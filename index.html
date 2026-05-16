@@ -1,0 +1,2262 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>JLPT N3 — 満点を目指せ！</title>
+<!-- Firebase SDKs — loaded before page script runs -->
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Noto+Serif+JP:wght@400;700&family=Noto+Sans+JP:wght@300;400;500;700&family=DM+Mono:wght@400;500&display=swap');
+
+:root {
+  --ink: #1a1a2e;
+  --paper: #f5f0e8;
+  --red: #c0392b;
+  --gold: #d4a017;
+  --jade: #2d7a4f;
+  --mist: #8c8c9e;
+  --indigo: #2c3e7a;
+  --cream: #faf7f0;
+  --border: rgba(26,26,46,0.12);
+  --shadow: 0 4px 24px rgba(26,26,46,0.08);
+}
+* { margin:0; padding:0; box-sizing:border-box; }
+body {
+  font-family:'Noto Sans JP',sans-serif;
+  background:var(--paper);
+  color:var(--ink);
+  min-height:100vh;
+  background-image:
+    repeating-linear-gradient(0deg, transparent, transparent 31px, rgba(26,26,46,0.04) 31px, rgba(26,26,46,0.04) 32px);
+}
+
+/* ===== HEADER ===== */
+header {
+  background:var(--ink);
+  color:var(--paper);
+  padding:16px 28px;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  border-bottom:3px solid var(--red);
+  position:sticky;
+  top:0;
+  z-index:100;
+}
+.logo { font-family:'Noto Serif JP',serif; font-size:20px; letter-spacing:2px; }
+.logo span { color:var(--red); }
+.header-right { display:flex; align-items:center; gap:16px; }
+.countdown { text-align:right; }
+.countdown .days { font-family:'DM Mono',monospace; font-size:24px; color:var(--gold); line-height:1; }
+.countdown .lbl { font-size:9px; opacity:.5; letter-spacing:2px; text-transform:uppercase; }
+
+/* ===== NAV TABS ===== */
+nav {
+  background:white;
+  border-bottom:1px solid var(--border);
+  display:flex;
+  padding:0 28px;
+  gap:4px;
+  overflow-x:auto;
+}
+nav button {
+  padding:12px 20px;
+  border:none;
+  background:none;
+  font-family:'Noto Sans JP',sans-serif;
+  font-size:13px;
+  font-weight:500;
+  color:var(--mist);
+  cursor:pointer;
+  border-bottom:3px solid transparent;
+  white-space:nowrap;
+  transition:all .2s;
+}
+nav button.active {
+  color:var(--ink);
+  border-bottom-color:var(--red);
+}
+
+/* ===== SCREENS ===== */
+.screen { display:none; padding:28px; max-width:900px; margin:0 auto; }
+.screen.active { display:block; }
+
+/* ===== OVERVIEW SCREEN ===== */
+.stats-grid {
+  display:grid;
+  grid-template-columns:repeat(3,1fr);
+  gap:16px;
+  margin-bottom:28px;
+}
+.stat-card {
+  background:white;
+  border:1px solid var(--border);
+  border-radius:12px;
+  padding:20px;
+  text-align:center;
+  box-shadow:var(--shadow);
+}
+.stat-card .big {
+  font-family:'DM Mono',monospace;
+  font-size:32px;
+  line-height:1;
+  margin-bottom:6px;
+}
+.stat-card .sub { font-size:11px; color:var(--mist); text-transform:uppercase; letter-spacing:1px; }
+.stat-card .bar-wrap { background:rgba(26,26,46,.08); border-radius:3px; height:5px; margin-top:10px; overflow:hidden; }
+.stat-card .bar-fill { height:100%; border-radius:3px; transition:width .6s ease; }
+
+.cat-list { display:grid; grid-template-columns:repeat(3,1fr); gap:12px; }
+.cat-card {
+  background:white;
+  border:1px solid var(--border);
+  border-radius:12px;
+  padding:20px;
+  cursor:pointer;
+  transition:all .2s;
+  box-shadow:var(--shadow);
+  position:relative;
+  overflow:hidden;
+}
+.cat-card:hover { transform:translateY(-3px); box-shadow:0 8px 32px rgba(26,26,46,.12); }
+.cat-card::before {
+  content:'';
+  position:absolute;
+  bottom:0; left:0; right:0;
+  height:3px;
+}
+.cat-card.douji::before { background:var(--red); }
+.cat-card.meishi::before { background:var(--indigo); }
+.cat-card.keiyoushi::before { background:var(--jade); }
+.cat-card .jp-label { font-family:'Noto Serif JP',serif; font-size:28px; opacity:.12; position:absolute; right:12px; top:8px; }
+.cat-card h3 { font-size:14px; font-weight:700; margin-bottom:4px; }
+.cat-card p { font-size:12px; color:var(--mist); margin-bottom:14px; }
+.cat-card .progress-info { display:flex; justify-content:space-between; font-size:11px; margin-bottom:5px; }
+.cat-card .progress-info .pct { font-family:'DM Mono',monospace; color:var(--mist); }
+.cat-card .cat-bar { background:rgba(26,26,46,.08); border-radius:3px; height:5px; overflow:hidden; }
+.cat-card .cat-bar-fill { height:100%; border-radius:3px; transition:width .6s ease; }
+.start-study-btn {
+  margin-top:12px;
+  width:100%;
+  padding:10px;
+  border:none;
+  border-radius:8px;
+  font-family:'Noto Sans JP',sans-serif;
+  font-size:13px;
+  font-weight:600;
+  cursor:pointer;
+  transition:all .2s;
+  letter-spacing:.5px;
+}
+.douji .start-study-btn { background:var(--red); color:white; }
+.meishi .start-study-btn { background:var(--indigo); color:white; }
+.keiyoushi .start-study-btn { background:var(--jade); color:white; }
+.start-study-btn:hover { opacity:.85; }
+
+/* ===== FLASHCARD SCREEN ===== */
+#screen-flash {
+  display:none;
+  max-width:680px;
+}
+#screen-flash.active { display:block; }
+
+.flash-header {
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  margin-bottom:20px;
+}
+.flash-header h2 { font-family:'Noto Serif JP',serif; font-size:16px; }
+.flash-progress-bar {
+  background:rgba(26,26,46,.1);
+  border-radius:4px;
+  height:6px;
+  margin-bottom:24px;
+  overflow:hidden;
+}
+.flash-progress-fill {
+  height:100%;
+  border-radius:4px;
+  background:linear-gradient(90deg,var(--indigo),var(--red));
+  transition:width .4s ease;
+}
+
+.card-wrap {
+  perspective:1000px;
+  margin-bottom:24px;
+}
+.flashcard {
+  background:white;
+  border:1px solid var(--border);
+  border-radius:20px;
+  min-height:280px;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  padding:40px 32px;
+  text-align:center;
+  box-shadow:var(--shadow);
+  cursor:pointer;
+  transition:transform .06s;
+  position:relative;
+  overflow:hidden;
+}
+.flashcard:active { transform:scale(.98); }
+.flashcard .hint { font-size:11px; color:var(--mist); letter-spacing:2px; text-transform:uppercase; margin-bottom:20px; }
+.flashcard .word { font-family:'Noto Serif JP',serif; font-size:52px; font-weight:700; line-height:1.1; margin-bottom:12px; color:var(--ink); }
+.flashcard .romaji { font-family:'DM Mono',monospace; font-size:18px; color:var(--mist); margin-bottom:0; }
+.flashcard.revealed .romaji { display:none; }
+.flashcard .meaning-reveal {
+  display:none;
+  flex-direction:column;
+  align-items:center;
+  gap:10px;
+  width:100%;
+}
+.flashcard.revealed .meaning-reveal { display:flex; }
+.flashcard.revealed .hint { display:none; }
+.flashcard .meaning-text { font-size:22px; font-weight:600; color:var(--ink); }
+.flashcard .meaning-romaji {
+  font-family:'DM Mono',monospace;
+  font-size:15px;
+  color:var(--indigo);
+  background:rgba(44,62,122,0.07);
+  padding:5px 16px;
+  border-radius:20px;
+  letter-spacing:.5px;
+}
+.flashcard .divider { width:60px; height:2px; background:var(--border); border-radius:2px; }
+.tap-hint {
+  font-size:11px;
+  color:var(--mist);
+  text-align:center;
+  margin-bottom:16px;
+  letter-spacing:1px;
+}
+.tap-hint.hide { opacity:0; }
+
+.action-row {
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:12px;
+}
+.btn-no {
+  padding:18px;
+  border:2px solid rgba(192,57,43,.3);
+  border-radius:12px;
+  background:rgba(192,57,43,.06);
+  color:var(--red);
+  font-family:'Noto Sans JP',sans-serif;
+  font-size:15px;
+  font-weight:700;
+  cursor:pointer;
+  transition:all .2s;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  gap:8px;
+}
+.btn-yes {
+  padding:18px;
+  border:2px solid rgba(45,122,79,.3);
+  border-radius:12px;
+  background:rgba(45,122,79,.06);
+  color:var(--jade);
+  font-family:'Noto Sans JP',sans-serif;
+  font-size:15px;
+  font-weight:700;
+  cursor:pointer;
+  transition:all .2s;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  gap:8px;
+}
+.btn-no:hover { background:rgba(192,57,43,.15); }
+.btn-yes:hover { background:rgba(45,122,79,.15); }
+.action-row.hidden { opacity:0; pointer-events:none; }
+
+.session-info {
+  display:flex;
+  justify-content:space-between;
+  margin-top:20px;
+  font-size:12px;
+  color:var(--mist);
+  font-family:'DM Mono',monospace;
+}
+
+/* Session complete */
+.session-done {
+  display:none;
+  text-align:center;
+  padding:40px 20px;
+  background:white;
+  border-radius:20px;
+  border:1px solid var(--border);
+  box-shadow:var(--shadow);
+}
+.session-done .trophy { font-size:64px; margin-bottom:16px; }
+.session-done h2 { font-family:'Noto Serif JP',serif; font-size:28px; margin-bottom:8px; }
+.session-done p { color:var(--mist); margin-bottom:24px; }
+.done-stats { display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:24px; }
+.done-stat { background:var(--cream); border-radius:10px; padding:14px; }
+.done-stat .n { font-family:'DM Mono',monospace; font-size:28px; }
+.done-stat .l { font-size:11px; color:var(--mist); margin-top:2px; }
+.btn-continue {
+  padding:14px 32px;
+  background:var(--ink);
+  color:white;
+  border:none;
+  border-radius:10px;
+  font-family:'Noto Sans JP',sans-serif;
+  font-size:14px;
+  font-weight:600;
+  cursor:pointer;
+  margin-right:8px;
+  transition:background .2s;
+}
+.btn-continue:hover { background:var(--indigo); }
+.btn-back-home {
+  padding:14px 24px;
+  background:none;
+  border:1px solid var(--border);
+  border-radius:10px;
+  font-family:'Noto Sans JP',sans-serif;
+  font-size:14px;
+  cursor:pointer;
+  color:var(--mist);
+}
+
+/* ===== REVIEW SCREEN ===== */
+.filter-bar {
+  display:flex;
+  gap:8px;
+  margin-bottom:20px;
+  flex-wrap:wrap;
+}
+.filter-btn {
+  padding:7px 16px;
+  border-radius:20px;
+  border:1px solid var(--border);
+  background:white;
+  font-family:'Noto Sans JP',sans-serif;
+  font-size:12px;
+  cursor:pointer;
+  transition:all .2s;
+  color:var(--mist);
+}
+.filter-btn.active { background:var(--ink); color:white; border-color:var(--ink); }
+.vocab-grid {
+  display:grid;
+  grid-template-columns:repeat(auto-fill,minmax(220px,1fr));
+  gap:10px;
+}
+.vocab-item {
+  background:white;
+  border:1px solid var(--border);
+  border-radius:10px;
+  padding:14px;
+  display:flex;
+  align-items:center;
+  gap:10px;
+}
+.vocab-item.mastered { background:rgba(45,122,79,.05); border-color:rgba(45,122,79,.2); }
+.vocab-item .jp { font-family:'Noto Serif JP',serif; font-size:16px; flex:1; min-width:0; }
+.vocab-item .id-meaning { font-size:11px; color:var(--mist); flex:1; min-width:0; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.vocab-item .status-dot { width:8px; height:8px; border-radius:50%; flex-shrink:0; }
+.status-dot.done { background:var(--jade); }
+.status-dot.todo { background:rgba(26,26,46,.15); }
+
+/* ===== AI SCREEN ===== */
+.chat-wrap {
+  background:white;
+  border:1px solid var(--border);
+  border-radius:16px;
+  overflow:hidden;
+  box-shadow:var(--shadow);
+}
+.chat-messages {
+  height:400px;
+  overflow-y:auto;
+  padding:20px;
+  display:flex;
+  flex-direction:column;
+  gap:12px;
+}
+.msg { max-width:80%; padding:12px 16px; border-radius:12px; font-size:14px; line-height:1.6; }
+.msg.user { background:var(--ink); color:white; align-self:flex-end; border-bottom-right-radius:3px; }
+.msg.ai { background:rgba(44,62,122,.07); align-self:flex-start; border-bottom-left-radius:3px; }
+.chat-input-area { padding:16px; border-top:1px solid var(--border); display:flex; gap:10px; }
+.chat-input-area input {
+  flex:1; padding:11px 16px; border:1px solid var(--border); border-radius:10px;
+  font-family:'Noto Sans JP',sans-serif; font-size:14px; outline:none;
+}
+.chat-input-area input:focus { border-color:var(--indigo); }
+.chat-send { padding:11px 20px; background:var(--red); color:white; border:none; border-radius:10px; cursor:pointer; font-size:16px; }
+.chat-send:disabled { opacity:.4; cursor:not-allowed; }
+.typing { display:flex; gap:4px; padding:12px 16px; background:rgba(44,62,122,.07); border-radius:12px; align-self:flex-start; width:fit-content; }
+.typing span { width:6px; height:6px; background:var(--indigo); border-radius:50%; animation:bounce 1.2s infinite; }
+.typing span:nth-child(2) { animation-delay:.2s; }
+.typing span:nth-child(3) { animation-delay:.4s; }
+@keyframes bounce { 0%,100% { transform:translateY(0); opacity:.4; } 50% { transform:translateY(-5px); opacity:1; } }
+
+/* ===== MISC ===== */
+.section-title {
+  font-family:'Noto Serif JP',serif;
+  font-size:12px;
+  letter-spacing:3px;
+  text-transform:uppercase;
+  color:var(--mist);
+  margin-bottom:16px;
+  display:flex;
+  align-items:center;
+  gap:8px;
+}
+.section-title::before { content:''; display:inline-block; width:5px; height:5px; background:var(--red); border-radius:50%; }
+
+/* ===== KANJI READ MODE ===== */
+#screen-kanji { display:none; max-width:680px; }
+#screen-kanji.active { display:block; }
+
+.kread-card {
+  background:white;
+  border:1px solid var(--border);
+  border-radius:20px;
+  padding:36px 28px 28px;
+  box-shadow:var(--shadow);
+  text-align:center;
+  margin-bottom:20px;
+  position:relative;
+}
+.kread-mode-badge {
+  position:absolute;
+  top:14px; right:16px;
+  font-size:10px;
+  font-family:'DM Mono',monospace;
+  letter-spacing:2px;
+  color:var(--mist);
+  text-transform:uppercase;
+}
+.kread-kanji {
+  font-family:'Noto Serif JP',serif;
+  font-size:88px;
+  font-weight:700;
+  line-height:1;
+  margin:8px 0 16px;
+  color:var(--ink);
+}
+.kread-context {
+  font-size:13px;
+  color:var(--mist);
+  margin-bottom:20px;
+  font-style:italic;
+}
+.kread-input-wrap {
+  display:flex;
+  gap:10px;
+  max-width:340px;
+  margin:0 auto 16px;
+}
+.kread-input {
+  flex:1;
+  padding:12px 16px;
+  border:2px solid var(--border);
+  border-radius:10px;
+  font-family:'Noto Sans JP',sans-serif;
+  font-size:16px;
+  text-align:center;
+  outline:none;
+  transition:border-color .2s;
+  background:var(--cream);
+}
+.kread-input:focus { border-color:var(--indigo); }
+.kread-input.correct { border-color:var(--jade); background:rgba(45,122,79,.06); color:var(--jade); }
+.kread-input.wrong { border-color:var(--red); background:rgba(192,57,43,.06); color:var(--red); }
+.kread-check-btn {
+  padding:12px 22px;
+  background:var(--ink);
+  color:white;
+  border:none;
+  border-radius:10px;
+  font-family:'Noto Sans JP',sans-serif;
+  font-size:14px;
+  font-weight:600;
+  cursor:pointer;
+  transition:background .2s;
+  white-space:nowrap;
+}
+.kread-check-btn:hover { background:var(--indigo); }
+
+.kread-answer-box {
+  display:none;
+  background:var(--cream);
+  border-radius:12px;
+  padding:16px 20px;
+  margin-top:8px;
+  text-align:left;
+  max-width:460px;
+  margin-left:auto;
+  margin-right:auto;
+}
+.kread-answer-box.show { display:block; }
+.kread-answer-row {
+  display:flex;
+  gap:16px;
+  flex-wrap:wrap;
+  margin-bottom:8px;
+}
+.kread-reading-pill {
+  background:white;
+  border:1px solid var(--border);
+  border-radius:8px;
+  padding:6px 14px;
+  font-family:'Noto Serif JP',serif;
+  font-size:18px;
+}
+.kread-reading-pill.on { border-color:rgba(192,57,43,.4); color:var(--red); }
+.kread-reading-pill.kun { border-color:rgba(44,62,122,.4); color:var(--indigo); }
+.kread-meaning-tag {
+  font-size:13px;
+  color:var(--mist);
+  margin-top:4px;
+}
+.kread-example {
+  font-family:'Noto Serif JP',serif;
+  font-size:15px;
+  margin-top:8px;
+  color:var(--ink);
+  border-top:1px solid var(--border);
+  padding-top:8px;
+}
+.kread-example span { font-size:12px; color:var(--mist); font-family:'Noto Sans JP',sans-serif; display:block; margin-top:2px; }
+
+.kread-actions {
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:12px;
+}
+.kread-actions.hidden { opacity:0; pointer-events:none; }
+
+/* skip button */
+.btn-skip {
+  padding:14px;
+  border:1px solid var(--border);
+  border-radius:12px;
+  background:white;
+  color:var(--mist);
+  font-family:'Noto Sans JP',sans-serif;
+  font-size:14px;
+  font-weight:600;
+  cursor:pointer;
+  transition:all .2s;
+  grid-column:1/-1;
+}
+.btn-skip:hover { border-color:var(--mist); }
+
+/* kanji stat card */
+.kread-session-info {
+  display:flex;
+  justify-content:space-between;
+  font-size:12px;
+  color:var(--mist);
+  font-family:'DM Mono',monospace;
+  margin-top:16px;
+}
+
+/* score feedback overlay */
+.kread-feedback {
+  display:none;
+  position:fixed;
+  inset:0;
+  align-items:center;
+  justify-content:center;
+  pointer-events:none;
+  z-index:200;
+}
+.kread-feedback.show { display:flex; }
+.kread-feedback-inner {
+  font-size:64px;
+  animation:popfade .7s ease forwards;
+}
+@keyframes popfade {
+  0% { transform:scale(.5); opacity:0; }
+  40% { transform:scale(1.2); opacity:1; }
+  100% { transform:scale(1); opacity:0; }
+}
+
+/* kanji select grid on overview */
+.kanji-select-grid {
+  display:grid;
+  grid-template-columns:repeat(auto-fill,minmax(100px,1fr));
+  gap:10px;
+  margin-top:14px;
+  max-height:320px;
+  overflow-y:auto;
+  padding-right:4px;
+}
+.kanji-select-item {
+  background:white;
+  border:2px solid var(--border);
+  border-radius:10px;
+  padding:14px 8px;
+  text-align:center;
+  cursor:pointer;
+  transition:all .2s;
+  position:relative;
+}
+.kanji-select-item:hover { border-color:var(--gold); transform:translateY(-2px); }
+.kanji-select-item.picked { border-color:var(--gold); background:rgba(212,160,23,.08); }
+.kanji-select-item .big-k { font-family:'Noto Serif JP',serif; font-size:28px; line-height:1; }
+.kanji-select-item .small-k { font-size:10px; color:var(--mist); margin-top:4px; }
+.kanji-select-item .done-dot {
+  position:absolute;
+  top:5px; right:5px;
+  width:7px; height:7px;
+  border-radius:50%;
+  background:var(--jade);
+}
+
+@media(max-width:600px) {
+  .stats-grid { grid-template-columns:1fr; }
+  .cat-list { grid-template-columns:1fr; }
+  .flashcard .word { font-size:38px; }
+  .kread-kanji { font-size:64px; }
+}
+::-webkit-scrollbar { width:5px; }
+::-webkit-scrollbar-thumb { background:var(--border); border-radius:3px; }
+
+/* ===== LOGIN SCREEN ===== */
+#login-screen {
+  position:fixed; inset:0; z-index:9999;
+  background:var(--ink);
+  display:flex; align-items:center; justify-content:center;
+  flex-direction:column;
+  background-image: repeating-linear-gradient(0deg,transparent,transparent 31px,rgba(255,255,255,0.03) 31px,rgba(255,255,255,0.03) 32px);
+}
+.login-box {
+  background:rgba(255,255,255,0.05);
+  border:1px solid rgba(255,255,255,0.12);
+  border-radius:20px;
+  padding:48px 40px;
+  text-align:center;
+  max-width:380px;
+  width:90%;
+  backdrop-filter:blur(10px);
+}
+.login-logo {
+  font-family:'Noto Serif JP',serif;
+  font-size:36px;
+  color:white;
+  margin-bottom:6px;
+  letter-spacing:3px;
+}
+.login-logo span { color:var(--red); }
+.login-tagline {
+  font-size:13px;
+  color:rgba(255,255,255,0.5);
+  margin-bottom:36px;
+  letter-spacing:1px;
+}
+.login-kanji-deco {
+  font-family:'Noto Serif JP',serif;
+  font-size:80px;
+  opacity:0.07;
+  color:white;
+  position:absolute;
+  top:20px; right:20px;
+  pointer-events:none;
+}
+.google-btn {
+  display:flex; align-items:center; justify-content:center; gap:12px;
+  width:100%;
+  padding:14px 24px;
+  background:white;
+  border:none;
+  border-radius:12px;
+  font-family:'Noto Sans JP',sans-serif;
+  font-size:15px;
+  font-weight:600;
+  color:#1a1a2e;
+  cursor:pointer;
+  transition:all 0.2s;
+  box-shadow:0 4px 20px rgba(0,0,0,0.3);
+}
+.google-btn:hover { transform:translateY(-2px); box-shadow:0 8px 28px rgba(0,0,0,0.4); }
+.google-btn:active { transform:translateY(0); }
+.google-btn svg { width:20px; height:20px; flex-shrink:0; }
+.login-desc {
+  font-size:12px;
+  color:rgba(255,255,255,0.35);
+  margin-top:20px;
+  line-height:1.6;
+}
+.login-loading {
+  display:none;
+  flex-direction:column;
+  align-items:center;
+  gap:14px;
+  color:rgba(255,255,255,0.6);
+  font-size:14px;
+}
+.login-spinner {
+  width:36px; height:36px;
+  border:3px solid rgba(255,255,255,0.1);
+  border-top-color:var(--red);
+  border-radius:50%;
+  animation:spin 0.8s linear infinite;
+}
+@keyframes spin { to { transform:rotate(360deg); } }
+
+/* User badge in header */
+.user-badge {
+  display:flex; align-items:center; gap:8px;
+  cursor:pointer;
+  padding:6px 10px;
+  border-radius:8px;
+  border:1px solid rgba(255,255,255,0.15);
+  transition:background 0.2s;
+}
+.user-badge:hover { background:rgba(255,255,255,0.08); }
+.user-avatar {
+  width:28px; height:28px;
+  border-radius:50%;
+  background:var(--red);
+  display:flex; align-items:center; justify-content:center;
+  font-size:12px; font-weight:700; color:white;
+  overflow:hidden;
+}
+.user-avatar img { width:100%; height:100%; object-fit:cover; }
+.user-name { font-size:12px; color:rgba(255,255,255,0.8); max-width:100px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.user-menu {
+  position:absolute; top:calc(100% + 8px); right:0;
+  background:white; border:1px solid var(--border);
+  border-radius:12px; padding:8px;
+  box-shadow:var(--shadow);
+  min-width:180px; z-index:200;
+  display:none;
+}
+.user-menu.open { display:block; }
+.user-menu-item {
+  display:flex; align-items:center; gap:10px;
+  padding:10px 14px;
+  border-radius:8px;
+  font-size:13px;
+  cursor:pointer;
+  transition:background 0.15s;
+  color:var(--ink);
+  border:none; background:none; width:100%; text-align:left;
+  font-family:'Noto Sans JP',sans-serif;
+}
+.user-menu-item:hover { background:var(--cream); }
+.user-menu-item.danger { color:var(--red); }
+.sync-badge {
+  font-size:9px; padding:2px 6px; border-radius:10px;
+  background:rgba(45,122,79,0.15); color:var(--jade);
+  font-family:'DM Mono',monospace; letter-spacing:1px;
+}
+.sync-badge.syncing { background:rgba(212,160,23,0.15); color:var(--gold); }
+
+</style>
+</head>
+<body>
+
+<!-- ====== LOGIN SCREEN ====== -->
+<div id="login-screen">
+  <div class="login-kanji-deco">学</div>
+  <div class="login-box">
+    <div class="login-logo">JLPT <span>N3</span></div>
+    <div class="login-tagline">満点を目指せ！— Raih Nilai Sempurna</div>
+
+    <div id="login-form">
+      <button class="google-btn" onclick="loginWithGoogle()">
+        <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+          <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/>
+          <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/>
+          <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z" fill="#FBBC05"/>
+          <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/>
+        </svg>
+        Masuk dengan Google
+      </button>
+      <p class="login-desc">
+        Progress belajarmu tersimpan di cloud ☁️<br>
+        Bisa akses dari device manapun
+      </p>
+    </div>
+
+    <div class="login-loading" id="login-loading">
+      <div class="login-spinner"></div>
+      <span>Memuat data kamu...</span>
+    </div>
+  </div>
+</div>
+
+<!-- ====== MAIN APP (hidden until logged in) ====== -->
+<div id="app" style="display:none">
+
+<header>
+  <div class="logo">JLPT <span>N3</span> 満点コース</div>
+  <div class="header-right">
+    <div class="countdown">
+      <div class="days" id="hdr-days">---</div>
+      <div class="lbl">hari ke Des 2026</div>
+    </div>
+    <div style="position:relative">
+      <div class="user-badge" id="user-badge" onclick="toggleUserMenu()">
+        <div class="user-avatar" id="user-avatar">?</div>
+        <span class="user-name" id="user-name">...</span>
+        <span class="sync-badge" id="sync-badge">● sync</span>
+      </div>
+      <div class="user-menu" id="user-menu">
+        <div style="padding:10px 14px 8px;border-bottom:1px solid var(--border);margin-bottom:4px">
+          <div style="font-size:12px;font-weight:700" id="menu-name">...</div>
+          <div style="font-size:11px;color:var(--mist)" id="menu-email">...</div>
+        </div>
+        <button class="user-menu-item" onclick="syncNow()">☁️ Sync Sekarang</button>
+        <button class="user-menu-item danger" onclick="logout()">🚪 Keluar</button>
+      </div>
+    </div>
+  </div>
+</header>
+
+<nav>
+  <button class="active" onclick="gotoScreen('overview')">🏠 Dashboard</button>
+  <button onclick="gotoScreen('flashmenu')">📚 Flashcard</button>
+  <button onclick="gotoScreen('kanjimenu')">漢字 Kanji</button>
+  <button onclick="gotoScreen('review')">📋 Semua Kata</button>
+  <button onclick="gotoScreen('ai')">🤖 Tanya Sensei</button>
+</nav>
+
+<!-- ====== OVERVIEW ====== -->
+<div id="screen-overview" class="screen active">
+  <div class="section-title" style="margin-bottom:20px">Progress Keseluruhan</div>
+  <div class="stats-grid">
+    <div class="stat-card">
+      <div class="big" id="ov-total" style="color:var(--indigo)">0/771</div>
+      <div class="sub">Total Kata Hafal</div>
+      <div class="bar-wrap"><div class="bar-fill" id="ov-bar" style="width:0%;background:var(--indigo)"></div></div>
+    </div>
+    <div class="stat-card">
+      <div class="big" id="ov-streak" style="color:var(--gold)">0🔥</div>
+      <div class="sub">Hari Berturut-turut</div>
+    </div>
+    <div class="stat-card">
+      <div class="big" id="ov-today" style="color:var(--jade)">0</div>
+      <div class="sub">Kata Hafal Hari Ini</div>
+    </div>
+  </div>
+
+  <div class="section-title">Mulai Belajar</div>
+  <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:24px">
+    <div onclick="gotoScreen('flashmenu')" style="background:white;border:1px solid var(--border);border-radius:12px;padding:18px;cursor:pointer;transition:all .2s;text-align:center;border-top:3px solid var(--red)" onmouseover="this.style.transform='translateY(-3px)'" onmouseout="this.style.transform=''">
+      <div style="font-size:28px;margin-bottom:8px">📚</div>
+      <div style="font-weight:700;font-size:14px;margin-bottom:4px">Flashcard</div>
+      <div style="font-size:11px;color:var(--mist)">Hafal kosakata N3</div>
+    </div>
+    <div onclick="gotoScreen('kanjimenu')" style="background:white;border:1px solid var(--border);border-radius:12px;padding:18px;cursor:pointer;transition:all .2s;text-align:center;border-top:3px solid var(--gold)" onmouseover="this.style.transform='translateY(-3px)'" onmouseout="this.style.transform=''">
+      <div style="font-size:28px;margin-bottom:8px">漢字</div>
+      <div style="font-weight:700;font-size:14px;margin-bottom:4px">Baca Kanji</div>
+      <div style="font-size:11px;color:var(--mist)">Flashcard kanji kotoba</div>
+    </div>
+    <div onclick="gotoScreen('ai')" style="background:white;border:1px solid var(--border);border-radius:12px;padding:18px;cursor:pointer;transition:all .2s;text-align:center;border-top:3px solid var(--indigo)" onmouseover="this.style.transform='translateY(-3px)'" onmouseout="this.style.transform=''">
+      <div style="font-size:28px;margin-bottom:8px">🤖</div>
+      <div style="font-weight:700;font-size:14px;margin-bottom:4px">Tanya Sensei</div>
+      <div style="font-size:11px;color:var(--mist)">Tanya grammar & arti</div>
+    </div>
+  </div>
+
+  <div class="section-title">Progress Per Kategori</div>
+  <div style="display:flex;flex-direction:column;gap:10px">
+    <div style="background:white;border:1px solid var(--border);border-radius:10px;padding:14px 18px">
+      <div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:6px">
+        <span style="font-weight:600">動詞 Kata Kerja</span>
+        <span style="font-family:'DM Mono',monospace;color:var(--mist)" id="cat-douji-done">0 / 242</span>
+      </div>
+      <div style="background:rgba(26,26,46,.08);border-radius:3px;height:5px;overflow:hidden"><div id="bar-douji" style="height:100%;background:var(--red);border-radius:3px;width:0%;transition:width .6s"></div></div>
+    </div>
+    <div style="background:white;border:1px solid var(--border);border-radius:10px;padding:14px 18px">
+      <div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:6px">
+        <span style="font-weight:600">名詞 Kata Benda</span>
+        <span style="font-family:'DM Mono',monospace;color:var(--mist)" id="cat-meishi-done">0 / 389</span>
+      </div>
+      <div style="background:rgba(26,26,46,.08);border-radius:3px;height:5px;overflow:hidden"><div id="bar-meishi" style="height:100%;background:var(--indigo);border-radius:3px;width:0%;transition:width .6s"></div></div>
+    </div>
+    <div style="background:white;border:1px solid var(--border);border-radius:10px;padding:14px 18px">
+      <div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:6px">
+        <span style="font-weight:600">形容詞 Kata Sifat</span>
+        <span style="font-family:'DM Mono',monospace;color:var(--mist)" id="cat-keiyou-done">0 / 140</span>
+      </div>
+      <div style="background:rgba(26,26,46,.08);border-radius:3px;height:5px;overflow:hidden"><div id="bar-keiyou" style="height:100%;background:var(--jade);border-radius:3px;width:0%;transition:width .6s"></div></div>
+    </div>
+  </div>
+</div>
+
+<!-- ====== FLASHCARD MENU SCREEN ====== -->
+<div id="screen-flashmenu" class="screen">
+  <div class="section-title" style="margin-bottom:6px">📚 Flashcard Kosakata</div>
+  <p style="font-size:13px;color:var(--mist);margin-bottom:24px">Pilih kategori lalu mulai — depan kanji, belakang arti & cara baca</p>
+
+  <div class="cat-list">
+    <div class="cat-card douji">
+      <div class="jp-label">動</div>
+      <h3>動詞 — Kata Kerja</h3>
+      <p>242 kata kerja N3</p>
+      <div class="progress-info">
+        <span id="fm-douji-done">0 / 242 hafal</span>
+        <span class="pct" id="fm-douji-pct">0%</span>
+      </div>
+      <div class="cat-bar"><div class="cat-bar-fill" id="fm-bar-douji" style="width:0%;background:var(--red)"></div></div>
+      <button class="start-study-btn" onclick="startStudy('kanji')">▶ Mulai Sesi</button>
+    </div>
+    <div class="cat-card meishi">
+      <div class="jp-label">名</div>
+      <h3>名詞 — Kata Benda</h3>
+      <p>389 kata benda N3</p>
+      <div class="progress-info">
+        <span id="fm-meishi-done">0 / 389 hafal</span>
+        <span class="pct" id="fm-meishi-pct">0%</span>
+      </div>
+      <div class="cat-bar"><div class="cat-bar-fill" id="fm-bar-meishi" style="width:0%;background:var(--indigo)"></div></div>
+      <button class="start-study-btn" onclick="startStudy('vocab')">▶ Mulai Sesi</button>
+    </div>
+    <div class="cat-card keiyoushi">
+      <div class="jp-label">形</div>
+      <h3>形容詞 — Kata Sifat</h3>
+      <p>140 kata sifat & keterangan N3</p>
+      <div class="progress-info">
+        <span id="fm-keiyou-done">0 / 140 hafal</span>
+        <span class="pct" id="fm-keiyou-pct">0%</span>
+      </div>
+      <div class="cat-bar"><div class="cat-bar-fill" id="fm-bar-keiyou" style="width:0%;background:var(--jade)"></div></div>
+      <button class="start-study-btn" onclick="startStudy('grammar')">▶ Mulai Sesi</button>
+    </div>
+  </div>
+
+  <!-- Mode info -->
+  <div style="margin-top:28px;background:white;border:1px solid var(--border);border-radius:12px;padding:20px;display:flex;gap:24px;flex-wrap:wrap">
+    <div style="flex:1;min-width:160px">
+      <div style="font-size:12px;font-weight:700;margin-bottom:6px;color:var(--ink)">📖 Cara Main</div>
+      <div style="font-size:12px;color:var(--mist);line-height:1.7">
+        <b>Depan:</b> Kata Jepang (kanji)<br>
+        <b>Belakang:</b> Arti + Cara baca<br>
+        Nilai sendiri — hafal atau belum
+      </div>
+    </div>
+    <div style="flex:1;min-width:160px">
+      <div style="font-size:12px;font-weight:700;margin-bottom:6px;color:var(--ink)">⚡ Sistem Cerdas</div>
+      <div style="font-size:12px;color:var(--mist);line-height:1.7">
+        Kata belum hafal muncul duluan<br>
+        Sesi 20 kata per putaran<br>
+        Progress tersimpan otomatis
+      </div>
+    </div>
+    <div style="flex:1;min-width:160px">
+      <div style="font-size:12px;font-weight:700;margin-bottom:6px;color:var(--ink)">🎯 Target</div>
+      <div style="font-size:12px;color:var(--mist);line-height:1.7">
+        Hafal semua 771 kata N3<br>
+        Untuk lulus ujian Desember 2026<br>
+        がんばれ！💪
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ====== FLASHCARD SCREEN ====== -->
+<div id="screen-flash" class="screen">
+  <div class="flash-header">
+    <div>
+      <h2 id="flash-category-title">動詞 Kata Kerja</h2>
+      <div style="font-size:12px;color:var(--mist);margin-top:2px" id="flash-subtitle">Belum hafal didahulukan</div>
+    </div>
+    <button onclick="exitStudy()" style="border:1px solid var(--border);background:white;padding:8px 16px;border-radius:8px;cursor:pointer;font-family:inherit;font-size:13px;color:var(--mist)">✕ Keluar</button>
+  </div>
+
+  <div class="flash-progress-bar">
+    <div class="flash-progress-fill" id="flash-prog-fill" style="width:0%"></div>
+  </div>
+
+  <!-- Active card -->
+  <div id="flash-active">
+    <div class="card-wrap">
+      <div class="flashcard" id="flashcard" onclick="revealCard()">
+        <div class="hint">Tap → lihat arti &amp; cara baca</div>
+        <div class="word" id="fc-word">食べる</div>
+        <div class="romaji" id="fc-romaji">taberu</div>
+        <div class="meaning-reveal">
+          <div class="divider"></div>
+          <div class="meaning-text" id="fc-meaning">makan</div>
+          <div class="meaning-romaji" id="fc-romaji-back">taberu</div>
+        </div>
+      </div>
+    </div>
+    <p class="tap-hint" id="tap-hint">👆 Tap kartu untuk lihat arti</p>
+    <div class="action-row hidden" id="action-row">
+      <button class="btn-no" onclick="markCard(false)">✗ &nbsp; Belum Hafal</button>
+      <button class="btn-yes" onclick="markCard(true)">✓ &nbsp; Sudah Hafal!</button>
+    </div>
+    <div class="session-info">
+      <span id="sess-left">Sisa: --</span>
+      <span id="sess-done">Sesi ini: 0</span>
+      <span id="sess-master">Hafal: 0</span>
+    </div>
+  </div>
+
+  <!-- Session complete -->
+  <div id="session-done-panel" class="session-done">
+    <div class="trophy">🎌</div>
+    <h2>セッション完了！</h2>
+    <p>Sesi belajar selesai. よくできました！</p>
+    <div class="done-stats">
+      <div class="done-stat">
+        <div class="n" id="done-reviewed">0</div>
+        <div class="l">Kata Dikerjakan</div>
+      </div>
+      <div class="done-stat">
+        <div class="n" id="done-mastered">0</div>
+        <div class="l">Baru Hafal</div>
+      </div>
+    </div>
+    <button class="btn-continue" onclick="continueStudy()">▶ Lanjut Sesi Berikutnya</button>
+    <button class="btn-back-home" onclick="exitStudy()">← Kembali</button>
+  </div>
+</div>
+
+<!-- ====== KANJI MENU SCREEN ====== -->
+<div id="screen-kanjimenu" class="screen">
+  <div class="section-title" style="margin-bottom:6px">漢字 Flashcard Kanji</div>
+  <p style="font-size:13px;color:var(--mist);margin-bottom:24px">Depan: kanji kata — Belakang: furigana + arti. Pilih kategori untuk mulai.</p>
+
+  <div class="cat-list">
+    <div class="cat-card douji">
+      <div class="jp-label">動</div>
+      <h3>動詞 — Kata Kerja</h3>
+      <p>242 kata kerja N3</p>
+      <div class="progress-info">
+        <span id="km-douji-done">0 / 242 hafal</span>
+        <span class="pct" id="km-douji-pct">0%</span>
+      </div>
+      <div class="cat-bar"><div class="cat-bar-fill" id="km-bar-douji" style="width:0%;background:var(--red)"></div></div>
+      <button class="start-study-btn" onclick="startKanjiFlash('kanji')">▶ Mulai Baca</button>
+    </div>
+    <div class="cat-card meishi">
+      <div class="jp-label">名</div>
+      <h3>名詞 — Kata Benda</h3>
+      <p>389 kata benda N3</p>
+      <div class="progress-info">
+        <span id="km-meishi-done">0 / 389 hafal</span>
+        <span class="pct" id="km-meishi-pct">0%</span>
+      </div>
+      <div class="cat-bar"><div class="cat-bar-fill" id="km-bar-meishi" style="width:0%;background:var(--indigo)"></div></div>
+      <button class="start-study-btn" onclick="startKanjiFlash('vocab')">▶ Mulai Baca</button>
+    </div>
+    <div class="cat-card keiyoushi">
+      <div class="jp-label">形</div>
+      <h3>形容詞 — Kata Sifat</h3>
+      <p>140 kata sifat & keterangan N3</p>
+      <div class="progress-info">
+        <span id="km-keiyou-done">0 / 140 hafal</span>
+        <span class="pct" id="km-keiyou-pct">0%</span>
+      </div>
+      <div class="cat-bar"><div class="cat-bar-fill" id="km-bar-keiyou" style="width:0%;background:var(--jade)"></div></div>
+      <button class="start-study-btn" onclick="startKanjiFlash('grammar')">▶ Mulai Baca</button>
+    </div>
+  </div>
+
+  <div style="margin-top:28px;background:white;border:1px solid var(--border);border-radius:12px;padding:20px;display:flex;gap:24px;flex-wrap:wrap">
+    <div style="flex:1;min-width:150px">
+      <div style="font-size:12px;font-weight:700;margin-bottom:6px">📖 Cara Main</div>
+      <div style="font-size:12px;color:var(--mist);line-height:1.7">
+        <b>Depan:</b> Kanji kata saja<br>
+        <b>Belakang:</b> Furigana + Arti<br>
+        Nilai sendiri — hafal atau belum
+      </div>
+    </div>
+    <div style="flex:1;min-width:150px">
+      <div style="font-size:12px;font-weight:700;margin-bottom:6px">🎯 Tujuan</div>
+      <div style="font-size:12px;color:var(--mist);line-height:1.7">
+        Latih baca kanji dalam konteks<br>
+        kata nyata N3 — bukan kanji satuan<br>
+        Progress tersimpan otomatis
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ====== KANJI FLASHCARD SCREEN ====== -->
+<div id="screen-kanjiflash" class="screen">
+  <div class="flash-header">
+    <div>
+      <h2 id="kf-title" style="font-family:'Noto Serif JP',serif;font-size:17px">漢字 Kata Kerja</h2>
+      <div style="font-size:12px;color:var(--mist);margin-top:2px" id="kf-subtitle">Belum hafal didahulukan</div>
+    </div>
+    <button onclick="exitKanjiFlash()" style="border:1px solid var(--border);background:white;padding:8px 16px;border-radius:8px;cursor:pointer;font-family:inherit;font-size:13px;color:var(--mist)">✕ Keluar</button>
+  </div>
+
+  <div class="flash-progress-bar">
+    <div class="flash-progress-fill" id="kf-prog-fill" style="width:0%"></div>
+  </div>
+
+  <div id="kf-active">
+    <div class="card-wrap">
+      <div class="flashcard" id="kf-card" onclick="revealKanjiCard()">
+        <div class="hint">Tap → lihat furigana &amp; arti</div>
+        <div class="word" id="kf-word" style="font-size:48px;line-height:1.2">感謝する</div>
+        <div class="meaning-reveal">
+          <div class="divider"></div>
+          <!-- furigana besar -->
+          <div id="kf-furigana" style="font-family:'Noto Serif JP',serif;font-size:22px;color:var(--indigo);letter-spacing:2px">かんしゃする</div>
+          <!-- romaji kecil -->
+          <div id="kf-romaji-back" style="font-family:'DM Mono',monospace;font-size:13px;color:var(--mist);margin-top:2px">kansha suru</div>
+          <div class="divider" style="margin-top:4px"></div>
+          <!-- arti -->
+          <div class="meaning-text" id="kf-meaning">berterima kasih</div>
+        </div>
+      </div>
+    </div>
+    <p class="tap-hint" id="kf-tap-hint">👆 Tap kartu untuk lihat furigana & arti</p>
+    <div class="action-row hidden" id="kf-action-row">
+      <button class="btn-no" onclick="markKanjiFlash(false)">✗ &nbsp; Belum Bisa</button>
+      <button class="btn-yes" onclick="markKanjiFlash(true)">✓ &nbsp; Bisa Baca!</button>
+    </div>
+    <div class="session-info">
+      <span id="kf-left">Sisa: --</span>
+      <span id="kf-done">Sesi ini: 0</span>
+      <span id="kf-master">Hafal: 0</span>
+    </div>
+  </div>
+
+  <!-- Session done -->
+  <div id="kf-done-panel" class="session-done">
+    <div class="trophy">⛩️</div>
+    <h2>読み完了！</h2>
+    <p>Sesi baca kanji selesai. よくできました！</p>
+    <div class="done-stats">
+      <div class="done-stat"><div class="n" id="kf-done-reviewed">0</div><div class="l">Kata Dikerjakan</div></div>
+      <div class="done-stat"><div class="n" id="kf-done-mastered">0</div><div class="l">Bisa Baca</div></div>
+    </div>
+    <button class="btn-continue" onclick="continueKanjiFlash()">▶ Lanjut Sesi</button>
+    <button class="btn-back-home" onclick="exitKanjiFlash()">← Kembali</button>
+  </div>
+</div>
+
+<!-- ====== REVIEW SCREEN ====== -->
+<div id="screen-review" class="screen">
+  <div class="section-title">Semua Kata N3</div>
+  <div class="filter-bar">
+    <button class="filter-btn active" onclick="setFilter('all',this)">Semua</button>
+    <button class="filter-btn" onclick="setFilter('kanji',this)">動詞 Kata Kerja</button>
+    <button class="filter-btn" onclick="setFilter('vocab',this)">名詞 Kata Benda</button>
+    <button class="filter-btn" onclick="setFilter('grammar',this)">形容詞 Kata Sifat</button>
+    <button class="filter-btn" onclick="setFilter('done',this)">✓ Sudah Hafal</button>
+    <button class="filter-btn" onclick="setFilter('todo',this)">✗ Belum Hafal</button>
+  </div>
+  <div style="font-size:12px;color:var(--mist);margin-bottom:14px" id="review-count">Menampilkan 771 kata</div>
+  <div class="vocab-grid" id="vocab-grid"></div>
+</div>
+
+<!-- ====== AI SCREEN ====== -->
+<div id="screen-ai" class="screen">
+  <div class="section-title">AI 先生 — Asisten Belajar</div>
+  <div class="chat-wrap">
+    <div class="chat-messages" id="chat-box">
+      <div class="msg ai">
+        こんにちは！N3満点を目指して一緒に頑張りましょう！<br><br>
+        Tanya apa saja: arti kata, contoh kalimat, perbedaan kata, pola grammar, atau minta latihan soal! 🎌
+      </div>
+    </div>
+    <div class="chat-input-area">
+      <input id="chat-input" placeholder="Tanya sensei... (mis: apa beda 見る dan 眺める?)" onkeydown="if(event.key==='Enter')sendMsg()">
+      <button class="chat-send" id="chat-send" onclick="sendMsg()">↑</button>
+    </div>
+  </div>
+</div>
+
+</div><!-- end #app -->
+
+<script>
+// ============================================================
+// DATA — Semua kotoba N3 dari PDF (771 item)
+// ============================================================
+
+const ALL_WORDS = {
+  kanji: [
+    {id:'kk1',jp:'有る',rom:'aru',id_:'ada'},
+    {id:'kk2',jp:'居る',rom:'iru',id_:'ada (makhluk hidup)'},
+    {id:'kk3',jp:'作業する',rom:'sagyou suru',id_:'bekerja'},
+    {id:'kk4',jp:'協力する',rom:'kyouryoku suru',id_:'bekerja sama'},
+    {id:'kk5',jp:'勉強する',rom:'benkyou suru',id_:'belajar'},
+    {id:'kk6',jp:'学ぶ',rom:'manabu',id_:'belajar'},
+    {id:'kk7',jp:'出発する',rom:'shuppatsu suru',id_:'berangkat'},
+    {id:'kk8',jp:'話し合う',rom:'hanashiau',id_:'berbincang-bincang'},
+    {id:'kk9',jp:'営業する',rom:'eigyou suru',id_:'berbisnis'},
+    {id:'kk10',jp:'語る',rom:'kataru',id_:'bercerita'},
+    {id:'kk11',jp:'商売する',rom:'shoubai suru',id_:'berdagang'},
+    {id:'kk12',jp:'基づく',rom:'motodzuku',id_:'berdasarkan'},
+    {id:'kk13',jp:'黙る',rom:'damaru',id_:'berdiam'},
+    {id:'kk14',jp:'立ち上げる',rom:'tachiageru',id_:'berdiri'},
+    {id:'kk15',jp:'泳ぐ',rom:'oyogu',id_:'berenang'},
+    {id:'kk16',jp:'参加する',rom:'sanka suru',id_:'bergabung'},
+    {id:'kk17',jp:'期待する',rom:'kitai suru',id_:'berharap'},
+    {id:'kk18',jp:'願う',rom:'negau',id_:'berharap / menginginkan'},
+    {id:'kk19',jp:'辞める',rom:'yameru',id_:'berhenti (kerja/kebiasaan)'},
+    {id:'kk20',jp:'留める',rom:'tomeru',id_:'berhenti, bermalam'},
+    {id:'kk21',jp:'約束する',rom:'yakusoku suru',id_:'berjanji'},
+    {id:'kk22',jp:'関連する',rom:'kanren suru',id_:'berkaitan'},
+    {id:'kk23',jp:'言う',rom:'iu',id_:'berkata'},
+    {id:'kk24',jp:'裏切る',rom:'uragiru',id_:'berkhianat'},
+    {id:'kk25',jp:'集中する',rom:'shuuchuu suru',id_:'berkonsentrasi'},
+    {id:'kk26',jp:'貢献する',rom:'kouken suru',id_:'berkontribusi'},
+    {id:'kk27',jp:'会合する',rom:'kaigou suru',id_:'berkumpul'},
+    {id:'kk28',jp:'減る',rom:'heru',id_:'berkurang'},
+    {id:'kk29',jp:'異なる',rom:'kotonaru',id_:'berlainan'},
+    {id:'kk30',jp:'訓練する',rom:'kunren suru',id_:'berlatih'},
+    {id:'kk31',jp:'練習する',rom:'renshuu suru',id_:'berlatih'},
+    {id:'kk32',jp:'呼吸する',rom:'kokyuu suru',id_:'bernafas'},
+    {id:'kk33',jp:'運動する',rom:'undou suru',id_:'berolahraga'},
+    {id:'kk34',jp:'組む',rom:'kumu',id_:'berpasangan'},
+    {id:'kk35',jp:'経験する',rom:'keiken suru',id_:'berpengalaman'},
+    {id:'kk36',jp:'思う',rom:'omou',id_:'berpikir'},
+    {id:'kk37',jp:'離れる',rom:'hanareru',id_:'berpisah'},
+    {id:'kk38',jp:'悲しむ',rom:'kanashimu',id_:'bersedih'},
+    {id:'kk39',jp:'隠れる',rom:'kakureru',id_:'bersembunyi'},
+    {id:'kk40',jp:'掃除する',rom:'souji suru',id_:'bersih-bersih'},
+    {id:'kk41',jp:'輝く',rom:'kagayaku',id_:'bersinar'},
+    {id:'kk42',jp:'悩む',rom:'nayamu',id_:'bersusah hati'},
+    {id:'kk43',jp:'伺う',rom:'ukagau',id_:'bertanya (sopan)'},
+    {id:'kk44',jp:'戦う',rom:'tatakau',id_:'bertarung'},
+    {id:'kk45',jp:'出会う',rom:'deau',id_:'bertemu'},
+    {id:'kk46',jp:'喧嘩する',rom:'kenka suru',id_:'bertengkar'},
+    {id:'kk47',jp:'叫ぶ',rom:'sakebu',id_:'berteriak'},
+    {id:'kk48',jp:'感謝する',rom:'kansha suru',id_:'berterima kasih'},
+    {id:'kk49',jp:'婚約する',rom:'konyaku suru',id_:'bertunangan'},
+    {id:'kk50',jp:'努力する',rom:'doryoku suru',id_:'berusaha keras'},
+    {id:'kk51',jp:'観光する',rom:'kankou suru',id_:'berwisata'},
+    {id:'kk52',jp:'出来る',rom:'dekiru',id_:'bisa'},
+    {id:'kk53',jp:'適する',rom:'tekisuru',id_:'cocok'},
+    {id:'kk54',jp:'似合う',rom:'niau',id_:'cocok, sesuai'},
+    {id:'kk55',jp:'効く',rom:'kiku',id_:'efektif'},
+    {id:'kk56',jp:'好む',rom:'konomu',id_:'gemar, menyukai'},
+    {id:'kk57',jp:'騒ぐ',rom:'sawagu',id_:'gempar / ribut'},
+    {id:'kk58',jp:'緊張する',rom:'kinchou suru',id_:'gugup'},
+    {id:'kk59',jp:'希望する',rom:'kibou suru',id_:'hendak / berharap'},
+    {id:'kk60',jp:'暮らす',rom:'kurasu',id_:'hidup / tinggal'},
+    {id:'kk61',jp:'気に入る',rom:'ki ni iru',id_:'jadi pikiran / penasaran'},
+    {id:'kk62',jp:'散歩する',rom:'sanpo suru',id_:'jalan-jalan'},
+    {id:'kk63',jp:'飽きる',rom:'akiru',id_:'jenuh / bosan'},
+    {id:'kk64',jp:'混乱する',rom:'konran suru',id_:'kalut, kekacauan'},
+    {id:'kk65',jp:'がっかりする',rom:'gakkari suru',id_:'kecewa'},
+    {id:'kk66',jp:'失望する',rom:'shitsubou suru',id_:'kecewa / putus asa'},
+    {id:'kk67',jp:'失う',rom:'ushinau',id_:'kehilangan'},
+    {id:'kk68',jp:'欠ける',rom:'kakeru',id_:'kekurangan'},
+    {id:'kk69',jp:'外出する',rom:'gaishutsu suru',id_:'keluar / jalan keluar'},
+    {id:'kk70',jp:'当たる',rom:'ataru',id_:'kena / tepat'},
+    {id:'kk71',jp:'相談する',rom:'soudan suru',id_:'konsultasi'},
+    {id:'kk72',jp:'合格する',rom:'goukaku suru',id_:'lulus'},
+    {id:'kk73',jp:'食う',rom:'kuu',id_:'makan (kasar)'},
+    {id:'kk74',jp:'怠ける',rom:'namakeru',id_:'malas'},
+    {id:'kk75',jp:'浴びる',rom:'abiru',id_:'mandi (shower)'},
+    {id:'kk76',jp:'入院する',rom:'nyuuin suru',id_:'masuk rumah sakit'},
+    {id:'kk77',jp:'入学する',rom:'nyuugaku suru',id_:'masuk sekolah'},
+    {id:'kk78',jp:'越える',rom:'koeru',id_:'melampaui'},
+    {id:'kk79',jp:'優れる',rom:'sugureru',id_:'melampaui / unggul'},
+    {id:'kk80',jp:'進学する',rom:'shingaku suru',id_:'melanjutkan sekolah'},
+    {id:'kk81',jp:'報告する',rom:'houkoku suru',id_:'melaporkan'},
+    {id:'kk82',jp:'禁止する',rom:'kinshi suru',id_:'melarang'},
+    {id:'kk83',jp:'爆発する',rom:'bakuhatsu suru',id_:'meledakkan'},
+    {id:'kk84',jp:'抜く',rom:'nuku',id_:'melepas / mencabut'},
+    {id:'kk85',jp:'放す',rom:'hanasu',id_:'melepas'},
+    {id:'kk86',jp:'外す',rom:'hazusu',id_:'melepaskan, menghilangkan'},
+    {id:'kk87',jp:'見る',rom:'miru',id_:'melihat'},
+    {id:'kk88',jp:'守る',rom:'mamoru',id_:'melindungi'},
+    {id:'kk89',jp:'横断する',rom:'oudan suru',id_:'melintasi'},
+    {id:'kk90',jp:'含む',rom:'fukumu',id_:'meliputi, mengandung'},
+    {id:'kk91',jp:'飛び出す',rom:'tobidasu',id_:'melompat / melesat keluar'},
+    {id:'kk92',jp:'広がる',rom:'hirogaru',id_:'meluas, melebar'},
+    {id:'kk93',jp:'描く',rom:'kaku',id_:'melukis / menggambar'},
+    {id:'kk94',jp:'許す',rom:'yurusu',id_:'memaafkan'},
+    {id:'kk95',jp:'理解する',rom:'rikai suru',id_:'memahami'},
+    {id:'kk96',jp:'進める',rom:'susumeru',id_:'memajukan'},
+    {id:'kk97',jp:'被る',rom:'kaburu',id_:'memakai (di kepala)'},
+    {id:'kk98',jp:'用いる',rom:'mochiiru',id_:'memakai, mempergunakan'},
+    {id:'kk99',jp:'無理する',rom:'muri suru',id_:'memaksakan diri'},
+    {id:'kk100',jp:'眺める',rom:'nagameru',id_:'memandang'},
+    {id:'kk101',jp:'確かめる',rom:'tashikameru',id_:'memastikan'},
+    {id:'kk102',jp:'割る',rom:'waru',id_:'membagi'},
+    {id:'kk103',jp:'応じる',rom:'oujiru',id_:'membalas, memenuhi'},
+    {id:'kk104',jp:'比較する',rom:'hikaku suru',id_:'membandingkan'},
+    {id:'kk105',jp:'援助する',rom:'enjo suru',id_:'membantu, mendukung'},
+    {id:'kk106',jp:'限る',rom:'kagiru',id_:'membatasi'},
+    {id:'kk107',jp:'支払う',rom:'shiharau',id_:'membayar'},
+    {id:'kk108',jp:'分ける',rom:'wakeru',id_:'membelah / membagi'},
+    {id:'kk109',jp:'嫌う',rom:'kirau',id_:'membenci'},
+    {id:'kk110',jp:'与える',rom:'ataeru',id_:'memberikan'},
+    {id:'kk111',jp:'証明する',rom:'shoumei suru',id_:'membuktikan'},
+    {id:'kk112',jp:'殺す',rom:'korosu',id_:'membunuh'},
+    {id:'kk113',jp:'解く',rom:'toku',id_:'memecahkan'},
+    {id:'kk114',jp:'掴む',rom:'tsukamu',id_:'memegang'},
+    {id:'kk115',jp:'抱く',rom:'idaku',id_:'memeluk'},
+    {id:'kk116',jp:'検査する',rom:'kensa suru',id_:'memeriksa'},
+    {id:'kk117',jp:'命じる',rom:'meijiru',id_:'memerintah'},
+    {id:'kk118',jp:'注文する',rom:'chuumon suru',id_:'memesan'},
+    {id:'kk119',jp:'選択する',rom:'sentaku suru',id_:'memilih'},
+    {id:'kk120',jp:'移す',rom:'utsusu',id_:'memindah'},
+    {id:'kk121',jp:'求める',rom:'motomeru',id_:'meminta'},
+    {id:'kk122',jp:'構う',rom:'kamau',id_:'mempedulikan'},
+    {id:'kk123',jp:'修理する',rom:'shuuri suru',id_:'memperbaiki'},
+    {id:'kk124',jp:'議論する',rom:'giron suru',id_:'memperbincangkan'},
+    {id:'kk125',jp:'警告する',rom:'keikoku suru',id_:'memperingati'},
+    {id:'kk126',jp:'得る',rom:'eru',id_:'memperoleh'},
+    {id:'kk127',jp:'稼ぐ',rom:'kasegu',id_:'memperoleh pendapatan'},
+    {id:'kk128',jp:'備える',rom:'sonaeru',id_:'mempersiapkan'},
+    {id:'kk129',jp:'褒める',rom:'homeru',id_:'memuji'},
+    {id:'kk130',jp:'決心する',rom:'kesshin suru',id_:'menabahkan hati / bertekad'},
+    {id:'kk131',jp:'貯金する',rom:'chokin suru',id_:'menabung'},
+    {id:'kk132',jp:'請求する',rom:'seikyuu suru',id_:'menagih'},
+    {id:'kk133',jp:'我慢する',rom:'gaman suru',id_:'menahan, bersabar'},
+    {id:'kk134',jp:'増す',rom:'masu',id_:'menambah'},
+    {id:'kk135',jp:'防ぐ',rom:'fusegu',id_:'menangkal'},
+    {id:'kk136',jp:'逮捕する',rom:'taiho suru',id_:'menangkap (polisi)'},
+    {id:'kk137',jp:'達する',rom:'tassuru',id_:'mencapai'},
+    {id:'kk138',jp:'届く',rom:'todoku',id_:'mencapai, sampai'},
+    {id:'kk139',jp:'就職する',rom:'shuushoku suru',id_:'mencari pekerjaan'},
+    {id:'kk140',jp:'予防する',rom:'yobou suru',id_:'mencegah'},
+    {id:'kk141',jp:'愛する',rom:'aisuru',id_:'mencintai'},
+    {id:'kk142',jp:'試す',rom:'tamesu',id_:'mencoba'},
+    {id:'kk143',jp:'苦しむ',rom:'kurushimu',id_:'menderita'},
+    {id:'kk144',jp:'発見する',rom:'hakken suru',id_:'mendeteksi, mendapati'},
+    {id:'kk145',jp:'強調する',rom:'kyouchou suru',id_:'menekankan, menonjolkan'},
+    {id:'kk146',jp:'検討する',rom:'kentou suru',id_:'meneliti'},
+    {id:'kk147',jp:'誘う',rom:'sasou',id_:'mengajak, mengundang'},
+    {id:'kk148',jp:'終える',rom:'oeru',id_:'mengakhiri'},
+    {id:'kk149',jp:'観察する',rom:'kansatsu suru',id_:'mengamati'},
+    {id:'kk150',jp:'取り上げる',rom:'toriageru',id_:'mengambil'},
+    {id:'kk151',jp:'分析する',rom:'bunseki suru',id_:'menganalisa'},
+    {id:'kk152',jp:'頼る',rom:'tayoru',id_:'mengandalkan'},
+    {id:'kk153',jp:'配達する',rom:'haitatsu suru',id_:'mengantarkan'},
+    {id:'kk154',jp:'批評する',rom:'hihyou suru',id_:'mengecam, mengkritik'},
+    {id:'kk155',jp:'変更する',rom:'henkou suru',id_:'mengedit'},
+    {id:'kk156',jp:'追う',rom:'ou',id_:'mengejar'},
+    {id:'kk157',jp:'経営する',rom:'keiei suru',id_:'mengelola'},
+    {id:'kk158',jp:'戻す',rom:'modosu',id_:'mengembalikan'},
+    {id:'kk159',jp:'発展する',rom:'hatten suru',id_:'mengembangkan'},
+    {id:'kk160',jp:'述べる',rom:'noberu',id_:'mengemukakan, menceritakan'},
+    {id:'kk161',jp:'雇う',rom:'yatou',id_:'menggaji, mempekerjakan'},
+    {id:'kk162',jp:'邪魔する',rom:'jama suru',id_:'mengganggu'},
+    {id:'kk163',jp:'換える',rom:'kaeru',id_:'mengganti'},
+    {id:'kk164',jp:'掛ける',rom:'kakeru',id_:'menggantung'},
+    {id:'kk165',jp:'動かす',rom:'ugokasu',id_:'menggerakkan'},
+    {id:'kk166',jp:'使用する',rom:'shiyou suru',id_:'menggunakan'},
+    {id:'kk167',jp:'過ごす',rom:'sugosu',id_:'menghabiskan (waktu)'},
+    {id:'kk168',jp:'出席する',rom:'shusseki suru',id_:'menghadiri'},
+    {id:'kk169',jp:'望む',rom:'nozomu',id_:'mengharapkan'},
+    {id:'kk170',jp:'避ける',rom:'sakeru',id_:'menghindar'},
+    {id:'kk171',jp:'数える',rom:'kazoeru',id_:'menghitung'},
+    {id:'kk172',jp:'尊敬する',rom:'sonkei suru',id_:'menghormati'},
+    {id:'kk173',jp:'結ぶ',rom:'musubu',id_:'mengikat'},
+    {id:'kk174',jp:'従う',rom:'shitagau',id_:'mengikuti'},
+    {id:'kk175',jp:'思い出す',rom:'omoidasu',id_:'mengingat'},
+    {id:'kk176',jp:'記入する',rom:'kinyuu suru',id_:'mengisi, menginput'},
+    {id:'kk177',jp:'許可する',rom:'kyoka suru',id_:'mengizinkan'},
+    {id:'kk178',jp:'心配する',rom:'shinpai suru',id_:'mengkhawatirkan'},
+    {id:'kk179',jp:'確認する',rom:'kakunin suru',id_:'mengkonfirmasi'},
+    {id:'kk180',jp:'消費する',rom:'shouhi suru',id_:'mengkonsumsi'},
+    {id:'kk181',jp:'叱る',rom:'shikaru',id_:'mengomeli, memarahi'},
+    {id:'kk182',jp:'変化する',rom:'henka suru',id_:'mengubah'},
+    {id:'kk183',jp:'繰り返す',rom:'kurikaesu',id_:'mengulang'},
+    {id:'kk184',jp:'発表する',rom:'happyou suru',id_:'mengumumkan'},
+    {id:'kk185',jp:'招待する',rom:'shoutai suru',id_:'mengundang'},
+    {id:'kk186',jp:'訪問する',rom:'houmon suru',id_:'mengunjungi'},
+    {id:'kk187',jp:'減らす',rom:'herasu',id_:'mengurangi'},
+    {id:'kk188',jp:'管理する',rom:'kanri suru',id_:'mengurus / manajemen'},
+    {id:'kk189',jp:'評価する',rom:'hyouka suru',id_:'menilai'},
+    {id:'kk190',jp:'預ける',rom:'azukeru',id_:'menitipkan'},
+    {id:'kk191',jp:'成る',rom:'naru',id_:'menjadi'},
+    {id:'kk192',jp:'優勝する',rom:'yuushou suru',id_:'menjuarai, memenangi'},
+    {id:'kk193',jp:'断る',rom:'kotowaru',id_:'menolak'},
+    {id:'kk194',jp:'助ける',rom:'tasukeru',id_:'menolong'},
+    {id:'kk195',jp:'指す',rom:'sasu',id_:'menunjuk'},
+    {id:'kk196',jp:'示す',rom:'shimesu',id_:'menunjukkan'},
+    {id:'kk197',jp:'閉じる',rom:'tojiru',id_:'menutup'},
+    {id:'kk198',jp:'覆う',rom:'oou',id_:'menutupi'},
+    {id:'kk199',jp:'気付く',rom:'kidzuku',id_:'menyadari'},
+    {id:'kk200',jp:'歓迎する',rom:'kangei suru',id_:'menyambut'},
+    {id:'kk201',jp:'合わせる',rom:'awaseru',id_:'menyatukan'},
+    {id:'kk202',jp:'救う',rom:'sukuu',id_:'menyelamatkan'},
+    {id:'kk203',jp:'調査する',rom:'chousa suru',id_:'menyelidiki'},
+    {id:'kk204',jp:'隠す',rom:'kakusu',id_:'menyembunyikan'},
+    {id:'kk205',jp:'完成する',rom:'kansei suru',id_:'menyempurnakan, rampung'},
+    {id:'kk206',jp:'触れる',rom:'fureru',id_:'menyentuh'},
+    {id:'kk207',jp:'諦める',rom:'akirameru',id_:'menyerah'},
+    {id:'kk208',jp:'任せる',rom:'makaseru',id_:'menyerahkan'},
+    {id:'kk209',jp:'攻撃する',rom:'kougeki suru',id_:'menyerang'},
+    {id:'kk210',jp:'運転する',rom:'unten suru',id_:'menyetir'},
+    {id:'kk211',jp:'放送する',rom:'housou suru',id_:'menyiarkan'},
+    {id:'kk212',jp:'残す',rom:'nokosu',id_:'menyisakan'},
+    {id:'kk213',jp:'支える',rom:'sasaeru',id_:'menyokong, menopang'},
+    {id:'kk214',jp:'感じる',rom:'kanjiru',id_:'merasa'},
+    {id:'kk215',jp:'祝う',rom:'iwau',id_:'merayakan'},
+    {id:'kk216',jp:'推薦する',rom:'suisen suru',id_:'merekomendasikan'},
+    {id:'kk217',jp:'計画する',rom:'keikaku suru',id_:'merencanakan'},
+    {id:'kk218',jp:'現れる',rom:'arawareru',id_:'muncul'},
+    {id:'kk219',jp:'昇る',rom:'noboru',id_:'naik, terbit'},
+    {id:'kk220',jp:'承知する',rom:'shouchi suru',id_:'paham, mengerti'},
+    {id:'kk221',jp:'信じる',rom:'shinjiru',id_:'percaya'},
+    {id:'kk222',jp:'行く',rom:'iku',id_:'pergi'},
+    {id:'kk223',jp:'出張する',rom:'shucchou suru',id_:'perjalanan bisnis'},
+    {id:'kk224',jp:'帰宅する',rom:'kitaku suru',id_:'pulang ke rumah'},
+    {id:'kk225',jp:'留学する',rom:'ryuugaku suru',id_:'sekolah di luar negeri'},
+    {id:'kk226',jp:'完了する',rom:'kanryou suru',id_:'selesai, rampung'},
+    {id:'kk227',jp:'成功する',rom:'seikou suru',id_:'sukses'},
+    {id:'kk228',jp:'恐れる',rom:'osoreru',id_:'takut'},
+    {id:'kk229',jp:'溺れる',rom:'oboreru',id_:'tenggelam'},
+    {id:'kk230',jp:'燃える',rom:'moeru',id_:'terbakar'},
+    {id:'kk231',jp:'育つ',rom:'sodatsu',id_:'terdidik, besar'},
+    {id:'kk232',jp:'感動する',rom:'kandou suru',id_:'terharu'},
+    {id:'kk233',jp:'繋ぐ',rom:'tsunagu',id_:'terhubung'},
+    {id:'kk234',jp:'起こる',rom:'okoru',id_:'terjadi'},
+    {id:'kk235',jp:'売れる',rom:'ureru',id_:'terjual'},
+    {id:'kk236',jp:'びっくりする',rom:'bikkuri suru',id_:'terkejut'},
+    {id:'kk237',jp:'感心する',rom:'kanshin suru',id_:'terkesan, mengagumi'},
+    {id:'kk238',jp:'遅刻する',rom:'chikoku suru',id_:'terlambat'},
+    {id:'kk239',jp:'微笑む',rom:'hohoemu',id_:'tersenyum'},
+    {id:'kk240',jp:'残る',rom:'nokoru',id_:'tertinggal, tersisa'},
+    {id:'kk241',jp:'到着する',rom:'touchaku suru',id_:'tiba'},
+    {id:'kk242',jp:'成長する',rom:'seichou suru',id_:'tumbuh'},
+  ],
+  vocab: [
+    {id:'v1',jp:'愛',rom:'ai',id_:'cinta'},{id:'v2',jp:'挨拶',rom:'aisatsu',id_:'salam'},{id:'v3',jp:'愛情',rom:'aijou',id_:'perasaan cinta/kasih sayang'},{id:'v4',jp:'合図',rom:'aizu',id_:'sinyal, tanda'},{id:'v5',jp:'相手',rom:'aite',id_:'lawan, rekan'},{id:'v6',jp:'明かり',rom:'akari',id_:'cahaya'},{id:'v7',jp:'握手',rom:'akushu',id_:'jabat tangan'},{id:'v8',jp:'嵐',rom:'arashi',id_:'badai'},{id:'v9',jp:'案',rom:'an',id_:'draft, konsep'},{id:'v10',jp:'暗記',rom:'anki',id_:'menghafal'},{id:'v11',jp:'安定',rom:'antei',id_:'kestabilan'},{id:'v12',jp:'案内',rom:'annai',id_:'memandu'},{id:'v13',jp:'意外',rom:'igai',id_:'di luar dugaan'},{id:'v14',jp:'意識',rom:'ishiki',id_:'kesadaran'},{id:'v15',jp:'異常',rom:'ijou',id_:'keanehan, abnormal'},{id:'v16',jp:'偉大',rom:'idai',id_:'kebesaran, kejayaan'},{id:'v17',jp:'痛み',rom:'itami',id_:'rasa sakit'},{id:'v18',jp:'位置',rom:'ichi',id_:'posisi'},{id:'v19',jp:'市場',rom:'ichiba',id_:'pasar'},{id:'v20',jp:'一瞬',rom:'isshun',id_:'seketika'},{id:'v21',jp:'一生',rom:'isshou',id_:'seumur hidup'},{id:'v22',jp:'移動',rom:'idou',id_:'pergerakan'},{id:'v23',jp:'命',rom:'inochi',id_:'nyawa'},{id:'v24',jp:'違反',rom:'ihan',id_:'pelanggaran'},{id:'v25',jp:'衣服',rom:'ifuku',id_:'pakaian'},{id:'v26',jp:'依頼',rom:'irai',id_:'penugasan'},{id:'v27',jp:'医療',rom:'iryou',id_:'perawatan kesehatan'},{id:'v28',jp:'印象',rom:'inshou',id_:'kesan'},{id:'v29',jp:'引退',rom:'intai',id_:'pensiun'},{id:'v30',jp:'宇宙',rom:'uchuu',id_:'luar angkasa'},{id:'v31',jp:'運',rom:'un',id_:'keberuntungan'},{id:'v32',jp:'影響',rom:'eikyou',id_:'pengaruh'},{id:'v33',jp:'営業',rom:'eigyou',id_:'bisnis, perdagangan'},{id:'v34',jp:'栄養',rom:'eiyou',id_:'nutrisi'},{id:'v35',jp:'笑顔',rom:'egao',id_:'wajah senyum'},{id:'v36',jp:'エネルギー',rom:'enerugii',id_:'energi'},{id:'v37',jp:'延期',rom:'enki',id_:'penundaan'},{id:'v38',jp:'演技',rom:'engi',id_:'akting'},{id:'v39',jp:'援助',rom:'enjo',id_:'bantuan'},{id:'v40',jp:'演説',rom:'enzetsu',id_:'pidato'},{id:'v41',jp:'遠慮',rom:'enryo',id_:'segan'},{id:'v42',jp:'横断',rom:'oudan',id_:'penyebrangan'},{id:'v43',jp:'汚染',rom:'osen',id_:'polusi'},{id:'v44',jp:'思い出',rom:'omoide',id_:'ingatan, kenangan'},{id:'v45',jp:'温度',rom:'ondo',id_:'temperatur, suhu'},{id:'v46',jp:'会計',rom:'kaikei',id_:'akuntan'},{id:'v47',jp:'解決',rom:'kaiketsu',id_:'solusi'},{id:'v48',jp:'改善',rom:'kaizen',id_:'perbaikan'},{id:'v49',jp:'回復',rom:'kaifuku',id_:'pemulihan'},{id:'v50',jp:'価格',rom:'kakaku',id_:'harga, nilai jual'},{id:'v51',jp:'化学',rom:'kagaku',id_:'ilmu kimia'},{id:'v52',jp:'覚悟',rom:'kakugo',id_:'kesiapan'},{id:'v53',jp:'学習',rom:'gakushuu',id_:'belajar, studi'},{id:'v54',jp:'確認',rom:'kakunin',id_:'konfirmasi'},{id:'v55',jp:'過去',rom:'kako',id_:'masa lalu'},{id:'v56',jp:'火災',rom:'kazai',id_:'kebakaran besar'},{id:'v57',jp:'家事',rom:'kaji',id_:'pekerjaan rumah tangga'},{id:'v58',jp:'歌手',rom:'kashu',id_:'penyanyi'},{id:'v59',jp:'価値',rom:'kachi',id_:'nilai, harga'},{id:'v60',jp:'活動',rom:'katsudou',id_:'aktivitas'},{id:'v61',jp:'我慢',rom:'gaman',id_:'kesabaran, ketahanan'},{id:'v62',jp:'可能',rom:'kanou',id_:'kemungkinan'},{id:'v63',jp:'感覚',rom:'kankaku',id_:'indera, intuisi'},{id:'v64',jp:'環境',rom:'kankyou',id_:'lingkungan'},{id:'v65',jp:'観光',rom:'kankou',id_:'melihat pemandangan'},{id:'v66',jp:'観察',rom:'kansatsu',id_:'observasi'},{id:'v67',jp:'感謝',rom:'kansha',id_:'berterima kasih'},{id:'v68',jp:'患者',rom:'kanja',id_:'pasien'},{id:'v69',jp:'感情',rom:'kanjou',id_:'emosi'},{id:'v70',jp:'完成',rom:'kansei',id_:'selesai'},{id:'v71',jp:'感動',rom:'kandou',id_:'terharu'},{id:'v72',jp:'監督',rom:'kantoku',id_:'pelatih, sutradara'},{id:'v73',jp:'管理',rom:'kanri',id_:'manajemen'},{id:'v74',jp:'完了',rom:'kanryou',id_:'penyelesaian'},{id:'v75',jp:'記憶',rom:'kioku',id_:'ingatan'},{id:'v76',jp:'機械',rom:'kikai',id_:'mesin'},{id:'v77',jp:'期間',rom:'kikan',id_:'periode'},{id:'v78',jp:'企業',rom:'kigyou',id_:'perusahaan, korporasi'},{id:'v79',jp:'期待',rom:'kitai',id_:'harapan'},{id:'v80',jp:'記事',rom:'kiji',id_:'artikel'},{id:'v81',jp:'傷',rom:'kizu',id_:'luka'},{id:'v82',jp:'希望',rom:'kibou',id_:'harapan'},{id:'v83',jp:'基本',rom:'kihon',id_:'dasar'},{id:'v84',jp:'義務',rom:'gimu',id_:'kewajiban'},{id:'v85',jp:'疑問',rom:'gimon',id_:'pertanyaan, masalah'},{id:'v86',jp:'逆',rom:'gyaku',id_:'kebalikan'},{id:'v87',jp:'休暇',rom:'kyuuka',id_:'cuti'},{id:'v88',jp:'休憩',rom:'kyuukei',id_:'istirahat'},{id:'v89',jp:'給料',rom:'kyuuryou',id_:'gaji'},{id:'v90',jp:'教科書',rom:'kyoukasho',id_:'buku teks sekolah'},{id:'v91',jp:'競技',rom:'kyougi',id_:'kontes'},{id:'v92',jp:'供給',rom:'kyoukyuu',id_:'suplai'},{id:'v93',jp:'教師',rom:'kyoushi',id_:'pengajar'},{id:'v94',jp:'教授',rom:'kyouju',id_:'profesor'},{id:'v95',jp:'強調',rom:'kyouchou',id_:'penekanan, highlight'},{id:'v96',jp:'共通',rom:'kyoutsuu',id_:'keawaman'},{id:'v97',jp:'恐怖',rom:'kyoufu',id_:'ketakutan'},{id:'v98',jp:'協力',rom:'kyouryoku',id_:'bekerjasama'},{id:'v99',jp:'許可',rom:'kyoka',id_:'izin'},{id:'v100',jp:'記録',rom:'kiroku',id_:'catatan, rekor'},{id:'v101',jp:'議論',rom:'giron',id_:'argumen'},{id:'v102',jp:'禁止',rom:'kinshi',id_:'larangan'},{id:'v103',jp:'緊張',rom:'kinchou',id_:'gugup'},{id:'v104',jp:'偶然',rom:'guuzen',id_:'kebetulan'},{id:'v105',jp:'苦痛',rom:'kutsuu',id_:'penderitaan mendalam'},{id:'v106',jp:'暮らし',rom:'kurashi',id_:'hidup'},{id:'v107',jp:'苦労',rom:'kurou',id_:'kesukaran'},{id:'v108',jp:'訓練',rom:'kunren',id_:'latihan'},{id:'v109',jp:'経営',rom:'keiei',id_:'administrasi'},{id:'v110',jp:'計画',rom:'keikaku',id_:'rencana'},{id:'v111',jp:'経験',rom:'keiken',id_:'pengalaman'},{id:'v112',jp:'傾向',rom:'keikou',id_:'kecenderungan'},{id:'v113',jp:'警告',rom:'keikoku',id_:'nasihat, ancaman'},{id:'v114',jp:'計算',rom:'keisan',id_:'kalkulasi'},{id:'v115',jp:'芸術',rom:'geijutsu',id_:'seni'},{id:'v116',jp:'契約',rom:'keiyaku',id_:'kontrak'},{id:'v117',jp:'結果',rom:'kekka',id_:'hasil'},{id:'v118',jp:'決心',rom:'kesshin',id_:'determinasi, resolusi'},{id:'v119',jp:'決定',rom:'kettei',id_:'keputusan'},{id:'v120',jp:'結論',rom:'ketsuron',id_:'kesimpulan'},{id:'v121',jp:'喧嘩',rom:'kenka',id_:'pertengkaran'},{id:'v122',jp:'健康',rom:'kenkou',id_:'kesehatan'},{id:'v123',jp:'検査',rom:'kensa',id_:'penyelidikan'},{id:'v124',jp:'建設',rom:'kensetsu',id_:'konstruksi'},{id:'v125',jp:'建築',rom:'kenchiku',id_:'arsitektur'},{id:'v126',jp:'検討',rom:'kentou',id_:'pertimbangan'},{id:'v127',jp:'権利',rom:'kenri',id_:'hak'},{id:'v128',jp:'合格',rom:'goukaku',id_:'lulus'},{id:'v129',jp:'交換',rom:'koukan',id_:'bertukar'},{id:'v130',jp:'効果',rom:'kouka',id_:'efek'},{id:'v131',jp:'攻撃',rom:'kougeki',id_:'serangan'},{id:'v132',jp:'貢献',rom:'kouken',id_:'kontribusi'},{id:'v133',jp:'広告',rom:'koukoku',id_:'iklan'},{id:'v134',jp:'行動',rom:'koudou',id_:'pergerakan'},{id:'v135',jp:'候補',rom:'kouho',id_:'kandidat'},{id:'v136',jp:'誤解',rom:'gokai',id_:'kesalahpahaman'},{id:'v137',jp:'呼吸',rom:'kokyuu',id_:'pernafasan'},{id:'v138',jp:'故郷',rom:'kokyou',id_:'kampung halaman'},{id:'v139',jp:'国語',rom:'kokugo',id_:'bahasa dalam negeri'},{id:'v140',jp:'国民',rom:'kokumin',id_:'masyarakat'},{id:'v141',jp:'個人',rom:'kojin',id_:'pribadi, individual'},{id:'v142',jp:'故障',rom:'koshou',id_:'kesalahan, kegagalan'},{id:'v143',jp:'困難',rom:'konnan',id_:'kesulitan'},{id:'v144',jp:'婚約',rom:'konyaku',id_:'pertunangan'},{id:'v145',jp:'混乱',rom:'konran',id_:'kekacauan'},{id:'v146',jp:'最高',rom:'saikou',id_:'terbaik'},{id:'v147',jp:'財産',rom:'zaisan',id_:'aset'},{id:'v148',jp:'最低',rom:'saitei',id_:'terburuk'},{id:'v149',jp:'才能',rom:'sainou',id_:'bakat'},{id:'v150',jp:'材料',rom:'zairyou',id_:'material, bahan'},{id:'v151',jp:'作業',rom:'sagyou',id_:'pekerjaan (industri)'},{id:'v152',jp:'作品',rom:'sakuhin',id_:'produk'},{id:'v153',jp:'参加',rom:'sanka',id_:'gabung'},{id:'v154',jp:'参考',rom:'sankou',id_:'referensi, konsultasi'},{id:'v155',jp:'賛成',rom:'sansei',id_:'setuju'},{id:'v156',jp:'酸素',rom:'sanso',id_:'oksigen'},{id:'v157',jp:'散歩',rom:'sanpo',id_:'jalan-jalan'},{id:'v158',jp:'幸せ',rom:'shiawase',id_:'kebahagiaan'},{id:'v159',jp:'事件',rom:'jiken',id_:'kejadian'},{id:'v160',jp:'資源',rom:'shigen',id_:'sumber'},{id:'v161',jp:'刺激',rom:'shigeki',id_:'stimulus'},{id:'v162',jp:'事情',rom:'jijou',id_:'kondisi'},{id:'v163',jp:'自然',rom:'shizen',id_:'alami'},{id:'v164',jp:'思想',rom:'shisou',id_:'ideologi'},{id:'v165',jp:'失業',rom:'shitsugyou',id_:'menganggur'},{id:'v166',jp:'失望',rom:'shitsubou',id_:'kekecewaan'},{id:'v167',jp:'指導',rom:'shidou',id_:'pelatihan'},{id:'v168',jp:'支配',rom:'shihai',id_:'dominasi'},{id:'v169',jp:'支払い',rom:'shiharai',id_:'pembayaran'},{id:'v170',jp:'死亡',rom:'shibou',id_:'kematian'},{id:'v171',jp:'借金',rom:'shakkin',id_:'hutang, pinjaman'},{id:'v172',jp:'邪魔',rom:'jama',id_:'gangguan'},{id:'v173',jp:'収穫',rom:'shuukaku',id_:'panen'},{id:'v174',jp:'宗教',rom:'shuukyou',id_:'agama'},{id:'v175',jp:'就職',rom:'shuushoku',id_:'mencari pekerjaan'},{id:'v176',jp:'集団',rom:'shuudan',id_:'grup, massa'},{id:'v177',jp:'集中',rom:'shuuchuu',id_:'konsentrasi'},{id:'v178',jp:'収入',rom:'shuunyuu',id_:'pemasukan'},{id:'v179',jp:'住民',rom:'juumin',id_:'warga negara'},{id:'v180',jp:'重要',rom:'juuyou',id_:'penting, dibutuhkan'},{id:'v181',jp:'修理',rom:'shuuri',id_:'memperbaiki, service'},{id:'v182',jp:'主義',rom:'shugi',id_:'asas, dasar'},{id:'v183',jp:'手術',rom:'shujutsu',id_:'operasi'},{id:'v184',jp:'首相',rom:'shushou',id_:'perdana menteri'},{id:'v185',jp:'手段',rom:'shudan',id_:'cara, langkah'},{id:'v186',jp:'出発',rom:'shuppatsu',id_:'keberangkatan'},{id:'v187',jp:'出版',rom:'shuppan',id_:'publikasi'},{id:'v188',jp:'準備',rom:'junbi',id_:'persiapan'},{id:'v189',jp:'使用',rom:'shiyou',id_:'penggunaan'},{id:'v190',jp:'障害',rom:'shougai',id_:'rintangan'},{id:'v191',jp:'奨学金',rom:'shougakukin',id_:'beasiswa'},{id:'v192',jp:'状況',rom:'joukyou',id_:'keadaan sekitar'},{id:'v193',jp:'条件',rom:'jouken',id_:'syarat'},{id:'v194',jp:'正直',rom:'shoujiki',id_:'jujur'},{id:'v195',jp:'常識',rom:'joushiki',id_:'akal sehat'},{id:'v196',jp:'招待',rom:'shoutai',id_:'undangan'},{id:'v197',jp:'状態',rom:'joutai',id_:'kondisi terkini'},{id:'v198',jp:'情報',rom:'jouhou',id_:'informasi'},{id:'v199',jp:'証明',rom:'shoumei',id_:'bukti'},{id:'v200',jp:'職業',rom:'shokugyou',id_:'pekerjaan / profesi'},{id:'v201',jp:'食事',rom:'shokuji',id_:'makanan'},{id:'v202',jp:'植物',rom:'shokubutsu',id_:'tanaman'},{id:'v203',jp:'食欲',rom:'shokuyoku',id_:'nafsu makan'},{id:'v204',jp:'処理',rom:'shori',id_:'pengolahan'},{id:'v205',jp:'書類',rom:'shorui',id_:'dokumen'},{id:'v206',jp:'神経',rom:'shinkei',id_:'syaraf'},{id:'v207',jp:'進行',rom:'shinkou',id_:'kemajuan'},{id:'v208',jp:'信号',rom:'shingou',id_:'rambu lalu lintas'},{id:'v209',jp:'人工',rom:'jinkou',id_:'buatan'},{id:'v210',jp:'人種',rom:'jinshu',id_:'ras'},{id:'v211',jp:'人生',rom:'jinsei',id_:'kehidupan'},{id:'v212',jp:'心臓',rom:'shinzou',id_:'jantung'},{id:'v213',jp:'身長',rom:'shinchou',id_:'tinggi badan'},{id:'v214',jp:'心配',rom:'shinpai',id_:'khawatir'},{id:'v215',jp:'人物',rom:'ninbutsu',id_:'tokoh'},{id:'v216',jp:'信用',rom:'shinyou',id_:'kepercayaan'},{id:'v217',jp:'信頼',rom:'shinrai',id_:'keyakinan'},{id:'v218',jp:'心理',rom:'shinri',id_:'psikologi'},{id:'v219',jp:'推薦',rom:'suisen',id_:'rekomendasi'},{id:'v220',jp:'睡眠',rom:'suimin',id_:'tidur'},{id:'v221',jp:'性格',rom:'seikaku',id_:'kelakuan / karakter'},{id:'v222',jp:'税金',rom:'zeikin',id_:'pajak'},{id:'v223',jp:'制限',rom:'seigen',id_:'pembatasan, restriksi'},{id:'v224',jp:'成功',rom:'seikou',id_:'kesuksesan'},{id:'v225',jp:'生産',rom:'seisan',id_:'produksi'},{id:'v226',jp:'精神',rom:'seishin',id_:'jiwa'},{id:'v227',jp:'成績',rom:'seiseki',id_:'prestasi'},{id:'v228',jp:'成長',rom:'seichou',id_:'pertumbuhan'},{id:'v229',jp:'責任',rom:'sekinin',id_:'tanggung jawab'},{id:'v230',jp:'世間',rom:'seken',id_:'masyarakat'},{id:'v231',jp:'設備',rom:'setsubi',id_:'perlengkapan'},{id:'v232',jp:'節約',rom:'setsuyaku',id_:'ekonomis'},{id:'v233',jp:'世話',rom:'sewa',id_:'merawat, membantu'},{id:'v234',jp:'全員',rom:"zen'in",id_:'seluruh anggota'},{id:'v235',jp:'専攻',rom:'senkou',id_:'jurusan'},{id:'v236',jp:'選手',rom:'senshu',id_:'atlet'},{id:'v237',jp:'選択',rom:'sentaku',id_:'pilihan'},{id:'v238',jp:'騒音',rom:'souon',id_:'kegaduhan'},{id:'v239',jp:'増加',rom:'zouka',id_:'penambahan'},{id:'v240',jp:'掃除',rom:'souji',id_:'menyapu, bersih-bersih'},{id:'v241',jp:'想像',rom:'souzou',id_:'imajinasi'},{id:'v242',jp:'相談',rom:'soudan',id_:'konsultasi'},{id:'v243',jp:'速度',rom:'sokudo',id_:'kecepatan'},{id:'v244',jp:'組織',rom:'soshiki',id_:'organisasi'},{id:'v245',jp:'損害',rom:'songai',id_:'kerugian, kerusakan'},{id:'v246',jp:'尊敬',rom:'sonkei',id_:'rasa hormat'},{id:'v247',jp:'存在',rom:'sonzai',id_:'keberadaan'},{id:'v248',jp:'体育',rom:'taiiku',id_:'pendidikan jasmani'},{id:'v249',jp:'大会',rom:'taikai',id_:'kejuaraan'},{id:'v250',jp:'大使',rom:'taishi',id_:'duta besar'},{id:'v251',jp:'対象',rom:'taishou',id_:'target'},{id:'v252',jp:'態度',rom:'taido',id_:'sikap'},{id:'v253',jp:'大統領',rom:'daitouryou',id_:'presiden'},{id:'v254',jp:'代表',rom:'daihyou',id_:'wakil, perwakilan'},{id:'v255',jp:'太陽',rom:'taiyou',id_:'matahari'},{id:'v256',jp:'立場',rom:'tachiba',id_:'posisi'},{id:'v257',jp:'単語',rom:'tango',id_:'kosakata'},{id:'v258',jp:'男子',rom:'danshi',id_:'anak laki-laki'},{id:'v259',jp:'団体',rom:'dantai',id_:'asosiasi'},{id:'v260',jp:'担当',rom:'tantou',id_:'tanggung jawab'},{id:'v261',jp:'地位',rom:'chii',id_:'status'},{id:'v262',jp:'地域',rom:'chiiki',id_:'wilayah'},{id:'v263',jp:'知恵',rom:'chie',id_:'kebijaksanaan'},{id:'v264',jp:'地球',rom:'chikyuu',id_:'bumi'},{id:'v265',jp:'遅刻',rom:'chikoku',id_:'terlambat'},{id:'v266',jp:'知識',rom:'chishiki',id_:'pengetahuan'},{id:'v267',jp:'知能',rom:'chinou',id_:'kepintaran'},{id:'v268',jp:'地方',rom:'chihou',id_:'region'},{id:'v269',jp:'チャンス',rom:'chansu',id_:'kesempatan'},{id:'v270',jp:'中央',rom:'chuuou',id_:'pusat, tengah'},{id:'v271',jp:'調査',rom:'chousa',id_:'penyelidikan'},{id:'v272',jp:'調子',rom:'choushi',id_:'irama, mood'},{id:'v273',jp:'頂上',rom:'choujou',id_:'puncak'},{id:'v274',jp:'貯金',rom:'chokin',id_:'menabung'},{id:'v275',jp:'直接',rom:'chokusetsu',id_:'langsung'},{id:'v276',jp:'通信',rom:'tsuushin',id_:'korespondensi'},{id:'v277',jp:'提案',rom:'teian',id_:'usulan'},{id:'v278',jp:'定期',rom:'teiki',id_:'berkala'},{id:'v279',jp:'抵抗',rom:'teikou',id_:'oposisi, perlawanan'},{id:'v280',jp:'程度',rom:'teido',id_:'derajat'},{id:'v281',jp:'鉄道',rom:'tetsudou',id_:'jalur kereta api'},{id:'v282',jp:'典型',rom:'tenkei',id_:'model, pola'},{id:'v283',jp:'天候',rom:'tenkou',id_:'cuaca alam'},{id:'v284',jp:'問い',rom:'toi',id_:'pertanyaan'},{id:'v285',jp:'当時',rom:'touji',id_:'pada saat itu'},{id:'v286',jp:'到着',rom:'touchaku',id_:'tiba'},{id:'v287',jp:'道徳',rom:'doutoku',id_:'moral'},{id:'v288',jp:'投票',rom:'touhyou',id_:'pemungutan suara'},{id:'v289',jp:'同僚',rom:'douryou',id_:'kolega kerja'},{id:'v290',jp:'道路',rom:'douro',id_:'jalan'},{id:'v291',jp:'特徴',rom:'tokuchou',id_:'karakteristik, ciri khusus'},{id:'v292',jp:'独立',rom:'dokuritsu',id_:'independen, merdeka'},{id:'v293',jp:'都市',rom:'toshi',id_:'urban'},{id:'v294',jp:'図書',rom:'tosho',id_:'buku-buku'},{id:'v295',jp:'土地',rom:'tochi',id_:'tanah'},{id:'v296',jp:'友達',rom:'tomodachi',id_:'teman'},{id:'v297',jp:'努力',rom:'doryoku',id_:'usaha'},{id:'v298',jp:'内容',rom:'naiyou',id_:'isi'},{id:'v299',jp:'仲間',rom:'nakama',id_:'rekan'},{id:'v300',jp:'流れ',rom:'nagare',id_:'arus'},{id:'v301',jp:'日常',rom:'nichijou',id_:'sehari-hari'},{id:'v302',jp:'日光',rom:'nikkou',id_:'cahaya matahari'},{id:'v303',jp:'入院',rom:'nyuuin',id_:'masuk rumah sakit'},{id:'v304',jp:'人気',rom:'ninki',id_:'populer'},{id:'v305',jp:'人間',rom:'ningen',id_:'manusia'},{id:'v306',jp:'願い',rom:'negai',id_:'keinginan'},{id:'v307',jp:'値段',rom:'nedan',id_:'harga'},{id:'v308',jp:'農業',rom:'nougyou',id_:'pertanian'},{id:'v309',jp:'能力',rom:'nouryoku',id_:'kemampuan'},{id:'v310',jp:'配達',rom:'haitatsu',id_:'pengiriman, distribusi'},{id:'v311',jp:'爆発',rom:'bakuhatsu',id_:'ledakan'},{id:'v312',jp:'発見',rom:'hakken',id_:'penemuan'},{id:'v313',jp:'発達',rom:'hattatsu',id_:'pertumbuhan'},{id:'v314',jp:'発展',rom:'hatten',id_:'kemajuan, perkembangan'},{id:'v315',jp:'発表',rom:'happyou',id_:'pengumuman'},{id:'v316',jp:'範囲',rom:"han'i",id_:'jangkauan'},{id:'v317',jp:'犯罪',rom:'hanzai',id_:'kejahatan'},{id:'v318',jp:'判断',rom:'handan',id_:'penghakiman, keputusan'},{id:'v319',jp:'被害',rom:'higai',id_:'kerugian, kerusakan'},{id:'v320',jp:'比較',rom:'hikaku',id_:'perbandingan'},{id:'v321',jp:'飛行機',rom:'hikouki',id_:'pesawat'},{id:'v322',jp:'批判',rom:'hihan',id_:'kritik'},{id:'v323',jp:'秘密',rom:'himitsu',id_:'rahasia'},{id:'v324',jp:'費用',rom:'hiyou',id_:'biaya'},{id:'v325',jp:'評価',rom:'hyouka',id_:'evaluasi'},{id:'v326',jp:'表現',rom:'hyougen',id_:'ekspresi'},{id:'v327',jp:'表情',rom:'hyoujou',id_:'ekspresi wajah'},{id:'v328',jp:'平等',rom:'byoutou',id_:'adil, netral'},{id:'v329',jp:'評判',rom:'hyouban',id_:'reputasi'},{id:'v330',jp:'風景',rom:'fuukei',id_:'pemandangan, landscape'},{id:'v331',jp:'夫婦',rom:'fuufu',id_:'suami istri'},{id:'v332',jp:'武器',rom:'buki',id_:'senjata'},{id:'v333',jp:'服装',rom:'fukusou',id_:'pakaian'},{id:'v334',jp:'舞台',rom:'butai',id_:'panggung, pentas'},{id:'v335',jp:'物質',rom:'busshitsu',id_:'zat'},{id:'v336',jp:'物理',rom:'butsuri',id_:'fisika'},{id:'v337',jp:'部分',rom:'bubun',id_:'bagian'},{id:'v338',jp:'分析',rom:'bunseki',id_:'analisis'},{id:'v339',jp:'文明',rom:'bunmei',id_:'peradaban'},{id:'v340',jp:'平均',rom:'heikin',id_:'rata-rata'},{id:'v341',jp:'平和',rom:'heiwa',id_:'kedamaian'},{id:'v342',jp:'変化',rom:'henka',id_:'perubahan'},{id:'v343',jp:'勉強',rom:'benkyou',id_:'belajar'},{id:'v344',jp:'弁当',rom:'bentou',id_:'kotak makan'},{id:'v345',jp:'報告',rom:'houkoku',id_:'laporan'},{id:'v346',jp:'宝石',rom:'houseki',id_:'batu permata'},{id:'v347',jp:'放送',rom:'housou',id_:'siaran'},{id:'v348',jp:'方法',rom:'houhou',id_:'cara, metode'},{id:'v349',jp:'保存',rom:'hozon',id_:'penyimpanan'},{id:'v350',jp:'本人',rom:'honnin',id_:'orang tersebut'},{id:'v351',jp:'迷子',rom:'maigo',id_:'tersesat, anak hilang'},{id:'v352',jp:'祭り',rom:'matsuri',id_:'festival'},{id:'v353',jp:'間違い',rom:'machigai',id_:'kesalahan'},{id:'v354',jp:'未来',rom:'mirai',id_:'masa depan'},{id:'v355',jp:'魅力',rom:'miryoku',id_:'mempesona'},{id:'v356',jp:'命令',rom:'meirei',id_:'perintah'},{id:'v357',jp:'迷惑',rom:'meiwaku',id_:'gangguan'},{id:'v358',jp:'目的',rom:'mokuteki',id_:'tujuan'},{id:'v359',jp:'目標',rom:'mokuhyou',id_:'sasaran, objek'},{id:'v360',jp:'物語',rom:'monogatari',id_:'kisah'},{id:'v361',jp:'役割',rom:'yakuwari',id_:'bagian (kewajiban, tugas)'},{id:'v362',jp:'勇気',rom:'yuuki',id_:'keberanian'},{id:'v363',jp:'友情',rom:'yuujou',id_:'persahabatan'},{id:'v364',jp:'友人',rom:'yuujin',id_:'sahabat'},{id:'v365',jp:'郵便',rom:'yuubin',id_:'surat post'},{id:'v366',jp:'輸出',rom:'yushutsu',id_:'ekspor'},{id:'v367',jp:'輸入',rom:'yunyuu',id_:'impor'},{id:'v368',jp:'要求',rom:'youkyuu',id_:'tuntutan'},{id:'v369',jp:'様子',rom:'yousu',id_:'situasi, keadaan'},{id:'v370',jp:'要素',rom:'youso',id_:'komponen'},{id:'v371',jp:'予算',rom:'yosan',id_:'estimasi, budget'},{id:'v372',jp:'予測',rom:'yosoku',id_:'prediksi'},{id:'v373',jp:'予防',rom:'yobou',id_:'mencegah'},{id:'v374',jp:'余裕',rom:'yoyuu',id_:'waktu luang'},{id:'v375',jp:'利益',rom:'rieki',id_:'keuntungan, profit'},{id:'v376',jp:'理解',rom:'rikai',id_:'pengertian'},{id:'v377',jp:'離婚',rom:'rikon',id_:'perceraian'},{id:'v378',jp:'留学',rom:'ryuugaku',id_:'belajar di luar negeri'},{id:'v379',jp:'流行',rom:'ryuukou',id_:'mode, fashion'},{id:'v380',jp:'量',rom:'ryou',id_:'kuantitas'},{id:'v381',jp:'料金',rom:'ryoukin',id_:'ongkos'},{id:'v382',jp:'礼儀',rom:'reigi',id_:'etika'},{id:'v383',jp:'冷静',rom:'reisei',id_:'kalem'},{id:'v384',jp:'練習',rom:'renshuu',id_:'latihan'},{id:'v385',jp:'連続',rom:'renzoku',id_:'berturut-turut, berseri'},{id:'v386',jp:'老人',rom:'roujin',id_:'orang tua, kakek-kakek'},{id:'v387',jp:'労働',rom:'roudou',id_:'buruh'},{id:'v388',jp:'論文',rom:'ronbun',id_:'skripsi, thesis'},{id:'v389',jp:'話題',rom:'wadai',id_:'topik'},
+  ],
+  grammar: [
+    {id:'g1',jp:'立派',rom:'rippa',id_:'agung, terhormat'},{id:'g2',jp:'不思議',rom:'fushigi',id_:'ajaib'},{id:'g3',jp:'ついに',rom:'tsui ni',id_:'akhirnya'},{id:'g4',jp:'自然',rom:'shizen',id_:'alami'},{id:'g5',jp:'安全',rom:'anzen',id_:'aman'},{id:'g6',jp:'奇妙',rom:'kimyou',id_:'aneh'},{id:'g7',jp:'熱心',rom:'nesshin',id_:'antusias'},{id:'g8',jp:'心配',rom:'shinpai',id_:'khawatir'},{id:'g9',jp:'良い',rom:'ii / yoi',id_:'bagus'},{id:'g10',jp:'多い',rom:'ooi',id_:'banyak'},{id:'g11',jp:'本当に',rom:'hontou ni',id_:'benar-benar'},{id:'g12',jp:'全く',rom:'mattaku',id_:'benar-benar / sama sekali'},{id:'g13',jp:'嫌い',rom:'kirai',id_:'benci'},{id:'g14',jp:'重い',rom:'omoi',id_:'berat'},{id:'g15',jp:'大変',rom:'taihen',id_:'berat, susah'},{id:'g16',jp:'煩い',rom:'urusai',id_:'berisik'},{id:'g17',jp:'度々',rom:'tabitabi',id_:'berkali-kali'},{id:'g18',jp:'清潔',rom:'seiketsu',id_:'bersih'},{id:'g19',jp:'大きい',rom:'ookii',id_:'besar'},{id:'g20',jp:'普通',rom:'futsuu',id_:'biasa'},{id:'g21',jp:'たいてい',rom:'taitei',id_:'biasanya'},{id:'g22',jp:'丸い',rom:'marui',id_:'bulat'},{id:'g23',jp:'酷い',rom:'hidoi',id_:'buruk'},{id:'g24',jp:'きれい',rom:'kirei',id_:'cantik, bersih'},{id:'g25',jp:'賢い',rom:'kashikoi',id_:'cerdas'},{id:'g26',jp:'適当',rom:'tekitou',id_:'cocok'},{id:'g27',jp:'かなり',rom:'kanari',id_:'agak, cukup'},{id:'g28',jp:'深い',rom:'fukai',id_:'dalam'},{id:'g29',jp:'浅い',rom:'asai',id_:'dangkal'},{id:'g30',jp:'近い',rom:'chikai',id_:'dekat'},{id:'g31',jp:'詳しい',rom:'kuwashii',id_:'detail'},{id:'g32',jp:'冷たい',rom:'tsumetai',id_:'dingin (benda)'},{id:'g33',jp:'寒い',rom:'samui',id_:'dingin (udara)'},{id:'g34',jp:'美しい',rom:'utsukushii',id_:'elok, cantik, indah'},{id:'g35',jp:'暗い',rom:'kurai',id_:'gelap'},{id:'g36',jp:'不安',rom:'fuan',id_:'gelisah'},{id:'g37',jp:'温かい',rom:'atatakai',id_:'hangat'},{id:'g38',jp:'だけ',rom:'dake',id_:'hanya'},{id:'g39',jp:'凄い',rom:'sugoi',id_:'hebat'},{id:'g40',jp:'静か',rom:'shizuka',id_:'hening'},{id:'g41',jp:'理想',rom:'risou',id_:'ideal'},{id:'g42',jp:'親しい',rom:'shitashii',id_:'intim, akrab'},{id:'g43',jp:'めったに〜ない',rom:'metta ni ~nai',id_:'jarang'},{id:'g44',jp:'遠い',rom:'tooi',id_:'jauh'},{id:'g45',jp:'明らか',rom:'akiraka',id_:'jelas'},{id:'g46',jp:'悪い',rom:'warui',id_:'jelek'},{id:'g47',jp:'冷静',rom:'reisei',id_:'kalem, tentram'},{id:'g48',jp:'いつでも',rom:'itsudemo',id_:'kapanpun'},{id:'g49',jp:'金持ち',rom:'kanemochi',id_:'kaya'},{id:'g50',jp:'豊か',rom:'yutaka',id_:'kaya, mampu'},{id:'g51',jp:'小さい',rom:'chiisai',id_:'kecil'},{id:'g52',jp:'幼い',rom:'osanai',id_:'kekanakan'},{id:'g53',jp:'格好いい',rom:'kakkoii',id_:'keren'},{id:'g54',jp:'また',rom:'mata',id_:'lagi'},{id:'g55',jp:'しかも',rom:'shikamo',id_:'lagi pula'},{id:'g56',jp:'そして',rom:'soshite',id_:'lalu'},{id:'g57',jp:'直接',rom:'chokusetsu',id_:'langsung'},{id:'g58',jp:'さらに',rom:'sara ni',id_:'lebih lagi'},{id:'g59',jp:'蒸し暑い',rom:'mushiatsui',id_:'lembab'},{id:'g60',jp:'非常',rom:'hijou',id_:'luar biasa'},{id:'g61',jp:'広い',rom:'hiroi',id_:'luas'},{id:'g62',jp:'可愛い',rom:'kawaii',id_:'lucu, imut'},{id:'g63',jp:'高い',rom:'takai',id_:'mahal, tinggi'},{id:'g64',jp:'寧ろ',rom:'mushiro',id_:'malahan'},{id:'g65',jp:'不幸',rom:'fukou',id_:'malang'},{id:'g66',jp:'それぞれ',rom:'sorezore',id_:'masing-masing'},{id:'g67',jp:'貧しい',rom:'mazushii',id_:'melarat, miskin'},{id:'g68',jp:'素晴らしい',rom:'subarashii',id_:'menakjubkan'},{id:'g69',jp:'面白い',rom:'omoshiroi',id_:'menarik'},{id:'g70',jp:'素敵',rom:'suteki',id_:'mengagumkan'},{id:'g71',jp:'苦しい',rom:'kurushii',id_:'menyakitkan'},{id:'g72',jp:'楽しい',rom:'tanoshii',id_:'menyenangkan'},{id:'g73',jp:'盛ん',rom:'sakan',id_:'meriah'},{id:'g74',jp:'貧乏',rom:'binbou',id_:'miskin'},{id:'g75',jp:'簡単',rom:'kantan',id_:'mudah'},{id:'g76',jp:'恐らく',rom:'osoraku',id_:'mungkin saja'},{id:'g77',jp:'安い',rom:'yasui',id_:'murah'},{id:'g78',jp:'美味い',rom:'umai',id_:'enak, nyaman'},{id:'g79',jp:'楽',rom:'raku',id_:'nyaman'},{id:'g80',jp:'結局',rom:'kekkyoku',id_:'pada akhirnya'},{id:'g81',jp:'一番',rom:'ichiban',id_:'paling'},{id:'g82',jp:'熱い',rom:'atsui',id_:'panas (benda)'},{id:'g83',jp:'暑い',rom:'atsui',id_:'panas (udara)'},{id:'g84',jp:'上手',rom:'jouzu',id_:'pandai'},{id:'g85',jp:'絶対に',rom:'zettai ni',id_:'pasti'},{id:'g86',jp:'下手',rom:'heta',id_:'payah'},{id:'g87',jp:'ゆっくり',rom:'yukkuri',id_:'perlahan-lahan'},{id:'g88',jp:'満足',rom:'manzoku',id_:'puas'},{id:'g89',jp:'賑やか',rom:'nigiyaka',id_:'ramai'},{id:'g90',jp:'低い',rom:'hikui',id_:'rendah'},{id:'g91',jp:'軽い',rom:'karui',id_:'ringan'},{id:'g92',jp:'複雑',rom:'fukuzatsu',id_:'rumit'},{id:'g93',jp:'痛い',rom:'itai',id_:'sakit'},{id:'g94',jp:'全然',rom:'zenzen',id_:'sama sekali'},{id:'g95',jp:'いつまでも',rom:'itsumademo',id_:'sampai kapanpun'},{id:'g96',jp:'生憎',rom:'ainiku',id_:'sayangnya'},{id:'g97',jp:'実は',rom:'jitsu wa',id_:'sebenarnya'},{id:'g98',jp:'出来るだけ',rom:'dekiru dake',id_:'sebisa mungkin'},{id:'g99',jp:'徐々に',rom:'jojo ni',id_:'secara bertahap'},{id:'g100',jp:'偶然',rom:'guuzen',id_:'secara tak sengaja'},{id:'g101',jp:'突然',rom:'totsuzen',id_:'secara tiba-tiba'},{id:'g102',jp:'単純',rom:'tanjun',id_:'sederhana'},{id:'g103',jp:'少ない',rom:'sukunai',id_:'sedikit'},{id:'g104',jp:'新鮮',rom:'shinsen',id_:'segar'},{id:'g105',jp:'涼しい',rom:'suzushii',id_:'sejuk'},{id:'g106',jp:'今',rom:'ima',id_:'sekarang'},{id:'g107',jp:'いつも',rom:'itsumo',id_:'selalu'},{id:'g108',jp:'ずっと',rom:'zutto',id_:'selalu, selamanya'},{id:'g109',jp:'狭い',rom:'semai',id_:'sempit'},{id:'g110',jp:'全て',rom:'subete',id_:'semuanya, seluruhnya'},{id:'g111',jp:'嬉しい',rom:'ureshii',id_:'senang'},{id:'g112',jp:'わざと',rom:'waza to',id_:'sengaja'},{id:'g113',jp:'寂しい',rom:'sabishii',id_:'sepi'},{id:'g114',jp:'たまに',rom:'tama ni',id_:'sesekali'},{id:'g115',jp:'それから',rom:'sore kara',id_:'setelah itu'},{id:'g116',jp:'無駄',rom:'muda',id_:'sia-sia'},{id:'g117',jp:'既に',rom:'sude ni',id_:'sudah'},{id:'g118',jp:'好き',rom:'suki',id_:'suka'},{id:'g119',jp:'困難',rom:'konnan',id_:'sukar, sulit'},{id:'g120',jp:'難しい',rom:'muzukashii',id_:'sulit'},{id:'g121',jp:'真剣に',rom:'shinken ni',id_:'sungguh-sungguh'},{id:'g122',jp:'鋭い',rom:'surudoi',id_:'tajam'},{id:'g123',jp:'でも',rom:'demo',id_:'tapi'},{id:'g124',jp:'厚い',rom:'atsui',id_:'tebal'},{id:'g125',jp:'穏やか',rom:'odayaka',id_:'tenang'},{id:'g126',jp:'明るい',rom:'akarui',id_:'terang'},{id:'g127',jp:'恐ろしい',rom:'osoroshii',id_:'menakutkan'},{id:'g128',jp:'特に',rom:'toku ni',id_:'terutama'},{id:'g129',jp:'急に',rom:'kyuu ni',id_:'tiba-tiba'},{id:'g130',jp:'不自由',rom:'fujiyuu',id_:'tidak bebas'},{id:'g131',jp:'まさか',rom:'masaka',id_:'tidak mungkin'},{id:'g132',jp:'不満',rom:'fuman',id_:'tidak puas'},{id:'g133',jp:'あまり',rom:'amari',id_:'tidak terlalu'},{id:'g134',jp:'細かい',rom:'komakai',id_:'halus'},{id:'g135',jp:'伝統的',rom:'dentouteki',id_:'tradisional'},{id:'g136',jp:'鈍い',rom:'nibui',id_:'tumpul'},{id:'g137',jp:'一般',rom:'ippan',id_:'umum'},{id:'g138',jp:'勢い',rom:'ikioi',id_:'bersemangat, bertenaga'},{id:'g139',jp:'即ち',rom:'sunawachi',id_:'yakni, yaitu'},{id:'g140',jp:'永遠に',rom:'eien ni',id_:'abadi'},
+  ]
+};
+
+// ============================================================
+// KANJI DATA — 197 kanji N3 dari seluruh kotoba (kata kerja, benda, sifat)
+// ============================================================
+const KANJI_DATA = [
+  {k:"発",on:['はつ', 'ほつ'],kun:[],meaning:"発生・発展",example:"発表する",ex_rom:"happyou suru",ex_id:"mengumumkan"},
+  {k:"出",on:['しゅつ', 'すい'],kun:['で.る', 'だ.す'],meaning:"出る・出す",example:"出発する",ex_rom:"shuppatsu suru",ex_id:"berangkat"},
+  {k:"人",on:['じん', 'にん'],kun:['ひと'],meaning:"人・人間",example:"人生",ex_rom:"jinsei",ex_id:"kehidupan"},
+  {k:"理",on:['り'],kun:[],meaning:"理由・理解",example:"理解する",ex_rom:"rikai suru",ex_id:"memahami"},
+  {k:"成",on:['せい', 'じょう'],kun:['な.る', 'な.す'],meaning:"成長・成功",example:"成長する",ex_rom:"seichou suru",ex_id:"tumbuh"},
+  {k:"業",on:['ぎょう', 'ごう'],kun:['わざ'],meaning:"作業・営業",example:"作業する",ex_rom:"sagyou suru",ex_id:"bekerja"},
+  {k:"感",on:['かん'],kun:['かん.じる'],meaning:"感謝・感動",example:"感じる",ex_rom:"kanjiru",ex_id:"merasakan"},
+  {k:"学",on:['がく', 'がっ'],kun:['まな.ぶ'],meaning:"学習・学校",example:"学ぶ",ex_rom:"manabu",ex_id:"belajar"},
+  {k:"合",on:['ごう', 'がっ', 'かっ'],kun:['あ.う', 'あ.わせる'],meaning:"合格・合わせる",example:"合格する",ex_rom:"goukaku suru",ex_id:"lulus"},
+  {k:"動",on:['どう'],kun:['うご.く', 'うご.かす'],meaning:"動作・運動",example:"動かす",ex_rom:"ugokasu",ex_id:"menggerakkan"},
+  {k:"心",on:['しん'],kun:['こころ'],meaning:"心配・心理",example:"心配する",ex_rom:"shinpai suru",ex_id:"mengkhawatirkan"},
+  {k:"力",on:['りょく', 'りき'],kun:['ちから'],meaning:"努力・能力",example:"努力する",ex_rom:"doryoku suru",ex_id:"berusaha keras"},
+  {k:"金",on:['きん', 'こん'],kun:['かね'],meaning:"金額・金持ち",example:"給料",ex_rom:"kyuuryou",ex_id:"gaji"},
+  {k:"情",on:['じょう'],kun:['なさ.け'],meaning:"情報・感情",example:"情報",ex_rom:"jouhou",ex_id:"informasi"},
+  {k:"手",on:['しゅ'],kun:['て'],meaning:"手段・手術",example:"手段",ex_rom:"shudan",ex_id:"cara/langkah"},
+  {k:"期",on:['き'],kun:[],meaning:"期間・期待",example:"期待する",ex_rom:"kitai suru",ex_id:"berharap"},
+  {k:"約",on:['やく'],kun:[],meaning:"約束・節約",example:"約束する",ex_rom:"yakusoku suru",ex_id:"berjanji"},
+  {k:"経",on:['けい', 'きょう'],kun:['へ.る'],meaning:"経験・経営",example:"経験する",ex_rom:"keiken suru",ex_id:"berpengalaman"},
+  {k:"望",on:['ぼう'],kun:['のぞ.む'],meaning:"希望・望む",example:"希望する",ex_rom:"kibou suru",ex_id:"berharap"},
+  {k:"入",on:['にゅう'],kun:['い.る', 'はい.る'],meaning:"入院・入学",example:"入院する",ex_rom:"nyuuin suru",ex_id:"masuk RS"},
+  {k:"告",on:['こく'],kun:['つ.げる'],meaning:"報告・警告",example:"報告する",ex_rom:"houkoku suru",ex_id:"melaporkan"},
+  {k:"解",on:['かい', 'げ'],kun:['と.く', 'と.ける'],meaning:"理解・解決",example:"解く",ex_rom:"toku",ex_id:"memecahkan"},
+  {k:"達",on:['たつ'],kun:['たち'],meaning:"到達・友達",example:"到着する",ex_rom:"touchaku suru",ex_id:"tiba"},
+  {k:"調",on:['ちょう'],kun:['しら.べる', 'ととの.う'],meaning:"調査・調子",example:"調査する",ex_rom:"chousa suru",ex_id:"menyelidiki"},
+  {k:"配",on:['はい'],kun:['くば.る'],meaning:"配達・心配",example:"配達する",ex_rom:"haitatsu suru",ex_id:"mengantarkan"},
+  {k:"記",on:['き'],kun:['しる.す'],meaning:"記録・記念",example:"記入する",ex_rom:"kinyuu suru",ex_id:"mencatat"},
+  {k:"表",on:['ひょう'],kun:['おもて', 'あらわ.す'],meaning:"発表・表情",example:"発表する",ex_rom:"happyou suru",ex_id:"mengumumkan"},
+  {k:"信",on:['しん'],kun:[],meaning:"信頼・信用",example:"信じる",ex_rom:"shinjiru",ex_id:"percaya"},
+  {k:"行",on:['こう', 'ぎょう'],kun:['い.く', 'おこな.う'],meaning:"行動・旅行",example:"行く",ex_rom:"iku",ex_id:"pergi"},
+  {k:"事",on:['じ', 'ず'],kun:['こと'],meaning:"事件・事情",example:"事件",ex_rom:"jiken",ex_id:"kejadian"},
+  {k:"間",on:['かん', 'けん'],kun:['あいだ', 'ま'],meaning:"期間・時間",example:"期間",ex_rom:"kikan",ex_id:"periode"},
+  {k:"物",on:['ぶつ', 'もつ'],kun:['もの'],meaning:"物語・食物",example:"物語",ex_rom:"monogatari",ex_id:"kisah"},
+  {k:"地",on:['ち', 'じ'],kun:[],meaning:"地域・地球",example:"地域",ex_rom:"chiiki",ex_id:"wilayah"},
+  {k:"強",on:['きょう', 'ごう'],kun:['つよ.い', 'し.いる'],meaning:"強調・強力",example:"強調する",ex_rom:"kyouchou suru",ex_id:"menekankan"},
+  {k:"営",on:['えい'],kun:['いとな.む'],meaning:"営業・経営",example:"営業する",ex_rom:"eigyou suru",ex_id:"berbisnis"},
+  {k:"語",on:['ご'],kun:['かた.る'],meaning:"単語・語学",example:"語る",ex_rom:"kataru",ex_id:"bercerita"},
+  {k:"待",on:['たい'],kun:['ま.つ'],meaning:"待機・期待",example:"期待する",ex_rom:"kitai suru",ex_id:"berharap"},
+  {k:"会",on:['かい', 'え'],kun:['あ.う'],meaning:"会合・機会",example:"会合する",ex_rom:"kaigou suru",ex_id:"berkumpul"},
+  {k:"練",on:['れん'],kun:['ね.る'],meaning:"練習・訓練",example:"練習する",ex_rom:"renshuu suru",ex_id:"berlatih"},
+  {k:"思",on:['し'],kun:['おも.う'],meaning:"思想・思い出",example:"思う",ex_rom:"omou",ex_id:"berpikir"},
+  {k:"観",on:['かん'],kun:['み.る'],meaning:"観察・観光",example:"観察する",ex_rom:"kansatsu suru",ex_id:"mengamati"},
+  {k:"失",on:['しつ'],kun:['うしな.う'],meaning:"失望・失業",example:"失う",ex_rom:"ushinau",ex_id:"kehilangan"},
+  {k:"当",on:['とう'],kun:['あ.たる'],meaning:"当時・当たる",example:"当たる",ex_rom:"ataru",ex_id:"kena/tepat"},
+  {k:"相",on:['そう', 'しょう'],kun:['あい'],meaning:"相談・相手",example:"相談する",ex_rom:"soudan suru",ex_id:"konsultasi"},
+  {k:"格",on:['かく', 'こう'],kun:[],meaning:"合格・性格",example:"合格する",ex_rom:"goukaku suru",ex_id:"lulus"},
+  {k:"断",on:['だん'],kun:['ことわ.る', 'た.つ'],meaning:"断る・判断",example:"断る",ex_rom:"kotowaru",ex_id:"menolak"},
+  {k:"支",on:['し'],kun:['ささ.える'],meaning:"支援・支払い",example:"支払う",ex_rom:"shiharau",ex_id:"membayar"},
+  {k:"明",on:['めい', 'みょう'],kun:['あか.るい', 'あ.ける'],meaning:"明確・明るい",example:"明らか",ex_rom:"akiraka",ex_id:"jelas"},
+  {k:"検",on:['けん'],kun:[],meaning:"検査・検討",example:"検査する",ex_rom:"kensa suru",ex_id:"memeriksa"},
+  {k:"査",on:['さ'],kun:[],meaning:"調査・検査",example:"調査する",ex_rom:"chousa suru",ex_id:"menyelidiki"},
+  {k:"論",on:['ろん'],kun:[],meaning:"議論・結論",example:"議論する",ex_rom:"giron suru",ex_id:"berdiskusi"},
+  {k:"決",on:['けつ'],kun:['き.める', 'き.まる'],meaning:"決定・決心",example:"決心する",ex_rom:"kesshin suru",ex_id:"bertekad"},
+  {k:"予",on:['よ'],kun:['あらかじ.め'],meaning:"予防・予算",example:"予防する",ex_rom:"yobou suru",ex_id:"mencegah"},
+  {k:"用",on:['よう'],kun:['もち.いる'],meaning:"用いる・使用",example:"用いる",ex_rom:"mochiiru",ex_id:"memakai"},
+  {k:"価",on:['か'],kun:['あたい'],meaning:"価格・価値",example:"価値",ex_rom:"kachi",ex_id:"nilai/harga"},
+  {k:"完",on:['かん'],kun:[],meaning:"完成・完了",example:"完成する",ex_rom:"kansei suru",ex_id:"rampung"},
+  {k:"計",on:['けい'],kun:['はか.る'],meaning:"計画・計算",example:"計画する",ex_rom:"keikaku suru",ex_id:"merencanakan"},
+  {k:"大",on:['だい', 'たい'],kun:['おお.きい'],meaning:"大会・大使",example:"大会",ex_rom:"taikai",ex_id:"kejuaraan"},
+  {k:"度",on:['ど'],kun:[],meaning:"程度・態度",example:"程度",ex_rom:"teido",ex_id:"derajat"},
+  {k:"能",on:['のう'],kun:[],meaning:"能力・可能",example:"能力",ex_rom:"nouryoku",ex_id:"kemampuan"},
+  {k:"教",on:['きょう'],kun:['おし.える', 'おそ.わる'],meaning:"教師・教授",example:"教師",ex_rom:"kyoushi",ex_id:"pengajar"},
+  {k:"子",on:['し', 'す'],kun:['こ'],meaning:"男子・女子",example:"男子",ex_rom:"danshi",ex_id:"anak laki-laki"},
+  {k:"作",on:['さく'],kun:['つく.る'],meaning:"作業・作品",example:"作品",ex_rom:"sakuhin",ex_id:"karya"},
+  {k:"話",on:['わ'],kun:['はな.す', 'はなし'],meaning:"話題・会話",example:"話題",ex_rom:"wadai",ex_id:"topik"},
+  {k:"立",on:['りつ', 'りゅう'],kun:['た.つ', 'た.てる'],meaning:"立場・独立",example:"立場",ex_rom:"tachiba",ex_id:"posisi"},
+  {k:"参",on:['さん'],kun:['まい.る'],meaning:"参加・参考",example:"参加する",ex_rom:"sanka suru",ex_id:"bergabung"},
+  {k:"加",on:['か'],kun:['くわ.える', 'くわ.わる'],meaning:"参加・増加",example:"参加する",ex_rom:"sanka suru",ex_id:"bergabung"},
+  {k:"留",on:['りゅう'],kun:['と.める'],meaning:"留学・留める",example:"留学する",ex_rom:"ryuugaku suru",ex_id:"belajar di LN"},
+  {k:"集",on:['しゅう'],kun:['あつ.める', 'あつ.まる'],meaning:"集中・集団",example:"集中する",ex_rom:"shuuchuu suru",ex_id:"berkonsentrasi"},
+  {k:"中",on:['ちゅう'],kun:['なか'],meaning:"集中・中央",example:"中央",ex_rom:"chuuou",ex_id:"pusat/tengah"},
+  {k:"習",on:['しゅう'],kun:['なら.う'],meaning:"練習・学習",example:"学習",ex_rom:"gakushuu",ex_id:"belajar/studi"},
+  {k:"運",on:['うん'],kun:['はこ.ぶ'],meaning:"運動・運転",example:"運動する",ex_rom:"undou suru",ex_id:"berolahraga"},
+  {k:"婚",on:['こん'],kun:[],meaning:"婚約・結婚",example:"婚約する",ex_rom:"konyaku suru",ex_id:"bertunangan"},
+  {k:"光",on:['こう'],kun:['ひかり', 'ひか.る'],meaning:"日光・観光",example:"観光する",ex_rom:"kankou suru",ex_id:"berwisata"},
+  {k:"外",on:['がい', 'げ'],kun:['そと', 'はず.す'],meaning:"外出・外国",example:"外出する",ex_rom:"gaishutsu suru",ex_id:"keluar"},
+  {k:"進",on:['しん'],kun:['すす.む', 'すす.める'],meaning:"進学・進める",example:"進学する",ex_rom:"shingaku suru",ex_id:"lanjut sekolah"},
+  {k:"報",on:['ほう'],kun:['むく.いる'],meaning:"情報・報告",example:"情報",ex_rom:"jouhou",ex_id:"informasi"},
+  {k:"見",on:['けん'],kun:['み.る', 'み.える'],meaning:"見る・発見",example:"見る",ex_rom:"miru",ex_id:"melihat"},
+  {k:"許",on:['きょ'],kun:['ゆる.す'],meaning:"許す・許可",example:"許可する",ex_rom:"kyoka suru",ex_id:"mengizinkan"},
+  {k:"確",on:['かく'],kun:['たし.か', 'たし.かめる'],meaning:"確認・確かめる",example:"確認する",ex_rom:"kakunin suru",ex_id:"konfirmasi"},
+  {k:"助",on:['じょ'],kun:['たす.ける', 'たす.かる'],meaning:"助ける・援助",example:"助ける",ex_rom:"tasukeru",ex_id:"menolong"},
+  {k:"命",on:['めい', 'みょう'],kun:['いのち'],meaning:"命令・命",example:"命じる",ex_rom:"meijiru",ex_id:"memerintah"},
+  {k:"文",on:['ぶん', 'もん'],kun:['ふみ'],meaning:"文明・文字",example:"文明",ex_rom:"bunmei",ex_id:"peradaban"},
+  {k:"選",on:['せん'],kun:['えら.ぶ'],meaning:"選択・選手",example:"選択する",ex_rom:"sentaku suru",ex_id:"memilih"},
+  {k:"備",on:['び'],kun:['そな.える'],meaning:"準備・設備",example:"準備する",ex_rom:"junbi suru",ex_id:"mempersiapkan"},
+  {k:"防",on:['ぼう'],kun:['ふせ.ぐ'],meaning:"予防・防ぐ",example:"防ぐ",ex_rom:"fusegu",ex_id:"menangkal"},
+  {k:"職",on:['しょく'],kun:[],meaning:"職業・就職",example:"就職する",ex_rom:"shuushoku suru",ex_id:"cari kerja"},
+  {k:"愛",on:['あい'],kun:['あい.する'],meaning:"愛情・愛する",example:"愛する",ex_rom:"aisuru",ex_id:"mencintai"},
+  {k:"苦",on:['く'],kun:['くる.しむ', 'くる.しい'],meaning:"苦しむ・苦痛",example:"苦しむ",ex_rom:"kurushimu",ex_id:"menderita"},
+  {k:"分",on:['ぶん', 'ふん', 'ぶ'],kun:['わ.かる', 'わ.ける'],meaning:"分析・分かる",example:"分析する",ex_rom:"bunseki suru",ex_id:"menganalisa"},
+  {k:"頼",on:['らい'],kun:['たの.む', 'たよ.る'],meaning:"頼る・信頼",example:"頼る",ex_rom:"tayoru",ex_id:"mengandalkan"},
+  {k:"変",on:['へん'],kun:['か.わる', 'か.える'],meaning:"変化・変更",example:"変化する",ex_rom:"henka suru",ex_id:"berubah"},
+  {k:"使",on:['し'],kun:['つか.う'],meaning:"使用・大使",example:"使用する",ex_rom:"shiyou suru",ex_id:"menggunakan"},
+  {k:"結",on:['けつ'],kun:['むす.ぶ'],meaning:"結果・結論",example:"結ぶ",ex_rom:"musubu",ex_id:"mengikat"},
+  {k:"可",on:['か'],kun:[],meaning:"可能・許可",example:"可能",ex_rom:"kanou",ex_id:"kemungkinan"},
+  {k:"化",on:['か', 'け'],kun:['な.る'],meaning:"変化・化学",example:"変化する",ex_rom:"henka suru",ex_id:"berubah"},
+  {k:"問",on:['もん'],kun:['と.う', 'と.い'],meaning:"問い・疑問",example:"疑問",ex_rom:"gimon",ex_id:"pertanyaan"},
+  {k:"評",on:['ひょう'],kun:[],meaning:"評価・批評",example:"評価する",ex_rom:"hyouka suru",ex_id:"menilai"},
+  {k:"気",on:['き', 'け'],kun:[],meaning:"気付く・気候",example:"気付く",ex_rom:"kidzuku",ex_id:"menyadari"},
+  {k:"攻",on:['こう'],kun:['せ.める'],meaning:"攻撃する",example:"攻撃する",ex_rom:"kougeki suru",ex_id:"menyerang"},
+  {k:"長",on:['ちょう'],kun:['なが.い'],meaning:"長期・長い",example:"長期",ex_rom:"chouki",ex_id:"jangka panjang"},
+  {k:"案",on:['あん'],kun:[],meaning:"案内・提案",example:"提案",ex_rom:"teian",ex_id:"usulan"},
+  {k:"定",on:['てい', 'じょう'],kun:['さだ.める'],meaning:"定期・決定",example:"定期",ex_rom:"teiki",ex_id:"berkala"},
+  {k:"識",on:['しき'],kun:[],meaning:"意識・常識",example:"意識",ex_rom:"ishiki",ex_id:"kesadaran"},
+  {k:"常",on:['じょう'],kun:['つね'],meaning:"日常・常識",example:"日常",ex_rom:"nichijou",ex_id:"sehari-hari"},
+  {k:"生",on:['せい', 'しょう'],kun:['い.きる', 'う.まれる'],meaning:"生産・人生",example:"生産する",ex_rom:"seisan suru",ex_id:"memproduksi"},
+  {k:"料",on:['りょう'],kun:[],meaning:"料金・料理",example:"料金",ex_rom:"ryoukin",ex_id:"ongkos"},
+  {k:"書",on:['しょ'],kun:['か.く'],meaning:"書類・書物",example:"書類",ex_rom:"shorui",ex_id:"dokumen"},
+  {k:"要",on:['よう'],kun:['い.る'],meaning:"重要・要素",example:"重要",ex_rom:"juuyou",ex_id:"penting"},
+  {k:"害",on:['がい'],kun:[],meaning:"障害・被害",example:"障害",ex_rom:"shougai",ex_id:"rintangan"},
+  {k:"知",on:['ち'],kun:['し.る'],meaning:"知識・知能",example:"知識",ex_rom:"chishiki",ex_id:"pengetahuan"},
+  {k:"道",on:['どう', 'とう'],kun:['みち'],meaning:"道路・道徳",example:"道路",ex_rom:"douro",ex_id:"jalan"},
+  {k:"友",on:['ゆう'],kun:['とも'],meaning:"友達・友情",example:"友達",ex_rom:"tomodachi",ex_id:"teman"},
+  {k:"判",on:['はん', 'ばん'],kun:[],meaning:"判断・批判",example:"判断する",ex_rom:"handan suru",ex_id:"memutuskan"},
+  {k:"平",on:['へい', 'びょう'],kun:['たい.ら', 'ひら'],meaning:"平和・平等",example:"平和",ex_rom:"heiwa",ex_id:"kedamaian"},
+  {k:"協",on:['きょう'],kun:[],meaning:"協力・協議",example:"協力する",ex_rom:"kyouryoku suru",ex_id:"bekerja sama"},
+  {k:"勉",on:['べん'],kun:[],meaning:"勉強する",example:"勉強する",ex_rom:"benkyou suru",ex_id:"belajar"},
+  {k:"売",on:['ばい'],kun:['う.る', 'う.れる'],meaning:"販売・売れる",example:"売れる",ex_rom:"ureru",ex_id:"terjual"},
+  {k:"基",on:['き'],kun:['もと'],meaning:"基本・基づく",example:"基本",ex_rom:"kihon",ex_id:"dasar"},
+  {k:"上",on:['じょう', 'しょう'],kun:['うえ', 'あ.がる'],meaning:"上達・上手",example:"上達",ex_rom:"joutatsu",ex_id:"kemajuan"},
+  {k:"願",on:['がん'],kun:['ねが.う'],meaning:"願い・願う",example:"願う",ex_rom:"negau",ex_id:"berharap"},
+  {k:"連",on:['れん'],kun:['つら.なる'],meaning:"連続・連絡",example:"連続",ex_rom:"renzoku",ex_id:"berturut-turut"},
+  {k:"貢",on:['こう'],kun:['みつ.ぐ'],meaning:"貢献する",example:"貢献する",ex_rom:"kouken suru",ex_id:"berkontribusi"},
+  {k:"減",on:['げん'],kun:['へ.る', 'へ.らす'],meaning:"削減・減らす",example:"減らす",ex_rom:"herasu",ex_id:"mengurangi"},
+  {k:"異",on:['い'],kun:['こと.なる'],meaning:"異なる・異常",example:"異常",ex_rom:"ijou",ex_id:"abnormal"},
+  {k:"訓",on:['くん'],kun:[],meaning:"訓練・訓読み",example:"訓練する",ex_rom:"kunren suru",ex_id:"berlatih"},
+  {k:"呼",on:['こ'],kun:['よ.ぶ'],meaning:"呼吸・呼ぶ",example:"呼吸する",ex_rom:"kokyuu suru",ex_id:"bernafas"},
+  {k:"吸",on:['きゅう'],kun:['す.う'],meaning:"呼吸・吸収",example:"呼吸する",ex_rom:"kokyuu suru",ex_id:"bernafas"},
+  {k:"組",on:['そ'],kun:['く.む'],meaning:"組む・組織",example:"組織",ex_rom:"soshiki",ex_id:"organisasi"},
+  {k:"験",on:['けん'],kun:[],meaning:"経験・試験",example:"経験する",ex_rom:"keiken suru",ex_id:"berpengalaman"},
+  {k:"離",on:['り'],kun:['はな.れる'],meaning:"離れる・離婚",example:"離婚",ex_rom:"rikon",ex_id:"perceraian"},
+  {k:"隠",on:['いん'],kun:['かく.す', 'かく.れる'],meaning:"隠す・隠れる",example:"隠す",ex_rom:"kakusu",ex_id:"menyembunyikan"},
+  {k:"掃",on:['そう'],kun:['は.く'],meaning:"掃除する",example:"掃除する",ex_rom:"souji suru",ex_id:"bersih-bersih"},
+  {k:"除",on:['じょ'],kun:['のぞ.く'],meaning:"掃除・除く",example:"掃除する",ex_rom:"souji suru",ex_id:"bersih-bersih"},
+  {k:"謝",on:['しゃ'],kun:['あやま.る'],meaning:"感謝・謝る",example:"感謝する",ex_rom:"kansha suru",ex_id:"berterima kasih"},
+  {k:"努",on:['ど'],kun:['つと.める'],meaning:"努力する",example:"努力する",ex_rom:"doryoku suru",ex_id:"berusaha keras"},
+  {k:"来",on:['らい'],kun:['く.る', 'き.たる'],meaning:"来る・未来",example:"未来",ex_rom:"mirai",ex_id:"masa depan"},
+  {k:"効",on:['こう'],kun:['き.く'],meaning:"効果・効く",example:"効く",ex_rom:"kiku",ex_id:"efektif"},
+  {k:"騒",on:['そう'],kun:['さわ.ぐ'],meaning:"騒音・騒ぐ",example:"騒音",ex_rom:"souon",ex_id:"kegaduhan"},
+  {k:"緊",on:['きん'],kun:[],meaning:"緊張する",example:"緊張する",ex_rom:"kinchou suru",ex_id:"gugup"},
+  {k:"張",on:['ちょう'],kun:['は.る'],meaning:"緊張・主張",example:"緊張する",ex_rom:"kinchou suru",ex_id:"gugup"},
+  {k:"希",on:['き'],kun:['まれ'],meaning:"希望・希少",example:"希望する",ex_rom:"kibou suru",ex_id:"berharap"},
+  {k:"暮",on:['ぼ'],kun:['く.れる', 'く.らす'],meaning:"暮らす・暮れ",example:"暮らす",ex_rom:"kurasu",ex_id:"hidup/tinggal"},
+  {k:"談",on:['だん'],kun:[],meaning:"相談・会談",example:"相談する",ex_rom:"soudan suru",ex_id:"konsultasi"},
+  {k:"院",on:['いん'],kun:[],meaning:"入院・病院",example:"入院する",ex_rom:"nyuuin suru",ex_id:"masuk RS"},
+  {k:"優",on:['ゆう'],kun:['やさ.しい', 'すぐ.れる'],meaning:"優れる・優勝",example:"優勝する",ex_rom:"yuushou suru",ex_id:"menjuarai"},
+  {k:"禁",on:['きん'],kun:[],meaning:"禁止・禁煙",example:"禁止する",ex_rom:"kinshi suru",ex_id:"melarang"},
+  {k:"止",on:['し'],kun:['と.まる', 'と.める'],meaning:"禁止・止まる",example:"禁止する",ex_rom:"kinshi suru",ex_id:"melarang"},
+  {k:"爆",on:['ばく'],kun:[],meaning:"爆発する",example:"爆発する",ex_rom:"bakuhatsu suru",ex_id:"meledak"},
+  {k:"横",on:['おう'],kun:['よこ'],meaning:"横断・横切る",example:"横断する",ex_rom:"oudan suru",ex_id:"melintasi"},
+  {k:"比",on:['ひ'],kun:['くら.べる'],meaning:"比較・比べる",example:"比較する",ex_rom:"hikaku suru",ex_id:"membandingkan"},
+  {k:"較",on:['かく'],kun:[],meaning:"比較する",example:"比較する",ex_rom:"hikaku suru",ex_id:"membandingkan"},
+  {k:"援",on:['えん'],kun:[],meaning:"援助・支援",example:"援助する",ex_rom:"enjo suru",ex_id:"membantu"},
+  {k:"払",on:['ふつ'],kun:['はら.う'],meaning:"支払い・払う",example:"支払う",ex_rom:"shiharau",ex_id:"membayar"},
+  {k:"証",on:['しょう'],kun:[],meaning:"証明・証拠",example:"証明する",ex_rom:"shoumei suru",ex_id:"membuktikan"},
+  {k:"択",on:['たく'],kun:[],meaning:"選択する",example:"選択する",ex_rom:"sentaku suru",ex_id:"memilih"},
+  {k:"移",on:['い'],kun:['うつ.る', 'うつ.す'],meaning:"移動・移す",example:"移す",ex_rom:"utsusu",ex_id:"memindah"},
+  {k:"求",on:['きゅう'],kun:['もと.める'],meaning:"要求・求める",example:"求める",ex_rom:"motomeru",ex_id:"meminta"},
+  {k:"修",on:['しゅう', 'しゅ'],kun:['おさ.める'],meaning:"修理・修正",example:"修理する",ex_rom:"shuuri suru",ex_id:"memperbaiki"},
+  {k:"議",on:['ぎ'],kun:[],meaning:"会議・議論",example:"議論する",ex_rom:"giron suru",ex_id:"berdiskusi"},
+  {k:"警",on:['けい'],kun:[],meaning:"警告・警察",example:"警告する",ex_rom:"keikoku suru",ex_id:"memperingati"},
+  {k:"貯",on:['ちょ'],kun:['た.める'],meaning:"貯金する",example:"貯金する",ex_rom:"chokin suru",ex_id:"menabung"},
+  {k:"我",on:['が'],kun:['わ', 'わが'],meaning:"我慢・我々",example:"我慢する",ex_rom:"gaman suru",ex_id:"bersabar"},
+  {k:"慢",on:['まん'],kun:[],meaning:"我慢する",example:"我慢する",ex_rom:"gaman suru",ex_id:"bersabar"},
+  {k:"就",on:['しゅう'],kun:['つ.く'],meaning:"就職・就く",example:"就職する",ex_rom:"shuushoku suru",ex_id:"cari kerja"},
+  {k:"討",on:['とう'],kun:['う.つ'],meaning:"検討・討論",example:"検討する",ex_rom:"kentou suru",ex_id:"meneliti"},
+  {k:"察",on:['さつ'],kun:[],meaning:"観察・警察",example:"観察する",ex_rom:"kansatsu suru",ex_id:"mengamati"},
+  {k:"析",on:['せき'],kun:[],meaning:"分析する",example:"分析する",ex_rom:"bunseki suru",ex_id:"menganalisa"},
+  {k:"展",on:['てん'],kun:[],meaning:"発展・展示",example:"発展する",ex_rom:"hatten suru",ex_id:"berkembang"},
+  {k:"邪",on:['じゃ'],kun:[],meaning:"邪魔する",example:"邪魔する",ex_rom:"jama suru",ex_id:"mengganggu"},
+  {k:"魔",on:['ま'],kun:[],meaning:"邪魔・悪魔",example:"邪魔する",ex_rom:"jama suru",ex_id:"mengganggu"},
+  {k:"換",on:['かん'],kun:['か.える'],meaning:"交換・換える",example:"換える",ex_rom:"kaeru",ex_id:"mengganti"},
+  {k:"過",on:['か'],kun:['す.ぎる', 'す.ごす'],meaning:"過ごす・過去",example:"過ごす",ex_rom:"sugosu",ex_id:"menghabiskan"},
+  {k:"尊",on:['そん'],kun:['たっと.ぶ'],meaning:"尊敬・尊重",example:"尊敬する",ex_rom:"sonkei suru",ex_id:"menghormati"},
+  {k:"敬",on:['けい'],kun:['うやま.う'],meaning:"尊敬・敬意",example:"尊敬する",ex_rom:"sonkei suru",ex_id:"menghormati"},
+  {k:"認",on:['にん'],kun:['みと.める'],meaning:"確認・認める",example:"確認する",ex_rom:"kakunin suru",ex_id:"mengkonfirmasi"},
+  {k:"費",on:['ひ'],kun:['つい.やす'],meaning:"消費・費用",example:"費用",ex_rom:"hiyou",ex_id:"biaya"},
+  {k:"招",on:['しょう'],kun:['まね.く'],meaning:"招待・招く",example:"招待する",ex_rom:"shoutai suru",ex_id:"mengundang"},
+  {k:"管",on:['かん'],kun:['くだ'],meaning:"管理・管轄",example:"管理する",ex_rom:"kanri suru",ex_id:"mengurus"},
+  {k:"任",on:['にん'],kun:['まか.せる'],meaning:"任せる・責任",example:"任せる",ex_rom:"makaseru",ex_id:"menyerahkan"},
+  {k:"撃",on:['げき'],kun:['う.つ'],meaning:"攻撃・撃つ",example:"攻撃する",ex_rom:"kougeki suru",ex_id:"menyerang"},
+  {k:"放",on:['ほう'],kun:['はな.す', 'はな.つ'],meaning:"放送・解放",example:"放送する",ex_rom:"housou suru",ex_id:"menyiarkan"},
+  {k:"送",on:['そう'],kun:['おく.る'],meaning:"放送・送る",example:"放送する",ex_rom:"housou suru",ex_id:"menyiarkan"},
+  {k:"残",on:['ざん'],kun:['のこ.る', 'のこ.す'],meaning:"残る・残す",example:"残す",ex_rom:"nokosu",ex_id:"menyisakan"},
+  {k:"推",on:['すい'],kun:['お.す'],meaning:"推薦・推測",example:"推薦する",ex_rom:"suisen suru",ex_id:"merekomendasikan"},
+  {k:"薦",on:['せん'],kun:['すす.める'],meaning:"推薦する",example:"推薦する",ex_rom:"suisen suru",ex_id:"merekomendasikan"},
+  {k:"画",on:['かく', 'が'],kun:['えが.く'],meaning:"計画・映画",example:"計画する",ex_rom:"keikaku suru",ex_id:"merencanakan"},
+  {k:"現",on:['げん'],kun:['あらわ.れる'],meaning:"現れる・現在",example:"現れる",ex_rom:"arawareru",ex_id:"muncul"},
+  {k:"了",on:['りょう'],kun:[],meaning:"完了・了解",example:"完了する",ex_rom:"kanryou suru",ex_id:"selesai"},
+  {k:"功",on:['こう'],kun:[],meaning:"成功・功績",example:"成功する",ex_rom:"seikou suru",ex_id:"sukses"},
+  {k:"恐",on:['きょう'],kun:['おそ.れる'],meaning:"恐れる・恐怖",example:"恐怖",ex_rom:"kyoufu",ex_id:"ketakutan"},
+  {k:"育",on:['いく'],kun:['そだ.つ', 'そだ.てる'],meaning:"育つ・教育",example:"育つ",ex_rom:"sodatsu",ex_id:"tumbuh/berkembang"},
+  {k:"遅",on:['ち'],kun:['おそ.い', 'おく.れる'],meaning:"遅刻・遅い",example:"遅刻する",ex_rom:"chikoku suru",ex_id:"terlambat"},
+  {k:"刻",on:['こく'],kun:['きざ.む'],meaning:"遅刻・時刻",example:"遅刻する",ex_rom:"chikoku suru",ex_id:"terlambat"},
+  {k:"笑",on:['しょう'],kun:['わら.う', 'え.む'],meaning:"笑う・微笑む",example:"微笑む",ex_rom:"hohoemu",ex_id:"tersenyum"},
+  {k:"到",on:['とう'],kun:[],meaning:"到着・到達",example:"到着する",ex_rom:"touchaku suru",ex_id:"tiba"},
+  {k:"着",on:['ちゃく'],kun:['き.る', 'つ.く'],meaning:"到着・着る",example:"到着する",ex_rom:"touchaku suru",ex_id:"tiba"}
+];
+
+// ============================================================
+// STATE — tambah kanji read progress
+// ============================================================
+let mastered = { kanji:{}, vocab:{}, grammar:{} };
+let kanjiReadMastered = {}; // separate progress for kanji reading
+let todayDate = new Date().toDateString();
+let todayCount = 0;
+let streak = 0;
+let lastStudyDate = null;
+
+// Flashcard session state
+let sessionQueue = [];
+let sessionCat = 'kanji';
+let sessionIdx = 0;
+let sessionReviewed = 0;
+let sessionMastered = 0;
+let revealed = false;
+const SESSION_SIZE = 20;
+
+// Kanji reading session state
+let kreadQueue = [];
+let kreadIdx = 0;
+let kreadCorrect = 0;
+let kreadTotal = 0;
+let pickedKanji = new Set();
+
+// ============================================================
+// FIREBASE CONFIG & INIT
+// ============================================================
+let auth, db, currentUser = null, syncTimeout = null;
+
+// Fungsi auth global (bisa dipanggil dari onclick di HTML)
+function loginWithGoogle() {
+  if (!auth) { alert('App masih loading, coba lagi...'); return; }
+  auth.signInWithPopup(new firebase.auth.GoogleAuthProvider())
+    .catch(err => alert('Login gagal: ' + err.message));
+}
+function logout() {
+  if (!confirm('Yakin mau keluar?')) return;
+  auth.signOut();
+  document.getElementById('user-menu').classList.remove('open');
+}
+function toggleUserMenu() {
+  document.getElementById('user-menu').classList.toggle('open');
+}
+document.addEventListener('click', e => {
+  const badge = document.getElementById('user-badge');
+  const menu  = document.getElementById('user-menu');
+  if (badge && !badge.contains(e.target) && menu && !menu.contains(e.target))
+    menu.classList.remove('open');
+});
+
+// Init Firebase setelah semua SDK selesai load
+window.addEventListener('load', function() {
+  firebase.initializeApp({
+    apiKey: "AIzaSyA1LnlGx7hyu6fDHItGhGfjfkMCKwedS_w",
+    authDomain: "jlpt-n3-tracker.firebaseapp.com",
+    projectId: "jlpt-n3-tracker",
+    storageBucket: "jlpt-n3-tracker.firebasestorage.app",
+    messagingSenderId: "362158844759",
+    appId: "1:362158844759:web:0676064b4dcf47495b6c12"
+  });
+  auth = firebase.auth();
+  db   = firebase.firestore();
+
+  auth.onAuthStateChanged(async user => {
+    if (user) {
+      currentUser = user;
+      document.getElementById('user-name').textContent = user.displayName?.split(' ')[0] || 'User';
+      document.getElementById('menu-name').textContent  = user.displayName || 'User';
+      document.getElementById('menu-email').textContent = user.email || '';
+      const av = document.getElementById('user-avatar');
+      if (user.photoURL) av.innerHTML = `<img src="${user.photoURL}" alt="av">`;
+      else av.textContent = (user.displayName || 'U')[0].toUpperCase();
+      showLoginLoading();
+      await loadFromFirestore();
+      hideLoginScreen();
+      init();
+    } else {
+      currentUser = null;
+      showLoginScreen();
+    }
+  });
+});
+
+function showLoginScreen() {
+  document.getElementById('login-screen').style.display = 'flex';
+  document.getElementById('app').style.display = 'none';
+  document.getElementById('login-form').style.display = 'block';
+  document.getElementById('login-loading').style.display = 'none';
+}
+
+function showLoginLoading() {
+  document.getElementById('login-form').style.display = 'none';
+  document.getElementById('login-loading').style.display = 'flex';
+}
+
+function hideLoginScreen() {
+  document.getElementById('login-screen').style.display = 'none';
+  document.getElementById('app').style.display = 'block';
+}
+
+// ============================================================
+// FIRESTORE — Save & Load
+// ============================================================
+async function loadFromFirestore() {
+  if (!currentUser) return;
+  try {
+    const doc = await db.collection('users').doc(currentUser.uid).get();
+    if (doc.exists) {
+      const data = doc.data();
+      if (data.mastered)         mastered         = data.mastered;
+      if (data.kanjiReadMastered) kanjiReadMastered = data.kanjiReadMastered;
+      if (data.streak)           streak           = data.streak;
+      if (data.lastStudyDate)    lastStudyDate    = data.lastStudyDate;
+      // todayCount — only if same day
+      if (data.todayDate === new Date().toDateString()) {
+        todayDate  = data.todayDate;
+        todayCount = data.todayCount || 0;
+      }
+    }
+    setSyncBadge('synced');
+  } catch(e) {
+    console.error('Load error:', e);
+    // Fallback to localStorage
+    loadFromLocal();
+    setSyncBadge('offline');
+  }
+}
+
+async function saveToFirestore() {
+  if (!currentUser) { saveToLocal(); return; }
+  setSyncBadge('syncing');
+  try {
+    await db.collection('users').doc(currentUser.uid).set({
+      mastered,
+      kanjiReadMastered,
+      streak,
+      lastStudyDate,
+      todayDate: new Date().toDateString(),
+      todayCount,
+      updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
+      displayName: currentUser.displayName,
+      email: currentUser.email,
+    }, { merge: true });
+    setSyncBadge('synced');
+  } catch(e) {
+    console.error('Save error:', e);
+    saveToLocal(); // fallback
+    setSyncBadge('offline');
+  }
+}
+
+// Debounced save — tidak spam Firestore setiap centang
+function save() {
+  saveToLocal(); // selalu simpan lokal dulu (instant)
+  if (syncTimeout) clearTimeout(syncTimeout);
+  syncTimeout = setTimeout(saveToFirestore, 1500); // sync ke cloud 1.5 detik kemudian
+}
+
+async function syncNow() {
+  document.getElementById('user-menu').classList.remove('open');
+  setSyncBadge('syncing');
+  await saveToFirestore();
+}
+
+// ============================================================
+// LOCAL STORAGE fallback
+// ============================================================
+function saveToLocal() {
+  try {
+    localStorage.setItem('n3_mastered',   JSON.stringify(mastered));
+    localStorage.setItem('n3_krmastered', JSON.stringify(kanjiReadMastered));
+    localStorage.setItem('n3_today',      JSON.stringify({ date: todayDate, count: todayCount }));
+    localStorage.setItem('n3_streak',     JSON.stringify({ streak, lastStudyDate }));
+  } catch(e) {}
+}
+
+function loadFromLocal() {
+  try {
+    const m = localStorage.getItem('n3_mastered');
+    if (m) mastered = JSON.parse(m);
+    const kr = localStorage.getItem('n3_krmastered');
+    if (kr) kanjiReadMastered = JSON.parse(kr);
+    const t = localStorage.getItem('n3_today');
+    if (t) { const td = JSON.parse(t); if (td.date === new Date().toDateString()) { todayDate = td.date; todayCount = td.count; } }
+    const s = localStorage.getItem('n3_streak');
+    if (s) { const sd = JSON.parse(s); streak = sd.streak; lastStudyDate = sd.lastStudyDate; }
+  } catch(e) {}
+}
+
+// ============================================================
+// SYNC BADGE UI
+// ============================================================
+function setSyncBadge(state) {
+  const b = document.getElementById('sync-badge');
+  if (!b) return;
+  if (state === 'synced')  { b.textContent = '● sync';    b.className = 'sync-badge'; }
+  if (state === 'syncing') { b.textContent = '↑ syncing'; b.className = 'sync-badge syncing'; }
+  if (state === 'offline') { b.textContent = '○ offline'; b.className = 'sync-badge syncing'; }
+}
+
+// ============================================================
+// COUNTDOWN
+// ============================================================
+function updateCountdown() {
+  // JLPT biasanya minggu pertama Desember — target 6 Des 2026
+  const target = new Date('2026-12-06');
+  const now = new Date();
+  const diff = Math.ceil((target - now) / 86400000);
+  document.getElementById('hdr-days').textContent = diff > 0 ? diff : '0';
+}
+
+// ============================================================
+// SCREEN NAVIGATION
+// ============================================================
+function gotoScreen(name) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById('screen-' + name).classList.add('active');
+  document.querySelectorAll('nav button').forEach((b, i) => {
+    b.classList.toggle('active', ['overview','flashmenu','kanjimenu','review','ai'][i] === name);
+  });
+  if (name === 'overview') updateOverview();
+  if (name === 'flashmenu') updateFlashMenu();
+  if (name === 'kanjimenu') updateKanjiMenu();
+  if (name === 'review') renderReview('all');
+}
+
+function updateFlashMenu() {
+  const kd = countMastered('kanji'), vd = countMastered('vocab'), gd = countMastered('grammar');
+  document.getElementById('fm-douji-done').textContent = kd + ' / 242 hafal';
+  document.getElementById('fm-meishi-done').textContent = vd + ' / 389 hafal';
+  document.getElementById('fm-keiyou-done').textContent = gd + ' / 140 hafal';
+  document.getElementById('fm-douji-pct').textContent = Math.round(kd/242*100) + '%';
+  document.getElementById('fm-meishi-pct').textContent = Math.round(vd/389*100) + '%';
+  document.getElementById('fm-keiyou-pct').textContent = Math.round(gd/140*100) + '%';
+  document.getElementById('fm-bar-douji').style.width = Math.min(Math.round(kd/242*100),100) + '%';
+  document.getElementById('fm-bar-meishi').style.width = Math.min(Math.round(vd/389*100),100) + '%';
+  document.getElementById('fm-bar-keiyou').style.width = Math.min(Math.round(gd/140*100),100) + '%';
+}
+
+// ============================================================
+// OVERVIEW
+// ============================================================
+function countMastered(cat) {
+  return Object.values(mastered[cat] || {}).filter(Boolean).length;
+}
+function totalAll() { return 242 + 389 + 140; }
+function masteredAll() { return countMastered('kanji') + countMastered('vocab') + countMastered('grammar'); }
+
+function updateOverview() {
+  const total = totalAll();
+  const done = masteredAll();
+  const pct = Math.round(done / total * 100);
+  document.getElementById('ov-total').textContent = `${done}/${total}`;
+  document.getElementById('ov-bar').style.width = pct + '%';
+  document.getElementById('ov-streak').textContent = streak + '🔥';
+  document.getElementById('ov-today').textContent = todayCount;
+
+  const kd = countMastered('kanji'), vd = countMastered('vocab'), gd = countMastered('grammar');
+  // Overview progress bars (simplified — no pct labels)
+  document.getElementById('cat-douji-done').textContent = `${kd} / 242`;
+  document.getElementById('cat-meishi-done').textContent = `${vd} / 389`;
+  document.getElementById('cat-keiyou-done').textContent = `${gd} / 140`;
+  document.getElementById('bar-douji').style.width = Math.min(Math.round(kd/242*100),100)+'%';
+  document.getElementById('bar-meishi').style.width = Math.min(Math.round(vd/389*100),100)+'%';
+  document.getElementById('bar-keiyou').style.width = Math.min(Math.round(gd/140*100),100)+'%';
+}
+
+// ============================================================
+// FLASHCARD STUDY
+// ============================================================
+function startStudy(cat) {
+  sessionCat = cat;
+  sessionReviewed = 0;
+  sessionMastered = 0;
+  revealed = false;
+
+  // Build queue: unmastered first (shuffled), then mastered (shuffled)
+  const words = ALL_WORDS[cat];
+  const unmastered = words.filter(w => !mastered[cat][w.id]);
+  const done = words.filter(w => mastered[cat][w.id]);
+  shuffle(unmastered);
+  shuffle(done);
+  // Take up to SESSION_SIZE from unmastered, top up with mastered
+  sessionQueue = [...unmastered, ...done].slice(0, SESSION_SIZE);
+  sessionIdx = 0;
+
+  const titles = { kanji:'動詞 Kata Kerja', vocab:'名詞 Kata Benda', grammar:'形容詞 Kata Sifat' };
+  document.getElementById('flash-category-title').textContent = titles[cat];
+  document.getElementById('flash-subtitle').textContent = `${unmastered.length} belum hafal · ${done.length} sudah hafal`;
+
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById('screen-flash').classList.add('active');
+  document.querySelectorAll('nav button').forEach(b => b.classList.remove('active'));
+
+  document.getElementById('session-done-panel').style.display = 'none';
+  document.getElementById('flash-active').style.display = 'block';
+
+  showCard();
+}
+
+function shuffle(arr) {
+  for (let i = arr.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [arr[i], arr[j]] = [arr[j], arr[i]];
+  }
+}
+
+function showCard() {
+  if (sessionIdx >= sessionQueue.length) { endSession(); return; }
+  const w = sessionQueue[sessionIdx];
+  revealed = false;
+
+  document.getElementById('fc-word').textContent = w.jp;
+  document.getElementById('fc-romaji').textContent = w.rom;       // depan — tersembunyi saat revealed
+  document.getElementById('fc-romaji-back').textContent = w.rom;  // belakang — muncul bersama arti
+  document.getElementById('fc-meaning').textContent = w.id_;
+
+  const fc = document.getElementById('flashcard');
+  fc.classList.remove('revealed');
+  document.getElementById('action-row').classList.add('hidden');
+  document.getElementById('tap-hint').classList.remove('hide');
+
+  // Update progress bar
+  const pct = (sessionIdx / sessionQueue.length * 100);
+  document.getElementById('flash-prog-fill').style.width = pct + '%';
+  document.getElementById('sess-left').textContent = `Sisa: ${sessionQueue.length - sessionIdx}`;
+  document.getElementById('sess-done').textContent = `Sesi ini: ${sessionReviewed}`;
+  document.getElementById('sess-master').textContent = `Hafal: ${sessionMastered}`;
+}
+
+function revealCard() {
+  if (revealed) return;
+  revealed = true;
+  document.getElementById('flashcard').classList.add('revealed');
+  document.getElementById('action-row').classList.remove('hidden');
+  document.getElementById('tap-hint').classList.add('hide');
+}
+
+function markCard(isHafal) {
+  const w = sessionQueue[sessionIdx];
+  const wasMastered = mastered[sessionCat][w.id];
+
+  if (isHafal) {
+    mastered[sessionCat][w.id] = true;
+    if (!wasMastered) { sessionMastered++; todayCount++; }
+  } else {
+    delete mastered[sessionCat][w.id];
+  }
+
+  // Update streak
+  const today = new Date().toDateString();
+  if (lastStudyDate !== today) {
+    const yesterday = new Date(Date.now() - 86400000).toDateString();
+    streak = (lastStudyDate === yesterday) ? streak + 1 : 1;
+    lastStudyDate = today;
+  }
+
+  save();
+  sessionReviewed++;
+  sessionIdx++;
+  showCard();
+}
+
+function endSession() {
+  document.getElementById('flash-active').style.display = 'none';
+  document.getElementById('session-done-panel').style.display = 'block';
+  document.getElementById('done-reviewed').textContent = sessionReviewed;
+  document.getElementById('done-mastered').textContent = sessionMastered;
+}
+
+function continueStudy() {
+  startStudy(sessionCat);
+}
+
+function exitStudy() {
+  gotoScreen('flashmenu');
+}
+
+// ============================================================
+// KANJI FLASHCARD MODE (kotoba — bukan kanji satuan)
+// ============================================================
+
+// State untuk kanji flashcard
+let kfCat = 'kanji';
+let kfQueue = [];
+let kfIdx = 0;
+let kfReviewed = 0;
+let kfMastered = 0;
+let kfRevealed = false;
+
+// Progress tersendiri untuk kanji flashcard (per word id)
+// Disimpan di dalam mastered yang sama tapi key berbeda: 'kf_' + id
+function kfIsMastered(id) { return !!kanjiReadMastered['kf_' + id]; }
+function kfSetMastered(id, val) {
+  if (val) kanjiReadMastered['kf_' + id] = true;
+  else delete kanjiReadMastered['kf_' + id];
+}
+function kfCountMastered(cat) {
+  return ALL_WORDS[cat].filter(w => kfIsMastered(w.id)).length;
+}
+
+function updateKanjiMenu() {
+  const cats = { kanji: 242, vocab: 389, grammar: 140 };
+  const ids  = { kanji: 'km-douji', vocab: 'km-meishi', grammar: 'km-keiyou' };
+  const bars = { kanji: 'km-bar-douji', vocab: 'km-bar-meishi', grammar: 'km-bar-keiyou' };
+  for (const [cat, total] of Object.entries(cats)) {
+    const done = kfCountMastered(cat);
+    const pct  = Math.round(done / total * 100);
+    document.getElementById(ids[cat] + '-done').textContent = done + ' / ' + total + ' hafal';
+    document.getElementById(ids[cat] + '-pct').textContent  = pct + '%';
+    document.getElementById(bars[cat]).style.width = Math.min(pct, 100) + '%';
+  }
+}
+
+function startKanjiFlash(cat) {
+  kfCat      = cat;
+  kfReviewed = 0;
+  kfMastered = 0;
+  kfRevealed = false;
+
+  const words = ALL_WORDS[cat];
+  const unmastered = words.filter(w => !kfIsMastered(w.id));
+  const done       = words.filter(w =>  kfIsMastered(w.id));
+  shuffle(unmastered);
+  shuffle(done);
+  kfQueue = [...unmastered, ...done].slice(0, SESSION_SIZE);
+  kfIdx   = 0;
+
+  const titles = { kanji: '漢字 Kata Kerja', vocab: '漢字 Kata Benda', grammar: '漢字 Kata Sifat' };
+  document.getElementById('kf-title').textContent = titles[cat];
+  document.getElementById('kf-subtitle').textContent =
+    unmastered.length + ' belum bisa · ' + done.length + ' sudah bisa';
+
+  // Tampilkan screen
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById('screen-kanjiflash').classList.add('active');
+  document.querySelectorAll('nav button').forEach(b => b.classList.remove('active'));
+
+  document.getElementById('kf-done-panel').style.display = 'none';
+  document.getElementById('kf-active').style.display     = 'block';
+
+  showKanjiCard();
+}
+
+function showKanjiCard() {
+  if (kfIdx >= kfQueue.length) { endKanjiFlash(); return; }
+  const w    = kfQueue[kfIdx];
+  kfRevealed = false;
+
+  // Depan: hanya tampilkan kanji (tanpa romaji)
+  document.getElementById('kf-word').textContent       = w.jp;
+  // Belakang: furigana (rom), arti
+  document.getElementById('kf-furigana').textContent   = w.rom;
+  document.getElementById('kf-romaji-back').textContent = w.rom;
+  document.getElementById('kf-meaning').textContent    = w.id_;
+
+  const card = document.getElementById('kf-card');
+  card.classList.remove('revealed');
+  document.getElementById('kf-action-row').classList.add('hidden');
+  document.getElementById('kf-tap-hint').classList.remove('hide');
+
+  const pct = kfIdx / kfQueue.length * 100;
+  document.getElementById('kf-prog-fill').style.width  = pct + '%';
+  document.getElementById('kf-left').textContent       = 'Sisa: ' + (kfQueue.length - kfIdx);
+  document.getElementById('kf-done').textContent       = 'Sesi ini: ' + kfReviewed;
+  document.getElementById('kf-master').textContent     = 'Hafal: ' + kfMastered;
+}
+
+function revealKanjiCard() {
+  if (kfRevealed) return;
+  kfRevealed = true;
+  document.getElementById('kf-card').classList.add('revealed');
+  document.getElementById('kf-action-row').classList.remove('hidden');
+  document.getElementById('kf-tap-hint').classList.add('hide');
+}
+
+function markKanjiFlash(hafal) {
+  const w = kfQueue[kfIdx];
+  const wasMastered = kfIsMastered(w.id);
+  kfSetMastered(w.id, hafal);
+
+  if (hafal && !wasMastered) { kfMastered++; todayCount++; }
+
+  // Update streak
+  const today = new Date().toDateString();
+  if (lastStudyDate !== today) {
+    const yesterday = new Date(Date.now() - 86400000).toDateString();
+    streak = (lastStudyDate === yesterday) ? streak + 1 : 1;
+    lastStudyDate = today;
+  }
+
+  save();
+  kfReviewed++;
+  kfIdx++;
+  showKanjiCard();
+}
+
+function endKanjiFlash() {
+  document.getElementById('kf-active').style.display     = 'none';
+  document.getElementById('kf-done-panel').style.display = 'block';
+  document.getElementById('kf-done-reviewed').textContent = kfReviewed;
+  document.getElementById('kf-done-mastered').textContent = kfMastered;
+}
+
+function continueKanjiFlash() { startKanjiFlash(kfCat); }
+
+function exitKanjiFlash() { gotoScreen('kanjimenu'); }
+
+// ============================================================
+// REVIEW SCREEN
+// ============================================================
+let currentFilter = 'all';
+
+function setFilter(f, btn) {
+  currentFilter = f;
+  document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  renderReview(f);
+}
+
+function renderReview(filter) {
+  let words = [];
+  const cats = ['kanji', 'vocab', 'grammar'];
+  for (const cat of cats) {
+    for (const w of ALL_WORDS[cat]) {
+      words.push({ ...w, cat });
+    }
+  }
+  if (filter === 'kanji') words = words.filter(w => w.cat === 'kanji');
+  if (filter === 'vocab') words = words.filter(w => w.cat === 'vocab');
+  if (filter === 'grammar') words = words.filter(w => w.cat === 'grammar');
+  if (filter === 'done') words = words.filter(w => mastered[w.cat][w.id]);
+  if (filter === 'todo') words = words.filter(w => !mastered[w.cat][w.id]);
+
+  document.getElementById('review-count').textContent = `Menampilkan ${words.length} kata`;
+  document.getElementById('vocab-grid').innerHTML = words.map(w => {
+    const done = mastered[w.cat][w.id];
+    return `<div class="vocab-item ${done ? 'mastered' : ''}">
+      <div class="status-dot ${done ? 'done' : 'todo'}"></div>
+      <div style="flex:1;min-width:0">
+        <div class="jp">${w.jp}</div>
+        <div class="id-meaning">${w.id_}</div>
+        <div style="font-size:10px;color:var(--mist);font-family:'DM Mono',monospace">${w.rom}</div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// ============================================================
+// AI CHAT
+// ============================================================
+const chatHistory = [];
+
+async function sendMsg() {
+  const inp = document.getElementById('chat-input');
+  const msg = inp.value.trim();
+  if (!msg) return;
+  inp.value = '';
+  document.getElementById('chat-send').disabled = true;
+
+  addMsg('user', msg);
+  chatHistory.push({ role:'user', content: msg });
+
+  const typing = document.createElement('div');
+  typing.className = 'typing'; typing.id = 'typing';
+  typing.innerHTML = '<span></span><span></span><span></span>';
+  document.getElementById('chat-box').appendChild(typing);
+  scrollChat();
+
+  try {
+    const res = await fetch('https://api.anthropic.com/v1/messages', {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({
+        model:'claude-sonnet-4-20250514',
+        max_tokens:1000,
+        system:`Kamu adalah sensei bahasa Jepang ahli untuk JLPT N3. Bantu pelajar Indonesia memahami kosakata, grammar, dan kanji N3 untuk mencapai nilai manten (満点) di ujian Desember.
+Jawab dalam Bahasa Indonesia yang mudah dipahami. Sertakan:
+- Penjelasan singkat dan padat
+- Contoh kalimat dalam huruf Jepang (kanji/hiragana/katakana)
+- Terjemahan contoh kalimat
+- Tips hafalan jika relevan
+Akhiri dengan satu kalimat semangat dalam bahasa Jepang.`,
+        messages: chatHistory
+      })
+    });
+    const data = await res.json();
+    document.getElementById('typing')?.remove();
+    const reply = data.content?.[0]?.text || 'Maaf, coba lagi ya!';
+    chatHistory.push({ role:'assistant', content: reply });
+    addMsg('ai', reply);
+  } catch(e) {
+    document.getElementById('typing')?.remove();
+    addMsg('ai', 'Koneksi bermasalah. Coba lagi! がんばって！');
+  }
+  document.getElementById('chat-send').disabled = false;
+  scrollChat();
+}
+
+function addMsg(role, text) {
+  const box = document.getElementById('chat-box');
+  const d = document.createElement('div');
+  d.className = 'msg ' + role;
+  d.innerHTML = text.replace(/\n/g,'<br>');
+  box.appendChild(d);
+  scrollChat();
+}
+function scrollChat() { const b=document.getElementById('chat-box'); b.scrollTop=b.scrollHeight; }
+
+// ============================================================
+// INIT — dipanggil setelah login berhasil
+// ============================================================
+function init() {
+  updateCountdown();
+  updateOverview();
+  setInterval(updateCountdown, 60000);
+}
+// Jangan panggil init() di sini — dipanggil oleh onAuthStateChanged setelah login
+</script>
+</body>
+</html>
