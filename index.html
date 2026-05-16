@@ -2487,49 +2487,37 @@ async function sendMsg() {
   document.getElementById('chat-box').appendChild(typing);
   scrollChat();
 
-  // Pakai Gemini API — support CORS dari browser
-  const GEMINI_KEY = 'AIzaSyAqVk1QM8KUbNAXjxoXMy7BjP187VhND_g';
-  const systemPrompt = `Kamu adalah sensei bahasa Jepang ahli untuk JLPT N3. Bantu pelajar Indonesia memahami kosakata, grammar, dan kanji N3 untuk mencapai nilai manten (満点) di ujian Desember 2026.
-Jawab dalam Bahasa Indonesia yang mudah dipahami. Sertakan:
-- Penjelasan singkat dan padat
-- Contoh kalimat dalam huruf Jepang (kanji/hiragana/katakana)
-- Terjemahan contoh kalimat
-- Tips hafalan jika relevan
-Akhiri dengan satu kalimat semangat dalam bahasa Jepang.`;
-
-  // Bangun history untuk Gemini format
-  const contents = [];
-  // System prompt as first user turn (Gemini cara)
-  const allMsgs = [{role:'user', content: systemPrompt}, {role:'assistant', content:'はい、わかりました！N3の勉強を一緒に頑張りましょう！'}, ...chatHistory];
-  for (const m of allMsgs) {
-    contents.push({
-      role: m.role === 'assistant' ? 'model' : 'user',
-      parts: [{ text: m.content }]
-    });
-  }
-
   try {
-    const res = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${GEMINI_KEY}`,
-      {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ contents })
-      }
-    );
+    const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer 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'
+      },
+      body: JSON.stringify({
+        model: 'llama3-8b-8192',
+        max_tokens: 1000,
+        messages: [
+          {
+            role: 'system',
+            content: 'Kamu adalah sensei bahasa Jepang ahli untuk JLPT N3. Bantu pelajar Indonesia memahami kosakata, grammar, dan kanji N3. Jawab dalam Bahasa Indonesia. Sertakan contoh kalimat Jepang dan terjemahannya. Akhiri dengan semangat dalam bahasa Jepang.'
+          },
+          ...chatHistory
+        ]
+      })
+    });
     const data = await res.json();
     document.getElementById('typing')?.remove();
-
     if (data.error) {
-      addMsg('ai', '⚠️ ' + (data.error.message || 'API error. Cek API key Gemini.'));
+      addMsg('ai', '⚠️ ' + data.error.message);
     } else {
-      const reply = data.candidates?.[0]?.content?.parts?.[0]?.text || 'Maaf, coba lagi ya!';
+      const reply = data.choices?.[0]?.message?.content || 'Maaf, coba lagi ya!';
       chatHistory.push({ role:'assistant', content: reply });
       addMsg('ai', reply);
     }
   } catch(e) {
     document.getElementById('typing')?.remove();
-    addMsg('ai', '⚠️ Koneksi bermasalah. Cek internet lalu coba lagi.');
+    addMsg('ai', '⚠️ Koneksi bermasalah: ' + e.message);
   }
   document.getElementById('chat-send').disabled = false;
   scrollChat();
