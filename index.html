@@ -626,6 +626,134 @@ nav button.active {
   .flashcard .word { font-size:38px; }
   .kread-kanji { font-size:64px; }
 }
+/* ===== LEADERBOARD ===== */
+.lb-header-card {
+  background: linear-gradient(135deg, var(--ink), var(--indigo));
+  border-radius: 16px;
+  padding: 24px;
+  color: white;
+  margin-bottom: 24px;
+  position: relative;
+  overflow: hidden;
+}
+.lb-header-card::before {
+  content: '🏆';
+  position: absolute;
+  right: 20px; top: 50%;
+  transform: translateY(-50%);
+  font-size: 80px;
+  opacity: 0.12;
+}
+.lb-header-card h2 { font-family:'Noto Serif JP',serif; font-size:22px; margin-bottom:4px; }
+.lb-header-card p  { font-size:13px; opacity:.6; }
+.lb-stats-row { display:flex; gap:24px; margin-top:14px; }
+.lb-stat { text-align:center; }
+.lb-stat .n { font-family:'DM Mono',monospace; font-size:28px; color:var(--gold); }
+.lb-stat .l { font-size:11px; opacity:.6; text-transform:uppercase; letter-spacing:1px; }
+
+.lb-rank-list { display:flex; flex-direction:column; gap:10px; }
+.lb-row {
+  background:white;
+  border:1px solid var(--border);
+  border-radius:12px;
+  padding:14px 18px;
+  display:flex;
+  align-items:center;
+  gap:14px;
+  transition:all .2s;
+  position:relative;
+  overflow:hidden;
+}
+.lb-row:hover { transform:translateX(3px); box-shadow:var(--shadow); }
+.lb-row.me { border-color:var(--gold); background:rgba(212,160,23,0.04); }
+.lb-row.rank-1 { border-color:var(--gold); }
+.lb-row.rank-2 { border-color:#b0b0b0; }
+.lb-row.rank-3 { border-color:#cd7f32; }
+.lb-rank-num {
+  font-family:'DM Mono',monospace;
+  font-size:20px;
+  font-weight:700;
+  width:36px;
+  text-align:center;
+  flex-shrink:0;
+  color:var(--mist);
+}
+.lb-rank-num.gold   { color:var(--gold); }
+.lb-rank-num.silver { color:#a0a0a0; }
+.lb-rank-num.bronze { color:#cd7f32; }
+.lb-avatar {
+  width:40px; height:40px;
+  border-radius:50%;
+  background:var(--indigo);
+  display:flex; align-items:center; justify-content:center;
+  font-size:16px; font-weight:700; color:white;
+  overflow:hidden; flex-shrink:0;
+}
+.lb-avatar img { width:100%; height:100%; object-fit:cover; }
+.lb-info { flex:1; min-width:0; }
+.lb-name { font-weight:600; font-size:14px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.lb-sub  { font-size:11px; color:var(--mist); margin-top:2px; }
+.lb-score {
+  text-align:right;
+  flex-shrink:0;
+}
+.lb-score .total { font-family:'DM Mono',monospace; font-size:22px; font-weight:700; color:var(--indigo); }
+.lb-score .label { font-size:10px; color:var(--mist); text-transform:uppercase; letter-spacing:1px; }
+.lb-streak { font-size:13px; color:var(--gold); font-weight:600; }
+.me-badge {
+  position:absolute; right:14px; top:8px;
+  font-size:9px; padding:2px 8px;
+  background:var(--gold); color:white;
+  border-radius:20px; font-family:'DM Mono',monospace;
+  letter-spacing:1px; font-weight:600;
+}
+.lb-empty {
+  text-align:center; padding:48px 20px;
+  color:var(--mist); font-size:14px;
+}
+.lb-empty .big { font-size:48px; margin-bottom:12px; }
+.lb-loading {
+  text-align:center; padding:40px;
+  color:var(--mist);
+}
+.lb-refresh-btn {
+  border:1px solid var(--border);
+  background:white;
+  padding:8px 16px;
+  border-radius:8px;
+  cursor:pointer;
+  font-family:'Noto Sans JP',sans-serif;
+  font-size:12px;
+  color:var(--mist);
+  transition:all .2s;
+}
+.lb-refresh-btn:hover { border-color:var(--indigo); color:var(--indigo); }
+.member-grid {
+  display:grid;
+  grid-template-columns:repeat(auto-fill,minmax(160px,1fr));
+  gap:10px;
+  margin-top:16px;
+}
+.member-card {
+  background:white;
+  border:1px solid var(--border);
+  border-radius:10px;
+  padding:14px;
+  text-align:center;
+}
+.member-card .av {
+  width:44px; height:44px;
+  border-radius:50%;
+  background:var(--indigo);
+  display:flex; align-items:center; justify-content:center;
+  font-size:18px; font-weight:700; color:white;
+  margin:0 auto 8px;
+  overflow:hidden;
+}
+.member-card .av img { width:100%; height:100%; object-fit:cover; }
+.member-card .nm { font-size:12px; font-weight:600; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.member-card .sc { font-family:'DM Mono',monospace; font-size:11px; color:var(--mist); margin-top:2px; }
+
 ::-webkit-scrollbar { width:5px; }
 ::-webkit-scrollbar-thumb { background:var(--border); border-radius:3px; }
 
@@ -827,6 +955,7 @@ nav button.active {
   <button onclick="gotoScreen('flashmenu')">📚 Flashcard</button>
   <button onclick="gotoScreen('kanjimenu')">漢字 Kanji</button>
   <button onclick="gotoScreen('review')">📋 Semua Kata</button>
+  <button onclick="gotoScreen('leaderboard')">🏆 Leaderboard</button>
   <button onclick="gotoScreen('ai')">🤖 Tanya Sensei</button>
 </nav>
 
@@ -1140,6 +1269,49 @@ nav button.active {
     <button class="btn-continue" onclick="continueKanjiFlash()">▶ Lanjut Sesi</button>
     <button class="btn-back-home" onclick="exitKanjiFlash()">← Kembali</button>
   </div>
+</div>
+
+<!-- ====== LEADERBOARD SCREEN ====== -->
+<div id="screen-leaderboard" class="screen">
+
+  <!-- Header card -->
+  <div class="lb-header-card">
+    <h2>🏆 Leaderboard</h2>
+    <p>Siapa yang paling banyak hafal kata N3?</p>
+    <div class="lb-stats-row">
+      <div class="lb-stat">
+        <div class="n" id="lb-total-users">-</div>
+        <div class="l">Pelajar</div>
+      </div>
+      <div class="lb-stat">
+        <div class="n" id="lb-total-words">771</div>
+        <div class="l">Total Kata</div>
+      </div>
+      <div class="lb-stat">
+        <div class="n" id="lb-my-rank">#-</div>
+        <div class="l">Rankmu</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Controls -->
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
+    <div class="section-title" style="margin:0">Ranking Hafalan</div>
+    <button class="lb-refresh-btn" onclick="loadLeaderboard()">↻ Refresh</button>
+  </div>
+
+  <!-- Rank list -->
+  <div id="lb-list" class="lb-rank-list">
+    <div class="lb-loading">⏳ Memuat data...</div>
+  </div>
+
+  <!-- All Members -->
+  <div class="section-title" style="margin-top:32px;margin-bottom:8px">👥 Semua Pelajar</div>
+  <p style="font-size:12px;color:var(--mist);margin-bottom:12px">Semua yang sudah bergabung belajar N3</p>
+  <div class="member-grid" id="lb-members">
+    <div class="lb-loading">⏳ Memuat...</div>
+  </div>
+
 </div>
 
 <!-- ====== REVIEW SCREEN ====== -->
@@ -1748,20 +1920,35 @@ async function loadFromFirestore() {
     const doc = await db.collection('users').doc(currentUser.uid).get();
     if (doc.exists) {
       const data = doc.data();
-      if (data.mastered)         mastered         = data.mastered;
+      if (data.mastered)          mastered          = data.mastered;
       if (data.kanjiReadMastered) kanjiReadMastered = data.kanjiReadMastered;
-      if (data.streak)           streak           = data.streak;
-      if (data.lastStudyDate)    lastStudyDate    = data.lastStudyDate;
-      // todayCount — only if same day
+      if (data.streak)            streak            = data.streak;
+      if (data.lastStudyDate)     lastStudyDate     = data.lastStudyDate;
       if (data.todayDate === new Date().toDateString()) {
         todayDate  = data.todayDate;
         todayCount = data.todayCount || 0;
       }
+    } else {
+      // User baru — daftarkan ke Firestore
+      await db.collection('users').doc(currentUser.uid).set({
+        displayName:   currentUser.displayName || 'Pelajar',
+        photoURL:      currentUser.photoURL    || '',
+        email:         currentUser.email       || '',
+        totalMastered: 0,
+        streak:        0,
+        joinedAt:      firebase.firestore.FieldValue.serverTimestamp(),
+        lastSeen:      firebase.firestore.FieldValue.serverTimestamp(),
+      });
     }
+    // Update lastSeen & profile setiap login
+    await db.collection('users').doc(currentUser.uid).update({
+      lastSeen:    firebase.firestore.FieldValue.serverTimestamp(),
+      displayName: currentUser.displayName || 'Pelajar',
+      photoURL:    currentUser.photoURL    || '',
+    });
     setSyncBadge('synced');
   } catch(e) {
     console.error('Load error:', e);
-    // Fallback to localStorage
     loadFromLocal();
     setSyncBadge('offline');
   }
@@ -1771,6 +1958,8 @@ async function saveToFirestore() {
   if (!currentUser) { saveToLocal(); return; }
   setSyncBadge('syncing');
   try {
+    // Hitung total kata hafal untuk leaderboard
+    const totalMastered = masteredAll();
     await db.collection('users').doc(currentUser.uid).set({
       mastered,
       kanjiReadMastered,
@@ -1778,14 +1967,17 @@ async function saveToFirestore() {
       lastStudyDate,
       todayDate: new Date().toDateString(),
       todayCount,
+      totalMastered,          // untuk sorting leaderboard
       updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
-      displayName: currentUser.displayName,
-      email: currentUser.email,
+      lastSeen: firebase.firestore.FieldValue.serverTimestamp(),
+      displayName: currentUser.displayName || 'Pelajar',
+      photoURL: currentUser.photoURL || '',
+      email: currentUser.email || '',
     }, { merge: true });
     setSyncBadge('synced');
   } catch(e) {
     console.error('Save error:', e);
-    saveToLocal(); // fallback
+    saveToLocal();
     setSyncBadge('offline');
   }
 }
@@ -1857,12 +2049,13 @@ function gotoScreen(name) {
   document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
   document.getElementById('screen-' + name).classList.add('active');
   document.querySelectorAll('nav button').forEach((b, i) => {
-    b.classList.toggle('active', ['overview','flashmenu','kanjimenu','review','ai'][i] === name);
+    b.classList.toggle('active', ['overview','flashmenu','kanjimenu','review','leaderboard','ai'][i] === name);
   });
-  if (name === 'overview') updateOverview();
-  if (name === 'flashmenu') updateFlashMenu();
-  if (name === 'kanjimenu') updateKanjiMenu();
-  if (name === 'review') renderReview('all');
+  if (name === 'overview')     updateOverview();
+  if (name === 'flashmenu')    updateFlashMenu();
+  if (name === 'kanjimenu')    updateKanjiMenu();
+  if (name === 'review')       renderReview('all');
+  if (name === 'leaderboard')  loadLeaderboard();
 }
 
 function updateFlashMenu() {
@@ -2247,6 +2440,106 @@ function addMsg(role, text) {
   scrollChat();
 }
 function scrollChat() { const b=document.getElementById('chat-box'); b.scrollTop=b.scrollHeight; }
+
+// ============================================================
+// ============================================================
+// LEADERBOARD
+// ============================================================
+async function loadLeaderboard() {
+  const listEl    = document.getElementById('lb-list');
+  const membersEl = document.getElementById('lb-members');
+  if (!listEl) return;
+
+  listEl.innerHTML    = '<div class="lb-loading">⏳ Memuat ranking...</div>';
+  membersEl.innerHTML = '<div class="lb-loading">⏳ Memuat anggota...</div>';
+
+  try {
+    // Ambil semua user, urutkan by totalMastered desc
+    const snap = await db.collection('users')
+      .orderBy('totalMastered', 'desc')
+      .limit(50)
+      .get();
+
+    const users = [];
+    snap.forEach(doc => {
+      const d = doc.data();
+      users.push({ uid: doc.id, ...d });
+    });
+
+    // Update header stats
+    document.getElementById('lb-total-users').textContent = users.length;
+    const myRankIdx = users.findIndex(u => u.uid === currentUser?.uid);
+    document.getElementById('lb-my-rank').textContent = myRankIdx >= 0 ? '#' + (myRankIdx + 1) : '#-';
+
+    // Render ranking
+    if (users.length === 0) {
+      listEl.innerHTML = '<div class="lb-empty"><div class="big">🎌</div>Belum ada data. Jadilah yang pertama!</div>';
+    } else {
+      listEl.innerHTML = users.map((u, i) => renderLbRow(u, i)).join('');
+    }
+
+    // Render member grid (semua user)
+    membersEl.innerHTML = users.map(u => renderMemberCard(u)).join('');
+
+  } catch(e) {
+    console.error('Leaderboard error:', e);
+    listEl.innerHTML = '<div class="lb-empty"><div class="big">⚠️</div>Gagal memuat. Cek koneksi internet.</div>';
+    membersEl.innerHTML = '';
+  }
+}
+
+function renderLbRow(u, idx) {
+  const rank  = idx + 1;
+  const isMe  = u.uid === currentUser?.uid;
+  const total = u.totalMastered || 0;
+  const pct   = Math.round(total / 771 * 100);
+
+  // Rank number styling
+  let rankClass = '', rankIcon = '#' + rank;
+  if (rank === 1) { rankClass = 'gold';   rankIcon = '🥇'; }
+  if (rank === 2) { rankClass = 'silver'; rankIcon = '🥈'; }
+  if (rank === 3) { rankClass = 'bronze'; rankIcon = '🥉'; }
+
+  // Avatar
+  const avHtml = u.photoURL
+    ? `<img src="${u.photoURL}" alt="av">`
+    : (u.displayName || 'U')[0].toUpperCase();
+
+  // Last seen
+  let lastSeen = '';
+  if (u.lastSeen?.toDate) {
+    const diff = Math.floor((Date.now() - u.lastSeen.toDate()) / 86400000);
+    lastSeen = diff === 0 ? '🟢 Aktif hari ini' : diff === 1 ? '🟡 Kemarin' : `⚪ ${diff} hari lalu`;
+  }
+
+  return `<div class="lb-row ${rank<=3?'rank-'+rank:''} ${isMe?'me':''}">
+    ${isMe ? '<span class="me-badge">KAMU</span>' : ''}
+    <div class="lb-rank-num ${rankClass}">${rankIcon}</div>
+    <div class="lb-avatar">${avHtml}</div>
+    <div class="lb-info">
+      <div class="lb-name">${u.displayName || 'Pelajar'}</div>
+      <div class="lb-sub">${lastSeen} &nbsp;·&nbsp; 🔥 ${u.streak||0} hari &nbsp;·&nbsp; ${pct}% selesai</div>
+    </div>
+    <div class="lb-score">
+      <div class="total">${total}</div>
+      <div class="label">kata hafal</div>
+    </div>
+  </div>`;
+}
+
+function renderMemberCard(u) {
+  const avHtml = u.photoURL
+    ? `<img src="${u.photoURL}" alt="av">`
+    : (u.displayName || 'U')[0].toUpperCase();
+  const total = u.totalMastered || 0;
+  const isMe  = u.uid === currentUser?.uid;
+  return `<div class="member-card" ${isMe ? 'style="border-color:var(--gold)"' : ''}>
+    <div class="av">${avHtml}</div>
+    <div class="nm">${u.displayName || 'Pelajar'} ${isMe ? '⭐' : ''}</div>
+    <div class="sc">${total} / 771 kata</div>
+    <div class="sc">🔥 ${u.streak||0} hari</div>
+  </div>`;
+}
 
 // ============================================================
 // INIT — dipanggil setelah login berhasil
