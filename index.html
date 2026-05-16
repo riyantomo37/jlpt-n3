@@ -2487,31 +2487,49 @@ async function sendMsg() {
   document.getElementById('chat-box').appendChild(typing);
   scrollChat();
 
-  try {
-    const res = await fetch('https://api.anthropic.com/v1/messages', {
-      method:'POST',
-      headers:{'Content-Type':'application/json'},
-      body: JSON.stringify({
-        model:'claude-sonnet-4-20250514',
-        max_tokens:1000,
-        system:`Kamu adalah sensei bahasa Jepang ahli untuk JLPT N3. Bantu pelajar Indonesia memahami kosakata, grammar, dan kanji N3 untuk mencapai nilai manten (満点) di ujian Desember.
+  // Pakai Gemini API — support CORS dari browser
+  const GEMINI_KEY = 'AIzaSyAqVk1QM8KUbNAXjxoXMy7BjP187VhND_g';
+  const systemPrompt = `Kamu adalah sensei bahasa Jepang ahli untuk JLPT N3. Bantu pelajar Indonesia memahami kosakata, grammar, dan kanji N3 untuk mencapai nilai manten (満点) di ujian Desember 2026.
 Jawab dalam Bahasa Indonesia yang mudah dipahami. Sertakan:
 - Penjelasan singkat dan padat
 - Contoh kalimat dalam huruf Jepang (kanji/hiragana/katakana)
 - Terjemahan contoh kalimat
 - Tips hafalan jika relevan
-Akhiri dengan satu kalimat semangat dalam bahasa Jepang.`,
-        messages: chatHistory
-      })
+Akhiri dengan satu kalimat semangat dalam bahasa Jepang.`;
+
+  // Bangun history untuk Gemini format
+  const contents = [];
+  // System prompt as first user turn (Gemini cara)
+  const allMsgs = [{role:'user', content: systemPrompt}, {role:'assistant', content:'はい、わかりました！N3の勉強を一緒に頑張りましょう！'}, ...chatHistory];
+  for (const m of allMsgs) {
+    contents.push({
+      role: m.role === 'assistant' ? 'model' : 'user',
+      parts: [{ text: m.content }]
     });
+  }
+
+  try {
+    const res = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${GEMINI_KEY}`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ contents })
+      }
+    );
     const data = await res.json();
     document.getElementById('typing')?.remove();
-    const reply = data.content?.[0]?.text || 'Maaf, coba lagi ya!';
-    chatHistory.push({ role:'assistant', content: reply });
-    addMsg('ai', reply);
+
+    if (data.error) {
+      addMsg('ai', '⚠️ ' + (data.error.message || 'API error. Cek API key Gemini.'));
+    } else {
+      const reply = data.candidates?.[0]?.content?.parts?.[0]?.text || 'Maaf, coba lagi ya!';
+      chatHistory.push({ role:'assistant', content: reply });
+      addMsg('ai', reply);
+    }
   } catch(e) {
     document.getElementById('typing')?.remove();
-    addMsg('ai', 'Koneksi bermasalah. Coba lagi! がんばって！');
+    addMsg('ai', '⚠️ Koneksi bermasalah. Cek internet lalu coba lagi.');
   }
   document.getElementById('chat-send').disabled = false;
   scrollChat();
