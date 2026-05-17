@@ -796,6 +796,61 @@ nav button.active {
 .dd-item.active { background:rgba(44,62,122,.08); color:var(--indigo); font-weight:600; }
 .dd-divider { height:1px; background:var(--border); margin:4px 0; }
 
+/* ===== LEVEL SYSTEM ===== */
+.level-badge {
+  display:inline-flex;
+  align-items:center;
+  gap:6px;
+  padding:4px 12px;
+  border-radius:20px;
+  font-size:12px;
+  font-weight:700;
+  font-family:'DM Mono',monospace;
+  letter-spacing:.5px;
+}
+.level-badge.lv1 { background:rgba(150,150,150,.15); color:#888; border:1px solid #ccc; }
+.level-badge.lv2 { background:rgba(44,122,200,.12); color:#2c7ac8; border:1px solid rgba(44,122,200,.3); }
+.level-badge.lv3 { background:rgba(45,160,80,.12); color:#2da050; border:1px solid rgba(45,160,80,.3); }
+.level-badge.lv4 { background:rgba(200,180,0,.15); color:#a09000; border:1px solid rgba(200,180,0,.3); }
+.level-badge.lv5 { background:rgba(220,120,0,.12); color:#c06000; border:1px solid rgba(220,120,0,.3); }
+.level-badge.lv6 { background:rgba(200,50,50,.12); color:var(--red); border:1px solid rgba(200,50,50,.3); }
+.level-badge.lv7 { background:linear-gradient(90deg,rgba(212,160,23,.2),rgba(192,57,43,.2)); color:var(--gold); border:1px solid var(--gold); }
+
+.level-up-overlay {
+  display:none;
+  position:fixed;
+  inset:0;
+  background:rgba(0,0,0,.7);
+  z-index:9000;
+  align-items:center;
+  justify-content:center;
+  flex-direction:column;
+}
+.level-up-overlay.show { display:flex; }
+.level-up-box {
+  background:var(--ink);
+  border:2px solid var(--gold);
+  border-radius:24px;
+  padding:40px;
+  text-align:center;
+  max-width:340px;
+  animation:levelPopIn .5s cubic-bezier(.175,.885,.32,1.275) forwards;
+}
+@keyframes levelPopIn {
+  0% { transform:scale(.5); opacity:0; }
+  100% { transform:scale(1); opacity:1; }
+}
+.level-up-stars { font-size:48px; margin-bottom:12px; }
+.level-up-title { font-family:'Noto Serif JP',serif; font-size:14px; color:rgba(255,255,255,.5); letter-spacing:3px; margin-bottom:6px; text-transform:uppercase; }
+.level-up-name { font-family:'Noto Serif JP',serif; font-size:32px; color:var(--gold); margin-bottom:4px; }
+.level-up-sub { font-size:14px; color:rgba(255,255,255,.7); margin-bottom:24px; }
+.level-up-desc { font-size:13px; color:rgba(255,255,255,.5); margin-bottom:24px; line-height:1.6; }
+.level-up-close { padding:12px 32px; background:var(--gold); color:var(--ink); border:none; border-radius:10px; font-family:'Noto Sans JP',sans-serif; font-size:14px; font-weight:700; cursor:pointer; }
+
+/* Progress XP bar on overview */
+.xp-bar-wrap { background:rgba(26,26,46,.1); border-radius:4px; height:8px; overflow:hidden; margin-top:6px; }
+.xp-bar-fill { height:100%; border-radius:4px; transition:width .8s ease; }
+
 /* ===== TEMA CARDS ===== */
 .tema-card {
   background:white;
@@ -1032,6 +1087,34 @@ nav button.active {
     <div class="stat-card">
       <div class="big" id="ov-today" style="color:var(--jade)">0</div>
       <div class="sub">Kata Hafal Hari Ini</div>
+    </div>
+  </div>
+
+  <!-- Level Card -->
+  <div style="background:linear-gradient(135deg,var(--ink),var(--indigo));border-radius:14px;padding:20px 24px;margin-bottom:24px;color:white;position:relative;overflow:hidden">
+    <div style="position:absolute;right:20px;top:50%;transform:translateY(-50%);font-size:80px;opacity:.06;font-family:'Noto Serif JP',serif" id="ov-lvl-jp-bg">見</div>
+    <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px">
+      <div>
+        <div style="font-size:11px;opacity:.5;letter-spacing:2px;text-transform:uppercase;margin-bottom:4px">Level Progress</div>
+        <div style="display:flex;align-items:center;gap:10px">
+          <span id="ov-level-badge" class="level-badge lv1">Lv.1 見習い</span>
+          <span style="font-size:13px;opacity:.7" id="ov-level-name">Pemula</span>
+        </div>
+        <div style="font-size:12px;opacity:.5;margin-top:6px" id="ov-next-level">100 kata lagi untuk Level 2</div>
+      </div>
+      <div style="text-align:right">
+        <div style="font-family:'DM Mono',monospace;font-size:36px;color:var(--gold);line-height:1" id="ov-xp">0</div>
+        <div style="font-size:11px;opacity:.5;text-transform:uppercase;letter-spacing:1px">XP kata hafal</div>
+      </div>
+    </div>
+    <div style="margin-top:12px">
+      <div style="display:flex;justify-content:space-between;font-size:11px;opacity:.5;margin-bottom:4px">
+        <span id="ov-xp-cur">0</span>
+        <span id="ov-xp-next">100</span>
+      </div>
+      <div class="xp-bar-wrap">
+        <div class="xp-bar-fill" id="ov-xp-bar" style="width:0%;background:linear-gradient(90deg,var(--gold),var(--red))"></div>
+      </div>
     </div>
   </div>
 
@@ -1477,26 +1560,48 @@ nav button.active {
       <button onclick="toggleDropdown('dd-mirip')" class="dd-btn" id="lbl-mirip">
         🔤 Pelafalan Mirip <span style="font-size:10px">▾</span>
       </button>
-      <div class="dropdown-panel" id="dd-mirip" style="min-width:260px">
-        <div style="font-size:10px;color:var(--mist);padding:6px 12px;letter-spacing:1px">VOKAL SAMA DI DEPAN</div>
-        <div class="dd-item" onclick="setFilter('mirip-hen',this);closeDropdowns()">変〜 : 変更・変化・変更・変身</div>
-        <div class="dd-item" onclick="setFilter('mirip-kan',this);closeDropdowns()">感〜 : 感動・感謝・感心・感覚</div>
-        <div class="dd-item" onclick="setFilter('mirip-kan2',this);closeDropdowns()">完〜 : 完了・完成・完全</div>
-        <div class="dd-item" onclick="setFilter('mirip-sei',this);closeDropdowns()">成〜 : 成功・成長・成績</div>
-        <div class="dd-item" onclick="setFilter('mirip-shu',this);closeDropdowns()">集〜 : 集中・集団・集合</div>
-        <div class="dd-item" onclick="setFilter('mirip-shin',this);closeDropdowns()">信〜 : 信頼・信用・信じる</div>
-        <div class="dd-item" onclick="setFilter('mirip-chi',this);closeDropdowns()">知〜 : 知識・知能・知恵</div>
+      <div class="dropdown-panel" id="dd-mirip" style="min-width:280px;max-height:420px;overflow-y:auto">
+
+        <div style="font-size:10px;color:var(--mist);padding:6px 12px;letter-spacing:1px;font-weight:700">🔤 AKHIRAN VOKAL SAMA</div>
+        <div class="dd-item" onclick="setFilter('end-ru',this);closeDropdowns()">〜る &nbsp;<span style="color:var(--mist);font-size:11px">miru, naru, kuru...</span></div>
+        <div class="dd-item" onclick="setFilter('end-u',this);closeDropdowns()">〜う &nbsp;<span style="color:var(--mist);font-size:11px">omou, negau, kau...</span></div>
+        <div class="dd-item" onclick="setFilter('end-ku',this);closeDropdowns()">〜く &nbsp;<span style="color:var(--mist);font-size:11px">kiku, kaku, iku...</span></div>
+        <div class="dd-item" onclick="setFilter('end-gu',this);closeDropdowns()">〜ぐ &nbsp;<span style="color:var(--mist);font-size:11px">oyogu, sawagu...</span></div>
+        <div class="dd-item" onclick="setFilter('end-su',this);closeDropdowns()">〜す &nbsp;<span style="color:var(--mist);font-size:11px">hanasu, nokosu...</span></div>
+        <div class="dd-item" onclick="setFilter('end-tsu',this);closeDropdowns()">〜つ &nbsp;<span style="color:var(--mist);font-size:11px">matsu, motsu...</span></div>
+        <div class="dd-item" onclick="setFilter('end-nu',this);closeDropdowns()">〜ぬ / 〜む &nbsp;<span style="color:var(--mist);font-size:11px">nayamu, kurushimu...</span></div>
+        <div class="dd-item" onclick="setFilter('end-bu',this);closeDropdowns()">〜ぶ &nbsp;<span style="color:var(--mist);font-size:11px">sakebu, manabu...</span></div>
+        <div class="dd-item" onclick="setFilter('end-suru',this);closeDropdowns()">〜する &nbsp;<span style="color:var(--mist);font-size:11px">semua kata kerja suru</span></div>
+        <div class="dd-item" onclick="setFilter('end-i',this);closeDropdowns()">〜い &nbsp;<span style="color:var(--mist);font-size:11px">takai, hiroi, furui...</span></div>
+
         <div class="dd-divider"></div>
-        <div style="font-size:10px;color:var(--mist);padding:6px 12px;letter-spacing:1px">BUNYI KATA MIRIP</div>
+        <div style="font-size:10px;color:var(--mist);padding:6px 12px;letter-spacing:1px;font-weight:700">漢字 AWALAN SAMA</div>
+        <div class="dd-item" onclick="setFilter('pref-hen',this);closeDropdowns()">変〜 &nbsp;<span style="color:var(--mist);font-size:11px">変更・変化・変換</span></div>
+        <div class="dd-item" onclick="setFilter('pref-kan',this);closeDropdowns()">感〜 &nbsp;<span style="color:var(--mist);font-size:11px">感動・感謝・感心・感覚</span></div>
+        <div class="dd-item" onclick="setFilter('pref-kan2',this);closeDropdowns()">完〜 &nbsp;<span style="color:var(--mist);font-size:11px">完了・完成</span></div>
+        <div class="dd-item" onclick="setFilter('pref-sei',this);closeDropdowns()">成〜 &nbsp;<span style="color:var(--mist);font-size:11px">成功・成長・成績</span></div>
+        <div class="dd-item" onclick="setFilter('pref-shu',this);closeDropdowns()">集〜 &nbsp;<span style="color:var(--mist);font-size:11px">集中・集団</span></div>
+        <div class="dd-item" onclick="setFilter('pref-shin',this);closeDropdowns()">信〜 &nbsp;<span style="color:var(--mist);font-size:11px">信頼・信用・信じる</span></div>
+        <div class="dd-item" onclick="setFilter('pref-chi',this);closeDropdowns()">知〜 &nbsp;<span style="color:var(--mist);font-size:11px">知識・知能・知恵</span></div>
+        <div class="dd-item" onclick="setFilter('pref-kai',this);closeDropdowns()">解〜/会〜 &nbsp;<span style="color:var(--mist);font-size:11px">解決・会合・解く</span></div>
+        <div class="dd-item" onclick="setFilter('pref-hatsu',this);closeDropdowns()">発〜 &nbsp;<span style="color:var(--mist);font-size:11px">発展・発表・発見</span></div>
+        <div class="dd-item" onclick="setFilter('pref-ki',this);closeDropdowns()">記〜/気〜/期〜 &nbsp;<span style="color:var(--mist);font-size:11px">記録・気付く・期待</span></div>
+        <div class="dd-item" onclick="setFilter('pref-ko',this);closeDropdowns()">行〜/公〜/交〜 &nbsp;<span style="color:var(--mist);font-size:11px">行動・交換・公告</span></div>
+
+        <div class="dd-divider"></div>
+        <div style="font-size:10px;color:var(--mist);padding:6px 12px;letter-spacing:1px;font-weight:700">漢字 AKHIRAN SAMA</div>
+        <div class="dd-item" onclick="setFilter('suf-suru',this);closeDropdowns()">〜する &nbsp;<span style="color:var(--mist);font-size:11px">semua verb suru</span></div>
+        <div class="dd-item" onclick="setFilter('suf-ka',this);closeDropdowns()">〜化 &nbsp;<span style="color:var(--mist);font-size:11px">変化・文化</span></div>
+        <div class="dd-item" onclick="setFilter('suf-ryoku',this);closeDropdowns()">〜力 &nbsp;<span style="color:var(--mist);font-size:11px">努力・能力・協力</span></div>
+        <div class="dd-item" onclick="setFilter('suf-ki',this);closeDropdowns()">〜気 &nbsp;<span style="color:var(--mist);font-size:11px">元気・人気・空気</span></div>
+        <div class="dd-item" onclick="setFilter('suf-teki',this);closeDropdowns()">〜的 &nbsp;<span style="color:var(--mist);font-size:11px">積極的・伝統的</span></div>
+
+        <div class="dd-divider"></div>
+        <div style="font-size:10px;color:var(--mist);padding:6px 12px;letter-spacing:1px;font-weight:700">🔊 BUNYI KATA MIRIP</div>
         <div class="dd-item" onclick="setFilter('mirip-kiku',this);closeDropdowns()">👂 聞く・効く・利く</div>
         <div class="dd-item" onclick="setFilter('mirip-miru',this);closeDropdowns()">👁️ 見る・観る・眺める</div>
         <div class="dd-item" onclick="setFilter('mirip-kaeru',this);closeDropdowns()">🔄 帰る・変える・換える</div>
         <div class="dd-item" onclick="setFilter('mirip-au',this);closeDropdowns()">🤝 合う・会う・似合う</div>
-        <div class="dd-divider"></div>
-        <div style="font-size:10px;color:var(--mist);padding:6px 12px;letter-spacing:1px">POLA AKHIRAN</div>
-        <div class="dd-item" onclick="setFilter('mirip-suru',this);closeDropdowns()">⚙️ Semua 〜する</div>
-        <div class="dd-item" onclick="setFilter('mirip-vowel-i',this);closeDropdowns()">🔠 Berakhiran -i (〜い)</div>
-        <div class="dd-item" onclick="setFilter('mirip-vowel-u',this);closeDropdowns()">Berakhiran -u (〜う)</div>
       </div>
     </div>
 
@@ -1525,6 +1630,18 @@ nav button.active {
       <input id="chat-input" placeholder="Tanya sensei... (mis: apa beda 見る dan 眺める?)" onkeydown="if(event.key==='Enter')sendMsg()">
       <button class="chat-send" id="chat-send" onclick="sendMsg()">↑</button>
     </div>
+  </div>
+</div>
+
+<!-- ====== LEVEL UP OVERLAY ====== -->
+<div class="level-up-overlay" id="level-up-overlay" onclick="closeLevelUp()">
+  <div class="level-up-box" onclick="event.stopPropagation()">
+    <div class="level-up-stars" id="lu-stars">🎉</div>
+    <div class="level-up-title">LEVEL UP！</div>
+    <div class="level-up-name" id="lu-name">学習者</div>
+    <div class="level-up-sub" id="lu-sub">Level 3 — Pelajar Aktif</div>
+    <div class="level-up-desc" id="lu-desc">Kamu sudah hafal 200 kata N3!<br>Terus semangat menuju Level 4 💪</div>
+    <button class="level-up-close" onclick="closeLevelUp()">よし！続けよう 🔥</button>
   </div>
 </div>
 
@@ -2316,6 +2433,102 @@ function countMastered(cat) {
 function totalAll() { return 242 + 389 + 140; }
 function masteredAll() { return countMastered('kanji') + countMastered('vocab') + countMastered('grammar'); }
 
+// ============================================================
+// LEVEL SYSTEM
+// ============================================================
+const LEVELS = [
+  { lv:1, min:0,   max:100, jp:'見習い',       id:'Pemula',         cls:'lv1', stars:'📖', color:'#888' },
+  { lv:2, min:100, max:200, jp:'初学者',       id:'Pelajar',        cls:'lv2', stars:'📘', color:'#2c7ac8' },
+  { lv:3, min:200, max:350, jp:'学習者',       id:'Pelajar Aktif',  cls:'lv3', stars:'📗', color:'#2da050' },
+  { lv:4, min:350, max:500, jp:'中級者',       id:'Menengah',       cls:'lv4', stars:'📙', color:'#a09000' },
+  { lv:5, min:500, max:650, jp:'上級者',       id:'Mahir',          cls:'lv5', stars:'🔶', color:'#c06000' },
+  { lv:6, min:650, max:771, jp:'達人',         id:'Ahli N3',        cls:'lv6', stars:'🔴', color:'var(--red)' },
+  { lv:7, min:771, max:771, jp:'満点マスター', id:'Master N3',      cls:'lv7', stars:'🌟', color:'var(--gold)' },
+];
+
+function getLevel(totalMastered) {
+  for (let i = LEVELS.length - 1; i >= 0; i--) {
+    if (totalMastered >= LEVELS[i].min) return LEVELS[i];
+  }
+  return LEVELS[0];
+}
+
+function getLevelBadgeHTML(totalMastered) {
+  const lv = getLevel(totalMastered);
+  return `<span class="level-badge ${lv.cls}">Lv.${lv.lv} ${lv.jp}</span>`;
+}
+
+let lastKnownLevel = 1;
+
+function checkLevelUp(oldTotal, newTotal) {
+  const oldLv = getLevel(oldTotal);
+  const newLv = getLevel(newTotal);
+  if (newLv.lv > oldLv.lv) {
+    showLevelUp(newLv, newTotal);
+  }
+}
+
+function showLevelUp(lv, total) {
+  document.getElementById('lu-stars').textContent = lv.stars;
+  document.getElementById('lu-name').textContent = lv.jp;
+  document.getElementById('lu-sub').textContent = `Level ${lv.lv} — ${lv.id}`;
+  const nextLv = LEVELS.find(l => l.lv === lv.lv + 1);
+  const nextMsg = nextLv ? `${nextLv.min - total} kata lagi untuk Level ${nextLv.lv}` : 'Kamu sudah mencapai level tertinggi! 🏆';
+  document.getElementById('lu-desc').innerHTML = `Kamu sudah hafal <b>${total}</b> kata N3!<br>${nextMsg}`;
+  document.getElementById('level-up-overlay').classList.add('show');
+  // Save level to Firestore
+  if (currentUser && db) {
+    db.collection('users').doc(currentUser.uid).update({ currentLevel: lv.lv }).catch(()=>{});
+  }
+}
+
+function closeLevelUp() {
+  document.getElementById('level-up-overlay').classList.remove('show');
+}
+
+function updateLevelUI(total) {
+  const lv = getLevel(total);
+  const nextLv = LEVELS.find(l => l.lv === lv.lv + 1);
+
+  // Badge
+  const badge = document.getElementById('ov-level-badge');
+  if (badge) {
+    badge.className = `level-badge ${lv.cls}`;
+    badge.textContent = `Lv.${lv.lv} ${lv.jp}`;
+  }
+  const lvBg = document.getElementById('ov-lvl-jp-bg');
+  if (lvBg) lvBg.textContent = lv.jp[0] || '学';
+
+  if (document.getElementById('ov-level-name'))
+    document.getElementById('ov-level-name').textContent = lv.id;
+
+  // XP
+  if (document.getElementById('ov-xp'))
+    document.getElementById('ov-xp').textContent = total;
+
+  // Progress to next level
+  if (nextLv) {
+    const xpInLevel = total - lv.min;
+    const xpNeeded  = nextLv.min - lv.min;
+    const pct = Math.min(Math.round(xpInLevel / xpNeeded * 100), 100);
+    if (document.getElementById('ov-xp-bar'))
+      document.getElementById('ov-xp-bar').style.width = pct + '%';
+    if (document.getElementById('ov-xp-cur'))
+      document.getElementById('ov-xp-cur').textContent = `${xpInLevel} / ${xpNeeded} XP`;
+    if (document.getElementById('ov-xp-next'))
+      document.getElementById('ov-xp-next').textContent = `Level ${nextLv.lv}`;
+    if (document.getElementById('ov-next-level'))
+      document.getElementById('ov-next-level').textContent = `${nextLv.min - total} kata lagi untuk Level ${nextLv.lv} ★`;
+  } else {
+    if (document.getElementById('ov-xp-bar'))
+      document.getElementById('ov-xp-bar').style.width = '100%';
+    if (document.getElementById('ov-next-level'))
+      document.getElementById('ov-next-level').textContent = '🌟 Level Maksimum! N3 Master!';
+    if (document.getElementById('ov-xp-cur'))
+      document.getElementById('ov-xp-cur').textContent = `${total} / ${totalAll()} XP`;
+  }
+}
+
 function updateOverview() {
   const total = totalAll();
   const done  = masteredAll();
@@ -2332,6 +2545,9 @@ function updateOverview() {
   document.getElementById('bar-douji').style.width  = Math.min(Math.round(kd/242*100),100)+'%';
   document.getElementById('bar-meishi').style.width = Math.min(Math.round(vd/389*100),100)+'%';
   document.getElementById('bar-keiyou').style.width = Math.min(Math.round(gd/140*100),100)+'%';
+
+  // Update level UI
+  updateLevelUI(done);
 
   // Load mini leaderboard & members (async, non-blocking)
   loadDashboardLeaderboard();
@@ -2490,8 +2706,9 @@ function markCard(isHafal) {
     masteredCat: sessionCat,
     masteredWas: wasMastered
   });
-  // Keep history max 10
   if (sessionHistory.length > 10) sessionHistory.shift();
+
+  const oldTotal = masteredAll();
 
   if (isHafal) {
     mastered[sessionCat][w.id] = true;
@@ -2499,6 +2716,8 @@ function markCard(isHafal) {
   } else {
     delete mastered[sessionCat][w.id];
   }
+
+  const newTotal = masteredAll();
 
   const today = new Date().toDateString();
   if (lastStudyDate !== today) {
@@ -2508,6 +2727,8 @@ function markCard(isHafal) {
   }
 
   save();
+  // Check for level up
+  if (isHafal && !wasMastered) checkLevelUp(oldTotal, newTotal);
   sessionReviewed++;
   sessionIdx++;
   showCard();
@@ -2789,23 +3010,57 @@ const TEMA = {
 
 // Grup pelafalan mirip — expanded
 const MIRIP = {
-  'mirip-kiku':   w => ['聞く','効く','利く'].includes(w.jp) || w.rom === 'kiku',
-  'mirip-miru':   w => ['見る','観る','眺める'].includes(w.jp),
-  'mirip-kaeru':  w => ['帰る','変える','換える','返る','代える'].includes(w.jp),
-  'mirip-suru':   w => w.rom.endsWith('suru') || w.jp.endsWith('する'),
-  'mirip-au':     w => ['合う','会う','似合う','出会う','話し合う','合わせる'].includes(w.jp),
-  'mirip-iru':    w => ['要る','居る','入る'].includes(w.jp),
-  'mirip-ou':     w => ['追う','覆う','負う','思う'].includes(w.jp),
-  'mirip-vowel-i':w => { const r=w.rom.replace(/\s.*/,''); return r.endsWith('i') || r.endsWith('ii'); },
-  'mirip-vowel-u':w => { const r=w.rom.replace(/\s.*/,''); return r.endsWith('u') && !r.endsWith('suru'); },
-  // Kanji depan sama
-  'mirip-hen':    w => w.jp.startsWith('変'),
-  'mirip-kan':    w => w.jp.startsWith('感'),
-  'mirip-kan2':   w => w.jp.startsWith('完'),
-  'mirip-sei':    w => w.jp.startsWith('成'),
-  'mirip-shu':    w => w.jp.startsWith('集'),
-  'mirip-shin':   w => w.jp.startsWith('信'),
-  'mirip-chi':    w => w.jp.startsWith('知'),
+  // Bunyi kata mirip
+  'mirip-kiku':  w => ['聞く','効く','利く'].includes(w.jp),
+  'mirip-miru':  w => ['見る','観る','眺める'].includes(w.jp),
+  'mirip-kaeru': w => ['帰る','変える','換える','返る','代える'].includes(w.jp),
+  'mirip-suru':  w => w.rom.endsWith('suru') || w.jp.endsWith('する'),
+  'mirip-au':    w => ['合う','会う','似合う','出会う','話し合う','合わせる'].includes(w.jp),
+
+  // Akhiran vokal/kana sama
+  'end-ru':   w => { const j=w.jp.replace(/する$/,''); return j.endsWith('る') && !j.endsWith('する'); },
+  'end-u':    w => { const j=w.jp; return (j.endsWith('う')||j.endsWith('おう')||j.endsWith('らう')) && !j.endsWith('する'); },
+  'end-ku':   w => w.jp.endsWith('く') && !w.jp.endsWith('する'),
+  'end-gu':   w => w.jp.endsWith('ぐ'),
+  'end-su':   w => w.jp.endsWith('す') && !w.jp.endsWith('する'),
+  'end-tsu':  w => w.jp.endsWith('つ'),
+  'end-nu':   w => w.jp.endsWith('む') || w.jp.endsWith('ぬ'),
+  'end-bu':   w => w.jp.endsWith('ぶ'),
+  'end-suru': w => w.jp.endsWith('する') || w.rom.endsWith('suru'),
+  'end-i':    w => { const j=w.jp; return j.endsWith('い') && !j.endsWith('する'); },
+
+  // Awalan kanji sama
+  'pref-hen':   w => w.jp.startsWith('変'),
+  'pref-kan':   w => w.jp.startsWith('感'),
+  'pref-kan2':  w => w.jp.startsWith('完'),
+  'pref-sei':   w => w.jp.startsWith('成'),
+  'pref-shu':   w => w.jp.startsWith('集'),
+  'pref-shin':  w => w.jp.startsWith('信'),
+  'pref-chi':   w => w.jp.startsWith('知'),
+  'pref-kai':   w => w.jp.startsWith('解') || w.jp.startsWith('会'),
+  'pref-hatsu': w => w.jp.startsWith('発'),
+  'pref-ki':    w => w.jp.startsWith('記') || w.jp.startsWith('気') || w.jp.startsWith('期'),
+  'pref-ko':    w => w.jp.startsWith('行') || w.jp.startsWith('交') || w.jp.startsWith('公') || w.jp.startsWith('講'),
+
+  // Akhiran kanji sama
+  'suf-suru':  w => w.jp.endsWith('する'),
+  'suf-ka':    w => w.jp.endsWith('化'),
+  'suf-ryoku': w => w.jp.endsWith('力'),
+  'suf-ki':    w => w.jp.endsWith('気'),
+  'suf-teki':  w => w.jp.endsWith('的'),
+
+  // Legacy (kept for flashmenu cards)
+  'mirip-iru':       w => ['要る','居る','入る'].includes(w.jp),
+  'mirip-ou':        w => ['追う','覆う','負う','思う'].includes(w.jp),
+  'mirip-vowel-i':   w => { const r=w.rom.replace(/\s.*/,''); return r.endsWith('i')||r.endsWith('ii'); },
+  'mirip-vowel-u':   w => { const r=w.rom.replace(/\s.*/,''); return r.endsWith('u')&&!r.endsWith('suru'); },
+  'mirip-hen':  w => w.jp.startsWith('変'),
+  'mirip-kan':  w => w.jp.startsWith('感'),
+  'mirip-kan2': w => w.jp.startsWith('完'),
+  'mirip-sei':  w => w.jp.startsWith('成'),
+  'mirip-shu':  w => w.jp.startsWith('集'),
+  'mirip-shin': w => w.jp.startsWith('信'),
+  'mirip-chi':  w => w.jp.startsWith('知'),
 };
 
 function setFilter(f, btn) {
@@ -3016,19 +3271,17 @@ function renderLbRow(u, idx) {
   const isMe  = u.uid === currentUser?.uid;
   const total = u.totalMastered || 0;
   const pct   = Math.round(total / 771 * 100);
+  const lv    = getLevel(total);
 
-  // Rank number styling
   let rankClass = '', rankIcon = '#' + rank;
   if (rank === 1) { rankClass = 'gold';   rankIcon = '🥇'; }
   if (rank === 2) { rankClass = 'silver'; rankIcon = '🥈'; }
   if (rank === 3) { rankClass = 'bronze'; rankIcon = '🥉'; }
 
-  // Avatar
   const avHtml = u.photoURL
     ? `<img src="${u.photoURL}" alt="av">`
     : (u.displayName || 'U')[0].toUpperCase();
 
-  // Last seen
   let lastSeen = '';
   if (u.lastSeen?.toDate) {
     const diff = Math.floor((Date.now() - u.lastSeen.toDate()) / 86400000);
@@ -3040,7 +3293,7 @@ function renderLbRow(u, idx) {
     <div class="lb-rank-num ${rankClass}">${rankIcon}</div>
     <div class="lb-avatar">${avHtml}</div>
     <div class="lb-info">
-      <div class="lb-name">${u.displayName || 'Pelajar'}</div>
+      <div class="lb-name">${u.displayName || 'Pelajar'} &nbsp;<span class="level-badge ${lv.cls}" style="font-size:10px;padding:2px 8px">Lv.${lv.lv} ${lv.jp}</span></div>
       <div class="lb-sub">${lastSeen} &nbsp;·&nbsp; 🔥 ${u.streak||0} hari &nbsp;·&nbsp; ${pct}% selesai</div>
     </div>
     <div class="lb-score">
@@ -3056,9 +3309,11 @@ function renderMemberCard(u) {
     : (u.displayName || 'U')[0].toUpperCase();
   const total = u.totalMastered || 0;
   const isMe  = u.uid === currentUser?.uid;
+  const lv    = getLevel(total);
   return `<div class="member-card" ${isMe ? 'style="border-color:var(--gold)"' : ''}>
     <div class="av">${avHtml}</div>
     <div class="nm">${u.displayName || 'Pelajar'} ${isMe ? '⭐' : ''}</div>
+    <div style="margin:4px 0"><span class="level-badge ${lv.cls}" style="font-size:10px;padding:2px 8px">Lv.${lv.lv} ${lv.jp}</span></div>
     <div class="sc">${total} / 771 kata</div>
     <div class="sc">🔥 ${u.streak||0} hari</div>
   </div>`;
