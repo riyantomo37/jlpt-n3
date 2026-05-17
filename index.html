@@ -754,6 +754,48 @@ nav button.active {
 .member-card .nm { font-size:12px; font-weight:600; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
 .member-card .sc { font-family:'DM Mono',monospace; font-size:11px; color:var(--mist); margin-top:2px; }
 
+/* ===== DROPDOWN FILTER ===== */
+.dd-btn {
+  padding:8px 14px;
+  border:1px solid var(--border);
+  border-radius:8px;
+  background:white;
+  font-family:'Noto Sans JP',sans-serif;
+  font-size:13px;
+  cursor:pointer;
+  transition:all .2s;
+  color:var(--ink);
+  white-space:nowrap;
+}
+.dd-btn:hover, .dd-btn.active { border-color:var(--indigo); color:var(--indigo); background:rgba(44,62,122,.05); }
+.dropdown-panel {
+  display:none;
+  position:absolute;
+  top:calc(100% + 6px);
+  left:0;
+  background:white;
+  border:1px solid var(--border);
+  border-radius:12px;
+  box-shadow:0 8px 32px rgba(26,26,46,.12);
+  z-index:100;
+  min-width:200px;
+  padding:6px;
+  max-height:360px;
+  overflow-y:auto;
+}
+.dropdown-panel.open { display:block; }
+.dd-item {
+  padding:9px 12px;
+  border-radius:8px;
+  font-size:13px;
+  cursor:pointer;
+  transition:background .15s;
+  color:var(--ink);
+}
+.dd-item:hover { background:var(--cream); }
+.dd-item.active { background:rgba(44,62,122,.08); color:var(--indigo); font-weight:600; }
+.dd-divider { height:1px; background:var(--border); margin:4px 0; }
+
 /* ===== TEMA CARDS ===== */
 .tema-card {
   background:white;
@@ -1188,6 +1230,9 @@ nav button.active {
       <button class="btn-no" onclick="markCard(false)">✗ &nbsp; Belum Hafal</button>
       <button class="btn-yes" onclick="markCard(true)">✓ &nbsp; Sudah Hafal!</button>
     </div>
+    <div style="margin-top:10px;text-align:center">
+      <button id="btn-prev-card" onclick="prevCard()" style="border:1px solid var(--border);background:white;padding:7px 18px;border-radius:8px;cursor:pointer;font-family:inherit;font-size:12px;color:var(--mist);display:none">← Kata Sebelumnya</button>
+    </div>
     <div class="session-info">
       <span id="sess-left">Sisa: --</span>
       <span id="sess-done">Sesi ini: 0</span>
@@ -1380,44 +1425,86 @@ nav button.active {
 <div id="screen-review" class="screen">
   <div class="section-title" style="margin-bottom:12px">Semua Kata N3</div>
 
-  <!-- Filter Kategori -->
-  <div style="font-size:11px;color:var(--mist);letter-spacing:1px;text-transform:uppercase;margin-bottom:6px">Kategori</div>
-  <div class="filter-bar" style="margin-bottom:12px">
-    <button class="filter-btn active" onclick="setFilter('all',this)">Semua</button>
-    <button class="filter-btn" onclick="setFilter('kanji',this)">動詞 Kata Kerja</button>
-    <button class="filter-btn" onclick="setFilter('vocab',this)">名詞 Kata Benda</button>
-    <button class="filter-btn" onclick="setFilter('grammar',this)">形容詞 Kata Sifat</button>
-    <button class="filter-btn" onclick="setFilter('done',this)">✓ Sudah Hafal</button>
-    <button class="filter-btn" onclick="setFilter('todo',this)">✗ Belum Hafal</button>
+  <!-- Search Bar -->
+  <div style="position:relative;margin-bottom:14px">
+    <input id="search-input" type="text" placeholder="🔍  Cari kanji, romaji, atau arti... (mis: 食べる / taberu / makan)"
+      style="width:100%;padding:12px 16px 12px 16px;border:2px solid var(--border);border-radius:12px;font-family:'Noto Sans JP',sans-serif;font-size:14px;outline:none;background:white;box-sizing:border-box;transition:border-color .2s"
+      oninput="onSearch(this.value)"
+      onfocus="this.style.borderColor='var(--indigo)'"
+      onblur="this.style.borderColor='var(--border)'">
+    <button onclick="clearSearch()" id="search-clear" style="display:none;position:absolute;right:12px;top:50%;transform:translateY(-50%);border:none;background:none;cursor:pointer;font-size:18px;color:var(--mist)">✕</button>
   </div>
 
-  <!-- Filter Tema -->
-  <div style="font-size:11px;color:var(--mist);letter-spacing:1px;text-transform:uppercase;margin-bottom:6px">🏷️ Filter Tema</div>
-  <div class="filter-bar" style="margin-bottom:12px">
-    <button class="filter-btn" onclick="setFilter('tema-perasaan',this)">😊 Perasaan</button>
-    <button class="filter-btn" onclick="setFilter('tema-kerja',this)">💼 Pekerjaan</button>
-    <button class="filter-btn" onclick="setFilter('tema-belajar',this)">📚 Pendidikan</button>
-    <button class="filter-btn" onclick="setFilter('tema-sosial',this)">🤝 Sosial</button>
-    <button class="filter-btn" onclick="setFilter('tema-kesehatan',this)">🏥 Kesehatan</button>
-    <button class="filter-btn" onclick="setFilter('tema-uang',this)">💰 Uang</button>
-    <button class="filter-btn" onclick="setFilter('tema-gerak',this)">🏃 Gerak</button>
-    <button class="filter-btn" onclick="setFilter('tema-alam',this)">🌿 Alam</button>
-    <button class="filter-btn" onclick="setFilter('tema-komunikasi',this)">💬 Komunikasi</button>
-    <button class="filter-btn" onclick="setFilter('tema-waktu',this)">⏰ Waktu</button>
-  </div>
+  <!-- Filter Dropdown -->
+  <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px">
+    <!-- Kategori dropdown -->
+    <div style="position:relative">
+      <button onclick="toggleDropdown('dd-kategori')" class="dd-btn" id="lbl-kategori">
+        📂 Kategori <span style="font-size:10px">▾</span>
+      </button>
+      <div class="dropdown-panel" id="dd-kategori">
+        <div class="dd-item active" onclick="setFilter('all',this);closeDropdowns()">Semua (771)</div>
+        <div class="dd-item" onclick="setFilter('kanji',this);closeDropdowns()">動詞 Kata Kerja (242)</div>
+        <div class="dd-item" onclick="setFilter('vocab',this);closeDropdowns()">名詞 Kata Benda (389)</div>
+        <div class="dd-item" onclick="setFilter('grammar',this);closeDropdowns()">形容詞 Kata Sifat (140)</div>
+        <div class="dd-divider"></div>
+        <div class="dd-item" onclick="setFilter('done',this);closeDropdowns()">✓ Sudah Hafal</div>
+        <div class="dd-item" onclick="setFilter('todo',this);closeDropdowns()">✗ Belum Hafal</div>
+      </div>
+    </div>
 
-  <!-- Filter Pelafalan Mirip -->
-  <div style="font-size:11px;color:var(--mist);letter-spacing:1px;text-transform:uppercase;margin-bottom:6px">🔤 Pelafalan Mirip (sering tertukar)</div>
-  <div class="filter-bar" style="margin-bottom:16px">
-    <button class="filter-btn" onclick="setFilter('mirip-kiku',this)">聞く・効く・利く</button>
-    <button class="filter-btn" onclick="setFilter('mirip-miru',this)">見る・観る・眺める</button>
-    <button class="filter-btn" onclick="setFilter('mirip-kaeru',this)">帰る・変える・換える</button>
-    <button class="filter-btn" onclick="setFilter('mirip-suru',this)">〜する 動詞</button>
-    <button class="filter-btn" onclick="setFilter('mirip-au',this)">合う・会う・似合う</button>
-    <button class="filter-btn" onclick="setFilter('mirip-iru',this)">要る・居る・入る</button>
-    <button class="filter-btn" onclick="setFilter('mirip-ou',this)">追う・覆う・負う</button>
-    <button class="filter-btn" onclick="setFilter('mirip-vowel-i',this)">vocal -i (〜い)</button>
-    <button class="filter-btn" onclick="setFilter('mirip-vowel-u',this)">vocal -u (〜う)</button>
+    <!-- Tema dropdown -->
+    <div style="position:relative">
+      <button onclick="toggleDropdown('dd-tema')" class="dd-btn" id="lbl-tema">
+        🏷️ Tema <span style="font-size:10px">▾</span>
+      </button>
+      <div class="dropdown-panel" id="dd-tema">
+        <div class="dd-item" onclick="setFilter('tema-perasaan',this);closeDropdowns()">😊 Perasaan & Emosi</div>
+        <div class="dd-item" onclick="setFilter('tema-kerja',this);closeDropdowns()">💼 Pekerjaan</div>
+        <div class="dd-item" onclick="setFilter('tema-belajar',this);closeDropdowns()">📚 Pendidikan</div>
+        <div class="dd-item" onclick="setFilter('tema-sosial',this);closeDropdowns()">🤝 Sosial</div>
+        <div class="dd-item" onclick="setFilter('tema-kesehatan',this);closeDropdowns()">🏥 Kesehatan</div>
+        <div class="dd-item" onclick="setFilter('tema-uang',this);closeDropdowns()">💰 Uang & Ekonomi</div>
+        <div class="dd-item" onclick="setFilter('tema-gerak',this);closeDropdowns()">🏃 Gerak & Pergi</div>
+        <div class="dd-item" onclick="setFilter('tema-alam',this);closeDropdowns()">🌿 Alam</div>
+        <div class="dd-item" onclick="setFilter('tema-komunikasi',this);closeDropdowns()">💬 Komunikasi</div>
+        <div class="dd-item" onclick="setFilter('tema-waktu',this);closeDropdowns()">⏰ Waktu</div>
+      </div>
+    </div>
+
+    <!-- Pelafalan Mirip dropdown -->
+    <div style="position:relative">
+      <button onclick="toggleDropdown('dd-mirip')" class="dd-btn" id="lbl-mirip">
+        🔤 Pelafalan Mirip <span style="font-size:10px">▾</span>
+      </button>
+      <div class="dropdown-panel" id="dd-mirip" style="min-width:260px">
+        <div style="font-size:10px;color:var(--mist);padding:6px 12px;letter-spacing:1px">VOKAL SAMA DI DEPAN</div>
+        <div class="dd-item" onclick="setFilter('mirip-hen',this);closeDropdowns()">変〜 : 変更・変化・変更・変身</div>
+        <div class="dd-item" onclick="setFilter('mirip-kan',this);closeDropdowns()">感〜 : 感動・感謝・感心・感覚</div>
+        <div class="dd-item" onclick="setFilter('mirip-kan2',this);closeDropdowns()">完〜 : 完了・完成・完全</div>
+        <div class="dd-item" onclick="setFilter('mirip-sei',this);closeDropdowns()">成〜 : 成功・成長・成績</div>
+        <div class="dd-item" onclick="setFilter('mirip-shu',this);closeDropdowns()">集〜 : 集中・集団・集合</div>
+        <div class="dd-item" onclick="setFilter('mirip-shin',this);closeDropdowns()">信〜 : 信頼・信用・信じる</div>
+        <div class="dd-item" onclick="setFilter('mirip-chi',this);closeDropdowns()">知〜 : 知識・知能・知恵</div>
+        <div class="dd-divider"></div>
+        <div style="font-size:10px;color:var(--mist);padding:6px 12px;letter-spacing:1px">BUNYI KATA MIRIP</div>
+        <div class="dd-item" onclick="setFilter('mirip-kiku',this);closeDropdowns()">👂 聞く・効く・利く</div>
+        <div class="dd-item" onclick="setFilter('mirip-miru',this);closeDropdowns()">👁️ 見る・観る・眺める</div>
+        <div class="dd-item" onclick="setFilter('mirip-kaeru',this);closeDropdowns()">🔄 帰る・変える・換える</div>
+        <div class="dd-item" onclick="setFilter('mirip-au',this);closeDropdowns()">🤝 合う・会う・似合う</div>
+        <div class="dd-divider"></div>
+        <div style="font-size:10px;color:var(--mist);padding:6px 12px;letter-spacing:1px">POLA AKHIRAN</div>
+        <div class="dd-item" onclick="setFilter('mirip-suru',this);closeDropdowns()">⚙️ Semua 〜する</div>
+        <div class="dd-item" onclick="setFilter('mirip-vowel-i',this);closeDropdowns()">🔠 Berakhiran -i (〜い)</div>
+        <div class="dd-item" onclick="setFilter('mirip-vowel-u',this);closeDropdowns()">Berakhiran -u (〜う)</div>
+      </div>
+    </div>
+
+    <!-- Active filter badge -->
+    <div id="active-filter-badge" style="display:none;align-items:center;gap:6px;background:rgba(44,62,122,.1);color:var(--indigo);padding:7px 12px;border-radius:8px;font-size:12px;font-weight:600">
+      <span id="active-filter-text"></span>
+      <button onclick="resetFilter()" style="border:none;background:none;cursor:pointer;color:var(--indigo);font-size:14px;padding:0;line-height:1">✕</button>
+    </div>
   </div>
 
   <div style="font-size:12px;color:var(--mist);margin-bottom:14px" id="review-count">Menampilkan 771 kata</div>
@@ -2322,6 +2409,7 @@ function startStudy(cat) {
   sessionCat = cat;
   sessionReviewed = 0;
   sessionMastered = 0;
+  sessionHistory = [];
   revealed = false;
 
   // Build queue: unmastered first (shuffled), then mastered (shuffled)
@@ -2361,8 +2449,8 @@ function showCard() {
   revealed = false;
 
   document.getElementById('fc-word').textContent = w.jp;
-  document.getElementById('fc-romaji').textContent = w.rom;       // depan — tersembunyi saat revealed
-  document.getElementById('fc-romaji-back').textContent = w.rom;  // belakang — muncul bersama arti
+  document.getElementById('fc-romaji').textContent = w.rom;
+  document.getElementById('fc-romaji-back').textContent = w.rom;
   document.getElementById('fc-meaning').textContent = w.id_;
 
   const fc = document.getElementById('flashcard');
@@ -2370,7 +2458,10 @@ function showCard() {
   document.getElementById('action-row').classList.add('hidden');
   document.getElementById('tap-hint').classList.remove('hide');
 
-  // Update progress bar
+  // Show/hide prev button
+  const prevBtn = document.getElementById('btn-prev-card');
+  if (prevBtn) prevBtn.style.display = sessionHistory.length > 0 ? 'inline-block' : 'none';
+
   const pct = (sessionIdx / sessionQueue.length * 100);
   document.getElementById('flash-prog-fill').style.width = pct + '%';
   document.getElementById('sess-left').textContent = `Sisa: ${sessionQueue.length - sessionIdx}`;
@@ -2388,7 +2479,19 @@ function revealCard() {
 
 function markCard(isHafal) {
   const w = sessionQueue[sessionIdx];
-  const wasMastered = mastered[sessionCat][w.id];
+  const wasMastered = !!mastered[sessionCat][w.id];
+
+  // Push to history before changing state
+  sessionHistory.push({
+    idx: sessionIdx,
+    reviewed: sessionReviewed,
+    mastered: sessionMastered,
+    masteredId: w.id,
+    masteredCat: sessionCat,
+    masteredWas: wasMastered
+  });
+  // Keep history max 10
+  if (sessionHistory.length > 10) sessionHistory.shift();
 
   if (isHafal) {
     mastered[sessionCat][w.id] = true;
@@ -2397,7 +2500,6 @@ function markCard(isHafal) {
     delete mastered[sessionCat][w.id];
   }
 
-  // Update streak
   const today = new Date().toDateString();
   if (lastStudyDate !== today) {
     const yesterday = new Date(Date.now() - 86400000).toDateString();
@@ -2559,7 +2661,76 @@ function exitKanjiFlash() { gotoScreen('kanjimenu'); }
 // ============================================================
 // REVIEW SCREEN
 // ============================================================
-let currentFilter = 'all';
+// ============================================================
+// SEARCH
+// ============================================================
+let searchQuery = '';
+
+function onSearch(val) {
+  searchQuery = val.trim().toLowerCase();
+  document.getElementById('search-clear').style.display = val ? 'block' : 'none';
+  renderReview(currentFilter);
+}
+
+function clearSearch() {
+  document.getElementById('search-input').value = '';
+  searchQuery = '';
+  document.getElementById('search-clear').style.display = 'none';
+  renderReview(currentFilter);
+}
+
+// ============================================================
+// DROPDOWN HELPERS
+// ============================================================
+function toggleDropdown(id) {
+  const el = document.getElementById(id);
+  const wasOpen = el.classList.contains('open');
+  closeDropdowns();
+  if (!wasOpen) el.classList.add('open');
+}
+
+function closeDropdowns() {
+  document.querySelectorAll('.dropdown-panel').forEach(p => p.classList.remove('open'));
+}
+
+// Close when clicking outside
+document.addEventListener('click', e => {
+  if (!e.target.closest('.dd-btn') && !e.target.closest('.dropdown-panel')) {
+    closeDropdowns();
+  }
+});
+
+function resetFilter() {
+  currentFilter = 'all';
+  searchQuery = '';
+  if (document.getElementById('search-input')) document.getElementById('search-input').value = '';
+  document.getElementById('active-filter-badge').style.display = 'none';
+  document.querySelectorAll('.dd-item').forEach(i => i.classList.remove('active'));
+  renderReview('all');
+}
+
+// ============================================================
+// FLASHCARD — PREV CARD
+// ============================================================
+let sessionHistory = []; // stack of previous cards
+
+function prevCard() {
+  if (sessionHistory.length === 0) return;
+  // Push current back to front of queue
+  if (sessionIdx > 0) sessionIdx--;
+  // Restore previous state from history
+  const prev = sessionHistory.pop();
+  sessionIdx = prev.idx;
+  sessionReviewed = prev.reviewed;
+  sessionMastered = prev.mastered;
+  // Undo mastered change if needed
+  if (prev.masteredId) {
+    mastered[prev.masteredCat][prev.masteredId] = prev.masteredWas;
+    save();
+  }
+  document.getElementById('btn-prev-card').style.display = sessionHistory.length > 0 ? 'inline-block' : 'none';
+  showCard();
+}
 
 // ============================================================
 // TEMA — mapping kata ke tema
@@ -2616,23 +2787,39 @@ const TEMA = {
   ],
 };
 
-// Grup pelafalan mirip
+// Grup pelafalan mirip — expanded
 const MIRIP = {
-  'mirip-kiku':   w => ['聞く','効く','利く'].includes(w.jp) || w.rom.includes('kiku'),
-  'mirip-miru':   w => ['見る','観る','眺める','見る'].includes(w.jp) || (w.rom.startsWith('mi') && w.jp.includes('る')),
+  'mirip-kiku':   w => ['聞く','効く','利く'].includes(w.jp) || w.rom === 'kiku',
+  'mirip-miru':   w => ['見る','観る','眺める'].includes(w.jp),
   'mirip-kaeru':  w => ['帰る','変える','換える','返る','代える'].includes(w.jp),
   'mirip-suru':   w => w.rom.endsWith('suru') || w.jp.endsWith('する'),
   'mirip-au':     w => ['合う','会う','似合う','出会う','話し合う','合わせる'].includes(w.jp),
   'mirip-iru':    w => ['要る','居る','入る'].includes(w.jp),
   'mirip-ou':     w => ['追う','覆う','負う','思う'].includes(w.jp),
-  'mirip-vowel-i':w => w.rom.endsWith('i') || w.rom.endsWith('ii'),
-  'mirip-vowel-u':w => w.rom.endsWith('u') && !w.rom.endsWith('suru'),
+  'mirip-vowel-i':w => { const r=w.rom.replace(/\s.*/,''); return r.endsWith('i') || r.endsWith('ii'); },
+  'mirip-vowel-u':w => { const r=w.rom.replace(/\s.*/,''); return r.endsWith('u') && !r.endsWith('suru'); },
+  // Kanji depan sama
+  'mirip-hen':    w => w.jp.startsWith('変'),
+  'mirip-kan':    w => w.jp.startsWith('感'),
+  'mirip-kan2':   w => w.jp.startsWith('完'),
+  'mirip-sei':    w => w.jp.startsWith('成'),
+  'mirip-shu':    w => w.jp.startsWith('集'),
+  'mirip-shin':   w => w.jp.startsWith('信'),
+  'mirip-chi':    w => w.jp.startsWith('知'),
 };
 
 function setFilter(f, btn) {
   currentFilter = f;
-  document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
-  btn.classList.add('active');
+  document.querySelectorAll('.dd-item').forEach(i => i.classList.remove('active'));
+  if (btn) btn.classList.add('active');
+  const badge = document.getElementById('active-filter-badge');
+  const badgeTxt = document.getElementById('active-filter-text');
+  if (f === 'all') {
+    badge.style.display = 'none';
+  } else {
+    badge.style.display = 'flex';
+    badgeTxt.textContent = btn?.textContent?.replace('✕','').trim() || f;
+  }
   renderReview(f);
 }
 
@@ -2644,38 +2831,34 @@ function renderReview(filter) {
       words.push({ ...w, cat });
     }
   }
-
-  // Kategori dasar
-  if (filter === 'kanji')  words = words.filter(w => w.cat === 'kanji');
-  if (filter === 'vocab')  words = words.filter(w => w.cat === 'vocab');
+  if (filter === 'kanji')   words = words.filter(w => w.cat === 'kanji');
+  if (filter === 'vocab')   words = words.filter(w => w.cat === 'vocab');
   if (filter === 'grammar') words = words.filter(w => w.cat === 'grammar');
-  if (filter === 'done')   words = words.filter(w => mastered[w.cat][w.id]);
-  if (filter === 'todo')   words = words.filter(w => !mastered[w.cat][w.id]);
-
-  // Filter tema
+  if (filter === 'done')    words = words.filter(w => mastered[w.cat][w.id]);
+  if (filter === 'todo')    words = words.filter(w => !mastered[w.cat][w.id]);
   if (filter.startsWith('tema-')) {
-    const key = filter.replace('tema-','');
-    const ids = TEMA[key] || [];
+    const ids = TEMA[filter.replace('tema-','')] || [];
     words = words.filter(w => ids.includes(w.id));
   }
-
-  // Filter pelafalan mirip
   if (filter.startsWith('mirip-')) {
     const fn = MIRIP[filter];
     if (fn) words = words.filter(fn);
   }
+  // Search
+  if (searchQuery) {
+    words = words.filter(w =>
+      w.jp.toLowerCase().includes(searchQuery) ||
+      w.rom.toLowerCase().includes(searchQuery) ||
+      w.id_.toLowerCase().includes(searchQuery)
+    );
+  }
 
   document.getElementById('review-count').textContent = `Menampilkan ${words.length} kata`;
   document.getElementById('vocab-grid').innerHTML = words.length === 0
-    ? `<div style="text-align:center;padding:40px;color:var(--mist);grid-column:1/-1">
-        <div style="font-size:32px;margin-bottom:8px">🔍</div>
-        Tidak ada kata untuk filter ini
-      </div>`
+    ? `<div style="text-align:center;padding:40px;color:var(--mist);grid-column:1/-1"><div style="font-size:32px;margin-bottom:8px">🔍</div>Tidak ada kata yang cocok</div>`
     : words.map(w => {
         const done = mastered[w.cat][w.id];
-        const temaLabel = Object.entries(TEMA)
-          .filter(([,ids]) => ids.includes(w.id))
-          .map(([t]) => t).join(',');
+        const temaKey = Object.entries(TEMA).find(([,ids]) => ids.includes(w.id))?.[0];
         return `<div class="vocab-item ${done ? 'mastered' : ''}" onclick="startStudyWord('${w.cat}','${w.id}')" style="cursor:pointer">
           <div class="status-dot ${done ? 'done' : 'todo'}"></div>
           <div style="flex:1;min-width:0">
@@ -2683,7 +2866,7 @@ function renderReview(filter) {
             <div class="id-meaning">${w.id_}</div>
             <div style="font-size:10px;color:var(--mist);font-family:'DM Mono',monospace">${w.rom}</div>
           </div>
-          ${temaLabel ? `<div style="font-size:9px;color:var(--indigo);background:rgba(44,62,122,.08);padding:2px 6px;border-radius:10px;white-space:nowrap">${getEmojiTema(temaLabel.split(',')[0])}</div>` : ''}
+          ${temaKey ? `<div style="font-size:13px">${getEmojiTema(temaKey)}</div>` : ''}
         </div>`;
       }).join('');
 }
