@@ -754,6 +754,21 @@ nav button.active {
 .member-card .nm { font-size:12px; font-weight:600; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
 .member-card .sc { font-family:'DM Mono',monospace; font-size:11px; color:var(--mist); margin-top:2px; }
 
+/* ===== TEMA CARDS ===== */
+.tema-card {
+  background:white;
+  border:1px solid var(--border);
+  border-radius:12px;
+  padding:16px 12px;
+  text-align:center;
+  cursor:pointer;
+  transition:all .2s;
+}
+.tema-card:hover { transform:translateY(-3px); box-shadow:var(--shadow); border-color:var(--indigo); }
+.tema-emoji { font-size:26px; margin-bottom:6px; }
+.tema-name { font-size:12px; font-weight:600; color:var(--ink); margin-bottom:4px; }
+.tema-count { font-size:11px; color:var(--mist); font-family:'DM Mono',monospace; }
+
 ::-webkit-scrollbar { width:5px; }
 ::-webkit-scrollbar-thumb { background:var(--border); border-radius:3px; }
 
@@ -1110,6 +1125,34 @@ nav button.active {
       </div>
     </div>
   </div>
+
+  <!-- Belajar per Tema -->
+  <div class="section-title" style="margin-top:28px;margin-bottom:12px">🏷️ Belajar per Tema</div>
+  <p style="font-size:12px;color:var(--mist);margin-bottom:14px">Fokus hafal kata dalam konteks yang sama</p>
+  <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:10px;margin-bottom:24px">
+    <div class="tema-card" onclick="startStudyTema('perasaan')"><div class="tema-emoji">😊</div><div class="tema-name">Perasaan</div><div class="tema-count" id="tc-perasaan">- kata</div></div>
+    <div class="tema-card" onclick="startStudyTema('kerja')"><div class="tema-emoji">💼</div><div class="tema-name">Pekerjaan</div><div class="tema-count" id="tc-kerja">- kata</div></div>
+    <div class="tema-card" onclick="startStudyTema('belajar')"><div class="tema-emoji">📚</div><div class="tema-name">Pendidikan</div><div class="tema-count" id="tc-belajar">- kata</div></div>
+    <div class="tema-card" onclick="startStudyTema('sosial')"><div class="tema-emoji">🤝</div><div class="tema-name">Sosial</div><div class="tema-count" id="tc-sosial">- kata</div></div>
+    <div class="tema-card" onclick="startStudyTema('kesehatan')"><div class="tema-emoji">🏥</div><div class="tema-name">Kesehatan</div><div class="tema-count" id="tc-kesehatan">- kata</div></div>
+    <div class="tema-card" onclick="startStudyTema('uang')"><div class="tema-emoji">💰</div><div class="tema-name">Uang</div><div class="tema-count" id="tc-uang">- kata</div></div>
+    <div class="tema-card" onclick="startStudyTema('gerak')"><div class="tema-emoji">🏃</div><div class="tema-name">Gerak</div><div class="tema-count" id="tc-gerak">- kata</div></div>
+    <div class="tema-card" onclick="startStudyTema('alam')"><div class="tema-emoji">🌿</div><div class="tema-name">Alam</div><div class="tema-count" id="tc-alam">- kata</div></div>
+    <div class="tema-card" onclick="startStudyTema('komunikasi')"><div class="tema-emoji">💬</div><div class="tema-name">Komunikasi</div><div class="tema-count" id="tc-komunikasi">- kata</div></div>
+    <div class="tema-card" onclick="startStudyTema('waktu')"><div class="tema-emoji">⏰</div><div class="tema-name">Waktu</div><div class="tema-count" id="tc-waktu">- kata</div></div>
+  </div>
+
+  <!-- Pelafalan Mirip -->
+  <div class="section-title" style="margin-bottom:12px">🔤 Kata Pelafalan Mirip</div>
+  <p style="font-size:12px;color:var(--mist);margin-bottom:14px">Latih kata yang sering tertukar karena bunyinya mirip</p>
+  <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:10px">
+    <div class="tema-card" onclick="startStudyMirip('mirip-kiku')"><div class="tema-emoji">👂</div><div class="tema-name">聞く・効く・利く</div><div class="tema-count">bunyi "kiku"</div></div>
+    <div class="tema-card" onclick="startStudyMirip('mirip-miru')"><div class="tema-emoji">👁️</div><div class="tema-name">見る・観る・眺める</div><div class="tema-count">bunyi "miru"</div></div>
+    <div class="tema-card" onclick="startStudyMirip('mirip-kaeru')"><div class="tema-emoji">🔄</div><div class="tema-name">帰る・変える・換える</div><div class="tema-count">bunyi "kaeru"</div></div>
+    <div class="tema-card" onclick="startStudyMirip('mirip-suru')"><div class="tema-emoji">⚙️</div><div class="tema-name">〜する 動詞</div><div class="tema-count">semua kata kerja suru</div></div>
+    <div class="tema-card" onclick="startStudyMirip('mirip-au')"><div class="tema-emoji">🤜</div><div class="tema-name">合う・会う・似合う</div><div class="tema-count">bunyi "au"</div></div>
+    <div class="tema-card" onclick="startStudyMirip('mirip-vowel-i')"><div class="tema-emoji">🔠</div><div class="tema-name">Berakhiran -i</div><div class="tema-count">vocal akhir い</div></div>
+  </div>
 </div>
 
 <!-- ====== FLASHCARD SCREEN ====== -->
@@ -1335,8 +1378,11 @@ nav button.active {
 
 <!-- ====== REVIEW SCREEN ====== -->
 <div id="screen-review" class="screen">
-  <div class="section-title">Semua Kata N3</div>
-  <div class="filter-bar">
+  <div class="section-title" style="margin-bottom:12px">Semua Kata N3</div>
+
+  <!-- Filter Kategori -->
+  <div style="font-size:11px;color:var(--mist);letter-spacing:1px;text-transform:uppercase;margin-bottom:6px">Kategori</div>
+  <div class="filter-bar" style="margin-bottom:12px">
     <button class="filter-btn active" onclick="setFilter('all',this)">Semua</button>
     <button class="filter-btn" onclick="setFilter('kanji',this)">動詞 Kata Kerja</button>
     <button class="filter-btn" onclick="setFilter('vocab',this)">名詞 Kata Benda</button>
@@ -1344,6 +1390,36 @@ nav button.active {
     <button class="filter-btn" onclick="setFilter('done',this)">✓ Sudah Hafal</button>
     <button class="filter-btn" onclick="setFilter('todo',this)">✗ Belum Hafal</button>
   </div>
+
+  <!-- Filter Tema -->
+  <div style="font-size:11px;color:var(--mist);letter-spacing:1px;text-transform:uppercase;margin-bottom:6px">🏷️ Filter Tema</div>
+  <div class="filter-bar" style="margin-bottom:12px">
+    <button class="filter-btn" onclick="setFilter('tema-perasaan',this)">😊 Perasaan</button>
+    <button class="filter-btn" onclick="setFilter('tema-kerja',this)">💼 Pekerjaan</button>
+    <button class="filter-btn" onclick="setFilter('tema-belajar',this)">📚 Pendidikan</button>
+    <button class="filter-btn" onclick="setFilter('tema-sosial',this)">🤝 Sosial</button>
+    <button class="filter-btn" onclick="setFilter('tema-kesehatan',this)">🏥 Kesehatan</button>
+    <button class="filter-btn" onclick="setFilter('tema-uang',this)">💰 Uang</button>
+    <button class="filter-btn" onclick="setFilter('tema-gerak',this)">🏃 Gerak</button>
+    <button class="filter-btn" onclick="setFilter('tema-alam',this)">🌿 Alam</button>
+    <button class="filter-btn" onclick="setFilter('tema-komunikasi',this)">💬 Komunikasi</button>
+    <button class="filter-btn" onclick="setFilter('tema-waktu',this)">⏰ Waktu</button>
+  </div>
+
+  <!-- Filter Pelafalan Mirip -->
+  <div style="font-size:11px;color:var(--mist);letter-spacing:1px;text-transform:uppercase;margin-bottom:6px">🔤 Pelafalan Mirip (sering tertukar)</div>
+  <div class="filter-bar" style="margin-bottom:16px">
+    <button class="filter-btn" onclick="setFilter('mirip-kiku',this)">聞く・効く・利く</button>
+    <button class="filter-btn" onclick="setFilter('mirip-miru',this)">見る・観る・眺める</button>
+    <button class="filter-btn" onclick="setFilter('mirip-kaeru',this)">帰る・変える・換える</button>
+    <button class="filter-btn" onclick="setFilter('mirip-suru',this)">〜する 動詞</button>
+    <button class="filter-btn" onclick="setFilter('mirip-au',this)">合う・会う・似合う</button>
+    <button class="filter-btn" onclick="setFilter('mirip-iru',this)">要る・居る・入る</button>
+    <button class="filter-btn" onclick="setFilter('mirip-ou',this)">追う・覆う・負う</button>
+    <button class="filter-btn" onclick="setFilter('mirip-vowel-i',this)">vocal -i (〜い)</button>
+    <button class="filter-btn" onclick="setFilter('mirip-vowel-u',this)">vocal -u (〜う)</button>
+  </div>
+
   <div style="font-size:12px;color:var(--mist);margin-bottom:14px" id="review-count">Menampilkan 771 kata</div>
   <div class="vocab-grid" id="vocab-grid"></div>
 </div>
@@ -2088,6 +2164,60 @@ function updateFlashMenu() {
   document.getElementById('fm-bar-douji').style.width = Math.min(Math.round(kd/242*100),100) + '%';
   document.getElementById('fm-bar-meishi').style.width = Math.min(Math.round(vd/389*100),100) + '%';
   document.getElementById('fm-bar-keiyou').style.width = Math.min(Math.round(gd/140*100),100) + '%';
+  // Update tema counts
+  for (const [key, ids] of Object.entries(TEMA)) {
+    const el = document.getElementById('tc-' + key);
+    if (el) el.textContent = ids.length + ' kata';
+  }
+}
+
+function startStudyTema(tema) {
+  const ids = TEMA[tema] || [];
+  const emojiMap = {perasaan:'😊',kerja:'💼',belajar:'📚',sosial:'🤝',kesehatan:'🏥',uang:'💰',gerak:'🏃',alam:'🌿',komunikasi:'💬',waktu:'⏰'};
+  let words = [];
+  for (const cat of ['kanji','vocab','grammar']) {
+    for (const w of ALL_WORDS[cat]) {
+      if (ids.includes(w.id)) words.push({...w, cat});
+    }
+  }
+  if (words.length === 0) { alert('Tidak ada kata untuk tema ini.'); return; }
+  shuffle(words);
+  sessionQueue = words;
+  sessionCat = words[0]?.cat || 'kanji';
+  sessionIdx = 0; sessionReviewed = 0; sessionMastered = 0;
+  document.getElementById('flash-category-title').textContent = (emojiMap[tema]||'') + ' Tema: ' + tema.charAt(0).toUpperCase() + tema.slice(1);
+  document.getElementById('flash-subtitle').textContent = words.length + ' kata dalam tema ini';
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById('screen-flash').classList.add('active');
+  document.querySelectorAll('nav button').forEach(b => b.classList.remove('active'));
+  document.getElementById('session-done-panel').style.display = 'none';
+  document.getElementById('flash-active').style.display = 'block';
+  showCard();
+}
+
+function startStudyMirip(key) {
+  const fn = MIRIP[key];
+  if (!fn) return;
+  let words = [];
+  for (const cat of ['kanji','vocab','grammar']) {
+    for (const w of ALL_WORDS[cat]) {
+      if (fn(w)) words.push({...w, cat});
+    }
+  }
+  if (words.length === 0) { alert('Tidak ada kata untuk filter ini.'); return; }
+  shuffle(words);
+  sessionQueue = words;
+  sessionCat = words[0]?.cat || 'kanji';
+  sessionIdx = 0; sessionReviewed = 0; sessionMastered = 0;
+  const labels = {'mirip-kiku':'👂 聞く・効く','mirip-miru':'👁️ 見る系','mirip-kaeru':'🔄 〜kaeru','mirip-suru':'⚙️ 〜する','mirip-au':'🤜 〜au','mirip-iru':'入る系','mirip-ou':'追う系','mirip-vowel-i':'🔠 Berakhiran -i','mirip-vowel-u':'vocal -u'};
+  document.getElementById('flash-category-title').textContent = labels[key] || 'Pelafalan Mirip';
+  document.getElementById('flash-subtitle').textContent = words.length + ' kata dengan pelafalan mirip';
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById('screen-flash').classList.add('active');
+  document.querySelectorAll('nav button').forEach(b => b.classList.remove('active'));
+  document.getElementById('session-done-panel').style.display = 'none';
+  document.getElementById('flash-active').style.display = 'block';
+  showCard();
 }
 
 // ============================================================
@@ -2431,6 +2561,74 @@ function exitKanjiFlash() { gotoScreen('kanjimenu'); }
 // ============================================================
 let currentFilter = 'all';
 
+// ============================================================
+// TEMA — mapping kata ke tema
+// ============================================================
+const TEMA = {
+  perasaan: [
+    'kk38','kk42','kk65','kk66','kk48','kk214','kk215',
+    'v69','v71','v70','v166','v158','v96','v97','v104',
+    'g13','g23','g36','g65','g111','g113','g71','g72','g93'
+  ],
+  kerja: [
+    'kk3','kk9','kk11','kk71','kk72','kk139','kk188','kk217',
+    'v33','v57','v89','v109','v110','v151','v175','v200','v229','v260','v297',
+    'g49','g50'
+  ],
+  belajar: [
+    'kk5','kk6','kk80','kk95','kk225',
+    'v5','v53','v75','v83','v90','v108','v111','v235','v266',
+    'g84','g86','g75','g120'
+  ],
+  sosial: [
+    'kk4','kk16','kk21','kk45','kk46','kk49','kk147','kk185','kk186','kk200',
+    'v2','v7','v44','v98','v121','v153','v155','v196','v296','v363','v364',
+    'g42','g54'
+  ],
+  kesehatan: [
+    'kk32','kk33','kk75','kk76','kk143',
+    'v17','v27','v68','v183','v206','v212','v213','v214','v220',
+    'g82','g83','g93','g32','g33'
+  ],
+  uang: [
+    'kk107','kk127','kk131','kk132',
+    'v50','v59','v89','v114','v147','v169','v222','v307','v324','v375','v381',
+    'g49','g50','g77','g63'
+  ],
+  gerak: [
+    'kk7','kk19','kk28','kk37','kk62','kk78','kk87','kk89','kk156','kk210','kk219','kk222','kk224','kk241',
+    'v22','v52','v134','v243','v271','v286',
+    'g44','g30','g57'
+  ],
+  alam: [
+    'kk41','kk83','kk229','kk230',
+    'v8','v31','v42','v64','v156','v255','v264','v283','v308',
+    'g28','g29','g35','g105','g59'
+  ],
+  komunikasi: [
+    'kk8','kk10','kk23','kk36','kk43','kk47','kk81','kk184',
+    'v40','v80','v165','v198','v199','v277','v284','v345','v389',
+    'g11','g111'
+  ],
+  waktu: [
+    'v20','v21','v37','v77','v87','v88','v95','v106','v107',
+    'g3','g56','g80','g95','g106','g107','g108','g114','g115','g117'
+  ],
+};
+
+// Grup pelafalan mirip
+const MIRIP = {
+  'mirip-kiku':   w => ['聞く','効く','利く'].includes(w.jp) || w.rom.includes('kiku'),
+  'mirip-miru':   w => ['見る','観る','眺める','見る'].includes(w.jp) || (w.rom.startsWith('mi') && w.jp.includes('る')),
+  'mirip-kaeru':  w => ['帰る','変える','換える','返る','代える'].includes(w.jp),
+  'mirip-suru':   w => w.rom.endsWith('suru') || w.jp.endsWith('する'),
+  'mirip-au':     w => ['合う','会う','似合う','出会う','話し合う','合わせる'].includes(w.jp),
+  'mirip-iru':    w => ['要る','居る','入る'].includes(w.jp),
+  'mirip-ou':     w => ['追う','覆う','負う','思う'].includes(w.jp),
+  'mirip-vowel-i':w => w.rom.endsWith('i') || w.rom.endsWith('ii'),
+  'mirip-vowel-u':w => w.rom.endsWith('u') && !w.rom.endsWith('suru'),
+};
+
 function setFilter(f, btn) {
   currentFilter = f;
   document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
@@ -2446,24 +2644,74 @@ function renderReview(filter) {
       words.push({ ...w, cat });
     }
   }
-  if (filter === 'kanji') words = words.filter(w => w.cat === 'kanji');
-  if (filter === 'vocab') words = words.filter(w => w.cat === 'vocab');
+
+  // Kategori dasar
+  if (filter === 'kanji')  words = words.filter(w => w.cat === 'kanji');
+  if (filter === 'vocab')  words = words.filter(w => w.cat === 'vocab');
   if (filter === 'grammar') words = words.filter(w => w.cat === 'grammar');
-  if (filter === 'done') words = words.filter(w => mastered[w.cat][w.id]);
-  if (filter === 'todo') words = words.filter(w => !mastered[w.cat][w.id]);
+  if (filter === 'done')   words = words.filter(w => mastered[w.cat][w.id]);
+  if (filter === 'todo')   words = words.filter(w => !mastered[w.cat][w.id]);
+
+  // Filter tema
+  if (filter.startsWith('tema-')) {
+    const key = filter.replace('tema-','');
+    const ids = TEMA[key] || [];
+    words = words.filter(w => ids.includes(w.id));
+  }
+
+  // Filter pelafalan mirip
+  if (filter.startsWith('mirip-')) {
+    const fn = MIRIP[filter];
+    if (fn) words = words.filter(fn);
+  }
 
   document.getElementById('review-count').textContent = `Menampilkan ${words.length} kata`;
-  document.getElementById('vocab-grid').innerHTML = words.map(w => {
-    const done = mastered[w.cat][w.id];
-    return `<div class="vocab-item ${done ? 'mastered' : ''}">
-      <div class="status-dot ${done ? 'done' : 'todo'}"></div>
-      <div style="flex:1;min-width:0">
-        <div class="jp">${w.jp}</div>
-        <div class="id-meaning">${w.id_}</div>
-        <div style="font-size:10px;color:var(--mist);font-family:'DM Mono',monospace">${w.rom}</div>
-      </div>
-    </div>`;
-  }).join('');
+  document.getElementById('vocab-grid').innerHTML = words.length === 0
+    ? `<div style="text-align:center;padding:40px;color:var(--mist);grid-column:1/-1">
+        <div style="font-size:32px;margin-bottom:8px">🔍</div>
+        Tidak ada kata untuk filter ini
+      </div>`
+    : words.map(w => {
+        const done = mastered[w.cat][w.id];
+        const temaLabel = Object.entries(TEMA)
+          .filter(([,ids]) => ids.includes(w.id))
+          .map(([t]) => t).join(',');
+        return `<div class="vocab-item ${done ? 'mastered' : ''}" onclick="startStudyWord('${w.cat}','${w.id}')" style="cursor:pointer">
+          <div class="status-dot ${done ? 'done' : 'todo'}"></div>
+          <div style="flex:1;min-width:0">
+            <div class="jp">${w.jp}</div>
+            <div class="id-meaning">${w.id_}</div>
+            <div style="font-size:10px;color:var(--mist);font-family:'DM Mono',monospace">${w.rom}</div>
+          </div>
+          ${temaLabel ? `<div style="font-size:9px;color:var(--indigo);background:rgba(44,62,122,.08);padding:2px 6px;border-radius:10px;white-space:nowrap">${getEmojiTema(temaLabel.split(',')[0])}</div>` : ''}
+        </div>`;
+      }).join('');
+}
+
+function getEmojiTema(t) {
+  const m = {perasaan:'😊',kerja:'💼',belajar:'📚',sosial:'🤝',kesehatan:'🏥',uang:'💰',gerak:'🏃',alam:'🌿',komunikasi:'💬',waktu:'⏰'};
+  return m[t] || '';
+}
+
+// Klik kata di review → langsung flashcard kata itu
+function startStudyWord(cat, id) {
+  const word = ALL_WORDS[cat].find(w => w.id === id);
+  if (!word) return;
+  // Buat sesi mini dengan kata ini + beberapa kata sejenis
+  const similar = ALL_WORDS[cat].filter(w => w.id !== id).slice(0,19);
+  shuffle(similar);
+  sessionQueue = [word, ...similar];
+  sessionCat = cat;
+  sessionIdx = 0; sessionReviewed = 0; sessionMastered = 0;
+  const titles = {kanji:'動詞',vocab:'名詞',grammar:'形容詞'};
+  document.getElementById('flash-category-title').textContent = titles[cat] + ' — ' + word.jp;
+  document.getElementById('flash-subtitle').textContent = 'Dimulai dari kata yang kamu pilih';
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById('screen-flash').classList.add('active');
+  document.querySelectorAll('nav button').forEach(b => b.classList.remove('active'));
+  document.getElementById('session-done-panel').style.display = 'none';
+  document.getElementById('flash-active').style.display = 'block';
+  showCard();
 }
 
 // ============================================================
