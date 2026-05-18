@@ -1422,61 +1422,67 @@ nav button.active {
 
 <!-- ====== KANJI MENU SCREEN ====== -->
 <div id="screen-kanjimenu" class="screen">
-  <div class="section-title" style="margin-bottom:6px">漢字 Flashcard Kanji</div>
-  <p style="font-size:13px;color:var(--mist);margin-bottom:24px">Depan: kanji kata — Belakang: furigana + arti. Pilih kategori untuk mulai.</p>
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
+    <div class="section-title" style="margin:0">漢字 Baca Kanji</div>
+    <span id="km-level-badge" class="level-badge lv3" style="font-size:12px">N3</span>
+  </div>
+  <p style="font-size:13px;color:var(--mist);margin-bottom:20px">Depan: kanji kata — Belakang: furigana + arti. Kata belum hafal muncul duluan.</p>
 
-  <div class="cat-list">
-    <div class="cat-card douji">
-      <div class="jp-label">動</div>
-      <h3>動詞 — Kata Kerja</h3>
-      <p>242 kata kerja N3</p>
-      <div class="progress-info">
-        <span id="km-douji-done">0 / 242 hafal</span>
-        <span class="pct" id="km-douji-pct">0%</span>
+  <!-- N3: 3 kategori -->
+  <div id="km-n3-section">
+    <div class="cat-list">
+      <div class="cat-card douji">
+        <div class="jp-label">動</div>
+        <h3>動詞 — Kata Kerja</h3>
+        <p>242 kata kerja</p>
+        <div class="progress-info">
+          <span id="km-douji-done">0 / 242 hafal</span>
+          <span class="pct" id="km-douji-pct">0%</span>
+        </div>
+        <div class="cat-bar"><div class="cat-bar-fill" id="km-bar-douji" style="width:0%;background:var(--red)"></div></div>
+        <button class="start-study-btn" onclick="startKanjiFlash('kanji')">▶ Mulai Baca</button>
       </div>
-      <div class="cat-bar"><div class="cat-bar-fill" id="km-bar-douji" style="width:0%;background:var(--red)"></div></div>
-      <button class="start-study-btn" onclick="startKanjiFlash('kanji')">▶ Mulai Baca</button>
-    </div>
-    <div class="cat-card meishi">
-      <div class="jp-label">名</div>
-      <h3>名詞 — Kata Benda</h3>
-      <p>389 kata benda N3</p>
-      <div class="progress-info">
-        <span id="km-meishi-done">0 / 389 hafal</span>
-        <span class="pct" id="km-meishi-pct">0%</span>
+      <div class="cat-card meishi">
+        <div class="jp-label">名</div>
+        <h3>名詞 — Kata Benda</h3>
+        <p>389 kata benda</p>
+        <div class="progress-info">
+          <span id="km-meishi-done">0 / 389 hafal</span>
+          <span class="pct" id="km-meishi-pct">0%</span>
+        </div>
+        <div class="cat-bar"><div class="cat-bar-fill" id="km-bar-meishi" style="width:0%;background:var(--indigo)"></div></div>
+        <button class="start-study-btn" onclick="startKanjiFlash('vocab')">▶ Mulai Baca</button>
       </div>
-      <div class="cat-bar"><div class="cat-bar-fill" id="km-bar-meishi" style="width:0%;background:var(--indigo)"></div></div>
-      <button class="start-study-btn" onclick="startKanjiFlash('vocab')">▶ Mulai Baca</button>
-    </div>
-    <div class="cat-card keiyoushi">
-      <div class="jp-label">形</div>
-      <h3>形容詞 — Kata Sifat</h3>
-      <p>140 kata sifat & keterangan N3</p>
-      <div class="progress-info">
-        <span id="km-keiyou-done">0 / 140 hafal</span>
-        <span class="pct" id="km-keiyou-pct">0%</span>
+      <div class="cat-card keiyoushi">
+        <div class="jp-label">形</div>
+        <h3>形容詞 — Kata Sifat</h3>
+        <p>140 kata sifat</p>
+        <div class="progress-info">
+          <span id="km-keiyou-done">0 / 140 hafal</span>
+          <span class="pct" id="km-keiyou-pct">0%</span>
+        </div>
+        <div class="cat-bar"><div class="cat-bar-fill" id="km-bar-keiyou" style="width:0%;background:var(--jade)"></div></div>
+        <button class="start-study-btn" onclick="startKanjiFlash('grammar')">▶ Mulai Baca</button>
       </div>
-      <div class="cat-bar"><div class="cat-bar-fill" id="km-bar-keiyou" style="width:0%;background:var(--jade)"></div></div>
-      <button class="start-study-btn" onclick="startKanjiFlash('grammar')">▶ Mulai Baca</button>
     </div>
   </div>
 
-  <div style="margin-top:28px;background:white;border:1px solid var(--border);border-radius:12px;padding:20px;display:flex;gap:24px;flex-wrap:wrap">
-    <div style="flex:1;min-width:150px">
-      <div style="font-size:12px;font-weight:700;margin-bottom:6px">📖 Cara Main</div>
-      <div style="font-size:12px;color:var(--mist);line-height:1.7">
-        <b>Depan:</b> Kanji kata saja<br>
-        <b>Belakang:</b> Furigana + Arti<br>
-        Nilai sendiri — hafal atau belum
-      </div>
+  <!-- N1/N2/N4/N5: flat -->
+  <div id="km-flat-section" style="display:none">
+    <div id="km-flat-card" style="background:white;border:1px solid var(--border);border-radius:16px;padding:32px;text-align:center;margin-bottom:20px">
+      <div id="km-flat-content">Loading...</div>
     </div>
-    <div style="flex:1;min-width:150px">
-      <div style="font-size:12px;font-weight:700;margin-bottom:6px">🎯 Tujuan</div>
-      <div style="font-size:12px;color:var(--mist);line-height:1.7">
-        Latih baca kanji dalam konteks<br>
-        kata nyata N3 — bukan kanji satuan<br>
-        Progress tersimpan otomatis
-      </div>
+  </div>
+
+  <!-- Info box -->
+  <div style="background:white;border:1px solid var(--border);border-radius:12px;padding:18px 20px;display:flex;gap:20px;flex-wrap:wrap;margin-top:20px">
+    <div style="flex:1;min-width:140px">
+      <div style="font-size:12px;font-weight:700;margin-bottom:5px">📖 Cara Main</div>
+      <div style="font-size:12px;color:var(--mist);line-height:1.7"><b>Depan:</b> Kanji kata<br><b>Belakang:</b> Furigana + Arti<br>Nilai sendiri hafal/belum</div>
+    </div>
+    <div style="flex:1;min-width:140px">
+      <div style="font-size:12px;font-weight:700;margin-bottom:5px">⚡ Sistem Cerdas</div>
+      <div style="font-size:12px;color:var(--mist);line-height:1.7">Belum hafal muncul duluan<br>Progress tersimpan cloud<br>Max 20 kata per sesi</div>
     </div>
   </div>
 </div>
@@ -1655,48 +1661,10 @@ nav button.active {
       <button onclick="toggleDropdown('dd-mirip')" class="dd-btn" id="lbl-mirip">
         🔤 Pelafalan Mirip <span style="font-size:10px">▾</span>
       </button>
-      <div class="dropdown-panel" id="dd-mirip" style="min-width:280px;max-height:420px;overflow-y:auto">
-
-        <div style="font-size:10px;color:var(--mist);padding:6px 12px;letter-spacing:1px;font-weight:700">🔤 AKHIRAN VOKAL SAMA</div>
-        <div class="dd-item" onclick="setFilter('end-ru',this);closeDropdowns()">〜る &nbsp;<span style="color:var(--mist);font-size:11px">miru, naru, kuru...</span></div>
-        <div class="dd-item" onclick="setFilter('end-u',this);closeDropdowns()">〜う &nbsp;<span style="color:var(--mist);font-size:11px">omou, negau, kau...</span></div>
-        <div class="dd-item" onclick="setFilter('end-ku',this);closeDropdowns()">〜く &nbsp;<span style="color:var(--mist);font-size:11px">kiku, kaku, iku...</span></div>
-        <div class="dd-item" onclick="setFilter('end-gu',this);closeDropdowns()">〜ぐ &nbsp;<span style="color:var(--mist);font-size:11px">oyogu, sawagu...</span></div>
-        <div class="dd-item" onclick="setFilter('end-su',this);closeDropdowns()">〜す &nbsp;<span style="color:var(--mist);font-size:11px">hanasu, nokosu...</span></div>
-        <div class="dd-item" onclick="setFilter('end-tsu',this);closeDropdowns()">〜つ &nbsp;<span style="color:var(--mist);font-size:11px">matsu, motsu...</span></div>
-        <div class="dd-item" onclick="setFilter('end-nu',this);closeDropdowns()">〜ぬ / 〜む &nbsp;<span style="color:var(--mist);font-size:11px">nayamu, kurushimu...</span></div>
-        <div class="dd-item" onclick="setFilter('end-bu',this);closeDropdowns()">〜ぶ &nbsp;<span style="color:var(--mist);font-size:11px">sakebu, manabu...</span></div>
-        <div class="dd-item" onclick="setFilter('end-suru',this);closeDropdowns()">〜する &nbsp;<span style="color:var(--mist);font-size:11px">semua kata kerja suru</span></div>
-        <div class="dd-item" onclick="setFilter('end-i',this);closeDropdowns()">〜い &nbsp;<span style="color:var(--mist);font-size:11px">takai, hiroi, furui...</span></div>
-
-        <div class="dd-divider"></div>
-        <div style="font-size:10px;color:var(--mist);padding:6px 12px;letter-spacing:1px;font-weight:700">漢字 AWALAN SAMA</div>
-        <div class="dd-item" onclick="setFilter('pref-hen',this);closeDropdowns()">変〜 &nbsp;<span style="color:var(--mist);font-size:11px">変更・変化・変換</span></div>
-        <div class="dd-item" onclick="setFilter('pref-kan',this);closeDropdowns()">感〜 &nbsp;<span style="color:var(--mist);font-size:11px">感動・感謝・感心・感覚</span></div>
-        <div class="dd-item" onclick="setFilter('pref-kan2',this);closeDropdowns()">完〜 &nbsp;<span style="color:var(--mist);font-size:11px">完了・完成</span></div>
-        <div class="dd-item" onclick="setFilter('pref-sei',this);closeDropdowns()">成〜 &nbsp;<span style="color:var(--mist);font-size:11px">成功・成長・成績</span></div>
-        <div class="dd-item" onclick="setFilter('pref-shu',this);closeDropdowns()">集〜 &nbsp;<span style="color:var(--mist);font-size:11px">集中・集団</span></div>
-        <div class="dd-item" onclick="setFilter('pref-shin',this);closeDropdowns()">信〜 &nbsp;<span style="color:var(--mist);font-size:11px">信頼・信用・信じる</span></div>
-        <div class="dd-item" onclick="setFilter('pref-chi',this);closeDropdowns()">知〜 &nbsp;<span style="color:var(--mist);font-size:11px">知識・知能・知恵</span></div>
-        <div class="dd-item" onclick="setFilter('pref-kai',this);closeDropdowns()">解〜/会〜 &nbsp;<span style="color:var(--mist);font-size:11px">解決・会合・解く</span></div>
-        <div class="dd-item" onclick="setFilter('pref-hatsu',this);closeDropdowns()">発〜 &nbsp;<span style="color:var(--mist);font-size:11px">発展・発表・発見</span></div>
-        <div class="dd-item" onclick="setFilter('pref-ki',this);closeDropdowns()">記〜/気〜/期〜 &nbsp;<span style="color:var(--mist);font-size:11px">記録・気付く・期待</span></div>
-        <div class="dd-item" onclick="setFilter('pref-ko',this);closeDropdowns()">行〜/公〜/交〜 &nbsp;<span style="color:var(--mist);font-size:11px">行動・交換・公告</span></div>
-
-        <div class="dd-divider"></div>
-        <div style="font-size:10px;color:var(--mist);padding:6px 12px;letter-spacing:1px;font-weight:700">漢字 AKHIRAN SAMA</div>
-        <div class="dd-item" onclick="setFilter('suf-suru',this);closeDropdowns()">〜する &nbsp;<span style="color:var(--mist);font-size:11px">semua verb suru</span></div>
-        <div class="dd-item" onclick="setFilter('suf-ka',this);closeDropdowns()">〜化 &nbsp;<span style="color:var(--mist);font-size:11px">変化・文化</span></div>
-        <div class="dd-item" onclick="setFilter('suf-ryoku',this);closeDropdowns()">〜力 &nbsp;<span style="color:var(--mist);font-size:11px">努力・能力・協力</span></div>
-        <div class="dd-item" onclick="setFilter('suf-ki',this);closeDropdowns()">〜気 &nbsp;<span style="color:var(--mist);font-size:11px">元気・人気・空気</span></div>
-        <div class="dd-item" onclick="setFilter('suf-teki',this);closeDropdowns()">〜的 &nbsp;<span style="color:var(--mist);font-size:11px">積極的・伝統的</span></div>
-
-        <div class="dd-divider"></div>
-        <div style="font-size:10px;color:var(--mist);padding:6px 12px;letter-spacing:1px;font-weight:700">🔊 BUNYI KATA MIRIP</div>
-        <div class="dd-item" onclick="setFilter('mirip-kiku',this);closeDropdowns()">👂 聞く・効く・利く</div>
-        <div class="dd-item" onclick="setFilter('mirip-miru',this);closeDropdowns()">👁️ 見る・観る・眺める</div>
-        <div class="dd-item" onclick="setFilter('mirip-kaeru',this);closeDropdowns()">🔄 帰る・変える・換える</div>
-        <div class="dd-item" onclick="setFilter('mirip-au',this);closeDropdowns()">🤝 合う・会う・似合う</div>
+      <div class="dropdown-panel" id="dd-mirip" style="min-width:300px;max-height:440px;overflow-y:auto">
+        <div id="dd-mirip-content">
+          <!-- Diisi dinamis oleh buildMiripDropdown() -->
+        </div>
       </div>
     </div>
 
@@ -3098,25 +3066,68 @@ function kfCountMastered(cat) {
 }
 
 function updateKanjiMenu() {
-  const cats = { kanji: 242, vocab: 389, grammar: 140 };
-  const ids  = { kanji: 'km-douji', vocab: 'km-meishi', grammar: 'km-keiyou' };
-  const bars = { kanji: 'km-bar-douji', vocab: 'km-bar-meishi', grammar: 'km-bar-keiyou' };
-  for (const [cat, total] of Object.entries(cats)) {
-    const done = kfCountMastered(cat);
-    const pct  = Math.round(done / total * 100);
-    document.getElementById(ids[cat] + '-done').textContent = done + ' / ' + total + ' hafal';
-    document.getElementById(ids[cat] + '-pct').textContent  = pct + '%';
-    document.getElementById(bars[cat]).style.width = Math.min(pct, 100) + '%';
+  const badge = document.getElementById('km-level-badge');
+  const n3sec  = document.getElementById('km-n3-section');
+  const flatSec= document.getElementById('km-flat-section');
+  const color  = JLPT_COLORS[currentJLPT] || 'var(--red)';
+
+  if (badge) {
+    badge.textContent   = currentJLPT;
+    badge.style.background = color;
+    badge.style.borderColor = color;
+    badge.style.color = 'white';
+  }
+
+  if (currentJLPT === 'N3') {
+    if (n3sec)  n3sec.style.display  = '';
+    if (flatSec) flatSec.style.display = 'none';
+    const cats = { kanji:242, vocab:389, grammar:140 };
+    const ids  = { kanji:'km-douji', vocab:'km-meishi', grammar:'km-keiyou' };
+    const bars = { kanji:'km-bar-douji', vocab:'km-bar-meishi', grammar:'km-bar-keiyou' };
+    for (const [cat, total] of Object.entries(cats)) {
+      const done = kfCountMastered(cat);
+      const pct  = Math.round(done/total*100);
+      document.getElementById(ids[cat]+'-done').textContent = done+' / '+total+' hafal';
+      document.getElementById(ids[cat]+'-pct').textContent  = pct+'%';
+      document.getElementById(bars[cat]).style.width = Math.min(pct,100)+'%';
+    }
+  } else {
+    if (n3sec)  n3sec.style.display  = 'none';
+    if (flatSec) flatSec.style.display = '';
+    const words = JLPT_DATA[currentJLPT] || [];
+    const total = words.length;
+    const done  = (() => {
+      const m = mastered['kf_'+currentJLPT] || {};
+      return Object.values(m).filter(Boolean).length;
+    })();
+    const pct = total ? Math.round(done/total*100) : 0;
+    const el = document.getElementById('km-flat-content');
+    if (el) el.innerHTML = `
+      <div style="font-size:48px;margin-bottom:12px">漢字</div>
+      <div style="font-weight:700;font-size:20px;margin-bottom:6px;color:${color}">${currentJLPT} — ${total} Kata</div>
+      <div style="font-size:13px;color:var(--mist);margin-bottom:16px">${done} bisa baca · ${total-done} belum · ${pct}%</div>
+      <div style="background:rgba(26,26,46,.1);border-radius:4px;height:8px;margin:0 auto 20px;width:80%;overflow:hidden">
+        <div style="height:100%;width:${pct}%;background:${color};border-radius:4px;transition:width .6s"></div>
+      </div>
+      <button class="start-study-btn" style="background:${color};display:inline-block;width:auto;padding:12px 32px"
+        onclick="startKanjiFlash('vocab')">▶ Mulai Baca Kanji ${currentJLPT}</button>
+    `;
   }
 }
 
 function startKanjiFlash(cat) {
-  kfCat      = cat;
+  kfCat      = currentJLPT === 'N3' ? cat : 'vocab';
   kfReviewed = 0;
   kfMastered = 0;
   kfRevealed = false;
 
-  const words = ALL_WORDS[cat];
+  let words;
+  if (currentJLPT === 'N3') {
+    words = ALL_WORDS[cat];
+  } else {
+    words = JLPT_DATA[currentJLPT] || [];
+  }
+
   const unmastered = words.filter(w => !kfIsMastered(w.id));
   const done       = words.filter(w =>  kfIsMastered(w.id));
   shuffle(unmastered);
@@ -3124,12 +3135,17 @@ function startKanjiFlash(cat) {
   kfQueue = [...unmastered, ...done].slice(0, SESSION_SIZE);
   kfIdx   = 0;
 
-  const titles = { kanji: '漢字 Kata Kerja', vocab: '漢字 Kata Benda', grammar: '漢字 Kata Sifat' };
-  document.getElementById('kf-title').textContent = titles[cat];
+  const color = JLPT_COLORS[currentJLPT] || 'var(--red)';
+  const titles = { kanji:'漢字 Kata Kerja', vocab:'漢字 Kata Benda', grammar:'漢字 Kata Sifat' };
+  const title  = currentJLPT === 'N3' ? titles[cat] : `漢字 ${currentJLPT}`;
+  document.getElementById('kf-title').textContent = title;
   document.getElementById('kf-subtitle').textContent =
     unmastered.length + ' belum bisa · ' + done.length + ' sudah bisa';
 
-  // Tampilkan screen
+  // Update accent color
+  const hdr = document.querySelector('#screen-kanjiflash .flash-header');
+  if (hdr) hdr.style.borderBottom = `2px solid ${color}`;
+
   document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
   document.getElementById('screen-kanjiflash').classList.add('active');
   document.querySelectorAll('nav button').forEach(b => b.classList.remove('active'));
@@ -3238,7 +3254,10 @@ function toggleDropdown(id) {
   const el = document.getElementById(id);
   const wasOpen = el.classList.contains('open');
   closeDropdowns();
-  if (!wasOpen) el.classList.add('open');
+  if (!wasOpen) {
+    el.classList.add('open');
+    if (id === 'dd-mirip') buildMiripDropdown();
+  }
 }
 
 function closeDropdowns() {
@@ -3339,60 +3358,120 @@ const TEMA = {
   ],
 };
 
-// Grup pelafalan mirip — expanded
+
+// ============================================================
+// DYNAMIC MIRIP FILTER
+// ============================================================
+const KANJI_GROUPS = {
+  N5: { pref: {'大':'大きい/大きな/大勢/大人','一':'一/一日/一番/一緒','今':'今/今日/今朝/今年','時':'～時/時間/～時間/～時','二':'二/二十歳/二十日/二つ','毎':'毎朝/毎月/毎週/毎日','来':'来る/さ来年/来月/来週','上':'上げる/上/上着/上手','外':'外国/外国人/外/外','九':'九/九/九日/九つ','先':'先/先月/先週/先生','出':'出す/出かける/出口/出る','八':'八/八百屋/八つ/八日','本':'本/～本/本棚/本当','明':'明るい/明後日/明日'}, suf: {'日':'明後日/明日/一日/五日','物':'買い物/果物/建物/食べ物','飯':'朝御飯/御飯/晩御飯/昼御飯','子':'椅子/お菓子/男の子/女の子','年':'去年/今年/さ来年/毎年','月':'今月/先月/一月/毎月','人':'大人/外国人/一人/二人','気':'元気/天気/電気/病気','週':'今週/先週/毎週/来週','館':'映画館/大使館/図書館'} },
+  N4: { pref: {'大':'大抵/大学生/大事/大体','会':'～会/会議室/会話/会場','下':'下宿/下着/下りる/下る','見':'見える/見つける/お見舞い/見つかる','運':'運動/運転手/運転/運ぶ','間':'間違える/間/この間/間に合う','以':'以下/以内/以外/以上','空':'空気/空港/空く/空く','最':'最近/最も/最後/最初','生':'生きる/生産/生活','止':'止む/止める/止める','予':'予習/予定/予約','気':'気/気分/気持ち','一':'一生懸命/一度/一杯','彼':'彼/彼ら/彼女'}, suf: {'物':'贈り物/品物/乗り物/着物','合':'場合/試合/都合/具合','学':'医学/科学/入学/文学','場':'売り場/飛行場/駐車場/会場','上':'屋上/申し上げる/差し上げる/以上','事':'大事/用事/火事/返事','会':'機会/教会/展覧会/社会','長':'課長/社長/校長/部長','分':'気分/随分/十分/大分','所':'住所/事務所/場所/近所'} },
+  N3: { pref: {'一':'一瞬/一生/一番/一般','大':'大会/大使/大統領/大変','手':'手術/手段/お手洗い/手','出':'出発する/出会う/出来る/出席する','見':'見る/見せる/見る/見える','無':'無理する/無駄/無くす/無理','日':'日常/日光/～日/日曜日','下':'下手/下さい/下/下手','人':'人工/人種/人生/人物','生':'生産/生憎/生まれる/生徒','不':'不思議/不安/不幸/不自由','取':'取り上げる/取る/取り替える/取り入れる','引':'引退/引く/引っ越す/引き出し','中':'中央/～中/～中/中','発':'発見する/発展する/発表する/発見'}, suf: {'日':'明後日/明日/一日/五日','出':'外出する/飛び出す/思い出す/思い出','気':'人気/勇気/元気/天気','合':'話し合う/会合する/似合う/場合','物':'植物/人物/買い物/果物','力':'協力する/努力する/協力/努力','上':'立ち上げる/取り上げる/頂上/屋上','立':'独立/役に立つ/組み立てる/国立','入':'気に入る/記入する/収入/輸入','分':'部分/自分/多分/半分'} },
+  N2: { pref: {'日':'〜(日本) 式/～日/～日/日時','引':'引力/引受る/引き返す/引算','下':'～下/下降/下線/下る','一':'一応/一段と/一流/一昨日','手':'～手/お手伝いさん/手洗い/手入れ','見':'見学/見上げる/見送る/見下ろす','水':'水産/水蒸気/水素/水滴','通':'～通/～通り/通勤/通ずる','大':'大通り/大凡/お大事に/大学院','出':'お出掛け/出勤/出張/出入り','長':'～長/長～/長所/長女','生':'生き生き/生け花/生ずる/生存','名':'～名/名字/名～/名作','売':'売上/売り上げ/売り切れ/売り切れる','小':'小父さん/小母さん/小～/小遣い'}, suf: {'日':'一昨日/元日/祭日/一昨昨日','合':'打合せ/組合せ/混合/集合','気':'お元気で/換気/湿気/蒸気','数':'回数/過半数/偶数/算数','分':'幾分/区分/水分/成分','掛':'お出掛け/思い掛けない/切っ掛け/腰掛け','度':'緯度/角度/加速度/経度','切':'売り切れ/売り切れる/思い切り/思いっ切り','地':'各地/基地/耕地/産地','点':'句読点/採点/弱点/終点'} },
+  N1: { pref: {'手':'お手上げ/手法/手当/手遅れ','一':'一概に/一同/一部分/一別','無':'無難/無礼/無意味/無口','取':'取扱/取り扱う/取り替え/取り組む','見':'見地/見合い/見合わせる/見落とす','不':'不意/不可欠/不吉/不況','出':'出世/出題/出動/出費','大':'大方/大柄/大筋/大空','原':'原則/原点/原典/原爆','主':'主/主導/主任/主','本':'本格/本館/本気/本国','仕':'仕上がり/仕上/仕上げる/仕入れる','同':'同調/同等/同封/同盟','生':'生臭い/生温い/生身/生まれつき','気':'気兼ね/気軽/気障/気質'}, suf: {'出':'差し出す/産出/投げ出す/逃げ出す','付':'交付/言付け/取り付ける/名付ける','立':'公立/孤立/逆立ち/取り立てる','気':'根気/寒気/何気ない/一気','込':'飲み込む/乗り込む/打ち込む/埋め込む','定':'限定/国定/固定/改定','力':'権力/動力/威力/圧力','上':'向上/参上/仕上がり/仕上','入':'購入/仕入れる/投入/導入','合':'結合/化合/組み合わせる/問い合わせる'} },
+};
+
+function buildMiripDropdown() {
+  const el = document.getElementById('dd-mirip-content');
+  if (!el) return;
+  const g     = KANJI_GROUPS[currentJLPT] || {};
+  const pref  = g.pref || {};
+  const suf   = g.suf  || {};
+  const color = JLPT_COLORS[currentJLPT] || 'var(--red)';
+
+  let html = '';
+
+  // Section: akhiran vokal (untuk semua level)
+  html += `<div style="font-size:10px;color:var(--mist);padding:6px 12px;letter-spacing:1px;font-weight:700;text-transform:uppercase">🔤 Akhiran Kana</div>`;
+  const endings = [
+    ['end-ru',  '〜る', 'verba godan/ichidan'],
+    ['end-ku',  '〜く', 'verba godan'],
+    ['end-su',  '〜す', 'verba godan'],
+    ['end-tsu', '〜つ', 'verba godan'],
+    ['end-nu',  '〜む/ぬ', 'verba godan'],
+    ['end-bu',  '〜ぶ', 'verba godan'],
+    ['end-gu',  '〜ぐ', 'verba godan'],
+    ['end-u',   '〜う', 'verba godan'],
+    ['end-suru','〜する', 'verba suru'],
+    ['end-i',   '〜い', 'adjektiva i'],
+  ];
+  // Only show endings that have words in current level
+  const lvlWords = currentJLPT === 'N3'
+    ? [...ALL_WORDS.kanji, ...ALL_WORDS.vocab, ...ALL_WORDS.grammar]
+    : (JLPT_DATA[currentJLPT] || []);
+  endings.forEach(([key, label, hint]) => {
+    const fn = MIRIP[key];
+    if (!fn) return;
+    const count = lvlWords.filter(fn).length;
+    if (count === 0) return;
+    html += `<div class="dd-item" onclick="setFilter('${key}',this);closeDropdowns()">
+      ${label} &nbsp;<span style="color:var(--mist);font-size:11px">${hint} · ${count} kata</span>
+    </div>`;
+  });
+
+  // Section: kanji depan sama
+  if (Object.keys(pref).length > 0) {
+    html += `<div class="dd-divider"></div>
+    <div style="font-size:10px;color:var(--mist);padding:6px 12px;letter-spacing:1px;font-weight:700;text-transform:uppercase">漢字 Awalan Sama (${currentJLPT})</div>`;
+    Object.entries(pref).slice(0,15).forEach(([k, v]) => {
+      const examples = v.split('/').slice(0,3).join('・');
+      html += `<div class="dd-item" onclick="setFilter('pref:${k}',this);closeDropdowns()">
+        <span style="font-family:'Noto Serif JP',serif;font-weight:700;color:${color}">${k}〜</span>
+        &nbsp;<span style="color:var(--mist);font-size:11px">${examples}</span>
+      </div>`;
+    });
+  }
+
+  // Section: kanji belakang sama
+  if (Object.keys(suf).length > 0) {
+    html += `<div class="dd-divider"></div>
+    <div style="font-size:10px;color:var(--mist);padding:6px 12px;letter-spacing:1px;font-weight:700;text-transform:uppercase">漢字 Akhiran Sama (${currentJLPT})</div>`;
+    Object.entries(suf).slice(0,10).forEach(([k, v]) => {
+      const examples = v.split('/').slice(0,3).join('・');
+      html += `<div class="dd-item" onclick="setFilter('suf:${k}',this);closeDropdowns()">
+        <span style="font-family:'Noto Serif JP',serif;font-weight:700;color:${color}">〜${k}</span>
+        &nbsp;<span style="color:var(--mist);font-size:11px">${examples}</span>
+      </div>`;
+    });
+  }
+
+  el.innerHTML = html;
+}
+
+// Grup pelafalan mirip — kana endings + dynamic pref:/suf: support
 const MIRIP = {
-  // Bunyi kata mirip
   'mirip-kiku':  w => ['聞く','効く','利く'].includes(w.jp),
   'mirip-miru':  w => ['見る','観る','眺める'].includes(w.jp),
   'mirip-kaeru': w => ['帰る','変える','換える','返る','代える'].includes(w.jp),
-  'mirip-suru':  w => w.rom.endsWith('suru') || w.jp.endsWith('する'),
+  'mirip-suru':  w => w.jp.endsWith('する'),
   'mirip-au':    w => ['合う','会う','似合う','出会う','話し合う','合わせる'].includes(w.jp),
-
-  // Akhiran vokal/kana sama
-  'end-ru':   w => { const j=w.jp.replace(/する$/,''); return j.endsWith('る') && !j.endsWith('する'); },
-  'end-u':    w => { const j=w.jp; return (j.endsWith('う')||j.endsWith('おう')||j.endsWith('らう')) && !j.endsWith('する'); },
-  'end-ku':   w => w.jp.endsWith('く') && !w.jp.endsWith('する'),
-  'end-gu':   w => w.jp.endsWith('ぐ'),
-  'end-su':   w => w.jp.endsWith('す') && !w.jp.endsWith('する'),
-  'end-tsu':  w => w.jp.endsWith('つ'),
-  'end-nu':   w => w.jp.endsWith('む') || w.jp.endsWith('ぬ'),
-  'end-bu':   w => w.jp.endsWith('ぶ'),
-  'end-suru': w => w.jp.endsWith('する') || w.rom.endsWith('suru'),
-  'end-i':    w => { const j=w.jp; return j.endsWith('い') && !j.endsWith('する'); },
-
-  // Awalan kanji sama
-  'pref-hen':   w => w.jp.startsWith('変'),
-  'pref-kan':   w => w.jp.startsWith('感'),
-  'pref-kan2':  w => w.jp.startsWith('完'),
-  'pref-sei':   w => w.jp.startsWith('成'),
-  'pref-shu':   w => w.jp.startsWith('集'),
-  'pref-shin':  w => w.jp.startsWith('信'),
-  'pref-chi':   w => w.jp.startsWith('知'),
-  'pref-kai':   w => w.jp.startsWith('解') || w.jp.startsWith('会'),
-  'pref-hatsu': w => w.jp.startsWith('発'),
-  'pref-ki':    w => w.jp.startsWith('記') || w.jp.startsWith('気') || w.jp.startsWith('期'),
-  'pref-ko':    w => w.jp.startsWith('行') || w.jp.startsWith('交') || w.jp.startsWith('公') || w.jp.startsWith('講'),
-
-  // Akhiran kanji sama
-  'suf-suru':  w => w.jp.endsWith('する'),
-  'suf-ka':    w => w.jp.endsWith('化'),
-  'suf-ryoku': w => w.jp.endsWith('力'),
-  'suf-ki':    w => w.jp.endsWith('気'),
+  'mirip-iru':   w => ['要る','居る','入る'].includes(w.jp),
+  'end-ru':    w => w.jp.endsWith('る') && !w.jp.endsWith('する'),
+  'end-u':     w => w.jp.endsWith('う') && !w.jp.endsWith('る'),
+  'end-ku':    w => w.jp.endsWith('く'),
+  'end-gu':    w => w.jp.endsWith('ぐ'),
+  'end-su':    w => w.jp.endsWith('す') && !w.jp.endsWith('する'),
+  'end-tsu':   w => w.jp.endsWith('つ'),
+  'end-nu':    w => w.jp.endsWith('む') || w.jp.endsWith('ぬ'),
+  'end-bu':    w => w.jp.endsWith('ぶ'),
+  'end-suru':  w => w.jp.endsWith('する'),
+  'end-i':     w => w.jp.endsWith('い'),
+  // Legacy static prefix/suffix
+  'pref-hen':  w => w.jp.startsWith('変'), 'pref-kan':  w => w.jp.startsWith('感'),
+  'pref-kan2': w => w.jp.startsWith('完'), 'pref-sei':  w => w.jp.startsWith('成'),
+  'pref-shu':  w => w.jp.startsWith('集'), 'pref-shin': w => w.jp.startsWith('信'),
+  'pref-chi':  w => w.jp.startsWith('知'), 'pref-kai':  w => w.jp.startsWith('解'),
+  'pref-hatsu':w => w.jp.startsWith('発'), 'suf-ka': w => w.jp.endsWith('化'),
+  'suf-ryoku': w => w.jp.endsWith('力'),   'suf-ki': w => w.jp.endsWith('気'),
   'suf-teki':  w => w.jp.endsWith('的'),
-
-  // Legacy (kept for flashmenu cards)
-  'mirip-iru':       w => ['要る','居る','入る'].includes(w.jp),
-  'mirip-ou':        w => ['追う','覆う','負う','思う'].includes(w.jp),
-  'mirip-vowel-i':   w => { const r=w.rom.replace(/\s.*/,''); return r.endsWith('i')||r.endsWith('ii'); },
-  'mirip-vowel-u':   w => { const r=w.rom.replace(/\s.*/,''); return r.endsWith('u')&&!r.endsWith('suru'); },
-  'mirip-hen':  w => w.jp.startsWith('変'),
-  'mirip-kan':  w => w.jp.startsWith('感'),
-  'mirip-kan2': w => w.jp.startsWith('完'),
-  'mirip-sei':  w => w.jp.startsWith('成'),
-  'mirip-shu':  w => w.jp.startsWith('集'),
-  'mirip-shin': w => w.jp.startsWith('信'),
-  'mirip-chi':  w => w.jp.startsWith('知'),
 };
+
+// Dynamic filter resolver — handles 'pref:X' and 'suf:X' from buildMiripDropdown
+function getMiripFn(filter) {
+  if (MIRIP[filter]) return MIRIP[filter];
+  if (filter.startsWith('pref:')) { const k=filter.slice(5); return w => w.jp.startsWith(k); }
+  if (filter.startsWith('suf:'))  { const k=filter.slice(4);  return w => w.jp.endsWith(k) && w.jp !== k; }
+  return null;
+}
 
 function setFilter(f, btn) {
   currentFilter = f;
@@ -3422,7 +3501,7 @@ function renderReview(filter) {
     const ids = TEMA[filter.replace('tema-','')] || [];
     words = words.filter(w => ids.includes(w.id));
   }
-  const fn = MIRIP[filter];
+  const fn = getMiripFn(filter);
   if (fn) words = words.filter(fn);
   if (searchQuery) {
     words = words.filter(w =>
