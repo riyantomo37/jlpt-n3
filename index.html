@@ -857,7 +857,8 @@ nav button.active {
   <button onclick="gotoScreen('flashmenu')">📚 Flashcard</button>
   <button onclick="gotoScreen('kanjimenu')">漢字 Kanji</button>
   <button onclick="gotoScreen('review')">📋 Semua Kata</button>
-  <button onclick="gotoScreen('ai')">🤖 Tanya Sensei</button>
+  <button onclick="gotoScreen('leaderboard')">🏆 Ranking</button>
+  <button onclick="gotoScreen('ai')">🤖 Sensei</button>
 </nav>
 
 <!-- ====== OVERVIEW ====== -->
@@ -926,73 +927,57 @@ nav button.active {
 
 <!-- ====== FLASHCARD MENU SCREEN ====== -->
 <div id="screen-flashmenu" class="screen">
-  <div class="section-title" style="margin-bottom:6px">📚 Flashcard Kosakata</div>
-  <p style="font-size:13px;color:var(--mist);margin-bottom:24px">Pilih kategori lalu mulai — depan kanji, belakang arti & cara baca</p>
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
+    <div class="section-title" style="margin:0">📚 Flashcard</div>
+    <span id="fm-level-badge" style="font-family:'DM Mono',monospace;font-size:11px;padding:3px 10px;border-radius:10px;font-weight:700;background:var(--red);color:white">N3</span>
+  </div>
+  <p style="font-size:13px;color:var(--mist);margin-bottom:20px">Depan: kanji — Belakang: arti & cara baca. Kata belum hafal muncul duluan.</p>
 
-  <div class="cat-list">
-    <div class="cat-card douji">
-      <div class="jp-label">動</div>
-      <h3>動詞 — Kata Kerja</h3>
-      <p>242 kata kerja N3</p>
-      <div class="progress-info">
-        <span id="fm-douji-done">0 / 242 hafal</span>
-        <span class="pct" id="fm-douji-pct">0%</span>
+  <!-- N3: 3 kategori -->
+  <div id="fm-n3-section">
+    <div class="cat-list">
+      <div class="cat-card douji">
+        <div class="jp-label">動</div>
+        <h3>動詞 — Kata Kerja</h3>
+        <p>242 kata kerja</p>
+        <div class="progress-info">
+          <span id="fm-douji-done">0 / 242 hafal</span>
+          <span class="pct" id="fm-douji-pct">0%</span>
+        </div>
+        <div class="cat-bar"><div class="cat-bar-fill" id="fm-bar-douji" style="width:0%;background:var(--red)"></div></div>
+        <button class="start-study-btn" onclick="startStudy('kanji')">▶ Mulai Sesi</button>
       </div>
-      <div class="cat-bar"><div class="cat-bar-fill" id="fm-bar-douji" style="width:0%;background:var(--red)"></div></div>
-      <button class="start-study-btn" onclick="startStudy('kanji')">▶ Mulai Sesi</button>
-    </div>
-    <div class="cat-card meishi">
-      <div class="jp-label">名</div>
-      <h3>名詞 — Kata Benda</h3>
-      <p>389 kata benda N3</p>
-      <div class="progress-info">
-        <span id="fm-meishi-done">0 / 389 hafal</span>
-        <span class="pct" id="fm-meishi-pct">0%</span>
+      <div class="cat-card meishi">
+        <div class="jp-label">名</div>
+        <h3>名詞 — Kata Benda</h3>
+        <p>389 kata benda</p>
+        <div class="progress-info">
+          <span id="fm-meishi-done">0 / 389 hafal</span>
+          <span class="pct" id="fm-meishi-pct">0%</span>
+        </div>
+        <div class="cat-bar"><div class="cat-bar-fill" id="fm-bar-meishi" style="width:0%;background:var(--indigo)"></div></div>
+        <button class="start-study-btn" onclick="startStudy('vocab')">▶ Mulai Sesi</button>
       </div>
-      <div class="cat-bar"><div class="cat-bar-fill" id="fm-bar-meishi" style="width:0%;background:var(--indigo)"></div></div>
-      <button class="start-study-btn" onclick="startStudy('vocab')">▶ Mulai Sesi</button>
-    </div>
-    <div class="cat-card keiyoushi">
-      <div class="jp-label">形</div>
-      <h3>形容詞 — Kata Sifat</h3>
-      <p>140 kata sifat & keterangan N3</p>
-      <div class="progress-info">
-        <span id="fm-keiyou-done">0 / 140 hafal</span>
-        <span class="pct" id="fm-keiyou-pct">0%</span>
+      <div class="cat-card keiyoushi">
+        <div class="jp-label">形</div>
+        <h3>形容詞 — Kata Sifat</h3>
+        <p>140 kata sifat</p>
+        <div class="progress-info">
+          <span id="fm-keiyou-done">0 / 140 hafal</span>
+          <span class="pct" id="fm-keiyou-pct">0%</span>
+        </div>
+        <div class="cat-bar"><div class="cat-bar-fill" id="fm-bar-keiyou" style="width:0%;background:var(--jade)"></div></div>
+        <button class="start-study-btn" onclick="startStudy('grammar')">▶ Mulai Sesi</button>
       </div>
-      <div class="cat-bar"><div class="cat-bar-fill" id="fm-bar-keiyou" style="width:0%;background:var(--jade)"></div></div>
-      <button class="start-study-btn" onclick="startStudy('grammar')">▶ Mulai Sesi</button>
     </div>
   </div>
 
-  <!-- Mode info -->
-  <div style="margin-top:28px;background:white;border:1px solid var(--border);border-radius:12px;padding:20px;display:flex;gap:24px;flex-wrap:wrap">
-    <div style="flex:1;min-width:160px">
-      <div style="font-size:12px;font-weight:700;margin-bottom:6px;color:var(--ink)">📖 Cara Main</div>
-      <div style="font-size:12px;color:var(--mist);line-height:1.7">
-        <b>Depan:</b> Kata Jepang (kanji)<br>
-        <b>Belakang:</b> Arti + Cara baca<br>
-        Nilai sendiri — hafal atau belum
-      </div>
-    </div>
-    <div style="flex:1;min-width:160px">
-      <div style="font-size:12px;font-weight:700;margin-bottom:6px;color:var(--ink)">⚡ Sistem Cerdas</div>
-      <div style="font-size:12px;color:var(--mist);line-height:1.7">
-        Kata belum hafal muncul duluan<br>
-        Sesi 20 kata per putaran<br>
-        Progress tersimpan otomatis
-      </div>
-    </div>
-    <div style="flex:1;min-width:160px">
-      <div style="font-size:12px;font-weight:700;margin-bottom:6px;color:var(--ink)">🎯 Target</div>
-      <div style="font-size:12px;color:var(--mist);line-height:1.7">
-        Hafal semua 771 kata N3<br>
-        Untuk lulus ujian Desember 2026<br>
-        がんばれ！💪
-      </div>
-    </div>
+  <!-- N1/N2/N4/N5: flat -->
+  <div id="fm-flat-section" style="display:none">
+    <div id="fm-flat-info" style="background:white;border:1px solid var(--border);border-radius:16px;padding:36px 24px;text-align:center"></div>
   </div>
 </div>
+
 
 <!-- ====== FLASHCARD SCREEN ====== -->
 <div id="screen-flash" class="screen">
@@ -1056,64 +1041,57 @@ nav button.active {
 
 <!-- ====== KANJI MENU SCREEN ====== -->
 <div id="screen-kanjimenu" class="screen">
-  <div class="section-title" style="margin-bottom:6px">漢字 Flashcard Kanji</div>
-  <p style="font-size:13px;color:var(--mist);margin-bottom:24px">Depan: kanji kata — Belakang: furigana + arti. Pilih kategori untuk mulai.</p>
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
+    <div class="section-title" style="margin:0">漢字 Baca Kanji</div>
+    <span id="km-level-badge" style="font-family:'DM Mono',monospace;font-size:11px;padding:3px 10px;border-radius:10px;font-weight:700;background:var(--red);color:white">N3</span>
+  </div>
+  <p style="font-size:13px;color:var(--mist);margin-bottom:20px">Depan: kanji kata — Belakang: furigana + arti. Nilai sendiri bisa/belum.</p>
 
-  <div class="cat-list">
-    <div class="cat-card douji">
-      <div class="jp-label">動</div>
-      <h3>動詞 — Kata Kerja</h3>
-      <p>242 kata kerja N3</p>
-      <div class="progress-info">
-        <span id="km-douji-done">0 / 242 hafal</span>
-        <span class="pct" id="km-douji-pct">0%</span>
+  <!-- N3: 3 kategori -->
+  <div id="km-n3-section">
+    <div class="cat-list">
+      <div class="cat-card douji">
+        <div class="jp-label">動</div>
+        <h3>動詞 — Kata Kerja</h3>
+        <p>242 kata kerja</p>
+        <div class="progress-info">
+          <span id="km-douji-done">0 / 242 hafal</span>
+          <span class="pct" id="km-douji-pct">0%</span>
+        </div>
+        <div class="cat-bar"><div class="cat-bar-fill" id="km-bar-douji" style="width:0%;background:var(--red)"></div></div>
+        <button class="start-study-btn" onclick="startKanjiFlash('kanji')">▶ Mulai Baca</button>
       </div>
-      <div class="cat-bar"><div class="cat-bar-fill" id="km-bar-douji" style="width:0%;background:var(--red)"></div></div>
-      <button class="start-study-btn" onclick="startKanjiFlash('kanji')">▶ Mulai Baca</button>
-    </div>
-    <div class="cat-card meishi">
-      <div class="jp-label">名</div>
-      <h3>名詞 — Kata Benda</h3>
-      <p>389 kata benda N3</p>
-      <div class="progress-info">
-        <span id="km-meishi-done">0 / 389 hafal</span>
-        <span class="pct" id="km-meishi-pct">0%</span>
+      <div class="cat-card meishi">
+        <div class="jp-label">名</div>
+        <h3>名詞 — Kata Benda</h3>
+        <p>389 kata benda</p>
+        <div class="progress-info">
+          <span id="km-meishi-done">0 / 389 hafal</span>
+          <span class="pct" id="km-meishi-pct">0%</span>
+        </div>
+        <div class="cat-bar"><div class="cat-bar-fill" id="km-bar-meishi" style="width:0%;background:var(--indigo)"></div></div>
+        <button class="start-study-btn" onclick="startKanjiFlash('vocab')">▶ Mulai Baca</button>
       </div>
-      <div class="cat-bar"><div class="cat-bar-fill" id="km-bar-meishi" style="width:0%;background:var(--indigo)"></div></div>
-      <button class="start-study-btn" onclick="startKanjiFlash('vocab')">▶ Mulai Baca</button>
-    </div>
-    <div class="cat-card keiyoushi">
-      <div class="jp-label">形</div>
-      <h3>形容詞 — Kata Sifat</h3>
-      <p>140 kata sifat & keterangan N3</p>
-      <div class="progress-info">
-        <span id="km-keiyou-done">0 / 140 hafal</span>
-        <span class="pct" id="km-keiyou-pct">0%</span>
+      <div class="cat-card keiyoushi">
+        <div class="jp-label">形</div>
+        <h3>形容詞 — Kata Sifat</h3>
+        <p>140 kata sifat</p>
+        <div class="progress-info">
+          <span id="km-keiyou-done">0 / 140 hafal</span>
+          <span class="pct" id="km-keiyou-pct">0%</span>
+        </div>
+        <div class="cat-bar"><div class="cat-bar-fill" id="km-bar-keiyou" style="width:0%;background:var(--jade)"></div></div>
+        <button class="start-study-btn" onclick="startKanjiFlash('grammar')">▶ Mulai Baca</button>
       </div>
-      <div class="cat-bar"><div class="cat-bar-fill" id="km-bar-keiyou" style="width:0%;background:var(--jade)"></div></div>
-      <button class="start-study-btn" onclick="startKanjiFlash('grammar')">▶ Mulai Baca</button>
     </div>
   </div>
 
-  <div style="margin-top:28px;background:white;border:1px solid var(--border);border-radius:12px;padding:20px;display:flex;gap:24px;flex-wrap:wrap">
-    <div style="flex:1;min-width:150px">
-      <div style="font-size:12px;font-weight:700;margin-bottom:6px">📖 Cara Main</div>
-      <div style="font-size:12px;color:var(--mist);line-height:1.7">
-        <b>Depan:</b> Kanji kata saja<br>
-        <b>Belakang:</b> Furigana + Arti<br>
-        Nilai sendiri — hafal atau belum
-      </div>
-    </div>
-    <div style="flex:1;min-width:150px">
-      <div style="font-size:12px;font-weight:700;margin-bottom:6px">🎯 Tujuan</div>
-      <div style="font-size:12px;color:var(--mist);line-height:1.7">
-        Latih baca kanji dalam konteks<br>
-        kata nyata N3 — bukan kanji satuan<br>
-        Progress tersimpan otomatis
-      </div>
-    </div>
+  <!-- N1/N2/N4/N5: flat -->
+  <div id="km-flat-section" style="display:none">
+    <div id="km-flat-content" style="background:white;border:1px solid var(--border);border-radius:16px;padding:36px 24px;text-align:center"></div>
   </div>
 </div>
+
 
 <!-- ====== KANJI FLASHCARD SCREEN ====== -->
 <div id="screen-kanjiflash" class="screen">
@@ -1165,7 +1143,43 @@ nav button.active {
     <p>Sesi baca kanji selesai. よくできました！</p>
     <div class="done-stats">
       <div class="done-stat"><div class="n" id="kf-done-reviewed">0</div><div class="l">Kata Dikerjakan</div></div>
-      <div class="done-stat"><div class="n" id="kf-done-mastered">0</div><div class="l">Bisa Baca</div></div>
+      <div class="done-stat"><div class="n" id="kf-done-mastered">0</div><!-- ====== LEADERBOARD SCREEN ======  -->
+<div id="screen-leaderboard" class="screen">
+  <!-- Header -->
+  <div style="background:linear-gradient(135deg,var(--ink),var(--indigo));border-radius:16px;padding:20px 24px;color:white;margin-bottom:20px;position:relative;overflow:hidden">
+    <div style="position:absolute;right:16px;top:50%;transform:translateY(-50%);font-size:72px;opacity:.07;font-family:'Noto Serif JP',serif">🏆</div>
+    <h2 style="font-family:'Noto Serif JP',serif;font-size:20px;margin-bottom:4px">🏆 Leaderboard</h2>
+    <div style="font-size:13px;opacity:.6" id="lb-subtitle">Ranking N3</div>
+    <div style="display:flex;gap:24px;margin-top:14px">
+      <div><div style="font-family:'DM Mono',monospace;font-size:26px;color:var(--gold)" id="lb-total-users">-</div><div style="font-size:10px;opacity:.5;text-transform:uppercase;letter-spacing:1px">Pelajar</div></div>
+      <div><div style="font-family:'DM Mono',monospace;font-size:26px;color:var(--gold)" id="lb-total-words">771</div><div style="font-size:10px;opacity:.5;text-transform:uppercase;letter-spacing:1px">Total Kata</div></div>
+      <div><div style="font-family:'DM Mono',monospace;font-size:26px;color:var(--gold)" id="lb-my-rank">#-</div><div style="font-size:10px;opacity:.5;text-transform:uppercase;letter-spacing:1px">Rankmu</div></div>
+    </div>
+  </div>
+
+  <!-- Level filter tabs -->
+  <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:16px">
+    <button class="filter-btn active" id="lb-filter-N3" onclick="loadLeaderboard('N3')">N3</button>
+    <button class="filter-btn" id="lb-filter-N5" onclick="loadLeaderboard('N5')">N5</button>
+    <button class="filter-btn" id="lb-filter-N4" onclick="loadLeaderboard('N4')">N4</button>
+    <button class="filter-btn" id="lb-filter-N2" onclick="loadLeaderboard('N2')">N2</button>
+    <button class="filter-btn" id="lb-filter-N1" onclick="loadLeaderboard('N1')">N1</button>
+    <button class="lb-refresh-btn" onclick="loadLeaderboard(lbCurrentLevel)" style="margin-left:auto">↻ Refresh</button>
+  </div>
+
+  <!-- Rank list -->
+  <div id="lb-list" class="lb-rank-list">
+    <div style="text-align:center;padding:32px;color:var(--mist)">⏳ Memuat...</div>
+  </div>
+
+  <!-- All Members -->
+  <div class="section-title" style="margin-top:28px;margin-bottom:12px">👥 Semua Pelajar</div>
+  <div class="member-grid" id="lb-members">
+    <div style="text-align:center;padding:16px;color:var(--mist);grid-column:1/-1">⏳ Memuat...</div>
+  </div>
+</div>
+
+<div class="l">Bisa Baca</div></div>
     </div>
     <button class="btn-continue" onclick="continueKanjiFlash()">▶ Lanjut Sesi</button>
     <button class="btn-back-home" onclick="exitKanjiFlash()">← Kembali</button>
@@ -1923,16 +1937,40 @@ function gotoScreen(name) {
 }
 
 function updateFlashMenu() {
-  const kd = countMastered('kanji'), vd = countMastered('vocab'), gd = countMastered('grammar');
-  document.getElementById('fm-douji-done').textContent = kd + ' / 242 hafal';
-  document.getElementById('fm-meishi-done').textContent = vd + ' / 389 hafal';
-  document.getElementById('fm-keiyou-done').textContent = gd + ' / 140 hafal';
-  document.getElementById('fm-douji-pct').textContent = Math.round(kd/242*100) + '%';
-  document.getElementById('fm-meishi-pct').textContent = Math.round(vd/389*100) + '%';
-  document.getElementById('fm-keiyou-pct').textContent = Math.round(gd/140*100) + '%';
-  document.getElementById('fm-bar-douji').style.width = Math.min(Math.round(kd/242*100),100) + '%';
-  document.getElementById('fm-bar-meishi').style.width = Math.min(Math.round(vd/389*100),100) + '%';
-  document.getElementById('fm-bar-keiyou').style.width = Math.min(Math.round(gd/140*100),100) + '%';
+  const color = JLPT_COLORS[currentJLPT] || 'var(--red)';
+  const badge = document.getElementById('fm-level-badge');
+  if (badge) { badge.textContent=currentJLPT; badge.style.background=color; }
+
+  const n3sec  = document.getElementById('fm-n3-section');
+  const flatSec= document.getElementById('fm-flat-section');
+
+  if (currentJLPT === 'N3') {
+    if (n3sec)  n3sec.style.display  = '';
+    if (flatSec) flatSec.style.display = 'none';
+    const kd=countMastered('kanji'), vd=countMastered('vocab'), gd=countMastered('grammar');
+    document.getElementById('fm-douji-done').textContent  = kd+' / 242 hafal';
+    document.getElementById('fm-meishi-done').textContent = vd+' / 389 hafal';
+    document.getElementById('fm-keiyou-done').textContent = gd+' / 140 hafal';
+    document.getElementById('fm-douji-pct').textContent   = Math.round(kd/242*100)+'%';
+    document.getElementById('fm-meishi-pct').textContent  = Math.round(vd/389*100)+'%';
+    document.getElementById('fm-keiyou-pct').textContent  = Math.round(gd/140*100)+'%';
+    document.getElementById('fm-bar-douji').style.width   = Math.min(Math.round(kd/242*100),100)+'%';
+    document.getElementById('fm-bar-meishi').style.width  = Math.min(Math.round(vd/389*100),100)+'%';
+    document.getElementById('fm-bar-keiyou').style.width  = Math.min(Math.round(gd/140*100),100)+'%';
+  } else {
+    if (n3sec)  n3sec.style.display  = 'none';
+    if (flatSec) flatSec.style.display = '';
+    const total=getCurrentTotal(), done=getCurrentMastered(), pct=Math.round(done/total*100);
+    const el=document.getElementById('fm-flat-info');
+    if (el) el.innerHTML = `
+      <div style="font-size:44px;margin-bottom:12px">📚</div>
+      <div style="font-weight:700;font-size:18px;margin-bottom:6px;color:${color}">${currentJLPT} — ${total} Kosakata</div>
+      <div style="font-size:13px;color:var(--mist);margin-bottom:14px">${done} hafal · ${total-done} belum · ${pct}%</div>
+      <div style="background:rgba(26,26,46,.1);border-radius:4px;height:8px;margin:0 auto 20px;max-width:300px;overflow:hidden">
+        <div style="height:100%;width:${pct}%;background:${color};border-radius:4px;transition:width .6s"></div>
+      </div>
+      <button class="start-study-btn" style="background:${color};display:inline-block;width:auto;padding:12px 32px" onclick="startStudy('vocab')">▶ Mulai Flashcard ${currentJLPT}</button>`;
+  }
 }
 
 // ============================================================
@@ -2098,15 +2136,40 @@ function kfCountMastered(cat) {
 }
 
 function updateKanjiMenu() {
-  const cats = { kanji: 242, vocab: 389, grammar: 140 };
-  const ids  = { kanji: 'km-douji', vocab: 'km-meishi', grammar: 'km-keiyou' };
-  const bars = { kanji: 'km-bar-douji', vocab: 'km-bar-meishi', grammar: 'km-bar-keiyou' };
-  for (const [cat, total] of Object.entries(cats)) {
-    const done = kfCountMastered(cat);
-    const pct  = Math.round(done / total * 100);
-    document.getElementById(ids[cat] + '-done').textContent = done + ' / ' + total + ' hafal';
-    document.getElementById(ids[cat] + '-pct').textContent  = pct + '%';
-    document.getElementById(bars[cat]).style.width = Math.min(pct, 100) + '%';
+  const color = JLPT_COLORS[currentJLPT] || 'var(--red)';
+  const badge = document.getElementById('km-level-badge');
+  if (badge) { badge.textContent=currentJLPT; badge.style.background=color; }
+
+  const n3sec  = document.getElementById('km-n3-section');
+  const flatSec= document.getElementById('km-flat-section');
+
+  if (currentJLPT === 'N3') {
+    if (n3sec)  n3sec.style.display  = '';
+    if (flatSec) flatSec.style.display = 'none';
+    const cats={kanji:242,vocab:389,grammar:140};
+    const ids={kanji:'km-douji',vocab:'km-meishi',grammar:'km-keiyou'};
+    const bars={kanji:'km-bar-douji',vocab:'km-bar-meishi',grammar:'km-bar-keiyou'};
+    for (const [cat,total] of Object.entries(cats)) {
+      const done=kfCountMastered(cat), pct=Math.round(done/total*100);
+      document.getElementById(ids[cat]+'-done').textContent = done+' / '+total+' hafal';
+      document.getElementById(ids[cat]+'-pct').textContent  = pct+'%';
+      document.getElementById(bars[cat]).style.width = Math.min(pct,100)+'%';
+    }
+  } else {
+    if (n3sec)  n3sec.style.display  = 'none';
+    if (flatSec) flatSec.style.display = '';
+    const total=getCurrentTotal();
+    const done=Object.values(mastered['kf_'+currentJLPT]||{}).filter(Boolean).length;
+    const pct=total?Math.round(done/total*100):0;
+    const el=document.getElementById('km-flat-content');
+    if (el) el.innerHTML = `
+      <div style="font-family:'Noto Serif JP',serif;font-size:56px;margin-bottom:12px;color:${color}">漢</div>
+      <div style="font-weight:700;font-size:18px;margin-bottom:6px;color:${color}">${currentJLPT} — ${total} Kata</div>
+      <div style="font-size:13px;color:var(--mist);margin-bottom:14px">${done} bisa baca · ${total-done} belum · ${pct}%</div>
+      <div style="background:rgba(26,26,46,.1);border-radius:4px;height:8px;margin:0 auto 20px;max-width:300px;overflow:hidden">
+        <div style="height:100%;width:${pct}%;background:${color};border-radius:4px;transition:width .6s"></div>
+      </div>
+      <button class="start-study-btn" style="background:${color};display:inline-block;width:auto;padding:12px 32px" onclick="startKanjiFlash('vocab')">▶ Mulai Baca Kanji ${currentJLPT}</button>`;
   }
 }
 
@@ -2401,6 +2464,158 @@ async
 // ============================================================
 // INIT — dipanggil setelah login berhasil
 // ============================================================
+
+
+async function loadDashboardLeaderboard() {
+  const lbEl = document.getElementById('ov-lb-list');
+  const membersEl = document.getElementById('ov-members');
+  const countEl = document.getElementById('ov-member-count');
+  if (!lbEl || !db) return;
+
+  const total = getCurrentTotal();
+  const color = JLPT_COLORS[currentJLPT] || 'var(--indigo)';
+
+  try {
+    const snap = await db.collection('users').limit(100).get();
+    const users = [];
+    snap.forEach(doc => {
+      const d = doc.data();
+      const lvlM = currentJLPT === 'N3'
+        ? (d.totalMastered || 0)
+        : ((d.totalMasteredAll || {})[currentJLPT] || 0);
+      users.push({ uid: doc.id, ...d, _lm: lvlM });
+    });
+    users.sort((a,b) => b._lm - a._lm);
+
+    if (countEl) countEl.textContent = users.length + ' pelajar';
+
+    // Mini top 5
+    lbEl.innerHTML = users.slice(0,5).map((u,i) => {
+      const rank = i+1, isMe = u.uid === currentUser?.uid;
+      const tot  = u._lm, pct = Math.round(tot/total*100);
+      const icon = rank===1?'🥇':rank===2?'🥈':rank===3?'🥉':'#'+rank;
+      const av   = u.photoURL
+        ? '<img src="'+u.photoURL+'" style="width:100%;height:100%;object-fit:cover;border-radius:50%">'
+        : '<span style="font-size:13px;font-weight:700">'+(u.displayName||'U')[0].toUpperCase()+'</span>';
+      return '<div style="background:white;border:1px solid '+(isMe?'var(--gold)':'var(--border)')+';border-radius:10px;padding:10px 14px;display:flex;align-items:center;gap:10px">'
+        +'<div style="font-size:18px;width:28px;text-align:center;flex-shrink:0">'+icon+'</div>'
+        +'<div style="width:32px;height:32px;border-radius:50%;background:'+color+';display:flex;align-items:center;justify-content:center;color:white;flex-shrink:0;overflow:hidden">'+av+'</div>'
+        +'<div style="flex:1;min-width:0"><div style="font-size:13px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+(u.displayName||'Pelajar')+(isMe?' ⭐':'')+'</div>'
+        +'<div style="font-size:11px;color:var(--mist)">🔥 '+(u.streak||0)+' hari · '+pct+'%</div></div>'
+        +'<div style="text-align:right;flex-shrink:0"><div style="font-family:'DM Mono',monospace;font-size:18px;font-weight:700;color:'+color+'">'+tot+'</div>'
+        +'<div style="font-size:10px;color:var(--mist)">kata</div></div></div>';
+    }).join('') || '<div style="padding:20px;text-align:center;color:var(--mist)">Belum ada data 🎌</div>';
+
+    // Bubble members
+    if (membersEl) {
+      membersEl.innerHTML = users.map(u => {
+        const isMe = u.uid === currentUser?.uid;
+        const av   = u.photoURL
+          ? '<img src="'+u.photoURL+'" style="width:100%;height:100%;object-fit:cover;">'
+          : '<span style="font-size:16px;font-weight:700">'+(u.displayName||'U')[0].toUpperCase()+'</span>';
+        return '<div onclick="gotoScreen('leaderboard')" title="'+(u.displayName||'?')+' — '+(u._lm||0)+' kata" style="display:flex;flex-direction:column;align-items:center;gap:4px;cursor:pointer">'
+          +'<div style="width:44px;height:44px;border-radius:50%;background:'+color+';display:flex;align-items:center;justify-content:center;color:white;overflow:hidden;border:2px solid '+(isMe?'var(--gold)':'transparent')+'">'+av+'</div>'
+          +'<div style="font-size:10px;color:var(--mist);max-width:44px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-align:center">'+(u.displayName||'?').split(' ')[0]+'</div></div>';
+      }).join('');
+    }
+  } catch(e) {
+    if (lbEl) lbEl.innerHTML = '<div style="padding:16px;text-align:center;color:var(--mist);font-size:12px">Perlu koneksi internet</div>';
+  }
+}
+async function loadLeaderboard(level) {
+  if (level) lbCurrentLevel = level;
+  const listEl = document.getElementById('lb-list');
+  const membersEl = document.getElementById('lb-members');
+  if (!listEl) return;
+
+  // Update filter tabs
+  document.querySelectorAll('[id^="lb-filter-"]').forEach(b => b.classList.remove('active'));
+  const activeBtn = document.getElementById('lb-filter-' + lbCurrentLevel);
+  if (activeBtn) activeBtn.classList.add('active');
+
+  const total = JLPT_TOTALS[lbCurrentLevel] || 771;
+  const color = JLPT_COLORS[lbCurrentLevel] || 'var(--red)';
+  const subEl = document.getElementById('lb-subtitle');
+  if (subEl) subEl.textContent = 'Ranking ' + lbCurrentLevel + ' — ' + total + ' kata';
+  const twEl = document.getElementById('lb-total-words');
+  if (twEl) twEl.textContent = total;
+
+  listEl.innerHTML = '<div style="text-align:center;padding:32px;color:var(--mist)">⏳ Memuat ranking...</div>';
+  if (membersEl) membersEl.innerHTML = '<div style="text-align:center;padding:16px;color:var(--mist);grid-column:1/-1">⏳ Memuat...</div>';
+
+  try {
+    const snap = await db.collection('users').limit(100).get();
+    const users = [];
+    snap.forEach(doc => {
+      const d = doc.data();
+      const lvlM = lbCurrentLevel === 'N3'
+        ? (d.totalMastered || 0)
+        : ((d.totalMasteredAll || {})[lbCurrentLevel] || 0);
+      users.push({ uid: doc.id, ...d, lvlMastered: lvlM });
+    });
+    users.sort((a,b) => b.lvlMastered - a.lvlMastered);
+
+    const tuEl = document.getElementById('lb-total-users');
+    if (tuEl) tuEl.textContent = users.length;
+    const myIdx = users.findIndex(u => u.uid === currentUser?.uid);
+    const mrEl = document.getElementById('lb-my-rank');
+    if (mrEl) mrEl.textContent = myIdx >= 0 ? '#'+(myIdx+1) : '#-';
+
+    if (!users.length) {
+      listEl.innerHTML = '<div style="text-align:center;padding:40px;color:var(--mist)"><div style="font-size:40px;margin-bottom:8px">🎌</div>Belum ada data</div>';
+    } else {
+      listEl.innerHTML = users.map((u,i) => {
+        const rank = i+1, isMe = u.uid===currentUser?.uid;
+        const tot  = u.lvlMastered, pct = Math.round(tot/total*100);
+        const lv   = getLevel(tot);
+        const icon = rank===1?'🥇':rank===2?'🥈':rank===3?'🥉':'#'+rank;
+        const rCls = rank===1?'gold':rank===2?'silver':rank===3?'bronze':'';
+        const av   = u.photoURL ? `<img src="${u.photoURL}" alt="av">` : (u.displayName||'U')[0].toUpperCase();
+        let lastSeen='';
+        if (u.lastSeen?.toDate) {
+          const d=Math.floor((Date.now()-u.lastSeen.toDate())/86400000);
+          lastSeen=d===0?'🟢 Hari ini':d===1?'🟡 Kemarin':'⚪ '+d+' hari lalu';
+        }
+        return `<div class="lb-row ${rank<=3?'rank-'+rank:''} ${isMe?'me':''}">
+          ${isMe?'<span class="me-badge">KAMU</span>':''}
+          <div class="lb-rank-num ${rCls}">${icon}</div>
+          <div class="lb-avatar">${av}</div>
+          <div class="lb-info">
+            <div class="lb-name">${u.displayName||'Pelajar'} <span class="level-badge ${lv.cls}" style="font-size:10px;padding:2px 7px">Lv.${lv.lv} ${lv.jp}</span></div>
+            <div class="lb-sub">${lastSeen} · 🔥 ${u.streak||0} hari · ${pct}%</div>
+          </div>
+          <div class="lb-score">
+            <div class="total" style="color:${color}">${tot}</div>
+            <div class="label">kata hafal</div>
+          </div>
+        </div>`;
+      }).join('');
+    }
+
+    if (membersEl) {
+      const allSnap = await db.collection('users').orderBy('totalMastered','desc').get();
+      const all=[];
+      allSnap.forEach(doc=>{ const d=doc.data(); all.push({uid:doc.id,...d}); });
+      membersEl.innerHTML = all.map(u=>{
+        const isMe=u.uid===currentUser?.uid;
+        const tot=lbCurrentLevel==='N3'?(u.totalMastered||0):((u.totalMasteredAll||{})[lbCurrentLevel]||0);
+        const lv=getLevel(tot);
+        const av=u.photoURL?`<img src="${u.photoURL}" alt="av">`:(u.displayName||'U')[0].toUpperCase();
+        return `<div class="member-card" ${isMe?'style="border-color:var(--gold)"':''}>
+          <div class="av">${av}</div>
+          <div class="nm">${u.displayName||'Pelajar'}${isMe?' ⭐':''}</div>
+          <div style="margin:4px 0"><span class="level-badge ${lv.cls}" style="font-size:10px;padding:2px 7px">Lv.${lv.lv} ${lv.jp}</span></div>
+          <div class="sc" style="color:${color}">${tot}/${total}</div>
+          <div class="sc">🔥 ${u.streak||0} hari</div>
+        </div>`;
+      }).join('');
+    }
+  } catch(e) {
+    console.error('Leaderboard error:',e);
+    listEl.innerHTML='<div style="text-align:center;padding:40px;color:var(--mist)">⚠️ Gagal memuat. Cek koneksi.</div>';
+  }
+}
+
 function init() {
   updateCountdown();
   updateOverview();
