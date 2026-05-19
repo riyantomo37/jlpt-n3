@@ -1740,8 +1740,9 @@ let auth, db, currentUser = null, syncTimeout = null;
 
 // Fungsi auth global (bisa dipanggil dari onclick di HTML)
 function loginWithGoogle() {
+  console.log('loginWithGoogle called, auth=', auth);
   if (!auth) {
-    // Auth not ready yet — retry in 500ms
+    console.log('auth not ready, retrying...');
     setTimeout(loginWithGoogle, 500);
     return;
   }
@@ -1749,7 +1750,7 @@ function loginWithGoogle() {
   auth.signInWithPopup(provider)
     .catch(err => {
       console.error('Login error:', err);
-      alert('Login gagal: ' + err.message);
+      alert('Login gagal: ' + err.code + '\n' + err.message);
     });
 }
 function logout() {
