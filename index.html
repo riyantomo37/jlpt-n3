@@ -1814,12 +1814,7 @@ function initFirebase() {
     }
   });
 }
-// Run immediately
-initFirebase();
-window.addEventListener('load', function() {
-  // Fallback: ensure Firebase is initialized
-  if (!auth) initFirebase();
-});
+// initFirebase() called at bottom of script
 
 function showLoginScreen() {
   document.getElementById('login-screen').style.display = 'flex';
@@ -2952,12 +2947,7 @@ function initFirebase() {
     }
   });
 }
-// Run immediately
-initFirebase();
-window.addEventListener('load', function() {
-  // Fallback: ensure Firebase is initialized
-  if (!auth) initFirebase();
-});
+// initFirebase() called at bottom of script
 
 
 
@@ -3327,6 +3317,9 @@ function resetFilter(){
   document.getElementById('active-filter-badge').style.display='none';
   renderReview('all');
 }
+
+// Start Firebase after all code is loaded
+initFirebase();
 </script>
 </body>
 </html>
