@@ -1740,9 +1740,17 @@ let auth, db, currentUser = null, syncTimeout = null;
 
 // Fungsi auth global (bisa dipanggil dari onclick di HTML)
 function loginWithGoogle() {
-  if (!auth) { alert('App masih loading, coba lagi...'); return; }
-  auth.signInWithPopup(new firebase.auth.GoogleAuthProvider())
-    .catch(err => alert('Login gagal: ' + err.message));
+  if (!auth) {
+    // Auth not ready yet — retry in 500ms
+    setTimeout(loginWithGoogle, 500);
+    return;
+  }
+  const provider = new firebase.auth.GoogleAuthProvider();
+  auth.signInWithPopup(provider)
+    .catch(err => {
+      console.error('Login error:', err);
+      alert('Login gagal: ' + err.message);
+    });
 }
 function logout() {
   if (!confirm('Yakin mau keluar?')) return;
@@ -1760,27 +1768,42 @@ document.addEventListener('click', e => {
 });
 
 // Init Firebase setelah semua SDK selesai load
-window.addEventListener('load', function() {
-  firebase.initializeApp({
-    apiKey: "AIzaSyA1LnlGx7hyu6fDHItGhGfjfkMCKwedS_w",
-    authDomain: "jlpt-n3-tracker.firebaseapp.com",
-    projectId: "jlpt-n3-tracker",
-    storageBucket: "jlpt-n3-tracker.firebasestorage.app",
-    messagingSenderId: "362158844759",
-    appId: "1:362158844759:web:0676064b4dcf47495b6c12"
-  });
+// Init Firebase immediately when script runs
+// (Firebase SDK loaded synchronously via <script> tags before this)
+function initFirebase() {
+  if (typeof firebase === 'undefined') {
+    setTimeout(initFirebase, 100);
+    return;
+  }
+  try {
+    firebase.initializeApp({
+      apiKey: "AIzaSyA1LnlGx7hyu6fDHItGhGfjfkMCKwedS_w",
+      authDomain: "jlpt-n3-tracker.firebaseapp.com",
+      projectId: "jlpt-n3-tracker",
+      storageBucket: "jlpt-n3-tracker.firebasestorage.app",
+      messagingSenderId: "362158844759",
+      appId: "1:362158844759:web:0676064b4dcf47495b6c12"
+    });
+  } catch(e) {
+    // Already initialized
+  }
   auth = firebase.auth();
   db   = firebase.firestore();
 
   auth.onAuthStateChanged(async user => {
     if (user) {
       currentUser = user;
-      document.getElementById('user-name').textContent = user.displayName?.split(' ')[0] || 'User';
-      document.getElementById('menu-name').textContent  = user.displayName || 'User';
-      document.getElementById('menu-email').textContent = user.email || '';
-      const av = document.getElementById('user-avatar');
-      if (user.photoURL) av.innerHTML = `<img src="${user.photoURL}" alt="av">`;
-      else av.textContent = (user.displayName || 'U')[0].toUpperCase();
+      const nameEl = document.getElementById('user-name');
+      const mnEl   = document.getElementById('menu-name');
+      const emEl   = document.getElementById('menu-email');
+      const avEl   = document.getElementById('user-avatar');
+      if (nameEl) nameEl.textContent = user.displayName?.split(' ')[0] || 'User';
+      if (mnEl)   mnEl.textContent   = user.displayName || 'User';
+      if (emEl)   emEl.textContent   = user.email || '';
+      if (avEl) {
+        if (user.photoURL) avEl.innerHTML = '<img src="'+user.photoURL+'" alt="av">';
+        else avEl.textContent = (user.displayName || 'U')[0].toUpperCase();
+      }
       showLoginLoading();
       await loadFromFirestore();
       hideLoginScreen();
@@ -1790,6 +1813,12 @@ window.addEventListener('load', function() {
       showLoginScreen();
     }
   });
+}
+// Run immediately
+initFirebase();
+window.addEventListener('load', function() {
+  // Fallback: ensure Firebase is initialized
+  if (!auth) initFirebase();
 });
 
 function showLoginScreen() {
@@ -2877,27 +2906,42 @@ document.addEventListener('click', e => {
 });
 
 // Init Firebase setelah semua SDK selesai load
-window.addEventListener('load', function() {
-  firebase.initializeApp({
-    apiKey: "AIzaSyA1LnlGx7hyu6fDHItGhGfjfkMCKwedS_w",
-    authDomain: "jlpt-n3-tracker.firebaseapp.com",
-    projectId: "jlpt-n3-tracker",
-    storageBucket: "jlpt-n3-tracker.firebasestorage.app",
-    messagingSenderId: "362158844759",
-    appId: "1:362158844759:web:0676064b4dcf47495b6c12"
-  });
+// Init Firebase immediately when script runs
+// (Firebase SDK loaded synchronously via <script> tags before this)
+function initFirebase() {
+  if (typeof firebase === 'undefined') {
+    setTimeout(initFirebase, 100);
+    return;
+  }
+  try {
+    firebase.initializeApp({
+      apiKey: "AIzaSyA1LnlGx7hyu6fDHItGhGfjfkMCKwedS_w",
+      authDomain: "jlpt-n3-tracker.firebaseapp.com",
+      projectId: "jlpt-n3-tracker",
+      storageBucket: "jlpt-n3-tracker.firebasestorage.app",
+      messagingSenderId: "362158844759",
+      appId: "1:362158844759:web:0676064b4dcf47495b6c12"
+    });
+  } catch(e) {
+    // Already initialized
+  }
   auth = firebase.auth();
   db   = firebase.firestore();
 
   auth.onAuthStateChanged(async user => {
     if (user) {
       currentUser = user;
-      document.getElementById('user-name').textContent = user.displayName?.split(' ')[0] || 'User';
-      document.getElementById('menu-name').textContent  = user.displayName || 'User';
-      document.getElementById('menu-email').textContent = user.email || '';
-      const av = document.getElementById('user-avatar');
-      if (user.photoURL) av.innerHTML = `<img src="${user.photoURL}" alt="av">`;
-      else av.textContent = (user.displayName || 'U')[0].toUpperCase();
+      const nameEl = document.getElementById('user-name');
+      const mnEl   = document.getElementById('menu-name');
+      const emEl   = document.getElementById('menu-email');
+      const avEl   = document.getElementById('user-avatar');
+      if (nameEl) nameEl.textContent = user.displayName?.split(' ')[0] || 'User';
+      if (mnEl)   mnEl.textContent   = user.displayName || 'User';
+      if (emEl)   emEl.textContent   = user.email || '';
+      if (avEl) {
+        if (user.photoURL) avEl.innerHTML = '<img src="'+user.photoURL+'" alt="av">';
+        else avEl.textContent = (user.displayName || 'U')[0].toUpperCase();
+      }
       showLoginLoading();
       await loadFromFirestore();
       hideLoginScreen();
@@ -2907,6 +2951,12 @@ window.addEventListener('load', function() {
       showLoginScreen();
     }
   });
+}
+// Run immediately
+initFirebase();
+window.addEventListener('load', function() {
+  // Fallback: ensure Firebase is initialized
+  if (!auth) initFirebase();
 });
 
 
