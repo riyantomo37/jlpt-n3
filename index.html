@@ -913,71 +913,35 @@ nav button.active {
 
 <!-- ====== FLASHCARD MENU SCREEN ====== -->
 <div id="screen-flashmenu" class="screen">
-  <div class="section-title" style="margin-bottom:6px">📚 Flashcard Kosakata</div>
-  <p style="font-size:13px;color:var(--mist);margin-bottom:24px">Pilih kategori lalu mulai — depan kanji, belakang arti & cara baca</p>
-
-  <div class="cat-list">
-    <div class="cat-card douji">
-      <div class="jp-label">動</div>
-      <h3>動詞 — Kata Kerja</h3>
-      <p>242 kata kerja N3</p>
-      <div class="progress-info">
-        <span id="fm-douji-done">0 / 242 hafal</span>
-        <span class="pct" id="fm-douji-pct">0%</span>
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
+    <div class="section-title" style="margin:0">📚 Flashcard</div>
+    <span id="fm-level-badge" style="font-family:'DM Mono',monospace;font-size:11px;padding:3px 10px;border-radius:10px;font-weight:700;background:var(--red);color:white">N3</span>
+  </div>
+  <p style="font-size:13px;color:var(--mist);margin-bottom:20px">Depan: kanji — Belakang: arti & cara baca. Kata belum hafal muncul duluan.</p>
+  <div id="fm-n3-section">
+    <div class="cat-list">
+      <div class="cat-card douji">
+        <div class="jp-label">動</div><h3>動詞 — Kata Kerja</h3><p>242 kata kerja</p>
+        <div class="progress-info"><span id="fm-douji-done">0 / 242 hafal</span><span class="pct" id="fm-douji-pct">0%</span></div>
+        <div class="cat-bar"><div class="cat-bar-fill" id="fm-bar-douji" style="width:0%;background:var(--red)"></div></div>
+        <button class="start-study-btn" onclick="startStudy('kanji')">▶ Mulai Sesi</button>
       </div>
-      <div class="cat-bar"><div class="cat-bar-fill" id="fm-bar-douji" style="width:0%;background:var(--red)"></div></div>
-      <button class="start-study-btn" onclick="startStudy('kanji')">▶ Mulai Sesi</button>
-    </div>
-    <div class="cat-card meishi">
-      <div class="jp-label">名</div>
-      <h3>名詞 — Kata Benda</h3>
-      <p>389 kata benda N3</p>
-      <div class="progress-info">
-        <span id="fm-meishi-done">0 / 389 hafal</span>
-        <span class="pct" id="fm-meishi-pct">0%</span>
+      <div class="cat-card meishi">
+        <div class="jp-label">名</div><h3>名詞 — Kata Benda</h3><p>389 kata benda</p>
+        <div class="progress-info"><span id="fm-meishi-done">0 / 389 hafal</span><span class="pct" id="fm-meishi-pct">0%</span></div>
+        <div class="cat-bar"><div class="cat-bar-fill" id="fm-bar-meishi" style="width:0%;background:var(--indigo)"></div></div>
+        <button class="start-study-btn" onclick="startStudy('vocab')">▶ Mulai Sesi</button>
       </div>
-      <div class="cat-bar"><div class="cat-bar-fill" id="fm-bar-meishi" style="width:0%;background:var(--indigo)"></div></div>
-      <button class="start-study-btn" onclick="startStudy('vocab')">▶ Mulai Sesi</button>
-    </div>
-    <div class="cat-card keiyoushi">
-      <div class="jp-label">形</div>
-      <h3>形容詞 — Kata Sifat</h3>
-      <p>140 kata sifat & keterangan N3</p>
-      <div class="progress-info">
-        <span id="fm-keiyou-done">0 / 140 hafal</span>
-        <span class="pct" id="fm-keiyou-pct">0%</span>
+      <div class="cat-card keiyoushi">
+        <div class="jp-label">形</div><h3>形容詞 — Kata Sifat</h3><p>140 kata sifat</p>
+        <div class="progress-info"><span id="fm-keiyou-done">0 / 140 hafal</span><span class="pct" id="fm-keiyou-pct">0%</span></div>
+        <div class="cat-bar"><div class="cat-bar-fill" id="fm-bar-keiyou" style="width:0%;background:var(--jade)"></div></div>
+        <button class="start-study-btn" onclick="startStudy('grammar')">▶ Mulai Sesi</button>
       </div>
-      <div class="cat-bar"><div class="cat-bar-fill" id="fm-bar-keiyou" style="width:0%;background:var(--jade)"></div></div>
-      <button class="start-study-btn" onclick="startStudy('grammar')">▶ Mulai Sesi</button>
     </div>
   </div>
-
-  <!-- Mode info -->
-  <div style="margin-top:28px;background:white;border:1px solid var(--border);border-radius:12px;padding:20px;display:flex;gap:24px;flex-wrap:wrap">
-    <div style="flex:1;min-width:160px">
-      <div style="font-size:12px;font-weight:700;margin-bottom:6px;color:var(--ink)">📖 Cara Main</div>
-      <div style="font-size:12px;color:var(--mist);line-height:1.7">
-        <b>Depan:</b> Kata Jepang (kanji)<br>
-        <b>Belakang:</b> Arti + Cara baca<br>
-        Nilai sendiri — hafal atau belum
-      </div>
-    </div>
-    <div style="flex:1;min-width:160px">
-      <div style="font-size:12px;font-weight:700;margin-bottom:6px;color:var(--ink)">⚡ Sistem Cerdas</div>
-      <div style="font-size:12px;color:var(--mist);line-height:1.7">
-        Kata belum hafal muncul duluan<br>
-        Sesi 20 kata per putaran<br>
-        Progress tersimpan otomatis
-      </div>
-    </div>
-    <div style="flex:1;min-width:160px">
-      <div style="font-size:12px;font-weight:700;margin-bottom:6px;color:var(--ink)">🎯 Target</div>
-      <div style="font-size:12px;color:var(--mist);line-height:1.7">
-        Hafal semua 771 kata N3<br>
-        Untuk lulus ujian Desember 2026<br>
-        がんばれ！💪
-      </div>
-    </div>
+  <div id="fm-flat-section" style="display:none">
+    <div id="fm-flat-info" style="background:white;border:1px solid var(--border);border-radius:16px;padding:36px 24px;text-align:center"></div>
   </div>
 </div>
 
@@ -1043,62 +1007,35 @@ nav button.active {
 
 <!-- ====== KANJI MENU SCREEN ====== -->
 <div id="screen-kanjimenu" class="screen">
-  <div class="section-title" style="margin-bottom:6px">漢字 Flashcard Kanji</div>
-  <p style="font-size:13px;color:var(--mist);margin-bottom:24px">Depan: kanji kata — Belakang: furigana + arti. Pilih kategori untuk mulai.</p>
-
-  <div class="cat-list">
-    <div class="cat-card douji">
-      <div class="jp-label">動</div>
-      <h3>動詞 — Kata Kerja</h3>
-      <p>242 kata kerja N3</p>
-      <div class="progress-info">
-        <span id="km-douji-done">0 / 242 hafal</span>
-        <span class="pct" id="km-douji-pct">0%</span>
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
+    <div class="section-title" style="margin:0">漢字 Baca Kanji</div>
+    <span id="km-level-badge" style="font-family:'DM Mono',monospace;font-size:11px;padding:3px 10px;border-radius:10px;font-weight:700;background:var(--red);color:white">N3</span>
+  </div>
+  <p style="font-size:13px;color:var(--mist);margin-bottom:20px">Depan: kanji — Belakang: furigana + arti. Nilai sendiri bisa/belum.</p>
+  <div id="km-n3-section">
+    <div class="cat-list">
+      <div class="cat-card douji">
+        <div class="jp-label">動</div><h3>動詞 — Kata Kerja</h3><p>242 kata kerja</p>
+        <div class="progress-info"><span id="km-douji-done">0 / 242 hafal</span><span class="pct" id="km-douji-pct">0%</span></div>
+        <div class="cat-bar"><div class="cat-bar-fill" id="km-bar-douji" style="width:0%;background:var(--red)"></div></div>
+        <button class="start-study-btn" onclick="startKanjiFlash('kanji')">▶ Mulai Baca</button>
       </div>
-      <div class="cat-bar"><div class="cat-bar-fill" id="km-bar-douji" style="width:0%;background:var(--red)"></div></div>
-      <button class="start-study-btn" onclick="startKanjiFlash('kanji')">▶ Mulai Baca</button>
-    </div>
-    <div class="cat-card meishi">
-      <div class="jp-label">名</div>
-      <h3>名詞 — Kata Benda</h3>
-      <p>389 kata benda N3</p>
-      <div class="progress-info">
-        <span id="km-meishi-done">0 / 389 hafal</span>
-        <span class="pct" id="km-meishi-pct">0%</span>
+      <div class="cat-card meishi">
+        <div class="jp-label">名</div><h3>名詞 — Kata Benda</h3><p>389 kata benda</p>
+        <div class="progress-info"><span id="km-meishi-done">0 / 389 hafal</span><span class="pct" id="km-meishi-pct">0%</span></div>
+        <div class="cat-bar"><div class="cat-bar-fill" id="km-bar-meishi" style="width:0%;background:var(--indigo)"></div></div>
+        <button class="start-study-btn" onclick="startKanjiFlash('vocab')">▶ Mulai Baca</button>
       </div>
-      <div class="cat-bar"><div class="cat-bar-fill" id="km-bar-meishi" style="width:0%;background:var(--indigo)"></div></div>
-      <button class="start-study-btn" onclick="startKanjiFlash('vocab')">▶ Mulai Baca</button>
-    </div>
-    <div class="cat-card keiyoushi">
-      <div class="jp-label">形</div>
-      <h3>形容詞 — Kata Sifat</h3>
-      <p>140 kata sifat & keterangan N3</p>
-      <div class="progress-info">
-        <span id="km-keiyou-done">0 / 140 hafal</span>
-        <span class="pct" id="km-keiyou-pct">0%</span>
+      <div class="cat-card keiyoushi">
+        <div class="jp-label">形</div><h3>形容詞 — Kata Sifat</h3><p>140 kata sifat</p>
+        <div class="progress-info"><span id="km-keiyou-done">0 / 140 hafal</span><span class="pct" id="km-keiyou-pct">0%</span></div>
+        <div class="cat-bar"><div class="cat-bar-fill" id="km-bar-keiyou" style="width:0%;background:var(--jade)"></div></div>
+        <button class="start-study-btn" onclick="startKanjiFlash('grammar')">▶ Mulai Baca</button>
       </div>
-      <div class="cat-bar"><div class="cat-bar-fill" id="km-bar-keiyou" style="width:0%;background:var(--jade)"></div></div>
-      <button class="start-study-btn" onclick="startKanjiFlash('grammar')">▶ Mulai Baca</button>
     </div>
   </div>
-
-  <div style="margin-top:28px;background:white;border:1px solid var(--border);border-radius:12px;padding:20px;display:flex;gap:24px;flex-wrap:wrap">
-    <div style="flex:1;min-width:150px">
-      <div style="font-size:12px;font-weight:700;margin-bottom:6px">📖 Cara Main</div>
-      <div style="font-size:12px;color:var(--mist);line-height:1.7">
-        <b>Depan:</b> Kanji kata saja<br>
-        <b>Belakang:</b> Furigana + Arti<br>
-        Nilai sendiri — hafal atau belum
-      </div>
-    </div>
-    <div style="flex:1;min-width:150px">
-      <div style="font-size:12px;font-weight:700;margin-bottom:6px">🎯 Tujuan</div>
-      <div style="font-size:12px;color:var(--mist);line-height:1.7">
-        Latih baca kanji dalam konteks<br>
-        kata nyata N3 — bukan kanji satuan<br>
-        Progress tersimpan otomatis
-      </div>
-    </div>
+  <div id="km-flat-section" style="display:none">
+    <div id="km-flat-content" style="background:white;border:1px solid var(--border);border-radius:16px;padding:36px 24px;text-align:center"></div>
   </div>
 </div>
 
@@ -1731,6 +1668,126 @@ document.addEventListener('click', e => {
 });
 
 // Init Firebase setelah semua SDK selesai load
+
+async function loadLeaderboard(level) {
+  if (level) lbCurrentLevel = level;
+  var listEl = document.getElementById('lb-list');
+  var membEl = document.getElementById('lb-members');
+  if (!listEl) return;
+  // Update tabs
+  document.querySelectorAll('[id^="lb-filter-"]').forEach(function(b){ b.classList.remove('active'); });
+  var ab = document.getElementById('lb-filter-' + lbCurrentLevel);
+  if (ab) ab.classList.add('active');
+  var total = JLPT_TOTALS[lbCurrentLevel] || 771;
+  var color = JLPT_COLORS[lbCurrentLevel] || 'var(--red)';
+  var sub = document.getElementById('lb-subtitle');
+  if (sub) sub.textContent = 'Ranking ' + lbCurrentLevel + ' — ' + total + ' kata';
+  var tw = document.getElementById('lb-total-words');
+  if (tw) tw.textContent = total;
+  listEl.innerHTML = '<div style="text-align:center;padding:32px;color:var(--mist)">⏳ Memuat...</div>';
+  if (membEl) membEl.innerHTML = '<div style="text-align:center;padding:16px;color:var(--mist);grid-column:1/-1">⏳ Memuat...</div>';
+  try {
+    var snap = await db.collection('users').limit(100).get();
+    var users = [];
+    snap.forEach(function(doc){
+      var d = doc.data();
+      var lm = lbCurrentLevel === 'N3' ? (d.totalMastered||0) : ((d.totalMasteredAll||{})[lbCurrentLevel]||0);
+      users.push(Object.assign({uid:doc.id},d,{lvlMastered:lm}));
+    });
+    users.sort(function(a,b){ return b.lvlMastered - a.lvlMastered; });
+    var tuEl = document.getElementById('lb-total-users');
+    if (tuEl) tuEl.textContent = users.length;
+    var myIdx = users.findIndex(function(u){ return u.uid === (currentUser&&currentUser.uid); });
+    var mr = document.getElementById('lb-my-rank');
+    if (mr) mr.textContent = myIdx >= 0 ? '#'+(myIdx+1) : '#-';
+    if (!users.length) {
+      listEl.innerHTML = '<div style="text-align:center;padding:40px;color:var(--mist)"><div style="font-size:40px">🎌</div>Belum ada data</div>';
+    } else {
+      listEl.innerHTML = users.map(function(u,i){
+        var rank=i+1, isMe=u.uid===(currentUser&&currentUser.uid);
+        var tot=u.lvlMastered, pct=Math.round(tot/total*100);
+        var lv=getLevel(tot);
+        var icon=rank===1?'🥇':rank===2?'🥈':rank===3?'🥉':'#'+rank;
+        var av=u.photoURL?'<img src="'+u.photoURL+'" alt="av">':(u.displayName||'U')[0].toUpperCase();
+        var lastSeen='';
+        if(u.lastSeen&&u.lastSeen.toDate){
+          var d2=Math.floor((Date.now()-u.lastSeen.toDate())/86400000);
+          lastSeen=d2===0?'🟢 Hari ini':d2===1?'🟡 Kemarin':'⚪ '+d2+' hari lalu';
+        }
+        return '<div class="lb-row '+(rank<=3?'rank-'+rank:'')+' '+(isMe?'me':'')+'">'
+          +(isMe?'<span class="me-badge">KAMU</span>':'')
+          +'<div class="lb-rank-num '+(rank===1?'gold':rank===2?'silver':rank===3?'bronze':'')+'">'+icon+'</div>'
+          +'<div class="lb-avatar">'+av+'</div>'
+          +'<div class="lb-info"><div class="lb-name">'+( u.displayName||'Pelajar')
+          +' <span class="level-badge '+lv.cls+'" style="font-size:10px;padding:2px 7px">Lv.'+lv.lv+' '+lv.jp+'</span></div>'
+          +'<div class="lb-sub">'+lastSeen+' · 🔥 '+(u.streak||0)+' hari · '+pct+'%</div></div>'
+          +'<div class="lb-score"><div class="total" style="color:'+color+'">'+tot+'</div><div class="label">kata hafal</div></div>'
+          +'</div>';
+      }).join('');
+    }
+    if (membEl) {
+      membEl.innerHTML = users.map(function(u){
+        var isMe=u.uid===(currentUser&&currentUser.uid);
+        var tot=u.lvlMastered, lv=getLevel(tot);
+        var av=u.photoURL?'<img src="'+u.photoURL+'" alt="av">':(u.displayName||'U')[0].toUpperCase();
+        return '<div class="member-card" '+(isMe?'style="border-color:var(--gold)"':'')+'>'
+          +'<div class="av">'+av+'</div>'
+          +'<div class="nm">'+(u.displayName||'Pelajar')+(isMe?' ⭐':'')+'</div>'
+          +'<div style="margin:4px 0"><span class="level-badge '+lv.cls+'" style="font-size:10px;padding:2px 7px">Lv.'+lv.lv+' '+lv.jp+'</span></div>'
+          +'<div class="sc" style="color:'+color+'">'+tot+'/'+total+'</div>'
+          +'<div class="sc">🔥 '+(u.streak||0)+' hari</div></div>';
+      }).join('');
+    }
+  } catch(err) {
+    listEl.innerHTML = '<div style="text-align:center;padding:40px;color:var(--mist)">⚠️ Gagal memuat. Cek koneksi.</div>';
+  }
+}
+
+async function loadDashboardLeaderboard() {
+  var lbEl = document.getElementById('ov-lb-list');
+  if (!lbEl || !db) return;
+  var total = getCurrentTotal();
+  var color = JLPT_COLORS[currentJLPT] || 'var(--indigo)';
+  try {
+    var snap = await db.collection('users').limit(50).get();
+    var users = [];
+    snap.forEach(function(doc){
+      var d = doc.data();
+      var lm = currentJLPT==='N3'?(d.totalMastered||0):((d.totalMasteredAll||{})[currentJLPT]||0);
+      users.push(Object.assign({uid:doc.id},d,{_lm:lm}));
+    });
+    users.sort(function(a,b){ return b._lm-a._lm; });
+    lbEl.innerHTML = users.slice(0,5).map(function(u,i){
+      var rank=i+1, isMe=u.uid===(currentUser&&currentUser.uid);
+      var tot=u._lm, pct=Math.round(tot/total*100);
+      var icon=rank===1?'🥇':rank===2?'🥈':rank===3?'🥉':'#'+rank;
+      var av=u.photoURL?'<img src="'+u.photoURL+'" style="width:100%;height:100%;object-fit:cover;border-radius:50%">'
+        :'<span style="font-size:13px;font-weight:700">'+(u.displayName||'U')[0].toUpperCase()+'</span>';
+      return '<div style="background:white;border:1px solid '+(isMe?'var(--gold)':'var(--border)')+';border-radius:10px;padding:10px 14px;display:flex;align-items:center;gap:10px">'
+        +'<div style="font-size:18px;width:28px;text-align:center;flex-shrink:0">'+icon+'</div>'
+        +'<div style="width:32px;height:32px;border-radius:50%;background:'+color+';display:flex;align-items:center;justify-content:center;color:white;flex-shrink:0;overflow:hidden">'+av+'</div>'
+        +'<div style="flex:1;min-width:0"><div style="font-size:13px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+(u.displayName||'Pelajar')+(isMe?' ⭐':'')+'</div>'
+        +'<div style="font-size:11px;color:var(--mist)">🔥 '+(u.streak||0)+' hari · '+pct+'%</div></div>'
+        +'<div style="text-align:right;flex-shrink:0"><div style="font-family:DM Mono,monospace;font-size:18px;font-weight:700;color:'+color+'">'+tot+'</div>'
+        +'<div style="font-size:10px;color:var(--mist)">kata</div></div></div>';
+    }).join('') || '<div style="padding:20px;text-align:center;color:var(--mist)">Belum ada data 🎌</div>';
+
+    // member bubbles
+    var membEl = document.getElementById('ov-members');
+    if (membEl) {
+      membEl.innerHTML = users.map(function(u){
+        var isMe=u.uid===(currentUser&&currentUser.uid);
+        var av=u.photoURL?'<img src="'+u.photoURL+'" style="width:100%;height:100%;object-fit:cover;">'
+          :'<span style="font-size:16px;font-weight:700">'+(u.displayName||'U')[0].toUpperCase()+'</span>';
+        +'<div onclick="gotoScreen(' + "'" + 'leaderboard' + "'" + ')" title="'+(u.displayName||'?')+' — '+u._lm+' kata" style="display:flex;flex-direction:column;align-items:center;gap:4px;cursor:pointer">'
+          +'<div style="width:44px;height:44px;border-radius:50%;background:'+color+';display:flex;align-items:center;justify-content:center;color:white;overflow:hidden;border:2px solid '+(isMe?'var(--gold)':'transparent')+'">'+av+'</div>'
+          +'<div style="font-size:10px;color:var(--mist);max-width:44px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-align:center">'+(u.displayName||'?').split(' ')[0]+'</div></div>';
+      }).join('');
+    }
+  } catch(e) {
+    if (lbEl) lbEl.innerHTML = '<div style="padding:16px;text-align:center;color:var(--mist);font-size:12px">Perlu koneksi internet</div>';
+  }
+}
 function initFirebase(){
   function _load(src,cb){
     var el=document.createElement('script');
@@ -1940,16 +1997,36 @@ function gotoScreen(name) {
 }
 
 function updateFlashMenu() {
-  const kd = countMastered('kanji'), vd = countMastered('vocab'), gd = countMastered('grammar');
-  document.getElementById('fm-douji-done').textContent = kd + ' / 242 hafal';
-  document.getElementById('fm-meishi-done').textContent = vd + ' / 389 hafal';
-  document.getElementById('fm-keiyou-done').textContent = gd + ' / 140 hafal';
-  document.getElementById('fm-douji-pct').textContent = Math.round(kd/242*100) + '%';
-  document.getElementById('fm-meishi-pct').textContent = Math.round(vd/389*100) + '%';
-  document.getElementById('fm-keiyou-pct').textContent = Math.round(gd/140*100) + '%';
-  document.getElementById('fm-bar-douji').style.width = Math.min(Math.round(kd/242*100),100) + '%';
-  document.getElementById('fm-bar-meishi').style.width = Math.min(Math.round(vd/389*100),100) + '%';
-  document.getElementById('fm-bar-keiyou').style.width = Math.min(Math.round(gd/140*100),100) + '%';
+  var color = JLPT_COLORS[currentJLPT] || 'var(--red)';
+  var badge = document.getElementById('fm-level-badge');
+  if (badge) { badge.textContent = currentJLPT; badge.style.background = color; }
+  var n3sec  = document.getElementById('fm-n3-section');
+  var flatSec = document.getElementById('fm-flat-section');
+  if (currentJLPT === 'N3') {
+    if (n3sec)  n3sec.style.display = '';
+    if (flatSec) flatSec.style.display = 'none';
+    var kd = countMastered('kanji'), vd = countMastered('vocab'), gd = countMastered('grammar');
+    document.getElementById('fm-douji-done').textContent = kd + ' / 242 hafal';
+    document.getElementById('fm-meishi-done').textContent = vd + ' / 389 hafal';
+    document.getElementById('fm-keiyou-done').textContent = gd + ' / 140 hafal';
+    document.getElementById('fm-douji-pct').textContent = Math.round(kd/242*100) + '%';
+    document.getElementById('fm-meishi-pct').textContent = Math.round(vd/389*100) + '%';
+    document.getElementById('fm-keiyou-pct').textContent = Math.round(gd/140*100) + '%';
+    document.getElementById('fm-bar-douji').style.width = Math.min(Math.round(kd/242*100),100) + '%';
+    document.getElementById('fm-bar-meishi').style.width = Math.min(Math.round(vd/389*100),100) + '%';
+    document.getElementById('fm-bar-keiyou').style.width = Math.min(Math.round(gd/140*100),100) + '%';
+  } else {
+    if (n3sec)  n3sec.style.display = 'none';
+    if (flatSec) flatSec.style.display = '';
+    var total = getCurrentTotal(), done = getCurrentMastered(), pct = Math.round(done/total*100);
+    var el = document.getElementById('fm-flat-info');
+    if (el) el.innerHTML = '<div style="font-size:44px;margin-bottom:12px">📚</div>'
+      + '<div style="font-weight:700;font-size:18px;margin-bottom:6px;color:'+color+'">' + currentJLPT + ' — ' + total + ' Kosakata</div>'
+      + '<div style="font-size:13px;color:var(--mist);margin-bottom:14px">' + done + ' hafal · ' + (total-done) + ' belum · ' + pct + '%</div>'
+      + '<div style="background:rgba(26,26,46,.1);border-radius:4px;height:8px;margin:0 auto 20px;max-width:300px;overflow:hidden">'
+      + '<div style="height:100%;width:'+pct+'%;background:'+color+';border-radius:4px;transition:width .6s"></div></div>'
+      + '<button class="start-study-btn" style="background:'+color+';display:inline-block;width:auto;padding:12px 32px" onclick="startStudy(&apos;vocab&apos;)">▶ Mulai Flashcard ' + currentJLPT + '</button>';
+  }
 }
 
 // ============================================================
@@ -1962,22 +2039,33 @@ function totalAll() { return 242 + 389 + 140; }
 function masteredAll() { return countMastered('kanji') + countMastered('vocab') + countMastered('grammar'); }
 
 function updateOverview() {
-  const total = totalAll();
-  const done = masteredAll();
-  const pct = Math.round(done / total * 100);
-  document.getElementById('ov-total').textContent = `${done}/${total}`;
-  document.getElementById('ov-bar').style.width = pct + '%';
+  var total = getCurrentTotal();
+  var done  = getCurrentMastered();
+  var pct   = Math.round(done / total * 100);
+  document.getElementById('ov-total').textContent  = done + '/' + total;
+  document.getElementById('ov-bar').style.width    = pct + '%';
   document.getElementById('ov-streak').textContent = streak + '🔥';
-  document.getElementById('ov-today').textContent = todayCount;
+  document.getElementById('ov-today').textContent  = todayCount;
 
-  const kd = countMastered('kanji'), vd = countMastered('vocab'), gd = countMastered('grammar');
-  // Overview progress bars (simplified — no pct labels)
-  document.getElementById('cat-douji-done').textContent = `${kd} / 242`;
-  document.getElementById('cat-meishi-done').textContent = `${vd} / 389`;
-  document.getElementById('cat-keiyou-done').textContent = `${gd} / 140`;
-  document.getElementById('bar-douji').style.width = Math.min(Math.round(kd/242*100),100)+'%';
-  document.getElementById('bar-meishi').style.width = Math.min(Math.round(vd/389*100),100)+'%';
-  document.getElementById('bar-keiyou').style.width = Math.min(Math.round(gd/140*100),100)+'%';
+  if (currentJLPT === 'N3') {
+    var kd = countMastered('kanji'), vd = countMastered('vocab'), gd = countMastered('grammar');
+    document.getElementById('cat-douji-done').textContent  = kd + ' / 242';
+    document.getElementById('cat-meishi-done').textContent = vd + ' / 389';
+    document.getElementById('cat-keiyou-done').textContent = gd + ' / 140';
+    document.getElementById('bar-douji').style.width  = Math.min(Math.round(kd/242*100),100) + '%';
+    document.getElementById('bar-meishi').style.width = Math.min(Math.round(vd/389*100),100) + '%';
+    document.getElementById('bar-keiyou').style.width = Math.min(Math.round(gd/140*100),100) + '%';
+  } else {
+    var color = JLPT_COLORS[currentJLPT] || 'var(--red)';
+    document.getElementById('cat-douji-done').textContent  = done + ' / ' + total;
+    document.getElementById('cat-meishi-done').textContent = '—';
+    document.getElementById('cat-keiyou-done').textContent = '—';
+    document.getElementById('bar-douji').style.width  = pct + '%';
+    document.getElementById('bar-douji').style.background = color;
+    document.getElementById('bar-meishi').style.width = '0%';
+    document.getElementById('bar-keiyou').style.width = '0%';
+  }
+  loadDashboardLeaderboard();
 }
 
 // ============================================================
@@ -1985,31 +2073,33 @@ function updateOverview() {
 // ============================================================
 function startStudy(cat) {
   sessionCat = cat;
-  sessionReviewed = 0;
-  sessionMastered = 0;
-  revealed = false;
-
-  // Build queue: unmastered first (shuffled), then mastered (shuffled)
-  const words = ALL_WORDS[cat];
-  const unmastered = words.filter(w => !mastered[cat][w.id]);
-  const done = words.filter(w => mastered[cat][w.id]);
-  shuffle(unmastered);
-  shuffle(done);
-  // Take up to SESSION_SIZE from unmastered, top up with mastered
-  sessionQueue = [...unmastered, ...done].slice(0, SESSION_SIZE);
+  sessionReviewed = 0; sessionMastered = 0; revealed = false;
+  var words, unmastered, done;
+  if (currentJLPT === 'N3') {
+    words = ALL_WORDS[cat];
+    unmastered = words.filter(function(w){ return !mastered[cat][w.id]; });
+    done       = words.filter(function(w){ return  mastered[cat][w.id]; });
+  } else {
+    var lvlWords = JLPT_DATA[currentJLPT] || [];
+    var lvlMast  = mastered[currentJLPT] || {};
+    unmastered = lvlWords.filter(function(w){ return !lvlMast[w.id]; });
+    done       = lvlWords.filter(function(w){ return  lvlMast[w.id]; });
+    cat = 'vocab';
+  }
+  shuffle(unmastered); shuffle(done);
+  sessionQueue = unmastered.concat(done).slice(0, SESSION_SIZE);
   sessionIdx = 0;
-
-  const titles = { kanji:'動詞 Kata Kerja', vocab:'名詞 Kata Benda', grammar:'形容詞 Kata Sifat' };
-  document.getElementById('flash-category-title').textContent = titles[cat];
-  document.getElementById('flash-subtitle').textContent = `${unmastered.length} belum hafal · ${done.length} sudah hafal`;
-
-  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  var color = JLPT_COLORS[currentJLPT] || 'var(--red)';
+  var titles = { kanji:'動詞 Kata Kerja', vocab:'名詞 Kata Benda', grammar:'形容詞 Kata Sifat' };
+  document.getElementById('flash-category-title').textContent =
+    currentJLPT === 'N3' ? titles[cat] : currentJLPT + ' — Kosakata';
+  document.getElementById('flash-subtitle').textContent =
+    unmastered.length + ' belum hafal · ' + done.length + ' sudah hafal';
+  document.querySelectorAll('.screen').forEach(function(s){ s.classList.remove('active'); });
   document.getElementById('screen-flash').classList.add('active');
-  document.querySelectorAll('nav button').forEach(b => b.classList.remove('active'));
-
+  document.querySelectorAll('nav button').forEach(function(b){ b.classList.remove('active'); });
   document.getElementById('session-done-panel').style.display = 'none';
   document.getElementById('flash-active').style.display = 'block';
-
   showCard();
 }
 
@@ -2052,24 +2142,27 @@ function revealCard() {
 }
 
 function markCard(isHafal) {
-  const w = sessionQueue[sessionIdx];
-  const wasMastered = mastered[sessionCat][w.id];
-
-  if (isHafal) {
-    mastered[sessionCat][w.id] = true;
-    if (!wasMastered) { sessionMastered++; todayCount++; }
+  var w = sessionQueue[sessionIdx];
+  var isMast;
+  if (currentJLPT === 'N3') {
+    isMast = !!mastered[sessionCat][w.id];
   } else {
-    delete mastered[sessionCat][w.id];
+    isMast = !!(mastered[currentJLPT] || {})[w.id];
   }
-
-  // Update streak
-  const today = new Date().toDateString();
+  if (isHafal) {
+    if (currentJLPT === 'N3') mastered[sessionCat][w.id] = true;
+    else { if (!mastered[currentJLPT]) mastered[currentJLPT] = {}; mastered[currentJLPT][w.id] = true; }
+    if (!isMast) { sessionMastered++; todayCount++; }
+  } else {
+    if (currentJLPT === 'N3') delete mastered[sessionCat][w.id];
+    else if (mastered[currentJLPT]) delete mastered[currentJLPT][w.id];
+  }
+  var today = new Date().toDateString();
   if (lastStudyDate !== today) {
-    const yesterday = new Date(Date.now() - 86400000).toDateString();
+    var yesterday = new Date(Date.now() - 86400000).toDateString();
     streak = (lastStudyDate === yesterday) ? streak + 1 : 1;
     lastStudyDate = today;
   }
-
   save();
   sessionReviewed++;
   sessionIdx++;
@@ -2115,45 +2208,68 @@ function kfCountMastered(cat) {
 }
 
 function updateKanjiMenu() {
-  const cats = { kanji: 242, vocab: 389, grammar: 140 };
-  const ids  = { kanji: 'km-douji', vocab: 'km-meishi', grammar: 'km-keiyou' };
-  const bars = { kanji: 'km-bar-douji', vocab: 'km-bar-meishi', grammar: 'km-bar-keiyou' };
-  for (const [cat, total] of Object.entries(cats)) {
-    const done = kfCountMastered(cat);
-    const pct  = Math.round(done / total * 100);
-    document.getElementById(ids[cat] + '-done').textContent = done + ' / ' + total + ' hafal';
-    document.getElementById(ids[cat] + '-pct').textContent  = pct + '%';
-    document.getElementById(bars[cat]).style.width = Math.min(pct, 100) + '%';
+  var color = JLPT_COLORS[currentJLPT] || 'var(--red)';
+  var badge = document.getElementById('km-level-badge');
+  if (badge) { badge.textContent = currentJLPT; badge.style.background = color; }
+  var n3sec  = document.getElementById('km-n3-section');
+  var flatSec = document.getElementById('km-flat-section');
+  if (currentJLPT === 'N3') {
+    if (n3sec)  n3sec.style.display = '';
+    if (flatSec) flatSec.style.display = 'none';
+    var cats = {kanji:242, vocab:389, grammar:140};
+    var ids  = {kanji:'km-douji', vocab:'km-meishi', grammar:'km-keiyou'};
+    var bars = {kanji:'km-bar-douji', vocab:'km-bar-meishi', grammar:'km-bar-keiyou'};
+    for (var cat in cats) {
+      var d = kfCountMastered(cat), p = Math.round(d/cats[cat]*100);
+      document.getElementById(ids[cat]+'-done').textContent = d + ' / ' + cats[cat] + ' hafal';
+      document.getElementById(ids[cat]+'-pct').textContent  = p + '%';
+      document.getElementById(bars[cat]).style.width = Math.min(p,100) + '%';
+    }
+  } else {
+    if (n3sec)  n3sec.style.display = 'none';
+    if (flatSec) flatSec.style.display = '';
+    var total = getCurrentTotal();
+    var kfKey = 'kf_' + currentJLPT;
+    var done = Object.values(mastered[kfKey] || {}).filter(Boolean).length;
+    var pct = total ? Math.round(done/total*100) : 0;
+    var el = document.getElementById('km-flat-content');
+    if (el) el.innerHTML = '<div style="font-family:Noto Serif JP,serif;font-size:56px;margin-bottom:12px;color:'+color+'">漢</div>'
+      + '<div style="font-weight:700;font-size:18px;margin-bottom:6px;color:'+color+'">' + currentJLPT + ' — ' + total + ' Kata</div>'
+      + '<div style="font-size:13px;color:var(--mist);margin-bottom:14px">' + done + ' bisa baca · ' + (total-done) + ' belum · ' + pct + '%</div>'
+      + '<div style="background:rgba(26,26,46,.1);border-radius:4px;height:8px;margin:0 auto 20px;max-width:300px;overflow:hidden">'
+      + '<div style="height:100%;width:'+pct+'%;background:'+color+';border-radius:4px"></div></div>'
+      + '<button class="start-study-btn" style="background:'+color+';display:inline-block;width:auto;padding:12px 32px" onclick="startKanjiFlash(&apos;vocab&apos;)">▶ Mulai Baca Kanji ' + currentJLPT + '</button>';
   }
 }
 
 function startKanjiFlash(cat) {
-  kfCat      = cat;
-  kfReviewed = 0;
-  kfMastered = 0;
-  kfRevealed = false;
-
-  const words = ALL_WORDS[cat];
-  const unmastered = words.filter(w => !kfIsMastered(w.id));
-  const done       = words.filter(w =>  kfIsMastered(w.id));
-  shuffle(unmastered);
-  shuffle(done);
-  kfQueue = [...unmastered, ...done].slice(0, SESSION_SIZE);
-  kfIdx   = 0;
-
-  const titles = { kanji: '漢字 Kata Kerja', vocab: '漢字 Kata Benda', grammar: '漢字 Kata Sifat' };
-  document.getElementById('kf-title').textContent = titles[cat];
-  document.getElementById('kf-subtitle').textContent =
-    unmastered.length + ' belum bisa · ' + done.length + ' sudah bisa';
-
-  // Tampilkan screen
-  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  kfCat = currentJLPT === 'N3' ? cat : 'vocab';
+  kfReviewed = 0; kfMastered = 0; kfRevealed = false;
+  var words;
+  if (currentJLPT === 'N3') {
+    words = ALL_WORDS[cat];
+  } else {
+    words = JLPT_DATA[currentJLPT] || [];
+  }
+  var kfKey = currentJLPT === 'N3' ? null : 'kf_' + currentJLPT;
+  var unmastered = words.filter(function(w){
+    return kfKey ? !(mastered[kfKey]||{})[w.id] : !kanjiReadMastered['kf_'+cat+'_'+w.id];
+  });
+  var done = words.filter(function(w){
+    return kfKey ? !!(mastered[kfKey]||{})[w.id] : !!kanjiReadMastered['kf_'+cat+'_'+w.id];
+  });
+  shuffle(unmastered); shuffle(done);
+  kfQueue = unmastered.concat(done).slice(0, SESSION_SIZE);
+  kfIdx = 0;
+  var color = JLPT_COLORS[currentJLPT] || 'var(--red)';
+  var titles = { kanji:'漢字 Kata Kerja', vocab:'漢字 Kata Benda', grammar:'漢字 Kata Sifat' };
+  document.getElementById('kf-title').textContent = currentJLPT === 'N3' ? titles[cat] : '漢字 ' + currentJLPT;
+  document.getElementById('kf-subtitle').textContent = unmastered.length + ' belum · ' + done.length + ' sudah';
+  document.querySelectorAll('.screen').forEach(function(s){ s.classList.remove('active'); });
   document.getElementById('screen-kanjiflash').classList.add('active');
-  document.querySelectorAll('nav button').forEach(b => b.classList.remove('active'));
-
+  document.querySelectorAll('nav button').forEach(function(b){ b.classList.remove('active'); });
   document.getElementById('kf-done-panel').style.display = 'none';
-  document.getElementById('kf-active').style.display     = 'block';
-
+  document.getElementById('kf-active').style.display = 'block';
   showKanjiCard();
 }
 
@@ -2234,30 +2350,55 @@ function setFilter(f, btn) {
 }
 
 function renderReview(filter) {
-  let words = [];
-  const cats = ['kanji', 'vocab', 'grammar'];
-  for (const cat of cats) {
-    for (const w of ALL_WORDS[cat]) {
-      words.push({ ...w, cat });
-    }
-  }
-  if (filter === 'kanji') words = words.filter(w => w.cat === 'kanji');
-  if (filter === 'vocab') words = words.filter(w => w.cat === 'vocab');
-  if (filter === 'grammar') words = words.filter(w => w.cat === 'grammar');
-  if (filter === 'done') words = words.filter(w => mastered[w.cat][w.id]);
-  if (filter === 'todo') words = words.filter(w => !mastered[w.cat][w.id]);
+  currentFilter = filter || 'all';
+  var color = JLPT_COLORS[currentJLPT] || 'var(--red)';
+  var titleEl = document.getElementById('review-title');
+  var badgeEl = document.getElementById('review-level-badge');
+  if (titleEl) titleEl.textContent = 'Semua Kata ' + currentJLPT;
+  if (badgeEl) { badgeEl.textContent = currentJLPT; badgeEl.style.background = color; }
 
-  document.getElementById('review-count').textContent = `Menampilkan ${words.length} kata`;
-  document.getElementById('vocab-grid').innerHTML = words.map(w => {
-    const done = mastered[w.cat][w.id];
-    return `<div class="vocab-item ${done ? 'mastered' : ''}">
-      <div class="status-dot ${done ? 'done' : 'todo'}"></div>
-      <div style="flex:1;min-width:0">
-        <div class="jp">${w.jp}</div>
-        <div class="id-meaning">${w.id_}</div>
-        <div style="font-size:10px;color:var(--mist);font-family:'DM Mono',monospace">${w.rom}</div>
-      </div>
-    </div>`;
+  var words = [];
+  if (currentJLPT === 'N3') {
+    ['kanji','vocab','grammar'].forEach(function(cat) {
+      ALL_WORDS[cat].forEach(function(w){ words.push(Object.assign({},w,{cat:cat})); });
+    });
+    if (filter === 'kanji')   words = words.filter(function(w){ return w.cat==='kanji'; });
+    if (filter === 'vocab')   words = words.filter(function(w){ return w.cat==='vocab'; });
+    if (filter === 'grammar') words = words.filter(function(w){ return w.cat==='grammar'; });
+    if (filter === 'done')    words = words.filter(function(w){ return !!mastered[w.cat][w.id]; });
+    if (filter === 'todo')    words = words.filter(function(w){ return !mastered[w.cat][w.id]; });
+  } else {
+    words = (JLPT_DATA[currentJLPT] || []).map(function(w){ return Object.assign({},w,{cat:'vocab'}); });
+    var lvlMast = mastered[currentJLPT] || {};
+    if (filter === 'done') words = words.filter(function(w){ return !!lvlMast[w.id]; });
+    if (filter === 'todo') words = words.filter(function(w){ return !lvlMast[w.id]; });
+  }
+
+  if (searchQuery) {
+    var q = searchQuery.toLowerCase();
+    words = words.filter(function(w){
+      return w.jp.toLowerCase().indexOf(q)>=0 || w.rom.toLowerCase().indexOf(q)>=0 || w.id_.toLowerCase().indexOf(q)>=0;
+    });
+  }
+
+  var countEl = document.getElementById('review-count');
+  if (countEl) countEl.textContent = 'Menampilkan ' + words.length + ' kata';
+
+  var grid = document.getElementById('vocab-grid');
+  if (!grid) return;
+  if (!words.length) {
+    grid.innerHTML = '<div style="text-align:center;padding:40px;color:var(--mist);grid-column:1/-1"><div style="font-size:32px">🔍</div>Tidak ada kata yang cocok</div>';
+    return;
+  }
+  grid.innerHTML = words.map(function(w) {
+    var done = currentJLPT==='N3' ? !!mastered[w.cat][w.id] : !!(mastered[currentJLPT]||{})[w.id];
+    return '<div class="vocab-item ' + (done?'mastered':'') + '" style="cursor:pointer">'
+      + '<div class="status-dot ' + (done?'done':'todo') + '"></div>'
+      + '<div style="flex:1;min-width:0">'
+      + '<div class="jp">' + w.jp + '</div>'
+      + '<div class="id-meaning">' + w.id_ + '</div>'
+      + '<div style="font-size:10px;color:var(--mist)">' + w.rom + '</div>'
+      + '</div></div>';
   }).join('');
 }
 
