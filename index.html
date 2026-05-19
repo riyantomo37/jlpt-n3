@@ -3,74 +3,18 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Test Login</title>
+<title>Test2 - No Firebase</title>
 <style>
-body { background:#1a1a2e; color:white; font-family:sans-serif; display:flex; align-items:center; justify-content:center; min-height:100vh; margin:0; }
-.box { background:rgba(255,255,255,.1); padding:40px; border-radius:16px; text-align:center; width:300px; }
-button { width:100%; padding:14px; margin:8px 0; border:none; border-radius:10px; font-size:16px; cursor:pointer; }
-.g-btn { background:white; color:#333; font-weight:bold; }
-.skip-btn { background:rgba(255,255,255,.15); color:white; }
-#log { margin-top:16px; font-size:12px; color:#aaa; text-align:left; white-space:pre-wrap; }
+body{background:#1a1a2e;color:white;font-family:sans-serif;display:flex;align-items:center;justify-content:center;min-height:100vh;margin:0;}
+.box{background:rgba(255,255,255,.1);padding:40px;border-radius:16px;text-align:center;width:300px;}
+button{width:100%;padding:14px;margin:8px 0;border:none;border-radius:10px;font-size:16px;cursor:pointer;background:white;color:#333;font-weight:bold;}
 </style>
 </head>
 <body>
 <div class="box">
-  <h2>JLPT Test</h2>
-  <p id="status">Memuat Firebase...</p>
-  <button class="g-btn" onclick="doGoogle()">Masuk dengan Google</button>
-  <button class="skip-btn" onclick="doSkip()">Lanjut tanpa akun</button>
-  <div id="log"></div>
+  <h2>Test Tanpa Firebase</h2>
+  <p>Klik tombol di bawah:</p>
+  <button onclick="alert('BERHASIL! JS bekerja normal.')">Klik Saya</button>
 </div>
-
-<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
-<script>
-var auth = null;
-var log = document.getElementById('log');
-
-function addLog(msg) {
-  log.textContent += '\n' + msg;
-  console.log(msg);
-}
-
-addLog('Script started');
-
-try {
-  firebase.initializeApp({
-    apiKey: "AIzaSyA1LnlGx7hyu6fDHItGhGfjfkMCKwedS_w",
-    authDomain: "jlpt-n3-tracker.firebaseapp.com",
-    projectId: "jlpt-n3-tracker",
-    appId: "1:362158844759:web:0676064b4dcf47495b6c12"
-  });
-  auth = firebase.auth();
-  addLog('Firebase OK');
-  document.getElementById('status').textContent = 'Firebase siap ✓';
-
-  auth.onAuthStateChanged(function(user) {
-    if (user) {
-      addLog('Logged in: ' + user.email);
-      document.getElementById('status').textContent = 'Login berhasil! ' + user.displayName;
-    } else {
-      addLog('Not logged in');
-    }
-  });
-} catch(e) {
-  addLog('Firebase ERROR: ' + e.message);
-  document.getElementById('status').textContent = 'Error: ' + e.message;
-}
-
-function doGoogle() {
-  addLog('Google login clicked');
-  if (!auth) { addLog('auth null!'); return; }
-  auth.signInWithPopup(new firebase.auth.GoogleAuthProvider())
-    .then(r => addLog('Success: ' + r.user.email))
-    .catch(e => addLog('Error: ' + e.code + ' - ' + e.message));
-}
-
-function doSkip() {
-  addLog('Skip clicked - langsung masuk');
-  document.body.innerHTML = '<div style="padding:40px;color:white;background:#1a1a2e;min-height:100vh"><h1>✓ JS Bekerja!</h1><p>Onclick berfungsi normal.</p><p style="color:#aaa">Masalah ada di Firebase, bukan JS.</p></div>';
-}
-</script>
 </body>
 </html>
