@@ -801,6 +801,9 @@ nav button.active {
         </svg>
         Masuk dengan Google
       </button>
+      <button onclick="loginAsGuest()" style="width:100%;margin-top:12px;padding:12px;background:transparent;border:1px solid rgba(255,255,255,0.2);border-radius:12px;color:rgba(255,255,255,0.6);font-family:'Noto Sans JP',sans-serif;font-size:14px;cursor:pointer;">
+        Lanjut tanpa akun →
+      </button>
       <p class="login-desc">
         Progress belajarmu tersimpan di cloud ☁️<br>
         Bisa akses dari device manapun
@@ -1740,18 +1743,18 @@ let auth, db, currentUser = null, syncTimeout = null;
 
 // Fungsi auth global (bisa dipanggil dari onclick di HTML)
 function loginWithGoogle() {
-  console.log('loginWithGoogle called, auth=', auth);
-  if (!auth) {
-    console.log('auth not ready, retrying...');
-    setTimeout(loginWithGoogle, 500);
-    return;
-  }
-  const provider = new firebase.auth.GoogleAuthProvider();
-  auth.signInWithPopup(provider)
-    .catch(err => {
-      console.error('Login error:', err);
-      alert('Login gagal: ' + err.code + '\n' + err.message);
-    });
+  console.log('loginWithGoogle, auth=', !!auth);
+  if (!auth) { setTimeout(loginWithGoogle, 300); return; }
+  auth.signInWithPopup(new firebase.auth.GoogleAuthProvider())
+    .catch(err => alert('Error: ' + err.code + ' - ' + err.message));
+}
+
+function loginAsGuest() {
+  // Masuk tanpa akun - data disimpan lokal saja
+  currentUser = null;
+  loadFromLocal();
+  hideLoginScreen();
+  init();
 }
 function logout() {
   if (!confirm('Yakin mau keluar?')) return;
@@ -1776,37 +1779,33 @@ function initFirebase() {
     setTimeout(initFirebase, 100);
     return;
   }
-  try {
-    firebase.initializeApp({
-      apiKey: "AIzaSyA1LnlGx7hyu6fDHItGhGfjfkMCKwedS_w",
-      authDomain: "jlpt-n3-tracker.firebaseapp.com",
-      projectId: "jlpt-n3-tracker",
-      storageBucket: "jlpt-n3-tracker.firebasestorage.app",
-      messagingSenderId: "362158844759",
-      appId: "1:362158844759:web:0676064b4dcf47495b6c12"
-    });
-  } catch(e) {
-    // Already initialized
-  }
+  try { firebase.initializeApp({
+    apiKey: "AIzaSyA1LnlGx7hyu6fDHItGhGfjfkMCKwedS_w",
+    authDomain: "jlpt-n3-tracker.firebaseapp.com",
+    projectId: "jlpt-n3-tracker",
+    storageBucket: "jlpt-n3-tracker.firebasestorage.app",
+    messagingSenderId: "362158844759",
+    appId: "1:362158844759:web:0676064b4dcf47495b6c12"
+  }); } catch(e) {}
   auth = firebase.auth();
   db   = firebase.firestore();
 
   auth.onAuthStateChanged(async user => {
     if (user) {
       currentUser = user;
-      const nameEl = document.getElementById('user-name');
-      const mnEl   = document.getElementById('menu-name');
-      const emEl   = document.getElementById('menu-email');
-      const avEl   = document.getElementById('user-avatar');
+      const nameEl=document.getElementById('user-name');
+      const mnEl=document.getElementById('menu-name');
+      const emEl=document.getElementById('menu-email');
+      const avEl=document.getElementById('user-avatar');
       if (nameEl) nameEl.textContent = user.displayName?.split(' ')[0] || 'User';
       if (mnEl)   mnEl.textContent   = user.displayName || 'User';
       if (emEl)   emEl.textContent   = user.email || '';
       if (avEl) {
         if (user.photoURL) avEl.innerHTML = '<img src="'+user.photoURL+'" alt="av">';
-        else avEl.textContent = (user.displayName || 'U')[0].toUpperCase();
+        else avEl.textContent = (user.displayName||'U')[0].toUpperCase();
       }
       showLoginLoading();
-      await loadFromFirestore();
+      try { await loadFromFirestore(); } catch(e) { loadFromLocal(); }
       hideLoginScreen();
       init();
     } else {
