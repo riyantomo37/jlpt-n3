@@ -2523,48 +2523,45 @@ function renderReview(filter) {
 const chatHistory = [];
 
 async function sendMsg() {
-  const inp = document.getElementById('chat-input');
-  const msg = inp.value.trim();
-  if (!msg) return;
-  inp.value = '';
-  document.getElementById('chat-send').disabled = true;
-
-  addMsg('user', msg);
-  chatHistory.push({ role:'user', content: msg });
-
-  const typing = document.createElement('div');
-  typing.className = 'typing'; typing.id = 'typing';
-  typing.innerHTML = '<span></span><span></span><span></span>';
+  var inp=document.getElementById('chat-input');
+  var msg=inp.value.trim();
+  if(!msg) return;
+  inp.value='';
+  document.getElementById('chat-send').disabled=true;
+  addMsg('user',msg);
+  chatHistory.push({role:'user',content:msg});
+  var typing=document.createElement('div');
+  typing.className='typing'; typing.id='typing';
+  typing.innerHTML='<span></span><span></span><span></span>';
   document.getElementById('chat-box').appendChild(typing);
   scrollChat();
-
   try {
-    const res = await fetch('https://api.anthropic.com/v1/messages', {
+    var res=await fetch('https://api.groq.com/openai/v1/chat/completions',{
       method:'POST',
-      headers:{'Content-Type':'application/json'},
-      body: JSON.stringify({
-        model:'claude-sonnet-4-20250514',
+      headers:{'Content-Type':'application/json','Authorization':'Bearer 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'},
+      body:JSON.stringify({
+        model:'llama-3.3-70b-versatile',
         max_tokens:1000,
-        system:`Kamu adalah sensei bahasa Jepang ahli untuk JLPT N3. Bantu pelajar Indonesia memahami kosakata, grammar, dan kanji N3 untuk mencapai nilai manten (満点) di ujian Desember.
-Jawab dalam Bahasa Indonesia yang mudah dipahami. Sertakan:
-- Penjelasan singkat dan padat
-- Contoh kalimat dalam huruf Jepang (kanji/hiragana/katakana)
-- Terjemahan contoh kalimat
-- Tips hafalan jika relevan
-Akhiri dengan satu kalimat semangat dalam bahasa Jepang.`,
-        messages: chatHistory
+        messages:[
+          {role:'system',content:'Kamu adalah sensei bahasa Jepang ahli untuk JLPT N3/N4/N5. Bantu pelajar Indonesia memahami kosakata, grammar, dan kanji. Jawab dalam Bahasa Indonesia. Sertakan contoh kalimat Jepang dan terjemahannya. Akhiri dengan semangat dalam bahasa Jepang.'},
+          ...chatHistory
+        ]
       })
     });
-    const data = await res.json();
+    var data=await res.json();
     document.getElementById('typing')?.remove();
-    const reply = data.content?.[0]?.text || 'Maaf, coba lagi ya!';
-    chatHistory.push({ role:'assistant', content: reply });
-    addMsg('ai', reply);
-  } catch(e) {
+    if(data.error){
+      addMsg('ai','⚠️ '+(data.error.message||'Error API'));
+    } else {
+      var reply=data.choices?.[0]?.message?.content||'Maaf, coba lagi ya!';
+      chatHistory.push({role:'assistant',content:reply});
+      addMsg('ai',reply);
+    }
+  } catch(err) {
     document.getElementById('typing')?.remove();
-    addMsg('ai', 'Koneksi bermasalah. Coba lagi! がんばって！');
+    addMsg('ai','⚠️ Koneksi bermasalah. Pastikan internet aktif lalu coba lagi!');
   }
-  document.getElementById('chat-send').disabled = false;
+  document.getElementById('chat-send').disabled=false;
   scrollChat();
 }
 
