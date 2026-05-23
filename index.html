@@ -705,6 +705,11 @@ nav button.active {
   padding:10px 16px; display:flex; align-items:center; gap:10px;
 }
 .exam-header-title { font-size:13px; font-weight:700; flex:1; }
+.exam-timer-wrap {
+  display:flex;align-items:center;gap:8px;
+  background:rgba(255,255,255,.1);
+  padding:4px 12px;border-radius:20px;
+}
 .exam-timer {
   font-family:'DM Mono',monospace; font-size:15px; font-weight:700;
   color:var(--gold); letter-spacing:1px;
@@ -1442,14 +1447,17 @@ nav button.active {
     <div class="exam-header">
       <button onclick="confirmExitExam()" style="border:none;background:none;color:white;cursor:pointer;font-size:18px;padding:0">←</button>
       <div class="exam-header-title" id="exam-session-label">文字語彙 · N3</div>
-      <div class="exam-timer" id="exam-timer">00:00</div>
+      <div class="exam-timer-wrap">
+        <span style="font-size:11px;color:rgba(255,255,255,.5);text-transform:uppercase;letter-spacing:.5px">⏱</span>
+        <div class="exam-timer" id="exam-timer">00:00</div>
+      </div>
     </div>
     <!-- Progress -->
     <div style="height:4px;background:rgba(26,26,46,.1)">
       <div id="exam-prog-fill" style="height:100%;width:0%;background:var(--red);transition:width .4s"></div>
     </div>
     <!-- Questions rendered here -->
-    <div id="exam-content" style="padding:16px"></div>
+    <div id="exam-content" style="padding:16px;padding-bottom:80px"></div>
     <!-- Bottom bar -->
     <div class="exam-bottom-bar">
       <div style="flex:1;font-size:12px;color:var(--mist)" id="exam-answered-count">0/0 dijawab</div>
@@ -1483,7 +1491,7 @@ nav button.active {
       </button>
     </div>
     <!-- Full review -->
-    <div id="result-review"></div>
+    <div id="result-review" style="padding-bottom:80px"></div>
   </div>
 
 </div>
@@ -2355,6 +2363,22 @@ function buildDynamicBank(words, level) {
       c:ch,a:ch.indexOf(correct),e:'「'+w.jp+'」('+w.id_+')の正しい使い方です。'});
   });
 
+  // Add unique ids to all questions
+  var idxMap={};
+  Object.keys(bank).forEach(function(mk){
+    bank[mk]=bank[mk].map(function(q,i){
+      return Object.assign({},q,{
+        id: currentJLPT+'_'+mk+'_'+i,
+        exp: q.exp||q.e||'',
+        question: q.question||q.q||'',
+        choices: (q.choices||q.c||[]).map(function(c,ci){
+          var lbl=['１','２','３','４'][ci];
+          return /^[１-４]\./.test(c||'') ? c : (lbl+'. '+c);
+        }),
+        answer: q.answer||q.a||0
+      });
+    });
+  });
   return bank;
 }
 function buildMojiVocabSections(words) {
@@ -2686,26 +2710,28 @@ function renderAllQuestions() {
 function renderQuestionHTML(q, num, total) {
   var labels = ['\uff11','\uff12','\uff13','\uff14'];
   var NL = String.fromCharCode(10);
-  var qText = (q.question||q.text||'').split(NL).join('<br>');
+  var qText = (q.question||q.text||q.q||'').split(NL).join('<br>');
   var info = q.info ? '<div style="font-size:11px;color:var(--mist);margin-bottom:8px">'+q.info+'</div>' : '';
 
-  // Listening question: add play button
+  // Listening
   var listenHtml = '';
   if (q.listening && q.script) {
     listenHtml = '<div style="background:rgba(142,68,173,.06);border:1px solid rgba(142,68,173,.2);border-radius:10px;padding:12px;margin-bottom:12px">'
       + '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">'
-      + '<span style="font-size:12px;font-weight:600;color:#8e44ad">🎧 Audio スクリプト</span>'
-      + '<button data-script="'+q.id+'" onclick="playScript(this)" '
-      + 'style="padding:6px 14px;background:#8e44ad;color:white;border:none;border-radius:8px;cursor:pointer;font-size:12px">▶ 再生</button>'
+      + '<span style="font-size:12px;font-weight:600;color:#8e44ad">🎧 スクリプト</span>'
+      + '<button data-script="'+q.id+'" onclick="playScript(this)" style="padding:6px 14px;background:#8e44ad;color:white;border:none;border-radius:8px;cursor:pointer;font-size:12px">▶ 再生</button>'
       + '</div>'
       + '<div id="script_'+q.id+'" style="font-size:13px;line-height:1.8;display:none">'+q.script.split(NL).join('<br>')+'</div>'
       + '</div>';
-    // Auto-play on first render
-    setTimeout(function(){ 
-      var btn = document.querySelector('[data-script="'+q.id+'"]');
-      if (btn) { readScript(q.script); }
-    }, 800);
+    setTimeout(function(){ readScript(q.script); }, 800);
   }
+
+  // Choices — use q.choices (already formatted) or q.c (raw)
+  var rawChoices = q.choices || q.c || [];
+  var choices = rawChoices.map(function(c,i){
+    var already = /^[\uff11-\uff14]\./.test(c||'');
+    return already ? c : (labels[i]+'. '+c);
+  });
 
   var html = '<div class="exam-q-row" id="qrow_'+q.id+'">'
     + '<div class="exam-q-num">\uff08'+num+'\uff09</div>'
@@ -2713,16 +2739,17 @@ function renderQuestionHTML(q, num, total) {
     + '<div class="exam-q-text">' + qText + '</div>'
     + info
     + '<div class="exam-choices-grid">';
-  for (var i=0; i<Math.min(4,(q.choices||[]).length); i++) {
-    var text = (q.choices[i]||'').replace(/^[\uff11-\uff14]\.\s*/,'');
+  for (var i=0; i<Math.min(4,choices.length); i++) {
+    var text=(choices[i]||'').replace(/^[\uff11-\uff14]\.\s*/,'');
     html += '<button class="exam-choice-btn" id="choice_'+q.id+'_'+i+'"'
       + ' data-qid="'+q.id+'" data-idx="'+i+'" onclick="handleChoiceClick(this)">'
       + '<span class="exam-choice-num">'+labels[i]+'</span>'
       + '<span>'+text+'</span>'
       + '</button>';
   }
+  var exp = q.exp || q.e || '';
   html += '</div>'
-    + '<div class="exam-exp-box" id="exp_'+q.id+'"></div>'
+    + '<div class="exam-exp-box" id="exp_'+q.id+'">💡 '+exp+'</div>'
     + '</div>';
   return html;
 }
@@ -2775,37 +2802,72 @@ function submitSection() {
   stopTimer();
   var total=0, correct=0;
   var mondaiScores = {};
+  var reviewHtml = '';
 
-  examSections.forEach(function(sec){
+  examSections.forEach(function(sec) {
     var secTotal=sec.questions.length, secCorrect=0;
-    sec.questions.forEach(function(q){
+
+    // Section header in review
+    reviewHtml += '<div style="background:var(--ink);color:white;padding:10px 14px;border-radius:10px 10px 0 0;margin-top:16px">'
+      + '<b>'+sec.title+'</b></div>'
+      + '<div style="border:1px solid var(--border);border-top:none;border-radius:0 0 10px 10px;overflow:hidden">';
+
+    // Reading passage
+    if (sec.passage) {
+      reviewHtml += '<div style="padding:12px 14px;background:#f8f9fa;font-size:13px;line-height:1.9;border-bottom:1px solid var(--border)">'
+        + sec.passage.split(String.fromCharCode(10)).join('<br>') + '</div>';
+    }
+
+    sec.questions.forEach(function(q, qi) {
       total++;
       var userAns = examAnswers[q.id];
-      var isCorrect = userAns === q.answer;
+      var isCorrect = (userAns === q.answer);
       if (isCorrect) { correct++; secCorrect++; }
 
-      // Show correct/wrong visual
-      for (var i=0; i<4; i++) {
-        var btn = document.getElementById('choice_'+q.id+'_'+i);
-        if (!btn) continue;
-        btn.disabled = true;
-        btn.classList.remove('selected');
-        if (i===q.answer) btn.classList.add('correct');
-        else if (i===userAns && userAns!==q.answer) btn.classList.add('wrong');
+      var labels = ['１','２','３','４'];
+      var statusIcon = isCorrect ? '✅' : (userAns !== undefined ? '❌' : '⬜');
+      var qText = (q.question||q.text||'').split(String.fromCharCode(10)).join(' ');
+      var userLabel = userAns !== undefined ? labels[userAns] : '-';
+      var correctLabel = labels[q.answer];
+      var correctText = (q.choices[q.answer]||'').replace(/^[１-４]\.\s*/,'');
+
+      reviewHtml += '<div style="padding:12px 14px;border-bottom:1px solid var(--border);background:'+(isCorrect?'rgba(45,160,80,.04)':'rgba(192,57,43,.04)')+'">'
+        + '<div style="font-size:11px;color:var(--mist);margin-bottom:3px">（'+(qi+1)+'） '+statusIcon+'</div>'
+        + '<div style="font-size:13px;margin-bottom:8px;line-height:1.6">'+qText+'</div>';
+
+      // Show all choices with correct/wrong highlight
+      reviewHtml += '<div style="display:flex;flex-direction:column;gap:4px;margin-bottom:8px">';
+      (q.choices||[]).forEach(function(ch, ci) {
+        var text=(ch||'').replace(/^[１-４]\.\s*/,'');
+        var bg='', border='', weight='';
+        if (ci===q.answer) { bg='rgba(45,160,80,.1)'; border='#2da050'; weight='600'; }
+        else if (ci===userAns && !isCorrect) { bg='rgba(192,57,43,.08)'; border='var(--red)'; }
+        reviewHtml += '<div style="padding:6px 10px;border-radius:7px;font-size:12px;font-weight:'+weight
+          +';background:'+bg+';border:1px solid '+(border||'var(--border)')+';">'
+          + labels[ci]+'. '+text+'</div>';
+      });
+      reviewHtml += '</div>';
+
+      // Explanation
+      var exp = q.exp || q.e || '';
+      if (exp) {
+        reviewHtml += '<div style="background:rgba(44,62,122,.06);border-radius:7px;padding:8px 10px;font-size:12px;color:var(--indigo);line-height:1.6">'
+          + '💡 '+exp+'</div>';
       }
-      // Show explanation
-      var expEl = document.getElementById('exp_'+q.id);
-      if (expEl && q.exp) {
-        expEl.innerHTML = '💡 ' + q.exp;
-        expEl.classList.add('show');
+
+      if (userAns !== undefined && !isCorrect) {
+        reviewHtml += '<div style="font-size:11px;color:var(--red);margin-top:4px">'
+          +'Jawabanmu: '+userLabel+' → Benar: '+correctLabel+'. '+correctText+'</div>';
       }
+      reviewHtml += '</div>';
     });
+    reviewHtml += '</div>';
     mondaiScores[sec.title] = {correct:secCorrect, total:secTotal};
   });
 
   var pct = total>0 ? Math.round(correct/total*100) : 0;
   showExamSection('exam-result');
-  renderResult(correct, total, pct, mondaiScores);
+  renderResult(correct, total, pct, mondaiScores, reviewHtml);
 
   // Save history
   var cfg = SECTION_CONFIG[lastSection]||{label:lastSection};
@@ -2814,58 +2876,54 @@ function submitSection() {
   examHistory.push(entry);
   if(examHistory.length>30) examHistory=examHistory.slice(-30);
   localStorage.setItem('examHistory',JSON.stringify(examHistory));
-
-  // Save to Firestore
   if(db&&currentUser){
     db.collection('exam_results').add(Object.assign({
-      uid:currentUser.uid, displayName:currentUser.displayName||'Pelajar',
+      uid:currentUser.uid,displayName:currentUser.displayName||'Pelajar',
       timestamp:new Date().toISOString()
-    }, entry)).catch(function(){});
+    },entry)).catch(function(){});
   }
 }
 
-function renderResult(correct, total, pct, mondaiScores) {
+function renderResult(correct, total, pct, mondaiScores, reviewHtml) {
   var grade = pct>=90?'A':pct>=80?'B':pct>=65?'C':pct>=50?'D':'E';
-  var gradeColors = {A:'var(--gold)',B:'#2da050',C:'var(--indigo)',D:'#e67e22',E:'var(--red)'};
+  var gc = {A:'var(--gold)',B:'#2da050',C:'var(--indigo)',D:'#e67e22',E:'var(--red)'};
   var msgs = {
     A:'素晴らしい！Luar biasa, siap ujian JLPT '+currentJLPT+'! 🎌',
-    B:'よくできました！Bagus sekali, terus pertahankan! がんばれ！',
-    C:'まあまあです。Cukup baik! Pelajari soal yang salah.',
-    D:'もっと勉強しましょう。Belajar lebih giat ya! 頑張って！',
-    E:'諦めないで！ Jangan menyerah, latihan lebih banyak lagi!'
+    B:'よくできました！Bagus sekali! がんばれ！',
+    C:'まあまあです。Cukup baik! Pelajari yang salah.',
+    D:'もっと勉強しましょう。Belajar lebih giat! 頑張って！',
+    E:'諦めないで！Jangan menyerah, coba lagi!'
   };
+  var color = JLPT_COLORS[currentJLPT]||'var(--red)';
 
-  document.getElementById('result-section-name').textContent = (SECTION_CONFIG[lastSection]||{label:lastSection}).label + ' · ' + currentJLPT;
-  document.getElementById('result-score').textContent = correct + '/' + total;
-  document.getElementById('result-score').style.color = gradeColors[grade];
+  document.getElementById('result-section-name').textContent =
+    (SECTION_CONFIG[lastSection]||{label:lastSection}).label + ' · ' + currentJLPT;
+  document.getElementById('result-score').textContent = correct+'/'+total;
+  document.getElementById('result-score').style.color = gc[grade];
+  var gb=document.getElementById('result-grade-badge');
+  gb.textContent='Grade '+grade; gb.style.background=gc[grade]; gb.style.color='white';
+  document.getElementById('result-message').textContent=msgs[grade];
 
-  var gb = document.getElementById('result-grade-badge');
-  gb.textContent = 'Grade ' + grade;
-  gb.style.background = gradeColors[grade];
-  gb.style.color = 'white';
-
-  document.getElementById('result-message').textContent = msgs[grade];
-
-  // Breakdown per mondai
-  var breakdown = '';
-  Object.entries(mondaiScores).forEach(function(entry){
-    var title=entry[0], sc=entry[1];
-    var mpct = Math.round(sc.correct/sc.total*100);
-    var mcol = mpct>=80?'var(--jade)':mpct>=60?'var(--gold)':'var(--red)';
-    breakdown += '<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 12px;background:white;border:1px solid var(--border);border-radius:8px;margin-bottom:6px">'
-      + '<span style="font-size:13px;font-weight:600">'+title+'</span>'
-      + '<div style="display:flex;align-items:center;gap:8px">'
-      + '<span style="font-size:12px;color:var(--mist)">'+sc.correct+'/'+sc.total+'</span>'
-      + '<span style="font-family:DM Mono,monospace;font-weight:700;font-size:14px;color:'+mcol+'">'+mpct+'%</span>'
-      + '</div></div>';
+  // Per-mondai breakdown
+  var breakdown='';
+  Object.entries(mondaiScores).forEach(function(kv){
+    var title=kv[0],sc=kv[1];
+    var mp=Math.round(sc.correct/sc.total*100);
+    var mc=mp>=80?'var(--jade)':mp>=60?'var(--gold)':'var(--red)';
+    breakdown+='<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 12px;background:white;border:1px solid var(--border);border-radius:8px;margin-bottom:6px">'
+      +'<span style="font-size:13px;font-weight:600">'+title+'</span>'
+      +'<div style="display:flex;align-items:center;gap:8px">'
+      +'<span style="font-size:12px;color:var(--mist)">'+sc.correct+'/'+sc.total+'</span>'
+      +'<span style="font-family:DM Mono,monospace;font-weight:700;font-size:14px;color:'+mc+'">'+mp+'%</span>'
+      +'</div></div>';
   });
-  document.getElementById('result-breakdown').innerHTML = 
-    '<div class="section-title" style="margin-bottom:8px">📊 Per Bagian</div>' + breakdown;
+  document.getElementById('result-breakdown').innerHTML=
+    '<div class="section-title" style="margin-bottom:8px">📊 Per Bagian</div>'+breakdown;
 
-  // Scroll to review (the session content becomes the review)
-  document.getElementById('result-review').innerHTML = 
-    '<div class="section-title" style="margin-bottom:10px">📋 Koreksi Jawaban</div>'
-    + '<div style="font-size:12px;color:var(--mist);margin-bottom:12px">Scroll ke atas untuk lihat penjelasan tiap soal</div>';
+  // Full review with explanations
+  document.getElementById('result-review').innerHTML=
+    '<div class="section-title" style="margin:16px 0 12px">📋 Koreksi Jawaban</div>'
+    +(reviewHtml||'<div style="text-align:center;padding:20px;color:var(--mist)">Tidak ada data review</div>');
 }
 
 function updateExamHistory() {
