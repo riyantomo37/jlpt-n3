@@ -2536,13 +2536,66 @@ function buildMondai(title, num, instruction, questions) {
 
 // ── Listening (聴解) ────────────────────────────────────────
 function buildListeningSections(words) {
-  var useBankN3 = currentJLPT==='N3' && typeof N3_LISTENING !== 'undefined';
-  var qs;
-  if (useBankN3 && N3_LISTENING.length) {
-    var pool = N3_LISTENING.slice(); shuffle(pool);
-    qs = pool.slice(0,5).map(function(item,i){
+  var pool = [];
+
+  // Use N3_LISTENING bank for N3
+  if (currentJLPT==='N3' && typeof N3_LISTENING!=='undefined' && N3_LISTENING.length) {
+    var p = N3_LISTENING.slice(); shuffle(p);
+    pool = p.slice(0,5).map(function(item,i){
       return {
-        id: 'lst_'+i,
+        id:'lst_'+i,
+        script: item.s,
+        question: item.q,
+        choices: (item.c||[]).map(function(c,ci){return String.fromCharCode(0xFF11+ci)+'. '+c;}),
+        answer: item.a,
+        exp: item.e,
+        listening: true
+      };
+    });
+  } else {
+    // N4/N5 — generate listening from word data
+    shuffle(words);
+    var sample = words.slice(0,6);
+    var scripts = [
+      {
+        s: '女：すみません、この近くに'+( sample[0]?sample[0].jp:'コンビニ')+'はありますか。\n男：ええ、駅の前にありますよ。\n女：ありがとうございます。',
+        q: '女の人は何を探していますか。',
+        c: [sample[0]?sample[0].jp:'コンビニ', '駅', '学校', '銀行'],
+        a: 0,
+        e: '女の人は「'+( sample[0]?sample[0].jp:'コンビニ')+'はありますか」と聞いています。'
+      },
+      {
+        s: '先生：明日のテストの範囲は'+( sample[1]?sample[1].jp:'第三課')+'からです。よく復習してください。\n学生：はい、わかりました。',
+        q: 'テストについて正しいのはどれですか。',
+        c: ['明日テストがある','今日テストがある','テストはない','テストは来週だ'],
+        a: 0,
+        e: '「明日のテスト」と言っています。'
+      },
+      {
+        s: '男：昨日、映画を見に行ったんですが、とても'+( sample[2]?sample[2].jp:'おもしろかった')+'です。\n女：そうですか。私も見たいです。',
+        q: '男の人は映画についてどう言いましたか。',
+        c: [sample[2]?sample[2].jp:'おもしろかった','つまらなかった','怖かった','長かった'],
+        a: 0,
+        e: '「とても'+( sample[2]?sample[2].jp:'おもしろかった')+'です」と言っています。'
+      },
+      {
+        s: 'アナウンス：お客様にお知らせします。ただいまエレベーターは点検中のため使用できません。ご不便をおかけして申し訳ありません。',
+        q: 'このアナウンスは何について話していますか。',
+        c: ['エレベーターが使えないこと','店が閉まること','電車が遅れること','駐車場が満車なこと'],
+        a: 0,
+        e: '「エレベーターは点検中のため使用できません」と言っています。'
+      },
+      {
+        s: '女：田中さん、顔色が悪いですね。\n男：実は昨日から頭が痛くて、少し熱もあります。\n女：それは大変ですね。早く帰って休んでください。',
+        q: '男の人の状態はどうですか。',
+        c: ['頭が痛くて熱もある','おなかが痛い','足が痛い','元気だ'],
+        a: 0,
+        e: '「頭が痛くて、少し熱もあります」と言っています。'
+      }
+    ];
+    pool = scripts.map(function(item,i){
+      return {
+        id:'lst_'+i,
         script: item.s,
         question: item.q,
         choices: item.c.map(function(c,ci){return String.fromCharCode(0xFF11+ci)+'. '+c;}),
@@ -2551,16 +2604,16 @@ function buildListeningSections(words) {
         listening: true
       };
     });
-  } else {
-    // AI-generated listening (fallback)
-    return [];
   }
+
+  if (!pool.length) return [];
+
   return [{
-    id:'mondai_listen',
-    title:'問題１（聴解）',
-    num:99,
-    instruction:'音声を聞いて、質問に答えてください。Audio akan dibacakan otomatis. Tekan 🔊 untuk memutar ulang.',
-    questions: qs,
+    id: 'mondai_listen',
+    title: '問題１（聴解）',
+    num: 99,
+    instruction: '音声を聞いて、質問に答えてください。\nTekan ▶ untuk memutar audio. Pilih jawaban yang benar.',
+    questions: pool,
     isListening: true
   }];
 }
