@@ -1501,6 +1501,7 @@ nav button.active {
       <div class="exam-score-label">SKOR</div>
       <div class="exam-grade-badge" id="result-grade-badge">B</div>
       <div style="font-size:13px;opacity:.8;line-height:1.6" id="result-message"></div>
+      <div id="result-exam-pts" style="display:none;margin-top:10px;font-size:13px;background:rgba(212,160,23,.2);color:var(--gold);padding:6px 16px;border-radius:20px;font-weight:700;letter-spacing:.5px"></div>
     </div>
     <!-- Per-mondai breakdown -->
     <div id="result-breakdown" style="margin-bottom:16px"></div>
@@ -2063,7 +2064,7 @@ async function loadLeaderboard(level) {
   var total=JLPT_TOTALS[lbCurrentLevel]||771;
   var color=JLPT_COLORS[lbCurrentLevel]||'var(--red)';
   var sub=document.getElementById('lb-subtitle');
-  if(sub) sub.textContent='Ranking '+lbCurrentLevel+' — '+total+' kata';
+  if(sub) sub.textContent='Ranking '+lbCurrentLevel+' · Poin = Kata Hafal + Poin Ujian';
   var tw=document.getElementById('lb-total-words');
   if(tw) tw.textContent=total;
   listEl.innerHTML='<div style="text-align:center;padding:32px;color:var(--mist)">⏳ Memuat...</div>';
@@ -2077,8 +2078,15 @@ async function loadLeaderboard(level) {
     var users=[];
     snap.forEach(function(doc){
       var d=doc.data();
-      var lm=lbCurrentLevel==='N3'?(d.totalMastered||0):((d.totalMasteredAll||{})[lbCurrentLevel]||0);
-      users.push(Object.assign({uid:doc.id},d,{lvlMastered:lm}));
+      // Points = mastered words for this level + exam points for this level
+      var wordPts = lbCurrentLevel==='N3'
+        ? (d.totalMastered||0)
+        : ((d.totalMasteredAll||{})[lbCurrentLevel]||0);
+      // Exam points are global — weight by level multiplier
+      var examPtsMult = {N5:1, N4:1, N3:1, N2:1, N1:1};
+      var examPts = (d.examPoints||0) * (examPtsMult[lbCurrentLevel]||1);
+      var lm = wordPts + Math.floor(examPts * 0.3); // 30% exam contribution
+      users.push(Object.assign({uid:doc.id},d,{lvlMastered:lm,wordPts:wordPts,examPts:Math.floor(examPts*0.3)}));
     });
     users.sort(function(a,b){return b.lvlMastered-a.lvlMastered;});
 
@@ -2117,7 +2125,7 @@ async function loadLeaderboard(level) {
         +'</div>'
         +'<div style="text-align:right;flex-shrink:0">'
         +'<div style="font-family:DM Mono,monospace;font-size:18px;font-weight:700;color:'+color+'">'+tot+'</div>'
-        +'<div style="font-size:10px;color:var(--mist)">kata</div>'
+        +'<div style="font-size:10px;color:var(--mist)">'+(u.examPts>0?'📝+'+u.examPts:'kata')+'</div>'
         +'</div></div>';
     }).join('');
   } catch(err) {
@@ -2193,6 +2201,37 @@ var SECTION_CONFIG = {
   dokkai:     { label:'読解 短文',    time:15*60, color:'var(--jade)' },
   monogatari: { label:'読解 中文',    time:20*60, color:'#e67e22' },
 };
+
+// ══════════════════════════════════════════════════
+// SISTEM POIN
+// ══════════════════════════════════════════════════
+var EXAM_POINTS_PER_CORRECT = { N5:3, N4:5, N3:8, N2:12, N1:15 };
+var EXAM_BONUS_PERFECT      = { N5:10, N4:15, N3:20, N2:30, N1:40 };
+var EXAM_BONUS_80           = { N5:5,  N4:8,  N3:10, N2:15, N1:20 };
+
+// Ambil total poin user (kata hafal + exam poin)
+function getTotalPoints(userData) {
+  var wordPts = 0;
+  if (userData) {
+    // N3
+    wordPts += userData.totalMastered || 0;
+    // N4/N5
+    var tma = userData.totalMasteredAll || {};
+    Object.keys(tma).forEach(function(lvl){ wordPts += tma[lvl]||0; });
+  }
+  var examPts = userData ? (userData.examPoints || 0) : 0;
+  return wordPts + examPts;
+}
+
+// Hitung poin dari hasil ujian
+function calcExamPoints(correct, total, level) {
+  var pct = total>0 ? Math.round(correct/total*100) : 0;
+  var pts = correct * (EXAM_POINTS_PER_CORRECT[level]||5);
+  if (pct===100) pts += (EXAM_BONUS_PERFECT[level]||10);
+  else if (pct>=80) pts += (EXAM_BONUS_80[level]||5);
+  return pts;
+}
+
 
 function showExamSection(id) {
   ['exam-menu','exam-loading','exam-session','exam-result'].forEach(function(s){
@@ -2962,19 +3001,41 @@ function submitSection() {
   showExamSection('exam-result');
   renderResult(correct, total, pct, mondaiScores, reviewHtml);
 
+  // Calculate exam points
+  var examPts = calcExamPoints(correct, total, currentJLPT);
+
   // Save history
   var cfg = SECTION_CONFIG[lastSection]||{label:lastSection};
   var entry = {type:cfg.label, level:currentJLPT, score:correct, total:total, pct:pct,
+    points:examPts,
     date:new Date().toLocaleDateString('id-ID',{day:'numeric',month:'short'})};
   examHistory.push(entry);
   if(examHistory.length>30) examHistory=examHistory.slice(-30);
   localStorage.setItem('examHistory',JSON.stringify(examHistory));
+
   if(db&&currentUser){
+    // Save result + increment examPoints on user doc
     db.collection('exam_results').add(Object.assign({
-      uid:currentUser.uid,displayName:currentUser.displayName||'Pelajar',
-      timestamp:new Date().toISOString()
+      uid:currentUser.uid, displayName:currentUser.displayName||'Pelajar',
+      timestamp:new Date().toISOString(), examPoints:examPts
     },entry)).catch(function(){});
+
+    // Update user total exam points (atomic increment)
+    db.collection('users').doc(currentUser.uid).update({
+      examPoints: firebase.firestore.FieldValue.increment(examPts),
+      lastExam: entry,
+      examCount: firebase.firestore.FieldValue.increment(1)
+    }).catch(function(){
+      // If field doesn't exist yet, set it
+      db.collection('users').doc(currentUser.uid).set({
+        examPoints: examPts, lastExam: entry, examCount: 1
+      }, {merge:true}).catch(function(){});
+    });
   }
+
+  // Show earned points in result
+  document.getElementById('result-exam-pts').textContent = '+'+examPts+' poin dari ujian';
+  document.getElementById('result-exam-pts').style.display = 'block';
 }
 
 function renderResult(correct, total, pct, mondaiScores, reviewHtml) {
@@ -3198,21 +3259,30 @@ async function saveToFirestore() {
   if (!currentUser) { saveToLocal(); return; }
   setSyncBadge('syncing');
   try {
+    // Calculate mastered counts per level for leaderboard
+    var n3Total = masteredAll();
+    var tma = {};
+    ['N5','N4','N2','N1'].forEach(function(lvl){
+      tma[lvl] = Object.values(mastered[lvl]||{}).filter(Boolean).length;
+    });
     await db.collection('users').doc(currentUser.uid).set({
-      mastered,
-      kanjiReadMastered,
-      streak,
-      lastStudyDate,
+      mastered: mastered,
+      kanjiReadMastered: kanjiReadMastered,
+      streak: streak,
+      lastStudyDate: lastStudyDate,
       todayDate: new Date().toDateString(),
-      todayCount,
+      todayCount: todayCount,
       updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
       displayName: currentUser.displayName,
       email: currentUser.email,
+      totalMastered: n3Total,
+      totalMasteredAll: tma,
+      lastSeen: firebase.firestore.FieldValue.serverTimestamp(),
     }, { merge: true });
     setSyncBadge('synced');
   } catch(e) {
     console.error('Save error:', e);
-    saveToLocal(); // fallback
+    saveToLocal();
     setSyncBadge('offline');
   }
 }
