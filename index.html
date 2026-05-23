@@ -705,6 +705,30 @@ nav button.active {
   padding:10px 16px; display:flex; align-items:center; gap:10px;
 }
 .exam-header-title { font-size:13px; font-weight:700; flex:1; }
+.exam-float-timer {
+  position: fixed;
+  top: 16px;
+  right: 16px;
+  z-index: 999;
+  background: var(--ink);
+  color: white;
+  padding: 8px 14px;
+  border-radius: 20px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  box-shadow: 0 4px 12px rgba(0,0,0,.3);
+  font-family: 'DM Mono', monospace;
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  display: none;
+  transition: background .3s;
+}
+.exam-float-timer.warn {
+  background: var(--red);
+  animation: pulse 1s infinite;
+}
 .exam-timer-wrap {
   display:flex;align-items:center;gap:8px;
   background:rgba(255,255,255,.1);
@@ -986,6 +1010,7 @@ nav button.active {
 </div>
 
 <!-- ====== MAIN APP (hidden until logged in) ====== -->
+<div id="exam-float-timer" class="exam-float-timer">⏱ <span id="exam-float-time">00:00</span></div>
 <div id="app" style="display:none">
 
 <header>
@@ -2186,6 +2211,9 @@ function startTimer(seconds) {
   clearInterval(examTimerInt);
   examStartTime = Date.now();
   examTimeLimitSec = seconds;
+  // Show floating timer
+  var ft = document.getElementById('exam-float-timer');
+  if (ft) ft.style.display = 'flex';
   updateTimerDisplay();
   examTimerInt = setInterval(function(){
     var elapsed = Math.floor((Date.now()-examStartTime)/1000);
@@ -2204,15 +2232,27 @@ function startTimer(seconds) {
 }
 
 function updateTimerDisplay() {
-  var el = document.getElementById('exam-timer');
-  if (!el) return;
   var elapsed = Math.floor((Date.now()-examStartTime)/1000);
   var remaining = Math.max(0, examTimeLimitSec - elapsed);
   var m = Math.floor(remaining/60), sec = remaining%60;
-  el.textContent = (m<10?'0':'')+m+':'+(sec<10?'0':'')+sec;
+  var timeStr = (m<10?'0':'')+m+':'+(sec<10?'0':'')+sec;
+  var el = document.getElementById('exam-timer');
+  if (el) el.textContent = timeStr;
+  // Update floating timer
+  var ft = document.getElementById('exam-float-time');
+  var fw = document.getElementById('exam-float-timer');
+  if (ft) ft.textContent = timeStr;
+  if (fw) {
+    if (remaining < 120) fw.classList.add('warn');
+    else fw.classList.remove('warn');
+  }
 }
 
-function stopTimer() { clearInterval(examTimerInt); }
+function stopTimer() {
+  clearInterval(examTimerInt);
+  var ft = document.getElementById('exam-float-timer');
+  if (ft) ft.style.display = 'none';
+}
 
 // ── Start exam section ────────────────────────────
 async function startExamSection(sectionType) {
