@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>JLPT N3 — 満点を目指せ！</title>
+<title>JLPT Guide 満点コース</title>
 <!-- Firebase SDKs — loaded before page script runs -->
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
@@ -951,8 +951,8 @@ nav button.active {
 <div id="login-screen">
   <div class="login-kanji-deco">学</div>
   <div class="login-box">
-    <div class="login-logo">JLPT <span>N3</span></div>
-    <div class="login-tagline">満点を目指せ！— Raih Nilai Sempurna</div>
+    <div class="login-logo">JLPT <span style="color:var(--gold)">Guide</span></div>
+    <div class="login-tagline">満点コース — Raih Nilai Sempurna</div>
 
     <div id="login-form">
       <button class="google-btn" onclick="loginWithGoogle()">
@@ -984,7 +984,7 @@ nav button.active {
 <div id="app" style="display:none">
 
 <header>
-  <div class="logo">JLPT <span>N3</span> 満点コース</div>
+  <div class="logo">JLPT <span>Guide</span> 満点コース</div>
   <div class="header-right">
     <div class="countdown">
       <div class="days" id="hdr-days">---</div>
@@ -2287,15 +2287,85 @@ async function startExamSection(sectionType) {
 }
 
 // ── Build 文字語彙 sections (client-side) ─────────
+
+function getLevelBank() {
+  if (currentJLPT === 'N3') return N3_BANK;
+  // For N4/N5: dynamically build bank from JLPT_DATA
+  var words = JLPT_DATA[currentJLPT] || [];
+  if (!words.length) return {};
+  return buildDynamicBank(words, currentJLPT);
+}
+
+function buildDynamicBank(words, level) {
+  var rnd = function(arr){ var a=arr.slice(); for(var i=a.length-1;i>0;i--){var j=Math.floor(Math.random()*(i+1));var t=a[i];a[i]=a[j];a[j]=t;} return a; };
+  var idOk = rnd(words.filter(function(w){ return w.id_&&w.id_.length>2&&!/^(to |a |an |the |be |is )/.test(w.id_.toLowerCase()); }));
+  var kanjiW = rnd(words.filter(function(w){ return /[一-鿿]/.test(w.jp)&&w.rom!==w.jp&&w.rom.length<15; }));
+
+  function makeQ(pool, w, keyFn, valFn, qFn, expFn) {
+    var wrong=rnd(pool.filter(function(x){return valFn(x)!==valFn(w);})).slice(0,3);
+    if(wrong.length<3) return null;
+    var ch=[valFn(w),valFn(wrong[0]),valFn(wrong[1]),valFn(wrong[2])];
+    ch=rnd(ch);
+    return {q:qFn(w),c:ch,a:ch.indexOf(valFn(w)),e:expFn(w)};
+  }
+
+  var bank = {mondai1:[],mondai2:[],mondai3:[],mondai4:[],mondai5:[]};
+
+  // 問題1 読み
+  kanjiW.slice(0,50).forEach(function(w){
+    var q=makeQ(kanjiW,w,'rom',function(x){return x.rom;},
+      function(w){return '「'+w.jp+'」の読み方はどれですか。'},
+      function(w){return '「'+w.jp+'」は「'+w.rom+'」と読みます。意味：'+w.id_});
+    if(q) bank.mondai1.push(q);
+  });
+
+  // 問題2 表記
+  kanjiW.slice(0,50).forEach(function(w){
+    var q=makeQ(kanjiW,w,'jp',function(x){return x.jp;},
+      function(w){return '「'+w.rom+'」を漢字で書くとどれですか。'},
+      function(w){return '「'+w.rom+'」は「'+w.jp+'」と書きます。意味：'+w.id_});
+    if(q) bank.mondai2.push(q);
+  });
+
+  // 問題3 文脈
+  var tmpls=['（　）を毎日使います。','（　）が好きです。','（　）を買いました。',
+    '（　）に行きます。','（　）を練習します。','（　）が必要です。',
+    '（　）を確認します。','（　）に参加します。'];
+  idOk.slice(0,60).forEach(function(w,i){
+    var wrong=rnd(idOk.filter(function(x){return x.jp!==w.jp;})).slice(0,3);
+    if(wrong.length<3) return;
+    var ch=rnd([w.jp,wrong[0].jp,wrong[1].jp,wrong[2].jp]);
+    var tmpl=tmpls[i%tmpls.length].replace('（　）','<span class="blank">（　）</span>');
+    bank.mondai3.push({q:tmpl,c:ch,a:ch.indexOf(w.jp),e:'「'+w.jp+'」('+w.rom+') = '+w.id_});
+  });
+
+  // 問題4 意味
+  idOk.slice(0,50).forEach(function(w){
+    var q=makeQ(idOk,w,'jp',function(x){return x.jp;},
+      function(w){return '「'+w.id_+'」に最も近い言葉はどれですか。'},
+      function(w){return '「'+w.id_+'」は「'+w.jp+'」('+w.rom+')です。'});
+    if(q) bank.mondai4.push(q);
+  });
+
+  // 問題5 用法
+  idOk.slice(0,40).forEach(function(w){
+    var correct=w.jp+'を使います。';
+    var ch=rnd([correct,w.jp+'が降っています。',w.jp+'を食べました。',w.jp+'に乗ります。']);
+    bank.mondai5.push({q:'「'+w.jp+'」の使い方として最もよいものはどれですか。',
+      c:ch,a:ch.indexOf(correct),e:'「'+w.jp+'」('+w.id_+')の正しい使い方です。'});
+  });
+
+  return bank;
+}
 function buildMojiVocabSections(words) {
   var sections = [];
   var NL = String.fromCharCode(10);
-  var useBankN3 = currentJLPT === 'N3' && typeof N3_BANK !== 'undefined';
+  var levelBank = getLevelBank(); var useBankN3 = levelBank && Object.keys(levelBank).length > 0;
 
   // 問題1 — 漢字読み
   var m1qs;
-  if (useBankN3 && N3_BANK.mondai1 && N3_BANK.mondai1.length) {
-    var shuffled = N3_BANK.mondai1.slice(); shuffle(shuffled);
+  if (useBankN3 && levelBank.mondai1 && levelBank.mondai1.length) {
+    var shuffled = levelBank.mondai1.slice(); shuffle(shuffled);
     m1qs = shuffled.slice(0,8).map(function(q,i){
       return {id:'m1_'+i, question:q.q.split('\n').join('<br>'), choices:q.c.map(function(c,ci){return String.fromCharCode(0xFF11+ci)+'. '+c;}), answer:q.a, exp:q.e};
     });
@@ -2313,8 +2383,8 @@ function buildMojiVocabSections(words) {
 
   // 問題2 — 表記
   var m2qs;
-  if (useBankN3 && N3_BANK.mondai2 && N3_BANK.mondai2.length) {
-    var shuffled2 = N3_BANK.mondai2.slice(); shuffle(shuffled2);
+  if (useBankN3 && levelBank.mondai2 && levelBank.mondai2.length) {
+    var shuffled2 = levelBank.mondai2.slice(); shuffle(shuffled2);
     m2qs = shuffled2.slice(0,6).map(function(q,i){
       return {id:'m2_'+i, question:q.q.split('\n').join('<br>'), choices:q.c.map(function(c,ci){return String.fromCharCode(0xFF11+ci)+'. '+c;}), answer:q.a, exp:q.e};
     });
@@ -2332,8 +2402,8 @@ function buildMojiVocabSections(words) {
 
   // 問題3 — 文脈規定
   var m3qs;
-  if (useBankN3 && N3_BANK.mondai3 && N3_BANK.mondai3.length) {
-    var shuffled3 = N3_BANK.mondai3.slice(); shuffle(shuffled3);
+  if (useBankN3 && levelBank.mondai3 && levelBank.mondai3.length) {
+    var shuffled3 = levelBank.mondai3.slice(); shuffle(shuffled3);
     m3qs = shuffled3.slice(0,11).map(function(q,i){
       return {id:'m3_'+i, question:q.q.split('\n').join('<br>'), choices:q.c.map(function(c,ci){return String.fromCharCode(0xFF11+ci)+'. '+c;}), answer:q.a, exp:q.e};
     });
@@ -2351,8 +2421,8 @@ function buildMojiVocabSections(words) {
 
   // 問題4 — 言い換え
   var m4qs;
-  if (useBankN3 && N3_BANK.mondai4 && N3_BANK.mondai4.length) {
-    var shuffled4 = N3_BANK.mondai4.slice(); shuffle(shuffled4);
+  if (useBankN3 && levelBank.mondai4 && levelBank.mondai4.length) {
+    var shuffled4 = levelBank.mondai4.slice(); shuffle(shuffled4);
     m4qs = shuffled4.slice(0,5).map(function(q,i){
       return {id:'m4_'+i, question:q.q.split('\n').join('<br>'), choices:q.c.map(function(c,ci){return String.fromCharCode(0xFF11+ci)+'. '+c;}), answer:q.a, exp:q.e};
     });
@@ -2369,8 +2439,8 @@ function buildMojiVocabSections(words) {
 
   // 問題5 — 用法
   var m5qs;
-  if (useBankN3 && N3_BANK.mondai5 && N3_BANK.mondai5.length) {
-    var shuffled5 = N3_BANK.mondai5.slice(); shuffle(shuffled5);
+  if (useBankN3 && levelBank.mondai5 && levelBank.mondai5.length) {
+    var shuffled5 = levelBank.mondai5.slice(); shuffle(shuffled5);
     m5qs = shuffled5.slice(0,5).map(function(q,i){
       return {id:'m5_'+i, question:q.q.split('\n').join('<br>'), choices:q.c.map(function(c,ci){return String.fromCharCode(0xFF11+ci)+'. '+c;}), answer:q.a, exp:q.e};
     });
@@ -2434,9 +2504,9 @@ function buildListeningSections(words) {
 // ── Dokkai (読解 official) ───────────────────────────────────
 function buildDokkaiSections(type) {
   var bankKey = type==='monogatari' ? 'mondai9' : 'mondai8';
-  if (typeof N3_BANK === 'undefined' || !N3_BANK[bankKey] || !N3_BANK[bankKey].length) return [];
+  var docBank = N3_BANK; if (!docBank[bankKey] || !docBank[bankKey].length) return [];
   
-  var pool = N3_BANK[bankKey].slice(); shuffle(pool);
+  var pool = docBank[bankKey].slice(); shuffle(pool);
   var texts = pool.slice(0,1);
   var sections = [];
   var mondaiNum = type==='monogatari' ? 9 : 8;
@@ -2467,12 +2537,12 @@ function buildDokkaiSections(type) {
 
 async function buildGrammarSections(words) {
   var sections = [];
-  var useBankN3 = currentJLPT==='N3' && typeof N3_BANK !== 'undefined';
+  var levelBank = getLevelBank(); var useBankN3 = levelBank && levelBank.mondai6 && levelBank.mondai6.length>0;
 
   // 問題6 — from bank or AI
   var m6qs;
-  if (useBankN3 && N3_BANK.mondai6 && N3_BANK.mondai6.length) {
-    var shuffled6 = N3_BANK.mondai6.slice(); shuffle(shuffled6);
+  if (useBankN3 && levelBank.mondai6 && levelBank.mondai6.length) {
+    var shuffled6 = levelBank.mondai6.slice(); shuffle(shuffled6);
     m6qs = shuffled6.slice(0,10).map(function(q,i){
       return {id:'m6_'+i, question:q.q.split('\n').join('<br>'), choices:q.c.map(function(c,ci){return String.fromCharCode(0xFF11+ci)+'. '+c;}), answer:q.a, exp:q.e};
     });
@@ -2481,8 +2551,8 @@ async function buildGrammarSections(words) {
 
   // 問題7 — sentence ordering from bank or AI
   var m7qs;
-  if (useBankN3 && N3_BANK.mondai7 && N3_BANK.mondai7.length) {
-    var shuffled7 = N3_BANK.mondai7.slice(); shuffle(shuffled7);
+  if (useBankN3 && levelBank.mondai7 && levelBank.mondai7.length) {
+    var shuffled7 = levelBank.mondai7.slice(); shuffle(shuffled7);
     m7qs = shuffled7.slice(0,3).map(function(q,i){
       return {id:'m7_'+i, question:q.q.split('\n').join('<br>'), choices:q.c.map(function(c,ci){return String.fromCharCode(0xFF11+ci)+'. '+c;}), answer:q.a, exp:q.e};
     });
@@ -3720,6 +3790,13 @@ const N3_BANK = {
   mondai8:[{p:'私はアルバイトを始めて、お金の大切さがわかるようになりました。\n毎月少しずつ貯金をして、来年は旅行に行きたいと思っています。\n働くことは大変ですが、自分で稼いだお金で何かを買うと、とてもうれしいです。',qs:[{q:'この人がアルバイトを始めてわかったことは何ですか。',c:['お金の大切さ','旅行の楽しさ','働くことの簡単さ','貯金の難しさ'],a:0,e:'「お金の大切さがわかるようになりました」とあります。'},{q:'この人はこれから何をしたいと思っていますか。',c:['旅行に行くこと','もっとアルバイトをすること','大きな家を買うこと','新しい仕事を探すこと'],a:0,e:'「来年は旅行に行きたいと思っています」とあります。'},{q:'この人はなぜうれしいと感じますか。',c:['自分で稼いだお金で何かを買うから','旅行ができるから','アルバイトが楽しいから','貯金が増えたから'],a:0,e:'「自分で稼いだお金で何かを買うと、とてもうれしい」とあります。'}]},{p:'最近、スマートフォンを使って外国語を勉強する人が増えています。\nアプリを使えば、電車の中や休み時間など、どこでも勉強できます。\nただし、スマートフォンばかり見ていると目が疲れるので、\n適度に休憩することが大切です。',qs:[{q:'スマートフォンで外国語を勉強する利点は何ですか。',c:['どこでも勉強できる','安く勉強できる','先生に教えてもらえる','友達ができる'],a:0,e:'「どこでも勉強できます」とあります。'},{q:'スマートフォンを使う際の注意点は何ですか。',c:['目が疲れるので休憩が必要','お金がかかりすぎる','電池が切れやすい','音が大きすぎる'],a:0,e:'「目が疲れるので、適度に休憩することが大切」とあります。'},{q:'「適度に」の意味はどれですか。',c:['ちょうどいい程度に','できるだけ多く','できるだけ少なく','全くしない'],a:0,e:'「適度に」はちょうどよい程度、やりすぎないことを意味します。'}]},{p:'富士山の思い出 (ヒエン)\n\n今年の夏休みに、初めて富士山に登りました。富士山は日本でいちばん高い山で、3776メートルもあります。こんなに高い山はわたしの国にはありません。それで、留学したら、ぜひ登ってみたいと思っていました。\n\n富士山の途中までバスで行って、夜10時ごろから登り始めました。登山の途中で、もう帰りたいと思いました。なぜかというと、夏でも富士山の上は本当に寒かったし、足も痛かったからです。しかし、山の上に着いて朝日を見たら、疲れが消えてしまいました。突然、目の前の雲の間から朝日が現れたのです。今まで見た中でいちばん美しい朝日でした。とてもすばらしい思い出になりました。',qs:[{q:'筆者が登山の途中でどう思いましたか。',c:['頂上に着きたい','もう帰りたい','朝日を見たい','とても楽しい'],a:1,e:'「登山の途中で、もう帰りたいと思いました」とあります。'},{q:'山の上に着いた後、筆者はどうなりましたか。',c:['もっと疲れた','疲れが消えた','寒くて帰った','眠ってしまった'],a:1,e:'「山の上に着いて朝日を見たら、それまでの疲れが消えてしまいました」とあります。'},{q:'この文章の内容と合うのはどれですか。',c:['筆者の国にも富士山ほど高い山がある','筆者は昼間に富士山を登り始めた','筆者は今まで見た中でいちばん美しい朝日を見た','筆者は富士山に何度も登ったことがある'],a:2,e:'「今まで見た中でいちばん美しい朝日でした」とあります。'}]}],
   mondai9:[{p:'【田中さんのブログより】\n\n先週末、家族で地元のお祭りに行きました。夜店がたくさん並んでいて、\nとてもにぎやかでした。子供たちは金魚すくいや射的を楽しみ、\n私と妻は懐かしい食べ物を食べながら、子供のころの話をしました。\n\nお祭りは地域の人々が集まる大切な機会だと思います。\n最近は参加者が減っているとも聞きますが、こういった伝統的な行事は\nぜひ続けてほしいと思います。来年もまた家族で来ようと思っています。',qs:[{q:'田中さんの家族はお祭りで何をしましたか。',c:['子供たちは金魚すくいや射的を楽しんだ','全員で花火を見た','田中さんが料理を作った','子供たちが踊りを踊った'],a:0,e:'「子供たちは金魚すくいや射的を楽しみ」とあります。'},{q:'田中さんはお祭りについてどう思っていますか。',c:['地域の人が集まる大切な機会だ','参加者が多すぎて困る','もう行きたくない','食べ物が高すぎる'],a:0,e:'「地域の人々が集まる大切な機会だと思います」とあります。'},{q:'「懐かしい」の意味はどれですか。',c:['昔を思い出して温かい気持ちになる','新しくてめずらしい','難しくて覚えられない','おいしそうに見える'],a:0,e:'「懐かしい」は過去の思い出があって、懐かしく感じること。'},{q:'田中さんは来年どうしようと思っていますか。',c:['また家族でお祭りに来る','違う場所に行く','一人で来る','来るかどうかわからない'],a:0,e:'「来年もまた家族で来ようと思っています」とあります。'}]},{p:'2009年7月15日\nさくら株式会社 営業部 御中\nABC株式会社 輸出入部 ヴァン・イシイ\n\n拝啓\n\nわが社は、日本のアクセサリーやバッグ、くつなどを過去10年以上アジア各国に輸出しております。\n\n先日、さくら株式会社様のホームページ上にて新しいバッグのカタログを拝見しました。ぜひ輸出を検討したく思いますので、最新のバッグのカタログと価格表を今月中に送っていただけないでしょうか。\n\nよろしくお願いいたします。',qs:[{q:'この手紙の中の会社について、正しいのはどれか。',c:['「さくら株式会社」は各国から輸入したバッグを日本で10年以上売っている。','「さくら株式会社」はバッグを輸出するかどうか検討し今月中に返事をする。','「ABC株式会社」はアジア各国の最新バッグをホームページで紹介している。','「ABC株式会社」は「さくら株式会社」にバッグのカタログと価格表を頼んだ。'],a:3,e:'ABC社がさくら社に「カタログと価格表を送っていただけないでしょうか」と頼んでいます。4が正解。'}]}],
 };
+
+const N5_BANK = {}; // generated from JLPT_DATA
+
+
+const N4_BANK = {}; // generated from JLPT_DATA
+
+
 
 const N3_LISTENING = [{s:'男：すみません、図書館はどこですか。\n女：あの大きい建物の右側です。\n男：ありがとうございます。',q:'図書館はどこにありますか。',c:["大きい建物の右側", "大きい建物の左側", "駅の前", "公園の隣"],a:0,e:'「あの大きい建物の右側です」と言っています。'},{s:'女：田中さん、明日のパーティーに来ますか。\n男：行きたいんですが、仕事が終わるかどうかわかりません。\n女：終わったら来てくださいね。\n男：はい、できるだけ早く行きます。',q:'男の人はパーティーについてどう言いましたか。',c:["仕事が終わったら行く", "絶対に行かない", "もう行くと決めた", "行きたくない"],a:0,e:'「仕事が終わるかどうかわかりません」「できるだけ早く行きます」と言っています。'},{s:'アナウンス：お客様にお知らせいたします。ただいまエレベーターが点検中のため、使用できません。ご不便をおかけして申し訳ありません。階段をご利用ください。',q:'このアナウンスは何について話していますか。',c:["エレベーターが使えないこと", "店が閉まること", "電車が遅れること", "駐車場が満車なこと"],a:0,e:'「エレベーターが点検中のため使用できません」と言っています。'},{s:'女：あれ、田中くん、元気なさそうだね。どうしたの？\n男：実は昨日から頭が痛くて。\n女：そうなの。熱はある？\n男：少しあります。\n女：それは大変だね。早く帰って休んだほうがいいよ。',q:'男の人の体の状態はどうですか。',c:["頭が痛くて少し熱がある", "おなかが痛い", "足が痛い", "全然元気だ"],a:0,e:'「頭が痛い」「少し熱がある」と言っています。'},{s:'先生：来週の月曜日にテストがあります。範囲は第三課から第五課までです。辞書は使ってもいいですが、教科書は持ち込みできません。よく復習しておいてください。',q:'テストについて正しいのはどれですか。',c:["辞書は使えるが教科書は使えない", "辞書も教科書も使えない", "教科書は使えるが辞書は使えない", "辞書も教科書も使える"],a:0,e:'「辞書は使ってもいい」「教科書は持ち込みできません」と言っています。'}];
 
