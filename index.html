@@ -697,6 +697,118 @@ nav button.active {
   font-family:'DM Mono',monospace;font-size:64px;
   font-weight:700;color:var(--gold);line-height:1;
 }
+
+/* ══════ EXAM SIMULATION ══════ */
+.exam-header {
+  position:sticky; top:0; z-index:50;
+  background:var(--ink); color:white;
+  padding:10px 16px; display:flex; align-items:center; gap:10px;
+}
+.exam-header-title { font-size:13px; font-weight:700; flex:1; }
+.exam-timer {
+  font-family:'DM Mono',monospace; font-size:15px; font-weight:700;
+  color:var(--gold); letter-spacing:1px;
+}
+.exam-timer.warn { color:#ff8080; animation: pulse 1s infinite; }
+@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.4} }
+
+.exam-section-header {
+  background:linear-gradient(135deg,var(--ink),#2c3e7a);
+  color:white; padding:16px 20px; margin-bottom:0;
+  border-radius:12px 12px 0 0;
+}
+.exam-section-header h3 { font-family:'Noto Serif JP',serif; font-size:16px; margin-bottom:2px; }
+.exam-section-header p  { font-size:12px; opacity:.6; }
+
+.mondai-block {
+  background:white; border:1px solid var(--border);
+  border-top:none; padding:18px 20px; margin-bottom:16px;
+  border-radius:0 0 12px 12px;
+}
+.mondai-block:not(:last-child) { border-radius:0; }
+.mondai-title {
+  font-size:13px; font-weight:700; color:var(--ink);
+  margin-bottom:10px; padding-bottom:8px;
+  border-bottom:2px solid var(--border);
+}
+.mondai-instruction {
+  font-size:12px; color:var(--mist); margin-bottom:14px;
+  line-height:1.7; background:rgba(44,62,122,.04);
+  padding:10px 12px; border-radius:8px;
+}
+.exam-q-row {
+  margin-bottom:18px; padding-bottom:18px;
+  border-bottom:1px dashed var(--border);
+}
+.exam-q-row:last-child { border-bottom:none; margin-bottom:0; padding-bottom:0; }
+.exam-q-num {
+  font-size:11px; font-weight:700; color:var(--red);
+  font-family:'DM Mono',monospace; margin-bottom:6px;
+}
+.exam-q-text {
+  font-size:15px; line-height:1.8; margin-bottom:12px;
+  font-family:'Noto Sans JP',sans-serif;
+}
+.exam-q-text .underline { text-decoration:underline; font-weight:600; }
+.exam-q-text .blank {
+  display:inline-block; min-width:50px; border-bottom:2px solid var(--ink);
+  text-align:center; font-weight:700;
+}
+.exam-choices-grid {
+  display:grid; grid-template-columns:1fr 1fr; gap:8px;
+}
+@media(max-width:400px){ .exam-choices-grid { grid-template-columns:1fr; } }
+.exam-choice-btn {
+  padding:10px 14px; border:1.5px solid var(--border);
+  border-radius:9px; cursor:pointer; font-size:14px;
+  font-family:'Noto Sans JP',sans-serif;
+  transition:all .15s; background:white; text-align:left;
+  display:flex; align-items:center; gap:8px;
+}
+.exam-choice-btn:hover:not(:disabled) { border-color:var(--indigo); background:rgba(44,62,122,.04); }
+.exam-choice-btn.selected { border-color:var(--indigo); background:rgba(44,62,122,.08); font-weight:600; }
+.exam-choice-btn.correct  { border-color:#2da050; background:rgba(45,160,80,.1); color:#2da050; font-weight:600; }
+.exam-choice-btn.wrong    { border-color:var(--red); background:rgba(192,57,43,.06); color:var(--red); }
+.exam-choice-num {
+  width:22px; height:22px; border-radius:50%; border:1.5px solid currentColor;
+  display:flex; align-items:center; justify-content:center;
+  font-size:11px; font-weight:700; flex-shrink:0;
+}
+.exam-exp-box {
+  margin-top:10px; padding:10px 12px;
+  background:rgba(44,62,122,.06); border-radius:8px;
+  font-size:12px; line-height:1.7; display:none;
+}
+.exam-exp-box.show { display:block; }
+
+/* Result */
+.exam-result-header {
+  background:linear-gradient(135deg,var(--ink),var(--indigo));
+  border-radius:14px; padding:24px; text-align:center; color:white; margin-bottom:16px;
+}
+.exam-score-display {
+  font-family:'DM Mono',monospace; font-size:56px;
+  font-weight:700; line-height:1;
+}
+.exam-score-label { font-size:12px; opacity:.5; text-transform:uppercase; letter-spacing:1px; margin-top:4px; }
+.exam-grade-badge {
+  display:inline-block; padding:4px 16px; border-radius:20px;
+  font-size:18px; font-weight:700; margin:12px 0;
+}
+
+/* Bottom nav */
+.exam-menu-btn {
+  display:flex; justify-content:space-between; align-items:center;
+  width:100%; padding:12px 14px; border-radius:10px; cursor:pointer;
+  font-family:'Noto Sans JP',sans-serif; font-size:13px; font-weight:600;
+  transition:all .2s;
+}
+.exam-menu-btn:hover { opacity:.85; transform:translateX(2px); }
+.exam-bottom-bar {
+  position:sticky; bottom:0; background:white;
+  border-top:1px solid var(--border); padding:10px 16px;
+  display:flex; gap:8px; align-items:center;
+}
 ::-webkit-scrollbar { width:5px; }
 ::-webkit-scrollbar-thumb { background:var(--border); border-radius:3px; }
 
@@ -1226,117 +1338,156 @@ nav button.active {
 </div>
 
 <!-- ====== AI PLACEHOLDER --><!-- ====== EXAM SCREEN ====== -->
-<div id="screen-exam" class="screen">
+<!-- ════ EXAM SCREEN ════ -->
+<div id="screen-exam" class="screen" style="padding:0">
 
-  <!-- Menu pilih exam -->
-  <div id="exam-menu">
+  <!-- ① MENU -->
+  <div id="exam-menu" style="padding:16px">
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
-      <div class="section-title" style="margin:0">📝 Latihan Ujian JLPT</div>
+      <div class="section-title" style="margin:0">📝 Simulasi Ujian JLPT</div>
       <span id="exam-level-badge" style="font-family:'DM Mono',monospace;font-size:11px;padding:3px 10px;border-radius:10px;font-weight:700;background:var(--red);color:white">N3</span>
     </div>
-    <p style="font-size:13px;color:var(--mist);margin-bottom:20px">Soal pilihan ganda format JLPT — 語彙・文法・読解</p>
+    <p style="font-size:13px;color:var(--mist);margin-bottom:20px">Format soal seperti ujian JLPT asli · Pilih bagian yang ingin dilatih</p>
 
-    <div style="display:flex;flex-direction:column;gap:10px">
-      <div class="exam-card" style="cursor:pointer" onclick="startExam('vocab')" onmouseover="this.style.borderColor='var(--red)'" onmouseout="this.style.borderColor='var(--border)'">
-        <div style="display:flex;align-items:center;gap:14px">
-          <div style="font-size:36px">📖</div>
-          <div>
-            <div style="font-weight:700;font-size:16px;margin-bottom:2px">語彙 <span style="color:var(--mist);font-size:13px;font-weight:400">Kosakata</span></div>
-            <div style="font-size:12px;color:var(--mist)">Arti kata, cara baca, penggunaan · 10 soal</div>
-          </div>
-          <div style="margin-left:auto;font-size:20px;color:var(--mist)">›</div>
+    <div style="display:flex;flex-direction:column;gap:10px;margin-bottom:24px">
+
+      <!-- 文字・語彙 -->
+      <div style="background:white;border:1px solid var(--border);border-radius:14px;overflow:hidden">
+        <div style="background:linear-gradient(90deg,#c0392b,#e74c3c);padding:12px 16px;color:white">
+          <div style="font-weight:700;font-size:14px">文字・語彙</div>
+          <div style="font-size:11px;opacity:.8">Huruf &amp; Kosakata</div>
+        </div>
+        <div style="padding:12px 16px;display:flex;flex-direction:column;gap:8px">
+          <button class="exam-menu-btn" onclick="startExamSection('moji_vocab')"
+            style="background:rgba(192,57,43,.06);border:1px solid rgba(192,57,43,.2);color:var(--red)">
+            <span>📖 問題1〜5 · 文字語彙</span>
+            <span style="font-size:11px;opacity:.7">35 soal · ~25 menit</span>
+          </button>
         </div>
       </div>
 
-      <div class="exam-card" style="cursor:pointer" onclick="startExam('grammar')" onmouseover="this.style.borderColor='var(--indigo)'" onmouseout="this.style.borderColor='var(--border)'">
-        <div style="display:flex;align-items:center;gap:14px">
-          <div style="font-size:36px">✏️</div>
-          <div>
-            <div style="font-weight:700;font-size:16px;margin-bottom:2px">文法 <span style="color:var(--mist);font-size:13px;font-weight:400">Grammar</span></div>
-            <div style="font-size:12px;color:var(--mist)">Pola kalimat, partikel, bentuk kata · 10 soal</div>
-          </div>
-          <div style="margin-left:auto;font-size:20px;color:var(--mist)">›</div>
+      <!-- 聴解 -->
+      <div style="background:white;border:1px solid var(--border);border-radius:14px;overflow:hidden">
+        <div style="background:linear-gradient(90deg,#8e44ad,#9b59b6);padding:12px 16px;color:white">
+          <div style="font-weight:700;font-size:14px">聴解</div>
+          <div style="font-size:11px;opacity:.8">Mendengarkan</div>
+        </div>
+        <div style="padding:12px 16px">
+          <button class="exam-menu-btn" onclick="startExamSection('listening')"
+            style="background:rgba(142,68,173,.06);border:1px solid rgba(142,68,173,.2);color:#8e44ad">
+            <span>🎧 問題1〜5 · 聴解</span>
+            <span style="font-size:11px;opacity:.7">5 soal · Audio TTS</span>
+          </button>
         </div>
       </div>
 
-      <div class="exam-card" style="cursor:pointer" onclick="startExam('reading')" onmouseover="this.style.borderColor='var(--jade)'" onmouseout="this.style.borderColor='var(--border)'">
-        <div style="display:flex;align-items:center;gap:14px">
-          <div style="font-size:36px">📄</div>
-          <div>
-            <div style="font-weight:700;font-size:16px;margin-bottom:2px">読解 <span style="color:var(--mist);font-size:13px;font-weight:400">Membaca</span></div>
-            <div style="font-size:12px;color:var(--mist)">Pemahaman teks pendek · 5 soal</div>
-          </div>
-          <div style="margin-left:auto;font-size:20px;color:var(--mist)">›</div>
+      <!-- 文法・読解 -->
+      <div style="background:white;border:1px solid var(--border);border-radius:14px;overflow:hidden">
+        <div style="background:linear-gradient(90deg,#2c3e7a,#3498db);padding:12px 16px;color:white">
+          <div style="font-weight:700;font-size:14px">文法・読解</div>
+          <div style="font-size:11px;opacity:.8">Grammar &amp; Membaca</div>
+        </div>
+        <div style="padding:12px 16px;display:flex;flex-direction:column;gap:8px">
+          <button class="exam-menu-btn" onclick="startExamSection('grammar')"
+            style="background:rgba(44,62,122,.06);border:1px solid rgba(44,62,122,.2);color:var(--indigo)">
+            <span>✏️ 文法 · Grammar</span>
+            <span style="font-size:11px;opacity:.7">13 soal · ~10 menit</span>
+          </button>
+          <button class="exam-menu-btn" onclick="startExamSection('dokkai')"
+            style="background:rgba(44,160,80,.06);border:1px solid rgba(44,160,80,.2);color:var(--jade)">
+            <span>📰 読解 · Teks Bacaan (dari bank soal)</span>
+            <span style="font-size:11px;opacity:.7">~5 soal · Official format</span>
+          </button>
+          <button class="exam-menu-btn" onclick="startExamSection('monogatari')"
+            style="background:rgba(230,126,34,.06);border:1px solid rgba(230,126,34,.2);color:#e67e22">
+            <span>📖 読解 中文 · Cerita (dokkai)</span>
+            <span style="font-size:11px;opacity:.7">4 soal · Teks cerita panjang</span>
+          </button>
+          <button class="exam-menu-btn" onclick="startExamSection('reading')"
+            style="background:rgba(44,160,80,.06);border:1px solid rgba(44,160,80,.2);color:var(--jade)">
+            <span>📄 読解 · Membaca</span>
+            <span style="font-size:11px;opacity:.7">10 soal · ~15 menit</span>
+          </button>
         </div>
       </div>
 
-      <div class="exam-card" style="cursor:pointer" onclick="startExam('mix')" onmouseover="this.style.borderColor='var(--gold)'" onmouseout="this.style.borderColor='var(--border)'">
-        <div style="display:flex;align-items:center;gap:14px">
-          <div style="font-size:36px">⚡</div>
-          <div>
-            <div style="font-weight:700;font-size:16px;margin-bottom:2px">Mix <span style="color:var(--mist);font-size:13px;font-weight:400">Semua bagian</span></div>
-            <div style="font-size:12px;color:var(--mist)">Campuran 語彙・文法・読解 · 15 soal</div>
-          </div>
-          <div style="margin-left:auto;font-size:20px;color:var(--mist)">›</div>
-        </div>
-      </div>
+      <!-- Mock Test Full -->
+      <button class="exam-menu-btn" onclick="startExamSection('full')"
+        style="background:linear-gradient(135deg,var(--ink),var(--indigo));color:white;border:none;border-radius:14px;padding:16px">
+        <span style="font-size:15px">⚡ Full Mock Test</span>
+        <span style="font-size:11px;opacity:.8">Semua bagian · ~60 menit</span>
+      </button>
     </div>
 
-    <!-- History skor -->
-    <div class="section-title" style="margin-top:24px;margin-bottom:10px">📊 Skor Terakhir</div>
-    <div id="exam-history" style="font-size:13px;color:var(--mist);text-align:center;padding:16px">Belum ada data ujian</div>
+    <!-- Riwayat -->
+    <div class="section-title" style="margin-bottom:10px">📊 Riwayat Ujian</div>
+    <div id="exam-history" style="font-size:13px;color:var(--mist);text-align:center;padding:16px">
+      Belum ada riwayat ujian
+    </div>
   </div>
 
-  <!-- Loading soal -->
+  <!-- ② LOADING -->
   <div id="exam-loading" style="display:none;text-align:center;padding:60px 24px">
     <div style="font-size:48px;margin-bottom:16px">🤖</div>
-    <div style="font-size:16px;font-weight:600;margin-bottom:8px">Sensei sedang membuat soal...</div>
-    <div style="font-size:13px;color:var(--mist)" id="exam-loading-status">Memuat soal <span id="exam-loading-type"></span></div>
+    <div style="font-size:16px;font-weight:600;margin-bottom:8px">Sensei sedang menyiapkan soal...</div>
+    <div style="font-size:13px;color:var(--mist)">Membuat soal <span id="exam-loading-type"></span></div>
     <div style="margin-top:20px;height:4px;background:rgba(26,26,46,.1);border-radius:2px;overflow:hidden">
       <div id="exam-loading-bar" style="height:100%;width:0%;background:var(--red);border-radius:2px;transition:width .5s"></div>
     </div>
   </div>
 
-  <!-- Sesi soal -->
+  <!-- ③ SESSION -->
   <div id="exam-session" style="display:none">
-    <!-- Header -->
-    <div style="display:flex;align-items:center;gap:12px;margin-bottom:12px">
-      <button onclick="exitExam()" style="border:none;background:none;cursor:pointer;font-size:20px;color:var(--mist);padding:0">←</button>
-      <div style="flex:1">
-        <div style="font-size:12px;color:var(--mist)" id="exam-session-title">語彙 · N3</div>
-        <div class="exam-progress-bar" style="margin:4px 0 0">
-          <div class="exam-progress-fill" id="exam-prog-fill" style="width:0%"></div>
-        </div>
-      </div>
-      <div style="font-family:'DM Mono',monospace;font-size:13px;color:var(--mist)" id="exam-qcount">1/10</div>
+    <!-- Sticky header with timer -->
+    <div class="exam-header">
+      <button onclick="confirmExitExam()" style="border:none;background:none;color:white;cursor:pointer;font-size:18px;padding:0">←</button>
+      <div class="exam-header-title" id="exam-session-label">文字語彙 · N3</div>
+      <div class="exam-timer" id="exam-timer">00:00</div>
     </div>
-
-    <!-- Soal aktif -->
-    <div id="exam-question-area"></div>
-
-    <!-- Tombol next -->
-    <button id="exam-next-btn" onclick="nextQuestion()" style="display:none;width:100%;padding:14px;background:var(--ink);color:white;border:none;border-radius:12px;font-family:inherit;font-size:15px;font-weight:600;cursor:pointer;margin-top:8px">
-      Soal Berikutnya →
-    </button>
+    <!-- Progress -->
+    <div style="height:4px;background:rgba(26,26,46,.1)">
+      <div id="exam-prog-fill" style="height:100%;width:0%;background:var(--red);transition:width .4s"></div>
+    </div>
+    <!-- Questions rendered here -->
+    <div id="exam-content" style="padding:16px"></div>
+    <!-- Bottom bar -->
+    <div class="exam-bottom-bar">
+      <div style="flex:1;font-size:12px;color:var(--mist)" id="exam-answered-count">0/0 dijawab</div>
+      <button id="exam-submit-btn" onclick="submitSection()" 
+        style="padding:10px 24px;background:var(--red);color:white;border:none;border-radius:10px;font-family:inherit;font-size:14px;font-weight:600;cursor:pointer">
+        Selesai &amp; Lihat Skor
+      </button>
+    </div>
   </div>
 
-  <!-- Hasil -->
-  <div id="exam-result" style="display:none">
-    <div class="exam-result-card">
-      <div style="font-size:14px;opacity:.6;margin-bottom:8px" id="result-title">語彙 · N3</div>
-      <div class="exam-score-big" id="result-score">0/10</div>
-      <div style="font-size:14px;opacity:.7;margin-top:8px" id="result-pct">0%</div>
-      <div style="font-size:32px;margin:16px 0" id="result-emoji">🎌</div>
-      <div style="font-size:14px;opacity:.8;line-height:1.6" id="result-msg"></div>
+  <!-- ④ RESULT -->
+  <div id="exam-result" style="display:none;padding:16px">
+    <div class="exam-result-header">
+      <div style="font-size:13px;opacity:.6;margin-bottom:4px" id="result-section-name">文字語彙</div>
+      <div class="exam-score-display" id="result-score">0/0</div>
+      <div class="exam-score-label">SKOR</div>
+      <div class="exam-grade-badge" id="result-grade-badge">B</div>
+      <div style="font-size:13px;opacity:.8;line-height:1.6" id="result-message"></div>
     </div>
-    <div style="margin-top:16px;display:flex;gap:10px">
-      <button onclick="startExam(lastExamType)" style="flex:1;padding:13px;background:var(--red);color:white;border:none;border-radius:12px;font-family:inherit;font-size:14px;font-weight:600;cursor:pointer">🔄 Coba Lagi</button>
-      <button onclick="exitExam()" style="flex:1;padding:13px;background:white;color:var(--ink);border:1px solid var(--border);border-radius:12px;font-family:inherit;font-size:14px;font-weight:600;cursor:pointer">← Kembali</button>
+    <!-- Per-mondai breakdown -->
+    <div id="result-breakdown" style="margin-bottom:16px"></div>
+    <!-- Action buttons -->
+    <div style="display:flex;gap:8px;margin-bottom:16px">
+      <button onclick="startExamSection(lastSection)"
+        style="flex:1;padding:13px;background:var(--red);color:white;border:none;border-radius:12px;font-family:inherit;font-size:14px;font-weight:600;cursor:pointer">
+        🔄 Coba Lagi
+      </button>
+      <button onclick="showExamSection('exam-menu');updateExamHistory()"
+        style="flex:1;padding:13px;background:white;color:var(--ink);border:1px solid var(--border);border-radius:12px;font-family:inherit;font-size:14px;font-weight:600;cursor:pointer">
+        ← Menu
+      </button>
     </div>
-    <div style="margin-top:16px" id="result-review"></div>
+    <!-- Full review -->
+    <div id="result-review"></div>
   </div>
 
 </div>
+
 
 <!-- ====== AI SCREEN ====== -->
 <div id="screen-ai" class="screen">
@@ -1987,61 +2138,84 @@ async function loadDashboardLeaderboard() {
   }
 }
 
-// ============================================================
-// EXAM SYSTEM
-// ============================================================
-var examQuestions = [];
-var examIdx = 0;
-var examScore = 0;
-var examAnswered = false;
-var lastExamType = 'vocab';
-var examHistory = JSON.parse(localStorage.getItem('examHistory')||'[]');
 
-function updateExamHistory() {
-  var el = document.getElementById('exam-history');
-  if (!el) return;
-  if (!examHistory.length) {
-    el.innerHTML = '<div style="text-align:center;padding:20px;color:var(--mist)">Belum ada riwayat ujian 📝</div>';
-    return;
-  }
-  var color = JLPT_COLORS[currentJLPT] || 'var(--red)';
-  el.innerHTML = examHistory.filter(function(h){ return h.level===currentJLPT; })
-    .slice(-6).reverse()
-    .map(function(h){
-      var c = h.pct>=80?'var(--jade)':h.pct>=60?'var(--gold)':'var(--red)';
-      return '<div style="display:flex;justify-content:space-between;align-items:center;'
-        +'padding:8px 0;border-bottom:1px solid var(--border)">'
-        +'<div>'
-        +'<span style="font-size:13px;font-weight:600">'+h.type+'</span>'
-        +'<span style="font-size:11px;color:var(--mist);margin-left:6px">'+h.date+'</span>'
-        +'</div>'
-        +'<div style="display:flex;align-items:center;gap:8px">'
-        +'<span style="font-size:12px;color:var(--mist)">'+h.score+'/'+h.total+'</span>'
-        +'<span style="font-family:DM Mono,monospace;font-weight:700;font-size:14px;color:'+c+'">'+h.pct+'%</span>'
-        +'</div>'
-        +'</div>';
-    }).join('')
-    || '<div style="text-align:center;padding:20px;color:var(--mist)">Belum ada riwayat untuk '+currentJLPT+'</div>';
-}
+// ══════════════════════════════════════════════════
+// EXAM SYSTEM v2 — JLPT Simulation
+// ══════════════════════════════════════════════════
+var examHistory   = JSON.parse(localStorage.getItem('examHistory')||'[]');
+var examSections  = [];   // Array of section objects
+var examAnswers   = {};   // {questionId: choiceIndex}
+var lastSection   = 'moji_vocab';
+var examTimerInt  = null;
+var examStartTime = 0;
+var examTimeLimitSec = 0;
+
+// Section config
+var SECTION_CONFIG = {
+  moji_vocab: { label:'文字・語彙', time:25*60, color:'#c0392b' },
+  grammar:    { label:'文法',       time:10*60, color:'#2c3e7a' },
+  reading:    { label:'読解',       time:15*60, color:'#2da050' },
+  full:       { label:'Full Mock',  time:60*60, color:'var(--ink)' },
+  listening:  { label:'聴解',         time:20*60, color:'#8e44ad' },
+  dokkai:     { label:'読解 短文',    time:15*60, color:'var(--jade)' },
+  monogatari: { label:'読解 中文',    time:20*60, color:'#e67e22' },
+};
 
 function showExamSection(id) {
   ['exam-menu','exam-loading','exam-session','exam-result'].forEach(function(s){
     var el=document.getElementById(s);
-    if(el) el.style.display=s===id?'':'none';
+    if(el) el.style.display = s===id?'':'none';
   });
 }
 
-async function startExam(type) {
-  lastExamType = type;
+function updateExamLevelBadge() {
+  var b=document.getElementById('exam-level-badge');
+  if(b){b.textContent=currentJLPT;b.style.background=JLPT_COLORS[currentJLPT]||'var(--red)';}
+}
+
+// ── Timer ──────────────────────────────────────────
+function startTimer(seconds) {
+  clearInterval(examTimerInt);
+  examStartTime = Date.now();
+  examTimeLimitSec = seconds;
+  updateTimerDisplay();
+  examTimerInt = setInterval(function(){
+    var elapsed = Math.floor((Date.now()-examStartTime)/1000);
+    var remaining = examTimeLimitSec - elapsed;
+    if (remaining <= 0) {
+      clearInterval(examTimerInt);
+      submitSection();
+      return;
+    }
+    var timerEl = document.getElementById('exam-timer');
+    if (timerEl) {
+      updateTimerDisplay();
+      if (remaining < 120) timerEl.classList.add('warn');
+    }
+  }, 1000);
+}
+
+function updateTimerDisplay() {
+  var el = document.getElementById('exam-timer');
+  if (!el) return;
+  var elapsed = Math.floor((Date.now()-examStartTime)/1000);
+  var remaining = Math.max(0, examTimeLimitSec - elapsed);
+  var m = Math.floor(remaining/60), sec = remaining%60;
+  el.textContent = (m<10?'0':'')+m+':'+(sec<10?'0':'')+sec;
+}
+
+function stopTimer() { clearInterval(examTimerInt); }
+
+// ── Start exam section ────────────────────────────
+async function startExamSection(sectionType) {
+  lastSection = sectionType;
   showExamSection('exam-loading');
-  var typeLabel = {vocab:'語彙',grammar:'文法',mix:'Mix'}[type] || type;
-  document.getElementById('exam-loading-type').textContent = typeLabel;
+  var cfg = SECTION_CONFIG[sectionType] || SECTION_CONFIG.moji_vocab;
+  document.getElementById('exam-loading-type').textContent = cfg.label;
   var bar = document.getElementById('exam-loading-bar');
   bar.style.width = '10%';
 
-  var nQ = type==='mix' ? 15 : 10;
-
-  // Get all words for current level
+  // Get words for current level
   var words = [];
   if (currentJLPT==='N3') {
     ['kanji','vocab','grammar'].forEach(function(c){
@@ -2051,233 +2225,644 @@ async function startExam(type) {
     words = (JLPT_DATA[currentJLPT]||[]).map(function(w){ return Object.assign({},w); });
   }
 
-  examQuestions = [];
+  examAnswers = {};
+  examSections = [];
+
   bar.style.width = '30%';
 
-  // ── 語彙 questions (client-side, instant) ────────────────
-  if (type === 'vocab' || type === 'mix') {
-    var n = type==='mix' ? 5 : 4;
-    var vocabQ   = generateVocabQuestions(words, n);
-    var yomiQ    = generateYomiQuestions(words, n);
-    var usageQ   = generateUsageQuestions(words, type==='mix'?2:2);
-    examQuestions = vocabQ.concat(yomiQ).concat(usageQ);
-    shuffle(examQuestions);
-    examQuestions = examQuestions.slice(0, type==='mix'?9:nQ);
-  }
+  try {
+    if (sectionType === 'moji_vocab' || sectionType === 'full') {
+      var mondai = buildMojiVocabSections(words);
+      examSections = examSections.concat(mondai);
+    }
+    bar.style.width = '55%';
 
-  bar.style.width = '60%';
+    if (sectionType === 'grammar' || sectionType === 'full') {
+      var grammarMondai = await buildGrammarSections(words);
+      examSections = examSections.concat(grammarMondai);
+    }
+    bar.style.width = '80%';
 
-  // ── 文法 questions (AI-generated) ────────────────────────
-  if (type === 'grammar' || type === 'mix') {
-    var need = type==='grammar' ? nQ : (nQ - examQuestions.length);
-    if (need > 0) {
-      shuffle(words);
-      var sample = words.slice(0,15).map(function(w){ 
-        return w.jp + '(' + w.rom + ')=' + w.id_; 
-      }).join('; ');
-      
-      var prompt = 'Buat ' + need + ' soal JLPT ' + currentJLPT + ' bagian 文法 (grammar) dalam Bahasa Indonesia.'
-        + ' Kata referensi: ' + sample + '.'
-        + ' Tipe soal yang bervariasi:'
-        + ' 1) Isi bagian kosong (___) dengan partikel/bentuk kata yang tepat'
-        + ' 2) Pilih kalimat yang paling natural'
-        + ' 3) Ubah ke bentuk yang benar (て形, ない形, dsb)'
-        + ' Format HANYA JSON: [{"q":"soal","choices":["A. ","B. ","C. ","D. "],"answer":0,"exp":"penjelasan"}]';
-
-      try {
-        var res = await fetch('https://api.groq.com/openai/v1/chat/completions',{
-          method:'POST',
-          headers:{'Content-Type':'application/json','Authorization':'Bearer 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'},
-          body: JSON.stringify({
-            model:'llama-3.3-70b-versatile', max_tokens:2500, temperature:0.5,
-            messages:[
-              {role:'system',content:'Kamu pembuat soal JLPT profesional berpengalaman. Buat soal yang akurat dan relevan. Jawab HANYA JSON array valid, tanpa teks lain.'},
-              {role:'user',content:prompt}
-            ]
-          })
-        });
-        bar.style.width = '85%';
-        var d = await res.json();
-        var raw = (d.choices?.[0]?.message?.content||'[]').replace(/```json|```/g,'').trim();
-        var st=raw.indexOf('['), en=raw.lastIndexOf(']');
-        if(st>=0&&en>st) raw=raw.slice(st,en+1);
-        var aiQs = JSON.parse(raw);
-        if (Array.isArray(aiQs) && aiQs.length) {
-          examQuestions = examQuestions.concat(aiQs.slice(0,need));
-        }
-      } catch(err) {
-        console.warn('Grammar AI error:', err.message);
-        // Fallback to more vocab questions
-        examQuestions = examQuestions.concat(generateVocabQuestions(words, need));
+    if (sectionType === 'reading' || sectionType === 'full') {
+      var readingMondai = await buildReadingSections(words);
+      examSections = examSections.concat(readingMondai);
+    }
+    if (sectionType === 'listening') {
+      var listenMondai = buildListeningSections(words);
+      examSections = examSections.concat(listenMondai);
+    }
+    if (sectionType === 'dokkai') {
+      var dokkaiMondai = buildDokkaiSections('dokkai');
+      examSections = examSections.concat(dokkaiMondai);
+      if (!dokkaiMondai.length) {
+        var aiReading = await buildReadingSections(words);
+        examSections = examSections.concat(aiReading);
       }
     }
-  }
-
-  // Final shuffle & trim
-  shuffle(examQuestions);
-  examQuestions = examQuestions.slice(0, nQ);
-  bar.style.width = '100%';
-  
-  setTimeout(launchSession, 350);
-}
-
-function launchSession() {
-  if (!examQuestions.length) {
-    showExamSection('exam-menu');
-    alert('Gagal membuat soal. Coba lagi!');
-    return;
-  }
-  examIdx=0; examScore=0;
-  showExamSection('exam-session');
-  var typeNames={vocab:'語彙',grammar:'文法',reading:'読解',mix:'Mix'};
-  document.getElementById('exam-session-title').textContent=(typeNames[lastExamType]||lastExamType)+' · '+currentJLPT;
-  renderQuestion();
-}
-
-function renderQuestion() {
-  var q = examQuestions[examIdx];
-  if (!q) { showResult(); return; }
-  examAnswered = false;
-  var total = examQuestions.length;
-  document.getElementById('exam-prog-fill').style.width = Math.round(examIdx/total*100)+'%';
-  document.getElementById('exam-qcount').textContent = (examIdx+1)+'/'+total;
-  document.getElementById('exam-next-btn').style.display = 'none';
-
-  var labels = ['A','B','C','D'];
-  var qText = (q.q||'').replace(/\n/g,'<br>');
-  
-  var area = document.getElementById('exam-question-area');
-  area.innerHTML = '<div class="exam-card">'
-    + '<div class="exam-qnum">Soal ' + (examIdx+1) + ' dari ' + total + ' &nbsp;·&nbsp; ' + currentJLPT + '</div>'
-    + '<div class="exam-question">' + qText + '</div>'
-    + '<div class="exam-choices">'
-    + (q.choices||[]).map(function(c,i){
-        var label = labels[i];
-        var text = c.replace(/^[A-D]\.\s*/,'');
-        return '<button class="exam-choice" onclick="answerQuestion('+i+')">'
-          + '<span class="choice-label">'+label+'</span>'
-          + '<span style="flex:1">'+text+'</span>'
-          + '</button>';
-      }).join('')
-    + '</div>'
-    + '<div class="exam-explanation" id="exam-exp" style="display:none">'
-    + '<b>💡 Penjelasan:</b><br>' + (q.exp||'') + '</div>'
-    + '</div>';
-}
-
-function answerQuestion(idx) {
-  if (examAnswered) return;
-  examAnswered = true;
-  var q = examQuestions[examIdx];
-  var correct = q.answer;
-  var btns = document.querySelectorAll('.exam-choice');
-  btns.forEach(function(b,i){
-    b.disabled = true;
-    if (i === correct) {
-      b.classList.add('correct');
-      b.querySelector('.choice-label').textContent = '✓';
-    } else if (i === idx && idx !== correct) {
-      b.classList.add('wrong');
-      b.querySelector('.choice-label').textContent = '✗';
+    if (sectionType === 'monogatari') {
+      var monogatariMondai = buildDokkaiSections('monogatari');
+      examSections = examSections.concat(monogatariMondai);
+      if (!monogatariMondai.length) {
+        var aiReading2 = await buildReadingSections(words);
+        examSections = examSections.concat(aiReading2);
+      }
     }
+    bar.style.width = '100%';
+
+    if (!examSections.length) throw new Error('No sections');
+
+    setTimeout(function(){
+      showExamSection('exam-session');
+      var lbl = document.getElementById('exam-session-label');
+      if(lbl) lbl.textContent = cfg.label + ' · ' + currentJLPT;
+      renderAllQuestions();
+      startTimer(cfg.time);
+    }, 300);
+
+  } catch(err) {
+    console.error('Exam build error:', err);
+    showExamSection('exam-menu');
+    alert('Gagal membuat soal: ' + err.message + '. Coba lagi!');
+  }
+}
+
+// ── Build 文字語彙 sections (client-side) ─────────
+function buildMojiVocabSections(words) {
+  var sections = [];
+  var NL = String.fromCharCode(10);
+  var useBankN3 = currentJLPT === 'N3' && typeof N3_BANK !== 'undefined';
+
+  // 問題1 — 漢字読み
+  var m1qs;
+  if (useBankN3 && N3_BANK.mondai1 && N3_BANK.mondai1.length) {
+    var shuffled = N3_BANK.mondai1.slice(); shuffle(shuffled);
+    m1qs = shuffled.slice(0,8).map(function(q,i){
+      return {id:'m1_'+i, question:q.q.split('\n').join('<br>'), choices:q.c.map(function(c,ci){return String.fromCharCode(0xFF11+ci)+'. '+c;}), answer:q.a, exp:q.e};
+    });
+  } else {
+    var kanjiWords = words.filter(function(w){ return /[一-鿿]/.test(w.jp) && w.rom!==w.jp && w.rom.length<12; });
+    shuffle(kanjiWords);
+    m1qs = kanjiWords.slice(0,8).map(function(w,i){
+      var wrong = kanjiWords.filter(function(x){return x.rom!==w.rom;}); shuffle(wrong); wrong=wrong.slice(0,3);
+      if(wrong.length<3) return null;
+      var ch=[w.rom,wrong[0].rom,wrong[1].rom,wrong[2].rom]; shuffle(ch);
+      return {id:'m1_'+i, question:'「<span class="underline">'+w.jp+'</span>」の読み方はどれですか。', choices:ch.map(function(c,ci){return String.fromCharCode(0xFF11+ci)+'. '+c;}), answer:ch.indexOf(w.rom), exp:'「'+w.jp+'」は「'+w.rom+'」と読みます。意味：'+w.id_};
+    }).filter(Boolean);
+  }
+  if (m1qs.length) sections.push({id:'mondai1',title:'問題１',num:1,instruction:'＿＿の言葉の読み方として最もよいものを、１・２・３・４から一つえらんでください。',questions:m1qs});
+
+  // 問題2 — 表記
+  var m2qs;
+  if (useBankN3 && N3_BANK.mondai2 && N3_BANK.mondai2.length) {
+    var shuffled2 = N3_BANK.mondai2.slice(); shuffle(shuffled2);
+    m2qs = shuffled2.slice(0,6).map(function(q,i){
+      return {id:'m2_'+i, question:q.q.split('\n').join('<br>'), choices:q.c.map(function(c,ci){return String.fromCharCode(0xFF11+ci)+'. '+c;}), answer:q.a, exp:q.e};
+    });
+  } else {
+    var kanjiW = words.filter(function(w){ return /[一-鿿]/.test(w.jp) && w.rom!==w.jp; });
+    shuffle(kanjiW);
+    m2qs = kanjiW.slice(0,6).map(function(w,i){
+      var wrong = kanjiW.filter(function(x){return x.jp!==w.jp;}); shuffle(wrong); wrong=wrong.slice(0,3);
+      if(wrong.length<3) return null;
+      var ch=[w.jp,wrong[0].jp,wrong[1].jp,wrong[2].jp]; shuffle(ch);
+      return {id:'m2_'+i, question:'「'+w.rom+'」を漢字で書くとどれですか。', choices:ch.map(function(c,ci){return String.fromCharCode(0xFF11+ci)+'. '+c;}), answer:ch.indexOf(w.jp), exp:'「'+w.rom+'」は「'+w.jp+'」と書きます。'};
+    }).filter(Boolean);
+  }
+  if (m2qs.length) sections.push({id:'mondai2',title:'問題２',num:2,instruction:'のことばを漢字で書くとき、最もよいものを１・２・３・４から一つえらんでください。',questions:m2qs});
+
+  // 問題3 — 文脈規定
+  var m3qs;
+  if (useBankN3 && N3_BANK.mondai3 && N3_BANK.mondai3.length) {
+    var shuffled3 = N3_BANK.mondai3.slice(); shuffle(shuffled3);
+    m3qs = shuffled3.slice(0,11).map(function(q,i){
+      return {id:'m3_'+i, question:q.q.split('\n').join('<br>'), choices:q.c.map(function(c,ci){return String.fromCharCode(0xFF11+ci)+'. '+c;}), answer:q.a, exp:q.e};
+    });
+  } else {
+    shuffle(words);
+    m3qs = words.slice(0,11).map(function(w,i){
+      var wrong = words.filter(function(x){return x.jp!==w.jp;}); shuffle(wrong); wrong=wrong.slice(0,3);
+      if(wrong.length<3) return null;
+      var templates=['（　）を毎日使います。','（　）がとても好きです。','（　）に行きました。'];
+      var ch=[w.jp,wrong[0].jp,wrong[1].jp,wrong[2].jp]; shuffle(ch);
+      return {id:'m3_'+i, question:templates[i%templates.length].replace('（　）','<span class="blank">（　）</span>'), choices:ch.map(function(c,ci){return String.fromCharCode(0xFF11+ci)+'. '+c;}), answer:ch.indexOf(w.jp), exp:'「'+w.jp+'」('+w.id_+')が正しい。'};
+    }).filter(Boolean);
+  }
+  if (m3qs.length) sections.push({id:'mondai3',title:'問題３',num:3,instruction:'（　）に入れるのに最もよいものを、１・２・３・４から一つえらんでください。',questions:m3qs});
+
+  // 問題4 — 言い換え
+  var m4qs;
+  if (useBankN3 && N3_BANK.mondai4 && N3_BANK.mondai4.length) {
+    var shuffled4 = N3_BANK.mondai4.slice(); shuffle(shuffled4);
+    m4qs = shuffled4.slice(0,5).map(function(q,i){
+      return {id:'m4_'+i, question:q.q.split('\n').join('<br>'), choices:q.c.map(function(c,ci){return String.fromCharCode(0xFF11+ci)+'. '+c;}), answer:q.a, exp:q.e};
+    });
+  } else {
+    shuffle(words);
+    m4qs = words.slice(0,5).map(function(w,i){
+      var wrong = words.filter(function(x){return x.jp!==w.jp;}); shuffle(wrong); wrong=wrong.slice(0,3);
+      if(wrong.length<3) return null;
+      var ch=[w.jp,wrong[0].jp,wrong[1].jp,wrong[2].jp]; shuffle(ch);
+      return {id:'m4_'+i, question:'「'+w.id_+'」に最も近い言葉はどれですか。', choices:ch.map(function(c,ci){return String.fromCharCode(0xFF11+ci)+'. '+c;}), answer:ch.indexOf(w.jp), exp:'「'+w.id_+'」は「'+w.jp+'」です。'};
+    }).filter(Boolean);
+  }
+  if (m4qs.length) sections.push({id:'mondai4',title:'問題４',num:4,instruction:'に意味が最も近いものを、１・２・３・４から一つえらんでください。',questions:m4qs});
+
+  // 問題5 — 用法
+  var m5qs;
+  if (useBankN3 && N3_BANK.mondai5 && N3_BANK.mondai5.length) {
+    var shuffled5 = N3_BANK.mondai5.slice(); shuffle(shuffled5);
+    m5qs = shuffled5.slice(0,5).map(function(q,i){
+      return {id:'m5_'+i, question:q.q.split('\n').join('<br>'), choices:q.c.map(function(c,ci){return String.fromCharCode(0xFF11+ci)+'. '+c;}), answer:q.a, exp:q.e};
+    });
+  } else {
+    shuffle(words);
+    m5qs = words.slice(0,5).map(function(w,i){
+      var ch=[w.jp+'を使います。',w.jp+'が降っています。',w.jp+'を食べました。',w.jp+'に乗ります。'];
+      var ai = 0;
+      return {id:'m5_'+i, question:'「<span class="underline">'+w.jp+'</span>」の正しい使い方はどれですか。', choices:ch.map(function(c,ci){return String.fromCharCode(0xFF11+ci)+'. '+c;}), answer:ai, exp:'「'+w.jp+'」('+w.id_+')の正しい使い方です。'};
+    });
+  }
+  if (m5qs.length) sections.push({id:'mondai5',title:'問題５',num:5,instruction:'次の言葉の使い方として最もよいものを、１・２・３・４から一つえらんでください。',questions:m5qs});
+
+  return sections;
+}
+
+// Helper: build mondai object
+function buildMondai(title, num, instruction, questions) {
+  return {
+    id: 'mondai'+num,
+    title: title,
+    num: num,
+    instruction: instruction,
+    questions: questions.filter(Boolean),
+  };
+}
+
+// ── Build 文法 sections (AI) ──────────────────────
+
+// ── Listening (聴解) ────────────────────────────────────────
+function buildListeningSections(words) {
+  var useBankN3 = currentJLPT==='N3' && typeof N3_LISTENING !== 'undefined';
+  var qs;
+  if (useBankN3 && N3_LISTENING.length) {
+    var pool = N3_LISTENING.slice(); shuffle(pool);
+    qs = pool.slice(0,5).map(function(item,i){
+      return {
+        id: 'lst_'+i,
+        script: item.s,
+        question: item.q,
+        choices: item.c.map(function(c,ci){return String.fromCharCode(0xFF11+ci)+'. '+c;}),
+        answer: item.a,
+        exp: item.e,
+        listening: true
+      };
+    });
+  } else {
+    // AI-generated listening (fallback)
+    return [];
+  }
+  return [{
+    id:'mondai_listen',
+    title:'問題１（聴解）',
+    num:99,
+    instruction:'音声を聞いて、質問に答えてください。Audio akan dibacakan otomatis. Tekan 🔊 untuk memutar ulang.',
+    questions: qs,
+    isListening: true
+  }];
+}
+
+// ── Dokkai (読解 official) ───────────────────────────────────
+function buildDokkaiSections(type) {
+  var bankKey = type==='monogatari' ? 'mondai9' : 'mondai8';
+  if (typeof N3_BANK === 'undefined' || !N3_BANK[bankKey] || !N3_BANK[bankKey].length) return [];
+  
+  var pool = N3_BANK[bankKey].slice(); shuffle(pool);
+  var texts = pool.slice(0,1);
+  var sections = [];
+  var mondaiNum = type==='monogatari' ? 9 : 8;
+  var title = type==='monogatari' ? '問題９ 読解（中文）' : '問題８ 読解（短文）';
+
+  texts.forEach(function(text, ti){
+    var qs = (text.qs||text.questions||[]).map(function(q,i){
+      return {
+        id: bankKey+'_'+ti+'_'+i,
+        question: q.q,
+        choices: q.c.map(function(c,ci){return String.fromCharCode(0xFF11+ci)+'. '+c;}),
+        answer: q.a,
+        exp: q.e
+      };
+    });
+    sections.push({
+      id: bankKey+'_'+ti,
+      title: title,
+      num: mondaiNum,
+      passage: text.p || text.passage,
+      instruction: '次の文章を読んで、後の問いに答えなさい。答えは１・２・３・４から最もよいものを一つえらんでください。',
+      questions: qs
+    });
   });
-  if (idx === correct) examScore++;
-  
-  // Show explanation
-  var expEl = document.getElementById('exam-exp');
-  if (expEl) expEl.style.display = 'block';
-  
-  // Show next button
-  var nextBtn = document.getElementById('exam-next-btn');
-  if (nextBtn) {
-    nextBtn.style.display = 'block';
-    nextBtn.textContent = examIdx < examQuestions.length-1 
-      ? 'Soal Berikutnya →' 
-      : 'Lihat Hasil 📊';
-    nextBtn.style.background = idx===correct ? 'var(--jade)' : 'var(--red)';
+  return sections;
+}
+
+
+async function buildGrammarSections(words) {
+  var sections = [];
+  var useBankN3 = currentJLPT==='N3' && typeof N3_BANK !== 'undefined';
+
+  // 問題6 — from bank or AI
+  var m6qs;
+  if (useBankN3 && N3_BANK.mondai6 && N3_BANK.mondai6.length) {
+    var shuffled6 = N3_BANK.mondai6.slice(); shuffle(shuffled6);
+    m6qs = shuffled6.slice(0,10).map(function(q,i){
+      return {id:'m6_'+i, question:q.q.split('\n').join('<br>'), choices:q.c.map(function(c,ci){return String.fromCharCode(0xFF11+ci)+'. '+c;}), answer:q.a, exp:q.e};
+    });
+    sections.push({id:'mondai6',title:'問題６',num:6,instruction:'（　）に入れるのに最もよいものを、１・２・３・４から一つえらんでください。',questions:m6qs});
+  }
+
+  // 問題7 — sentence ordering from bank or AI
+  var m7qs;
+  if (useBankN3 && N3_BANK.mondai7 && N3_BANK.mondai7.length) {
+    var shuffled7 = N3_BANK.mondai7.slice(); shuffle(shuffled7);
+    m7qs = shuffled7.slice(0,3).map(function(q,i){
+      return {id:'m7_'+i, question:q.q.split('\n').join('<br>'), choices:q.c.map(function(c,ci){return String.fromCharCode(0xFF11+ci)+'. '+c;}), answer:q.a, exp:q.e};
+    });
+    sections.push({id:'mondai7',title:'問題７',num:7,instruction:'次の文の★に入る最もよいものはどれですか。',questions:m7qs});
+  }
+
+  // If no bank data (N4/N5), use AI
+  if (!sections.length) {
+    shuffle(words);
+    var sample = words.slice(0,12).map(function(w){ return w.jp+'='+w.id_; }).join('; ');
+    var prompt = 'Buat 10 soal JLPT '+currentJLPT+' bagian 文法 bahasa Indonesia. Kata: '+sample
+      +'. Format HANYA JSON: [{"q":"kalimat dgn ___","c":["pilihan1","pilihan2","pilihan3","pilihan4"],"a":0,"e":"penjelasan"}]';
+    try {
+      var res = await fetch('https://api.groq.com/openai/v1/chat/completions',{
+        method:'POST',
+        headers:{'Content-Type':'application/json','Authorization':'Bearer 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'},
+        body:JSON.stringify({model:'llama-3.3-70b-versatile',max_tokens:2000,temperature:0.5,
+          messages:[
+            {role:'system',content:'Pembuat soal JLPT profesional. Jawab HANYA JSON array valid.'},
+            {role:'user',content:prompt}
+          ]
+        })
+      });
+      var d = await res.json();
+      var raw=(d.choices?.[0]?.message?.content||'[]').replace(/```json|```/g,'').trim();
+      var st=raw.indexOf('['), en=raw.lastIndexOf(']');
+      if(st>=0&&en>st) raw=raw.slice(st,en+1);
+      var aiQs = JSON.parse(raw);
+      if (Array.isArray(aiQs) && aiQs.length) {
+        m6qs = aiQs.slice(0,10).map(function(q,i){
+          return {id:'m6ai_'+i, question:(q.q||''), choices:(q.c||[]).map(function(c,ci){return String.fromCharCode(0xFF11+ci)+'. '+c;}), answer:q.a||0, exp:q.e||''};
+        });
+        sections.push({id:'mondai6',title:'問題６',num:6,instruction:'（　）に入れるのに最もよいものを選んでください。',questions:m6qs});
+      }
+    } catch(err) {
+      // fallback: more vocab
+      var fbWords = words.slice(0,10);
+      m6qs = fbWords.map(function(w,i){
+        var wrong = words.filter(function(x){return x.jp!==w.jp;}); shuffle(wrong); wrong=wrong.slice(0,3);
+        var ch=[w.jp,wrong[0].jp,wrong[1].jp,wrong[2].jp]; shuffle(ch);
+        return {id:'m6fb_'+i, question:'（　）に入る言葉はどれですか。「毎日（　）します。」', choices:ch.map(function(c,ci){return String.fromCharCode(0xFF11+ci)+'. '+c;}), answer:ch.indexOf(w.jp), exp:w.jp+'('+w.id_+')'};
+      }).filter(function(q){ return q !== null; });
+      sections.push({id:'mondai6',title:'問題６',num:6,instruction:'（　）に入る言葉を選んでください。',questions:m6qs});
+    }
+  }
+  return sections;
+}
+
+// ── Build 読解 sections (AI) ──────────────────────
+async function buildReadingSections(words) {
+  shuffle(words);
+  var sample = words.slice(0,8).map(function(w){ return w.jp; }).join('、');
+  var prompt = 'Buat 1 teks pendek Jepang (4-6 kalimat, level '+currentJLPT+') lalu 3 soal pilihan ganda tentang teks itu dalam Bahasa Indonesia.'
+    +' Gunakan kata-kata ini jika memungkinkan: '+sample+'.'
+    +' Format JSON: {"passage":"teks Jepang disini","questions":[{"q":"pertanyaan","choices":["A","B","C","D"],"answer":0,"exp":"penjelasan"}]}';
+
+  try {
+    var res = await fetch('https://api.groq.com/openai/v1/chat/completions',{
+      method:'POST',
+      headers:{'Content-Type':'application/json','Authorization':'Bearer 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'},
+      body:JSON.stringify({model:'llama-3.3-70b-versatile',max_tokens:2000,temperature:0.6,
+        messages:[
+          {role:'system',content:'Pembuat soal JLPT 読解 profesional. Jawab HANYA JSON valid.'},
+          {role:'user',content:prompt}
+        ]
+      })
+    });
+    var d = await res.json();
+    var raw=(d.choices?.[0]?.message?.content||'{}').replace(/```json|```/g,'').trim();
+    var st=raw.indexOf('{'),en=raw.lastIndexOf('}');
+    if(st>=0&&en>st) raw=raw.slice(st,en+1);
+    var data = JSON.parse(raw);
+
+    if(!data.passage||!data.questions) throw new Error('invalid');
+
+    var qs = data.questions.slice(0,3).map(function(q,i){
+      return {
+        id:'m8_'+i,
+        question: q.q,
+        choices: (q.choices||[]).slice(0,4),
+        answer: q.answer||0,
+        exp: q.exp||''
+      };
+    });
+
+    return [{
+      id:'mondai8',
+      title:'問題８',
+      num:8,
+      passage: data.passage,
+      instruction:'次の文章を読んで、後の問いに答えなさい。答えは１・２・３・４から最もよいものを一つえらんでください。',
+      questions: qs
+    }];
+  } catch(err) {
+    return [];
   }
 }
 
-function nextQuestion() {
-  examIdx++;
-  if(examIdx>=examQuestions.length){showResult();}
-  else{renderQuestion();}
+// ── Render all questions ──────────────────────────
+function renderAllQuestions() {
+  var content = document.getElementById('exam-content');
+  if (!content) return;
+  var totalQ = examSections.reduce(function(n,sec){ return n+sec.questions.length; }, 0);
+  var html = '';
+  var qNum = 1;
+
+  examSections.forEach(function(sec) {
+    var secColor = '#c0392b';
+    html += '<div style="background:linear-gradient(135deg,'+secColor+',#e74c3c);color:white;padding:14px 16px;border-radius:12px 12px 0 0;margin-top:16px">'
+      + '<div style="font-weight:700;font-size:15px">'+sec.title+'</div>'
+      + '<div style="font-size:11px;opacity:.7;margin-top:2px">'+sec.instruction+'</div>'
+      + '</div>';
+
+    // Passage for reading
+    if (sec.passage) {
+      html += '<div style="background:#f8f8f2;border:1px solid var(--border);border-top:none;padding:14px 16px;font-size:14px;line-height:1.9;font-family:Noto Sans JP,sans-serif">'
+        + sec.passage.split(String.fromCharCode(10)).join('<br>') + '</div>';
+    }
+
+    html += '<div style="background:white;border:1px solid var(--border);border-top:none;border-radius:0 0 12px 12px;padding:16px">';
+    sec.questions.forEach(function(q) {
+      html += renderQuestionHTML(q, qNum++, totalQ);
+    });
+    html += '</div>';
+  });
+
+  content.innerHTML = html;
+  updateAnsweredCount();
 }
 
-function showResult() {
-  var total = examQuestions.length;
-  var pct = Math.round(examScore/total*100);
-  var color = JLPT_COLORS[currentJLPT] || 'var(--red)';
-  showExamSection('exam-result');
+function renderQuestionHTML(q, num, total) {
+  var labels = ['\uff11','\uff12','\uff13','\uff14'];
+  var NL = String.fromCharCode(10);
+  var qText = (q.question||q.text||'').split(NL).join('<br>');
+  var info = q.info ? '<div style="font-size:11px;color:var(--mist);margin-bottom:8px">'+q.info+'</div>' : '';
 
-  var typeNames = {vocab:'語彙',grammar:'文法',reading:'読解',mix:'Mix'};
-  var typeName = typeNames[lastExamType] || lastExamType;
-  document.getElementById('result-title').textContent = typeName + ' · ' + currentJLPT;
-  document.getElementById('result-score').textContent = examScore + '/' + total;
-  document.getElementById('result-score').style.color = pct>=80?'var(--gold)':pct>=60?'white':'#ff8080';
-  document.getElementById('result-pct').textContent = pct + '%';
-
-  var grade = pct>=90?'A':pct>=80?'B':pct>=60?'C':pct>=40?'D':'E';
-  var emoji = {A:'🏆',B:'⭐',C:'📚',D:'💪',E:'🔄'}[grade];
-  var msgs = {
-    A:'Luar biasa! Kamu siap ujian JLPT ' + currentJLPT + '! 🎌',
-    B:'Bagus sekali! Terus pertahankan! がんばれ！',
-    C:'Cukup baik! Pelajari kata yang salah dan coba lagi.',
-    D:'Jangan menyerah! 諦めないで！ Pelajari lebih banyak dan coba lagi.',
-    E:'Mulai dari awal ya! 頑張って！ Flashcard dulu sebelum ujian.'
-  };
-  document.getElementById('result-emoji').textContent = emoji;
-  document.getElementById('result-msg').textContent = msgs[grade];
-
-  // Save to localStorage
-  var entry = {
-    type: typeName, level: currentJLPT,
-    score: examScore, total: total, pct: pct,
-    date: new Date().toLocaleDateString('id-ID',{day:'numeric',month:'short'})
-  };
-  examHistory.push(entry);
-  if (examHistory.length > 30) examHistory = examHistory.slice(-30);
-  localStorage.setItem('examHistory', JSON.stringify(examHistory));
-
-  // Save to Firestore
-  if (db && currentUser) {
-    db.collection('users').doc(currentUser.uid).update({
-      lastExam: entry,
-      examCount: firebase.firestore.FieldValue.increment(1)
-    }).catch(function(){});
-    db.collection('exam_results').add(Object.assign({
-      uid: currentUser.uid,
-      displayName: currentUser.displayName || 'Pelajar',
-      timestamp: firebase.firestore.FieldValue.serverTimestamp()
-    }, entry)).catch(function(){});
+  // Listening question: add play button
+  var listenHtml = '';
+  if (q.listening && q.script) {
+    listenHtml = '<div style="background:rgba(142,68,173,.06);border:1px solid rgba(142,68,173,.2);border-radius:10px;padding:12px;margin-bottom:12px">'
+      + '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">'
+      + '<span style="font-size:12px;font-weight:600;color:#8e44ad">🎧 Audio スクリプト</span>'
+      + '<button data-script="'+q.id+'" onclick="playScript(this)" '
+      + 'style="padding:6px 14px;background:#8e44ad;color:white;border:none;border-radius:8px;cursor:pointer;font-size:12px">▶ 再生</button>'
+      + '</div>'
+      + '<div id="script_'+q.id+'" style="font-size:13px;line-height:1.8;display:none">'+q.script.split(NL).join('<br>')+'</div>'
+      + '</div>';
+    // Auto-play on first render
+    setTimeout(function(){ 
+      var btn = document.querySelector('[data-script="'+q.id+'"]');
+      if (btn) { readScript(q.script); }
+    }, 800);
   }
 
-  // Review section — show all questions with correct answers
-  var rev = document.getElementById('result-review');
-  rev.innerHTML = '<div class="section-title" style="margin-bottom:10px">📋 Review Semua Jawaban</div>'
-    + examQuestions.map(function(q,i){
-        var cor = q.answer;
-        var labels = ['A','B','C','D'];
-        var ans = (q.choices?.[cor]||'').replace(/^[A-D]\.\s*/,'');
-        var qText = (q.q||'').replace(/\n/g,' · ');
-        return '<div style="background:white;border:1px solid var(--border);border-radius:10px;padding:12px 14px;margin-bottom:8px">'
-          + '<div style="font-size:11px;color:var(--mist);margin-bottom:3px">Soal '+(i+1)+'</div>'
-          + '<div style="font-size:13px;margin-bottom:6px;line-height:1.5">'+qText+'</div>'
-          + '<div style="font-size:12px;color:var(--jade);font-weight:600">✓ '+labels[cor]+'. '+ans+'</div>'
-          + (q.exp ? '<div style="font-size:11px;color:var(--mist);margin-top:3px">💡 '+q.exp+'</div>' : '')
-          + '</div>';
-      }).join('');
+  var html = '<div class="exam-q-row" id="qrow_'+q.id+'">'
+    + '<div class="exam-q-num">\uff08'+num+'\uff09</div>'
+    + listenHtml
+    + '<div class="exam-q-text">' + qText + '</div>'
+    + info
+    + '<div class="exam-choices-grid">';
+  for (var i=0; i<Math.min(4,(q.choices||[]).length); i++) {
+    var text = (q.choices[i]||'').replace(/^[\uff11-\uff14]\.\s*/,'');
+    html += '<button class="exam-choice-btn" id="choice_'+q.id+'_'+i+'"'
+      + ' data-qid="'+q.id+'" data-idx="'+i+'" onclick="handleChoiceClick(this)">'
+      + '<span class="exam-choice-num">'+labels[i]+'</span>'
+      + '<span>'+text+'</span>'
+      + '</button>';
+  }
+  html += '</div>'
+    + '<div class="exam-exp-box" id="exp_'+q.id+'"></div>'
+    + '</div>';
+  return html;
 }
 
-function exitExam() {
+function handleChoiceClick(btn) {
+  var qId = btn.getAttribute('data-qid');
+  var idx = parseInt(btn.getAttribute('data-idx'));
+  selectAnswer(qId, idx);
+}
+
+function selectAnswer(qId, choiceIdx) {
+  examAnswers[qId] = choiceIdx;
+  // Visual feedback - highlight selected
+  var sec = examSections.find(function(s){
+    return s.questions.some(function(q){return q.id===qId;});
+  });
+  if (!sec) return;
+  var q = sec.questions.find(function(q){return q.id===qId;});
+  if (!q) return;
+
+  for (var i=0; i<4; i++) {
+    var btn = document.getElementById('choice_'+qId+'_'+i);
+    if (!btn) continue;
+    btn.classList.remove('selected');
+    if (i === choiceIdx) btn.classList.add('selected');
+  }
+  updateAnsweredCount();
+}
+
+function updateAnsweredCount() {
+  var total = examSections.reduce(function(n,s){ return n+s.questions.length; }, 0);
+  var answered = Object.keys(examAnswers).length;
+  var el = document.getElementById('exam-answered-count');
+  if (el) el.textContent = answered + '/' + total + ' dijawab';
+  var btn = document.getElementById('exam-submit-btn');
+  if (btn) btn.style.background = answered===total ? 'var(--jade)' : 'var(--red)';
+}
+
+function confirmExitExam() {
+  if (Object.keys(examAnswers).length > 0) {
+    if (!confirm('Ujian akan dibatalkan. Yakin keluar?')) return;
+  }
+  stopTimer();
   showExamSection('exam-menu');
   updateExamHistory();
 }
 
-function updateExamLevelBadge() {
-  var badge=document.getElementById('exam-level-badge');
-  if(badge){badge.textContent=currentJLPT;badge.style.background=JLPT_COLORS[currentJLPT]||'var(--red)';}
+// ── Submit & Score ────────────────────────────────
+function submitSection() {
+  stopTimer();
+  var total=0, correct=0;
+  var mondaiScores = {};
+
+  examSections.forEach(function(sec){
+    var secTotal=sec.questions.length, secCorrect=0;
+    sec.questions.forEach(function(q){
+      total++;
+      var userAns = examAnswers[q.id];
+      var isCorrect = userAns === q.answer;
+      if (isCorrect) { correct++; secCorrect++; }
+
+      // Show correct/wrong visual
+      for (var i=0; i<4; i++) {
+        var btn = document.getElementById('choice_'+q.id+'_'+i);
+        if (!btn) continue;
+        btn.disabled = true;
+        btn.classList.remove('selected');
+        if (i===q.answer) btn.classList.add('correct');
+        else if (i===userAns && userAns!==q.answer) btn.classList.add('wrong');
+      }
+      // Show explanation
+      var expEl = document.getElementById('exp_'+q.id);
+      if (expEl && q.exp) {
+        expEl.innerHTML = '💡 ' + q.exp;
+        expEl.classList.add('show');
+      }
+    });
+    mondaiScores[sec.title] = {correct:secCorrect, total:secTotal};
+  });
+
+  var pct = total>0 ? Math.round(correct/total*100) : 0;
+  showExamSection('exam-result');
+  renderResult(correct, total, pct, mondaiScores);
+
+  // Save history
+  var cfg = SECTION_CONFIG[lastSection]||{label:lastSection};
+  var entry = {type:cfg.label, level:currentJLPT, score:correct, total:total, pct:pct,
+    date:new Date().toLocaleDateString('id-ID',{day:'numeric',month:'short'})};
+  examHistory.push(entry);
+  if(examHistory.length>30) examHistory=examHistory.slice(-30);
+  localStorage.setItem('examHistory',JSON.stringify(examHistory));
+
+  // Save to Firestore
+  if(db&&currentUser){
+    db.collection('exam_results').add(Object.assign({
+      uid:currentUser.uid, displayName:currentUser.displayName||'Pelajar',
+      timestamp:new Date().toISOString()
+    }, entry)).catch(function(){});
+  }
 }
+
+function renderResult(correct, total, pct, mondaiScores) {
+  var grade = pct>=90?'A':pct>=80?'B':pct>=65?'C':pct>=50?'D':'E';
+  var gradeColors = {A:'var(--gold)',B:'#2da050',C:'var(--indigo)',D:'#e67e22',E:'var(--red)'};
+  var msgs = {
+    A:'素晴らしい！Luar biasa, siap ujian JLPT '+currentJLPT+'! 🎌',
+    B:'よくできました！Bagus sekali, terus pertahankan! がんばれ！',
+    C:'まあまあです。Cukup baik! Pelajari soal yang salah.',
+    D:'もっと勉強しましょう。Belajar lebih giat ya! 頑張って！',
+    E:'諦めないで！ Jangan menyerah, latihan lebih banyak lagi!'
+  };
+
+  document.getElementById('result-section-name').textContent = (SECTION_CONFIG[lastSection]||{label:lastSection}).label + ' · ' + currentJLPT;
+  document.getElementById('result-score').textContent = correct + '/' + total;
+  document.getElementById('result-score').style.color = gradeColors[grade];
+
+  var gb = document.getElementById('result-grade-badge');
+  gb.textContent = 'Grade ' + grade;
+  gb.style.background = gradeColors[grade];
+  gb.style.color = 'white';
+
+  document.getElementById('result-message').textContent = msgs[grade];
+
+  // Breakdown per mondai
+  var breakdown = '';
+  Object.entries(mondaiScores).forEach(function(entry){
+    var title=entry[0], sc=entry[1];
+    var mpct = Math.round(sc.correct/sc.total*100);
+    var mcol = mpct>=80?'var(--jade)':mpct>=60?'var(--gold)':'var(--red)';
+    breakdown += '<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 12px;background:white;border:1px solid var(--border);border-radius:8px;margin-bottom:6px">'
+      + '<span style="font-size:13px;font-weight:600">'+title+'</span>'
+      + '<div style="display:flex;align-items:center;gap:8px">'
+      + '<span style="font-size:12px;color:var(--mist)">'+sc.correct+'/'+sc.total+'</span>'
+      + '<span style="font-family:DM Mono,monospace;font-weight:700;font-size:14px;color:'+mcol+'">'+mpct+'%</span>'
+      + '</div></div>';
+  });
+  document.getElementById('result-breakdown').innerHTML = 
+    '<div class="section-title" style="margin-bottom:8px">📊 Per Bagian</div>' + breakdown;
+
+  // Scroll to review (the session content becomes the review)
+  document.getElementById('result-review').innerHTML = 
+    '<div class="section-title" style="margin-bottom:10px">📋 Koreksi Jawaban</div>'
+    + '<div style="font-size:12px;color:var(--mist);margin-bottom:12px">Scroll ke atas untuk lihat penjelasan tiap soal</div>';
+}
+
+function updateExamHistory() {
+  var el = document.getElementById('exam-history');
+  if (!el) return;
+  var filtered = examHistory.filter(function(h){ return h.level===currentJLPT; }).slice(-6).reverse();
+  if (!filtered.length) {
+    el.innerHTML = '<div style="text-align:center;padding:20px;color:var(--mist)">Belum ada riwayat untuk '+currentJLPT+'</div>';
+    return;
+  }
+  var color = JLPT_COLORS[currentJLPT]||'var(--red)';
+  el.innerHTML = filtered.map(function(h){
+    var c = h.pct>=80?'var(--jade)':h.pct>=60?'var(--gold)':'var(--red)';
+    return '<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--border)">'
+      +'<div><span style="font-size:13px;font-weight:600">'+h.type+'</span>'
+      +' <span style="font-size:11px;color:var(--mist)">'+h.date+'</span></div>'
+      +'<div style="display:flex;align-items:center;gap:8px">'
+      +'<span style="font-size:12px;color:var(--mist)">'+h.score+'/'+h.total+'</span>'
+      +'<span style="font-family:DM Mono,monospace;font-weight:700;color:'+c+'">'+h.pct+'%</span>'
+      +'</div></div>';
+  }).join('');
+}
+
+// Legacy aliases
+function startExam(type) { startExamSection(type==='vocab'?'moji_vocab':type==='grammar'?'grammar':type==='mix'?'full':type); }
+function exitExam() { confirmExitExam(); }
+
+
+// ══════════════════════════════════════════════════
+// TTS — Web Speech API (Japanese)
+// ══════════════════════════════════════════════════
+var ttsUtterance = null;
+var ttsSupported = typeof window !== 'undefined' && 'speechSynthesis' in window;
+
+function readScript(text) {
+  if (!ttsSupported) { alert('Browser kamu tidak mendukung fitur audio. Gunakan Chrome.'); return; }
+  window.speechSynthesis.cancel();
+  var utt = new SpeechSynthesisUtterance(text);
+  utt.lang = 'ja-JP';
+  utt.rate = 0.85;
+  utt.pitch = 1.0;
+  // Try to use Japanese voice
+  var voices = window.speechSynthesis.getVoices();
+  var jpVoice = voices.find(function(v){ return v.lang.includes('ja'); });
+  if (jpVoice) utt.voice = jpVoice;
+  ttsUtterance = utt;
+  window.speechSynthesis.speak(utt);
+}
+
+function playScript(btn) {
+  var qId = btn.getAttribute('data-script');
+  var scriptEl = document.getElementById('script_'+qId);
+  if (scriptEl) {
+    scriptEl.style.display = scriptEl.style.display==='none' ? '' : 'none';
+  }
+  // Find the question
+  var q = null;
+  examSections.forEach(function(sec){
+    sec.questions.forEach(function(sq){ if(sq.id===qId) q=sq; });
+  });
+  if (q && q.script) readScript(q.script);
+}
+
+function stopAudio() {
+  if (ttsSupported) window.speechSynthesis.cancel();
+}
+
 function initFirebase(){
   function _load(src,cb){
     var el=document.createElement('script');
@@ -3005,7 +3590,7 @@ function addMsg(role, text) {
   const box = document.getElementById('chat-box');
   const d = document.createElement('div');
   d.className = 'msg ' + role;
-  d.innerHTML = text.replace(/\n/g,'<br>');
+  d.innerHTML = text.split('\\n').join('<br>');
   box.appendChild(d);
   scrollChat();
 }
@@ -3123,6 +3708,21 @@ function generateUsageQuestions(words, count) {
 
 
 const JLPT_TOTALS = { N5:718, N4:668, N3:771, N2:1906, N1:2699 };
+
+const N3_BANK = {
+  mondai1:[{q:'この映画は去年の__秋__に公開されました。\n「秋」の読み方はどれですか。',c:['あき','なつ','はる','ふゆ'],a:0,e:'「秋」はあき(aki)と読みます。季節の一つです。'},{q:'彼女は__親切__な人です。\n「親切」の読み方はどれですか。',c:['しんせつ','したしさ','おやきり','しんきり'],a:0,e:'「親切」はしんせつ(shinsetsu)と読みます。意味：優しくて助けてくれること。'},{q:'この問題は__簡単__ではありません。\n「簡単」の読み方はどれですか。',c:['かんたん','かんじゅ','かんがん','かんそう'],a:0,e:'「簡単」はかんたん(kantan)と読みます。意味：易しい、難しくない。'},{q:'駅まで__歩いて__10分かかります。\n「歩いて」の読み方はどれですか。',c:['あるいて','およいで','はしって','とんで'],a:0,e:'「歩いて」はあるいて(aruite)と読みます。'},{q:'この本は__難しい__です。\n「難しい」の読み方はどれですか。',c:['むずかしい','やさしい','おもしろい','たのしい'],a:0,e:'「難しい」はむずかしい(muzukashii)と読みます。'},{q:'毎朝__新聞__を読みます。\n「新聞」の読み方はどれですか。',c:['しんぶん','きゅうぶん','しんもん','さんぶん'],a:0,e:'「新聞」はしんぶん(shinbun)と読みます。'},{q:'この店は__安い__です。\n「安い」の読み方はどれですか。',c:['やすい','たかい','ひくい','ひろい'],a:0,e:'「安い」はやすい(yasui)と読みます。意味：値段が低い。'},{q:'彼は__医者__です。\n「医者」の読み方はどれですか。',c:['いしゃ','かしゃ','にしゃ','みしゃ'],a:0,e:'「医者」はいしゃ(isha)と読みます。意味：病気を治す専門家。'},{q:'山本さんはクラスの代表に選ばれた。\n「代表」の読み方はどれですか。',c:['たいひょう','だいひょ','だいひょう','たいひょ'],a:2,e:'「代表」は「だいひょう」と読みます。'},{q:'３日前から雨が続いている。\n「続いて」の読み方はどれですか。',c:['ういて','うごいて','ついて','つづいて'],a:3,e:'「続いて」は「つづいて」と読みます。'}],
+  mondai2:[{q:'この問題は「かんたん」ではない。\n「かんたん」を漢字で書くとどれですか。',c:['簡単','感単','完単','看単'],a:0,e:'「かんたん」は「簡単」と書きます。'},{q:'友達に「でんわ」をかけました。\n「でんわ」を漢字で書くとどれですか。',c:['電話','電和','点話','伝話'],a:0,e:'「でんわ」は「電話」と書きます。'},{q:'「きょうしつ」で勉強します。\n「きょうしつ」を漢字で書くとどれですか。',c:['教室','共室','橋室','京室'],a:0,e:'「きょうしつ」は「教室」と書きます。'},{q:'「えき」まで歩いて行きます。\n「えき」を漢字で書くとどれですか。',c:['駅','役','液','益'],a:0,e:'「えき」は「駅」と書きます。電車が止まるところです。'},{q:'「しごと」が終わりました。\n「しごと」を漢字で書くとどれですか。',c:['仕事','使事','仕言','使言'],a:0,e:'「しごと」は「仕事」と書きます。'},{q:'「だいがく」に入りました。\n「だいがく」を漢字で書くとどれですか。',c:['大学','代学','対学','大楽'],a:0,e:'「だいがく」は「大学」と書きます。'},{q:'アルバイトの「めんせつ」は来週の土曜日だ。\n「めんせつ」を漢字で書くとどれですか。',c:['面接','面投','両接','両投'],a:0,e:'「めんせつ」は「面接」と書きます。'},{q:'困っているときに先生に「たすけて」いただきました。\n「たすけて」を漢字で書くとどれですか。',c:['助けて','守けて','支けて','協けて'],a:0,e:'「たすけて」は「助けて」と書きます。'}],
+  mondai3:[{q:'この映画は（　）おもしろくて、何度も見ました。\nどれが入りますか。',c:['とても','ちょっと','あまり','ほとんど'],a:0,e:'「とても」は程度が高いことを表します。「ちょっと」「あまり」「ほとんど」は意味が合いません。'},{q:'道が（　）、バスが遅れました。\nどれが入りますか。',c:['こんでいて','あいていて','すいていて','とまっていて'],a:0,e:'「こんでいる」は混雑していること。道が混んでいてバスが遅れた。'},{q:'熱があるので、学校を（　）しました。\nどれが入りますか。',c:['欠席','出席','参加','退席'],a:0,e:'「欠席」は学校や会議に行かないこと。熱があるので欠席した。'},{q:'このケーキは（　）がいいです。\nどれが入りますか。',c:['味','形','色','音'],a:0,e:'ケーキが良い「味」がすることを表します。'},{q:'彼は約束を（　）人です。\nどれが入りますか。',c:['守る','破る','作る','決める'],a:0,e:'「約束を守る」は約束を忘れずに実行すること。'},{q:'もっと（　）話してください。わかりません。\nどれが入りますか。',c:['ゆっくり','はやく','おおきく','ちいさく'],a:0,e:'「ゆっくり」話すと理解しやすくなります。'},{q:'財布を（　）、困っています。\nどれが入りますか。',c:['なくして','見つけて','拾って','もらって'],a:0,e:'「なくす」は持っていたものが見つからなくなること。'},{q:'窓が（　）から、寒いです。\nどれが入りますか。',c:['開いている','閉まっている','壊れている','割れている'],a:0,e:'窓が開いているから寒い、という自然な文脈です。'},{q:'この料理は（　）のに時間がかかります。\nどれが入りますか。',c:['作る','食べる','買う','洗う'],a:0,e:'料理を「作る」のに時間がかかる、が自然な文脈です。'},{q:'電車の中では（　）に話してください。\nどれが入りますか。',c:['静か','にぎやか','うるさ','たのし'],a:0,e:'電車の中では「静か」に話すのがマナーです。'},{q:'このニュースを聞いて、（　）しました。\nどれが入りますか。',c:['びっくり','にっこり','ゆっくり','しっかり'],a:0,e:'「びっくりする」は驚くこと。ニュースを聞いて驚いた。'},{q:'（　）寝たので、気持ちがいい。',c:['すっかり','ぐっすり','はっきり','ぴったり'],a:1,e:'「ぐっすり」は深く眠ること。ぐっすり寝た→気持ちがいい。'},{q:'このパソコンは誰でも使えますが、コピーは（　）です。',c:['会費','費用','有料','料金'],a:2,e:'「有料」はお金が必要なこと。コピーは有料。'}],
+  mondai4:[{q:'この店は「にぎやか」です。\n「にぎやか」に意味が最も近いのはどれですか。',c:['活気がある','静かだ','きれいだ','古い'],a:0,e:'「にぎやか」は活気があって騒がしいこと。「活気がある」が最も近い。'},{q:'試験が「終わった」のでほっとしました。\n「終わった」に最も近いのはどれですか。',c:['済んだ','始まった','続いた','止まった'],a:0,e:'「終わった」と「済んだ」は同じ意味です。'},{q:'彼は「正直な」人です。\n「正直な」に意味が最も近いのはどれですか。',c:['うそをつかない','やさしい','かしこい','つよい'],a:0,e:'「正直」はうそをつかないこと。'},{q:'この映画は「退屈」です。\n「退屈」に意味が最も近いのはどれですか。',c:['つまらない','たのしい','むずかしい','こわい'],a:0,e:'「退屈」はつまらないこと、何もすることがないこと。'},{q:'バスが「遅れた」ので、遅刻しました。\n「遅れた」に最も近いのはどれですか。',c:['時間どおりに来なかった','早く来た','止まった','違う道を通った'],a:0,e:'「遅れる」は予定の時間より後になること。'},{q:'次々に新しいゲームが作られる。\n「次々に」に最も近いのはどれですか。',c:['だんだん','これから','いつでも','どんどん'],a:3,e:'「次々に」と「どんどん」は続けて起こることを表します。'},{q:'明日の飛行機の予約を確認してください。\n「確認して」に最も近いのはどれですか。',c:['変えて','調べて','行って','頼んで'],a:1,e:'「確認する」は正しいかどうか調べること。'}],
+  mondai5:[{q:'「経験」という言葉の使い方として正しいのはどれですか。',c:['この仕事には経験が必要です。','経験が雨で濡れました。','経験を食べました。','経験が壊れました。'],a:0,e:'「経験」は過去にやったことや体験のこと。仕事に必要、と使うのが正しい。'},{q:'「残念」という言葉の使い方として正しいのはどれですか。',c:['試合に負けて残念です。','残念を食べました。','残念が来ました。','残念に乗りました。'],a:0,e:'「残念」は期待通りにならなくて悲しいこと。'},{q:'「相談する」の使い方として正しいのはどれですか。',c:['友達に悩みを相談しました。','ご飯を相談しました。','電車を相談しました。','天気を相談しました。'],a:0,e:'「相談する」は問題や悩みを誰かに話して意見を聞くこと。'},{q:'「丁寧」の使い方として正しいのはどれですか。',c:['彼は丁寧に説明してくれました。','丁寧が降っています。','丁寧を食べました。','丁寧に乗りました。'],a:0,e:'「丁寧」は細かく注意深くすること。「丁寧に説明する」が正しい。'},{q:'「迷惑」の使い方として正しいのはどれですか。',c:['大きな声で話して、周りに迷惑をかけました。','迷惑を食べました。','迷惑が来ました。','迷惑を見ました。'],a:0,e:'「迷惑をかける」は他の人に不便や困ったことをさせること。'},{q:'「今ごろ」の使い方として最もよいものはどれですか。',c:['それでは、今ごろテストを始めます。','今ごろ東京では桜が咲いているでしょう。','今ごろ現金で支払うことが少なくなった。','今ごろ雨が降りそうな天気だ。'],a:1,e:'「今ごろ」は「この時期に」という意味。2が正しい使い方。'},{q:'「かわいがる」の使い方として最もよいものはどれですか。',c:['山田さんは子どもをとてもかわいがっています。','あの人は親をとてもかわいがっています。','田中さんは時計をとてもかわいがっています。','あの人は自分の家をとてもかわいがっています。'],a:0,e:'「かわいがる」は目下の者を愛情持って接すること。子どもに使うのが正しい。'}],
+  mondai6:[{q:'もし明日雨が降る（　）、試合は中止になります。',c:['なら','ので','から','ため'],a:0,e:'「なら」は条件を表します。「もし〜なら」で仮定の条件。'},{q:'３時間（　）待ちましたが、彼は来ませんでした。',c:['も','を','に','で'],a:0,e:'「も」は予想より多いことを強調します。「3時間も」は長い時間を強調。'},{q:'この薬を飲む（　）、元気になりました。',c:['と','が','で','に'],a:0,e:'「〜と」は行為の後に自然に起こることを表します。'},{q:'彼女は歌う（　）ダンスも上手です。',c:['だけでなく','だけで','ばかりか','のみ'],a:0,e:'「〜だけでなく」はAだけでなくBも、という追加を表す表現。'},{q:'子供の（　）、この映画が大好きでした。',c:['ころ','とき','間','あいだ'],a:0,e:'「子供のころ」は子供の時期・時代を表します。'},{q:'電車が遅れた（　）、会議に間に合いませんでした。',c:['せいで','おかげで','ために','から'],a:0,e:'「〜せいで」は悪い原因・理由を表します。'},{q:'先生に（　）、この問題の答えがわかりました。',c:['教えてもらって','教えてあげて','教えてくれて','教えてやって'],a:0,e:'「〜てもらう」は自分が恩恵を受けること。先生に教えてもらった。'},{q:'彼は会議中（　）ずっと寝ていました。',c:['に','で','を','が'],a:0,e:'「〜中に」は期間を表します。「会議中に」は会議の間ずっと。'},{q:'この映画は見る（　）があります。',c:['価値','値段','必要','意味'],a:0,e:'「見る価値がある」は見る意味・価値があるという表現。'},{q:'試験に合格（　）ように毎日勉強しています。',c:['できる','する','した','して'],a:0,e:'「〜できるように」は目標に向けての努力を表します。'},{q:'彼女は料理が上手な（　）、掃除も得意です。',c:['うえに','だけに','ほかに','ために'],a:0,e:'「〜うえに」はAの他にBも、という追加を表す表現。'},{q:'体の具合が悪い（　）、今日は休んでください。',c:['なら','ので','に','を'],a:0,e:'「〜ので」は理由を表します。具合が悪いので休む。'},{q:'仕事が終わり（　）すぐに帰りました。',c:['次第','ながら','まま','つつ'],a:0,e:'「〜次第」は〜したらすぐに、という表現。'},{q:'父が短気なの（　）、母の方は気が長い。',c:['において','に対して','について','によって'],a:1,e:'「〜に対して」は対比を表します。'},{q:'A「時間ありますか。」\nB「ええ、１時間（　）ありますよ。」',c:['ごろなら','ごろでも','ぐらいでも','ぐらいなら'],a:2,e:'「〜ぐらいでも」はおよその量を表します。'}],
+  mondai7:[{q:'彼女は ＿＿ ★ ＿＿ 人です。\n（選択肢の正しい順番を選んでください）',c:['親切で / 頭がよくて / おもしろい','頭がよくて / おもしろくて / 親切な','おもしろくて / 親切で / 頭のいい','頭のいい / 親切で / おもしろい'],a:2,e:'「〜くて」で形容詞をつなぎます。おもしろくて＋親切で＋頭のいい人。'},{q:'この問題は ＿＿ ★ ＿＿ です。\n（正しい語順を選んでください）',c:['私にとって / 難しすぎ / て / 解けません','難しすぎて / 私には / 解けません / の','私が / とても / 難しい / と思います','解けないほど / 私には / とても難しい / です'],a:0,e:'「私にとって難しすぎて解けません」が自然な語順。'},{q:'駅に ＿＿ ★ ＿＿ でした。\n（正しい語順を選んでください）',c:['着いた / 電車は / もう / 出た後','電車が / 着いた / もう出た / 後','もう出た / 後 / 着いた / 電車は','後 / 電車が / 着いた / もう出て'],a:0,e:'「駅に着いた時、電車はもう出た後でした」が正しい順番。'},{q:'彼は ＿＿ ★ ＿＿ と思います。\n（正しい語順を選んでください）',c:['合格する / きっと / 試験に / はずだ','試験に / きっと / 合格する / だろう','きっと / 合格 / 試験 / するだろう','合格 / 試験に / きっと / するだろう'],a:1,e:'「彼はきっと試験に合格するだろうと思います」が正しい。'},{q:'先生に ＿＿ ★ ＿＿ なりました。\n（正しい語順を選んでください）',c:['言われた / ことが / 気に / なった','言われたことが / ずっと / 気に / なった','気に / ずっと / 言われた / ことが','ずっと / なった / 言われた / ことが'],a:1,e:'「先生に言われたことがずっと気になりました」が正しい語順。'},{q:'先週 ＿ ＿ ★ ＿ から、行ってみませんか。\n（★に入る最もよいものを選んでください）',c:['ばかりの','レストランが','オープンした','ある'],a:2,e:'語順：先週オープンしたばかりのレストランがあるから→★=オープンした(3番)'},{q:'B「どうやったら ＿ ＿ ★ ＿ 不思議に思います。」\n（★に入る最もよいものを選んでください）',c:['できるのか','動きが','とても','あんな'],a:0,e:'語順：あんな動きがとてもできるのか不思議→★=できるのか(1番)'}],
+  mondai8:[{p:'私はアルバイトを始めて、お金の大切さがわかるようになりました。\n毎月少しずつ貯金をして、来年は旅行に行きたいと思っています。\n働くことは大変ですが、自分で稼いだお金で何かを買うと、とてもうれしいです。',qs:[{q:'この人がアルバイトを始めてわかったことは何ですか。',c:['お金の大切さ','旅行の楽しさ','働くことの簡単さ','貯金の難しさ'],a:0,e:'「お金の大切さがわかるようになりました」とあります。'},{q:'この人はこれから何をしたいと思っていますか。',c:['旅行に行くこと','もっとアルバイトをすること','大きな家を買うこと','新しい仕事を探すこと'],a:0,e:'「来年は旅行に行きたいと思っています」とあります。'},{q:'この人はなぜうれしいと感じますか。',c:['自分で稼いだお金で何かを買うから','旅行ができるから','アルバイトが楽しいから','貯金が増えたから'],a:0,e:'「自分で稼いだお金で何かを買うと、とてもうれしい」とあります。'}]},{p:'最近、スマートフォンを使って外国語を勉強する人が増えています。\nアプリを使えば、電車の中や休み時間など、どこでも勉強できます。\nただし、スマートフォンばかり見ていると目が疲れるので、\n適度に休憩することが大切です。',qs:[{q:'スマートフォンで外国語を勉強する利点は何ですか。',c:['どこでも勉強できる','安く勉強できる','先生に教えてもらえる','友達ができる'],a:0,e:'「どこでも勉強できます」とあります。'},{q:'スマートフォンを使う際の注意点は何ですか。',c:['目が疲れるので休憩が必要','お金がかかりすぎる','電池が切れやすい','音が大きすぎる'],a:0,e:'「目が疲れるので、適度に休憩することが大切」とあります。'},{q:'「適度に」の意味はどれですか。',c:['ちょうどいい程度に','できるだけ多く','できるだけ少なく','全くしない'],a:0,e:'「適度に」はちょうどよい程度、やりすぎないことを意味します。'}]},{p:'富士山の思い出 (ヒエン)\n\n今年の夏休みに、初めて富士山に登りました。富士山は日本でいちばん高い山で、3776メートルもあります。こんなに高い山はわたしの国にはありません。それで、留学したら、ぜひ登ってみたいと思っていました。\n\n富士山の途中までバスで行って、夜10時ごろから登り始めました。登山の途中で、もう帰りたいと思いました。なぜかというと、夏でも富士山の上は本当に寒かったし、足も痛かったからです。しかし、山の上に着いて朝日を見たら、疲れが消えてしまいました。突然、目の前の雲の間から朝日が現れたのです。今まで見た中でいちばん美しい朝日でした。とてもすばらしい思い出になりました。',qs:[{q:'筆者が登山の途中でどう思いましたか。',c:['頂上に着きたい','もう帰りたい','朝日を見たい','とても楽しい'],a:1,e:'「登山の途中で、もう帰りたいと思いました」とあります。'},{q:'山の上に着いた後、筆者はどうなりましたか。',c:['もっと疲れた','疲れが消えた','寒くて帰った','眠ってしまった'],a:1,e:'「山の上に着いて朝日を見たら、それまでの疲れが消えてしまいました」とあります。'},{q:'この文章の内容と合うのはどれですか。',c:['筆者の国にも富士山ほど高い山がある','筆者は昼間に富士山を登り始めた','筆者は今まで見た中でいちばん美しい朝日を見た','筆者は富士山に何度も登ったことがある'],a:2,e:'「今まで見た中でいちばん美しい朝日でした」とあります。'}]}],
+  mondai9:[{p:'【田中さんのブログより】\n\n先週末、家族で地元のお祭りに行きました。夜店がたくさん並んでいて、\nとてもにぎやかでした。子供たちは金魚すくいや射的を楽しみ、\n私と妻は懐かしい食べ物を食べながら、子供のころの話をしました。\n\nお祭りは地域の人々が集まる大切な機会だと思います。\n最近は参加者が減っているとも聞きますが、こういった伝統的な行事は\nぜひ続けてほしいと思います。来年もまた家族で来ようと思っています。',qs:[{q:'田中さんの家族はお祭りで何をしましたか。',c:['子供たちは金魚すくいや射的を楽しんだ','全員で花火を見た','田中さんが料理を作った','子供たちが踊りを踊った'],a:0,e:'「子供たちは金魚すくいや射的を楽しみ」とあります。'},{q:'田中さんはお祭りについてどう思っていますか。',c:['地域の人が集まる大切な機会だ','参加者が多すぎて困る','もう行きたくない','食べ物が高すぎる'],a:0,e:'「地域の人々が集まる大切な機会だと思います」とあります。'},{q:'「懐かしい」の意味はどれですか。',c:['昔を思い出して温かい気持ちになる','新しくてめずらしい','難しくて覚えられない','おいしそうに見える'],a:0,e:'「懐かしい」は過去の思い出があって、懐かしく感じること。'},{q:'田中さんは来年どうしようと思っていますか。',c:['また家族でお祭りに来る','違う場所に行く','一人で来る','来るかどうかわからない'],a:0,e:'「来年もまた家族で来ようと思っています」とあります。'}]},{p:'2009年7月15日\nさくら株式会社 営業部 御中\nABC株式会社 輸出入部 ヴァン・イシイ\n\n拝啓\n\nわが社は、日本のアクセサリーやバッグ、くつなどを過去10年以上アジア各国に輸出しております。\n\n先日、さくら株式会社様のホームページ上にて新しいバッグのカタログを拝見しました。ぜひ輸出を検討したく思いますので、最新のバッグのカタログと価格表を今月中に送っていただけないでしょうか。\n\nよろしくお願いいたします。',qs:[{q:'この手紙の中の会社について、正しいのはどれか。',c:['「さくら株式会社」は各国から輸入したバッグを日本で10年以上売っている。','「さくら株式会社」はバッグを輸出するかどうか検討し今月中に返事をする。','「ABC株式会社」はアジア各国の最新バッグをホームページで紹介している。','「ABC株式会社」は「さくら株式会社」にバッグのカタログと価格表を頼んだ。'],a:3,e:'ABC社がさくら社に「カタログと価格表を送っていただけないでしょうか」と頼んでいます。4が正解。'}]}],
+};
+
+const N3_LISTENING = [{s:'男：すみません、図書館はどこですか。\n女：あの大きい建物の右側です。\n男：ありがとうございます。',q:'図書館はどこにありますか。',c:["大きい建物の右側", "大きい建物の左側", "駅の前", "公園の隣"],a:0,e:'「あの大きい建物の右側です」と言っています。'},{s:'女：田中さん、明日のパーティーに来ますか。\n男：行きたいんですが、仕事が終わるかどうかわかりません。\n女：終わったら来てくださいね。\n男：はい、できるだけ早く行きます。',q:'男の人はパーティーについてどう言いましたか。',c:["仕事が終わったら行く", "絶対に行かない", "もう行くと決めた", "行きたくない"],a:0,e:'「仕事が終わるかどうかわかりません」「できるだけ早く行きます」と言っています。'},{s:'アナウンス：お客様にお知らせいたします。ただいまエレベーターが点検中のため、使用できません。ご不便をおかけして申し訳ありません。階段をご利用ください。',q:'このアナウンスは何について話していますか。',c:["エレベーターが使えないこと", "店が閉まること", "電車が遅れること", "駐車場が満車なこと"],a:0,e:'「エレベーターが点検中のため使用できません」と言っています。'},{s:'女：あれ、田中くん、元気なさそうだね。どうしたの？\n男：実は昨日から頭が痛くて。\n女：そうなの。熱はある？\n男：少しあります。\n女：それは大変だね。早く帰って休んだほうがいいよ。',q:'男の人の体の状態はどうですか。',c:["頭が痛くて少し熱がある", "おなかが痛い", "足が痛い", "全然元気だ"],a:0,e:'「頭が痛い」「少し熱がある」と言っています。'},{s:'先生：来週の月曜日にテストがあります。範囲は第三課から第五課までです。辞書は使ってもいいですが、教科書は持ち込みできません。よく復習しておいてください。',q:'テストについて正しいのはどれですか。',c:["辞書は使えるが教科書は使えない", "辞書も教科書も使えない", "教科書は使えるが辞書は使えない", "辞書も教科書も使える"],a:0,e:'「辞書は使ってもいい」「教科書は持ち込みできません」と言っています。'}];
+
 
 const JLPT_CAT_COUNTS = {
   N5: {kanji:52, vocab:595, grammar:71},
