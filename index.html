@@ -1188,7 +1188,6 @@ nav button.active {
     </div>
     <p class="tap-hint" id="tap-hint">👆 Tap kartu untuk lihat arti</p>
     <div class="action-row hidden" id="action-row">
-      <button id="undo-btn" onclick="undoCard()" title="Kembali ke kartu sebelumnya" style="padding:0 14px;border:1px solid var(--border);background:white;border-radius:10px;cursor:pointer;font-size:18px;opacity:.3;flex-shrink:0">↩</button>
       <button class="btn-no" onclick="markCard(false)">✗ &nbsp; Belum Hafal</button>
       <button class="btn-yes" onclick="markCard(true)">✓ &nbsp; Sudah Hafal!</button>
     </div>
@@ -1196,6 +1195,12 @@ nav button.active {
       <span id="sess-left">Sisa: --</span>
       <span id="sess-done">Sesi ini: 0</span>
       <span id="sess-master">Hafal: 0</span>
+    </div>
+    <div style="text-align:center;margin-top:8px">
+      <button id="undo-btn" onclick="undoCard()"
+        style="border:1px solid var(--border);background:white;border-radius:20px;cursor:pointer;font-size:13px;padding:6px 18px;color:var(--mist);opacity:.3;transition:opacity .2s">
+        ↩ Kartu sebelumnya
+      </button>
     </div>
   </div>
 
@@ -1286,7 +1291,6 @@ nav button.active {
     </div>
     <p class="tap-hint" id="kf-tap-hint">👆 Tap kartu untuk lihat furigana & arti</p>
     <div class="action-row hidden" id="kf-action-row">
-      <button id="kf-undo-btn" onclick="undoKanjiCard()" title="Kembali ke kartu sebelumnya" style="padding:0 14px;border:1px solid var(--border);background:white;border-radius:10px;cursor:pointer;font-size:18px;opacity:.3;flex-shrink:0">↩</button>
       <button class="btn-no" onclick="markKanjiFlash(false)">✗ &nbsp; Belum Bisa</button>
       <button class="btn-yes" onclick="markKanjiFlash(true)">✓ &nbsp; Bisa Baca!</button>
     </div>
@@ -1294,6 +1298,12 @@ nav button.active {
       <span id="kf-left">Sisa: --</span>
       <span id="kf-done">Sesi ini: 0</span>
       <span id="kf-master">Hafal: 0</span>
+    </div>
+    <div style="text-align:center;margin-top:8px">
+      <button id="kf-undo-btn" onclick="undoKanjiCard()"
+        style="border:1px solid var(--border);background:white;border-radius:20px;cursor:pointer;font-size:13px;padding:6px 18px;color:var(--mist);opacity:.3;transition:opacity .2s">
+        ↩ Kartu sebelumnya
+      </button>
     </div>
   </div>
 
@@ -3640,6 +3650,7 @@ function shuffle(arr) {
 }
 
 function showCard() {
+  updateUndoBtn();
   if (sessionIdx >= sessionQueue.length) { endSession(); return; }
   const w = sessionQueue[sessionIdx];
   revealed = false;
@@ -3839,6 +3850,7 @@ function startKanjiFlash(cat) {
 }
 
 function showKanjiCard() {
+  updateKfUndoBtn();
   if (kfIdx >= kfQueue.length) { endKanjiFlash(); return; }
   const w    = kfQueue[kfIdx];
   kfRevealed = false;
