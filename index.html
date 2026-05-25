@@ -1574,7 +1574,9 @@ nav button.active {
     <button onclick="closeWordModal()" style="width:100%;margin-top:10px;padding:12px;border:1px solid var(--border);border-radius:12px;background:none;font-family:inherit;font-size:14px;color:var(--mist);cursor:pointer">Tutup</button>
   </div>
 </div>
-<script>
+<script>var sessionHistory = [];
+var kfHistory = [];
+
 // ============================================================
 // DATA — Semua kotoba N3 dari PDF (771 item)
 // ============================================================
@@ -3670,6 +3672,11 @@ function revealCard() {
 
 function markCard(isHafal) {
   var w = sessionQueue[sessionIdx];
+  // Push to undo history
+  var isMastCurrent = currentJLPT==='N3' ? !!mastered[sessionCat][w.id] : !!(mastered[currentJLPT]||{})[w.id];
+  if (!sessionHistory) sessionHistory = [];
+  sessionHistory.push({idx:sessionIdx, wordId:w.id, cat:sessionCat, wasMastered:isMastCurrent});
+  if (sessionHistory.length > 20) sessionHistory.shift();
   var isMast;
   if (currentJLPT === 'N3') {
     isMast = !!mastered[sessionCat][w.id];
@@ -3693,8 +3700,34 @@ function markCard(isHafal) {
   save();
   sessionReviewed++;
   sessionIdx++;
+  updateUndoBtn();
   showCard();
 }
+
+function undoCard() {
+  if (!sessionHistory || !sessionHistory.length) return;
+  var last = sessionHistory.pop();
+  // Restore mastered state
+  if (currentJLPT==='N3') {
+    if (last.wasMastered) mastered[last.cat][last.wordId] = true;
+    else delete mastered[last.cat][last.wordId];
+  } else {
+    if (!mastered[currentJLPT]) mastered[currentJLPT] = {};
+    if (last.wasMastered) mastered[currentJLPT][last.wordId] = true;
+    else delete mastered[currentJLPT][last.wordId];
+  }
+  sessionIdx = last.idx;
+  if (sessionReviewed > 0) sessionReviewed--;
+  save();
+  updateUndoBtn();
+  showCard();
+}
+
+function updateUndoBtn() {
+  var btn = document.getElementById('undo-btn');
+  if (btn) btn.style.opacity = (sessionHistory && sessionHistory.length > 0) ? '1' : '0.3';
+}
+
 
 function endSession() {
   document.getElementById('flash-active').style.display = 'none';
