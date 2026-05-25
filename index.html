@@ -739,6 +739,10 @@ nav button.active {
   color:var(--gold); letter-spacing:1px;
 }
 .exam-timer.warn { color:#ff8080; animation: pulse 1s infinite; }
+@keyframes slideUp {
+  from { transform: translateY(100%); }
+  to   { transform: translateY(0); }
+}
 @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.4} }
 
 .exam-section-header {
@@ -1161,7 +1165,7 @@ nav button.active {
       <h2 id="flash-category-title">動詞 Kata Kerja</h2>
       <div style="font-size:12px;color:var(--mist);margin-top:2px" id="flash-subtitle">Belum hafal didahulukan</div>
     </div>
-    <button onclick="exitStudy()" style="border:1px solid var(--border);background:white;padding:8px 16px;border-radius:8px;cursor:pointer;font-family:inherit;font-size:13px;color:var(--mist)">✕ Keluar</button>
+    <button onclick="exitStudy()" style="border:none;background:none;cursor:pointer;font-size:22px;color:var(--mist);padding:4px 8px;line-height:1">←</button>
   </div>
 
   <div class="flash-progress-bar">
@@ -1255,7 +1259,7 @@ nav button.active {
       <h2 id="kf-title" style="font-family:'Noto Serif JP',serif;font-size:17px">漢字 Kata Kerja</h2>
       <div style="font-size:12px;color:var(--mist);margin-top:2px" id="kf-subtitle">Belum hafal didahulukan</div>
     </div>
-    <button onclick="exitKanjiFlash()" style="border:1px solid var(--border);background:white;padding:8px 16px;border-radius:8px;cursor:pointer;font-family:inherit;font-size:13px;color:var(--mist)">✕ Keluar</button>
+    <button onclick="exitKanjiFlash()" style="border:none;background:none;cursor:pointer;font-size:22px;color:var(--mist);padding:4px 8px;line-height:1">←</button>
   </div>
 
   <div class="flash-progress-bar">
@@ -1542,6 +1546,32 @@ nav button.active {
 
 </div><!-- end #app -->
 
+<!-- Word Modal -->
+<div id="word-modal" style="display:none;position:fixed;inset:0;z-index:500;background:rgba(0,0,0,.5);align-items:flex-end;justify-content:center">
+  <div style="background:white;border-radius:20px 20px 0 0;padding:24px;width:100%;max-width:480px;animation:slideUp .25s ease">
+    <div style="width:40px;height:4px;background:var(--border);border-radius:2px;margin:0 auto 20px"></div>
+    <!-- Word header -->
+    <div style="text-align:center;margin-bottom:20px">
+      <div id="wm-jp" style="font-family:'Noto Serif JP',serif;font-size:40px;font-weight:700;color:var(--ink);margin-bottom:4px"></div>
+      <div id="wm-rom" style="font-family:'DM Mono',monospace;font-size:15px;color:var(--mist);margin-bottom:6px"></div>
+      <div id="wm-id" style="font-size:16px;font-weight:600;color:var(--ink)"></div>
+    </div>
+    <!-- Status badge -->
+    <div id="wm-status" style="text-align:center;margin-bottom:20px"></div>
+    <!-- Action buttons -->
+    <div style="display:flex;gap:10px">
+      <button id="wm-btn-hafal" onclick="setWordStatusFromModal(true)"
+        style="flex:1;padding:14px;border:none;border-radius:12px;font-family:inherit;font-size:15px;font-weight:700;cursor:pointer;background:var(--jade);color:white">
+        ✅ Sudah Hafal
+      </button>
+      <button id="wm-btn-belum" onclick="setWordStatusFromModal(false)"
+        style="flex:1;padding:14px;border:none;border-radius:12px;font-family:inherit;font-size:15px;font-weight:700;cursor:pointer;background:rgba(192,57,43,.1);color:var(--red)">
+        ✗ Belum Hafal
+      </button>
+    </div>
+    <button onclick="closeWordModal()" style="width:100%;margin-top:10px;padding:12px;border:1px solid var(--border);border-radius:12px;background:none;font-family:inherit;font-size:14px;color:var(--mist);cursor:pointer">Tutup</button>
+  </div>
+</div>
 <script>
 // ============================================================
 // DATA — Semua kotoba N3 dari PDF (771 item)
@@ -3145,6 +3175,107 @@ function stopAudio() {
   if (ttsSupported) window.speechSynthesis.cancel();
 }
 
+
+// ══ Word Modal ══════════════════════════════════════════════
+var _modalWordId = null;
+var _modalWordCat = null;
+
+function openWordModal(wordId, cat) {
+  // Find word
+  var word = null;
+  if (currentJLPT==='N3') {
+    var catArr = cat ? ALL_WORDS[cat] : null;
+    if (!catArr) {
+      ['kanji','vocab','grammar'].forEach(function(c){
+        if (!word) word = ALL_WORDS[c].find(function(w){ return w.id===wordId; });
+      });
+    } else {
+      word = catArr.find(function(w){ return w.id===wordId; });
+    }
+  } else {
+    word = (JLPT_DATA[currentJLPT]||[]).find(function(w){ return w.id===wordId; });
+  }
+  if (!word) return;
+
+  _modalWordId = wordId;
+  _modalWordCat = cat || word.cat || 'vocab';
+
+  var done = currentJLPT==='N3'
+    ? !!mastered[_modalWordCat][wordId]
+    : !!(mastered[currentJLPT]||{})[wordId];
+
+  document.getElementById('wm-jp').textContent  = word.jp;
+  document.getElementById('wm-rom').textContent = word.rom;
+  document.getElementById('wm-id').textContent  = word.id_;
+
+  var color = JLPT_COLORS[currentJLPT] || 'var(--red)';
+  document.getElementById('wm-status').innerHTML = done
+    ? '<span style="background:rgba(45,160,80,.1);color:var(--jade);padding:5px 16px;border-radius:20px;font-size:13px;font-weight:600">✅ Sudah Hafal</span>'
+    : '<span style="background:rgba(192,57,43,.08);color:var(--red);padding:5px 16px;border-radius:20px;font-size:13px;font-weight:600">✗ Belum Hafal</span>';
+
+  // Update button styles based on current status
+  var hafal = document.getElementById('wm-btn-hafal');
+  var belum = document.getElementById('wm-btn-belum');
+  hafal.style.background = done ? 'var(--jade)' : 'rgba(45,160,80,.1)';
+  hafal.style.color       = done ? 'white' : 'var(--jade)';
+  hafal.style.fontWeight  = done ? '700' : '600';
+  belum.style.background  = done ? 'rgba(192,57,43,.08)' : 'var(--red)';
+  belum.style.color       = done ? 'var(--red)' : 'white';
+  belum.style.fontWeight  = done ? '600' : '700';
+
+  var modal = document.getElementById('word-modal');
+  modal.style.display = 'flex';
+  document.body.style.overflow = 'hidden';
+}
+
+function setWordStatusFromModal(isHafal) {
+  if (!_modalWordId) return;
+  var wordId = _modalWordId;
+  var cat    = _modalWordCat;
+
+  if (currentJLPT==='N3') {
+    if (isHafal) mastered[cat][wordId] = true;
+    else delete mastered[cat][wordId];
+  } else {
+    if (!mastered[currentJLPT]) mastered[currentJLPT] = {};
+    if (isHafal) mastered[currentJLPT][wordId] = true;
+    else delete mastered[currentJLPT][wordId];
+  }
+
+  save();
+
+  // Update modal status display
+  document.getElementById('wm-status').innerHTML = isHafal
+    ? '<span style="background:rgba(45,160,80,.1);color:var(--jade);padding:5px 16px;border-radius:20px;font-size:13px;font-weight:600">✅ Sudah Hafal</span>'
+    : '<span style="background:rgba(192,57,43,.08);color:var(--red);padding:5px 16px;border-radius:20px;font-size:13px;font-weight:600">✗ Belum Hafal</span>';
+
+  var hafal = document.getElementById('wm-btn-hafal');
+  var belum = document.getElementById('wm-btn-belum');
+  hafal.style.background = isHafal ? 'var(--jade)' : 'rgba(45,160,80,.1)';
+  hafal.style.color       = isHafal ? 'white' : 'var(--jade)';
+  belum.style.background  = isHafal ? 'rgba(192,57,43,.08)' : 'var(--red)';
+  belum.style.color       = isHafal ? 'var(--red)' : 'white';
+
+  // Refresh the grid item without re-rendering everything
+  var vocabItem = document.querySelector('#vocab-grid .vocab-item');
+  // Re-render just the grid
+  renderReview(currentFilter);
+  // Reopen modal (since re-render closes it via display)
+  openWordModal(wordId, cat);
+}
+
+function closeWordModal() {
+  document.getElementById('word-modal').style.display = 'none';
+  document.body.style.overflow = '';
+  _modalWordId = null; _modalWordCat = null;
+}
+
+// Close on backdrop click
+document.addEventListener('click', function(e){
+  var modal = document.getElementById('word-modal');
+  if (modal && e.target === modal) closeWordModal();
+});
+
 function initFirebase(){
   function _load(src,cb){
     var el=document.createElement('script');
@@ -3797,68 +3928,67 @@ function renderReview(filter) {
   var color = JLPT_COLORS[currentJLPT] || 'var(--red)';
   var titleEl=document.getElementById('review-title');
   var badgeEl=document.getElementById('review-level-badge');
-  if (titleEl) titleEl.textContent = 'Semua Kata ' + currentJLPT;
-  if (badgeEl) { badgeEl.textContent=currentJLPT; badgeEl.style.background=color; }
+  if(titleEl) titleEl.textContent='Semua Kata '+currentJLPT;
+  if(badgeEl){badgeEl.textContent=currentJLPT;badgeEl.style.background=color;}
 
-  // Show/hide category filters based on level
+  // Show/hide category filters
   var rbKanji=document.getElementById('rb-kanji');
   var rbVocab=document.getElementById('rb-vocab');
   var rbGram=document.getElementById('rb-grammar');
-  var show3cats = currentJLPT === 'N3' || (JLPT_DATA[currentJLPT] && JLPT_DATA[currentJLPT].some(function(w){return w.cat==='kanji';}));
-  if (rbKanji) rbKanji.style.display = show3cats ? '' : 'none';
-  if (rbVocab) rbVocab.style.display = show3cats ? '' : 'none';
-  if (rbGram)  rbGram.style.display  = show3cats ? '' : 'none';
+  var show3 = currentJLPT==='N3'||(JLPT_DATA[currentJLPT]&&JLPT_DATA[currentJLPT].some(function(w){return w.cat==='kanji';}));
+  if(rbKanji) rbKanji.style.display=show3?'':'none';
+  if(rbVocab) rbVocab.style.display=show3?'':'none';
+  if(rbGram)  rbGram.style.display=show3?'':'none';
 
   var words = [];
-  if (currentJLPT === 'N3') {
-    ['kanji','vocab','grammar'].forEach(function(cat) {
+  if(currentJLPT==='N3'){
+    ['kanji','vocab','grammar'].forEach(function(cat){
       ALL_WORDS[cat].forEach(function(w){ words.push(Object.assign({},w,{cat:cat})); });
     });
+    if(filter==='kanji')   words=words.filter(function(w){return w.cat==='kanji';});
+    if(filter==='vocab')   words=words.filter(function(w){return w.cat==='vocab';});
+    if(filter==='grammar') words=words.filter(function(w){return w.cat==='grammar';});
   } else {
-    words = (JLPT_DATA[currentJLPT]||[]).slice();
+    words=(JLPT_DATA[currentJLPT]||[]).slice();
   }
-
-  // Apply filters
-  if (filter==='kanji')   words=words.filter(function(w){return w.cat==='kanji';});
-  if (filter==='vocab')   words=words.filter(function(w){return w.cat==='vocab';});
-  if (filter==='grammar') words=words.filter(function(w){return w.cat==='grammar';});
-  if (filter==='done') {
-    words=words.filter(function(w){
-      return currentJLPT==='N3' ? !!mastered[w.cat][w.id] : !!(mastered[currentJLPT]||{})[w.id];
-    });
-  }
-  if (filter==='todo') {
-    words=words.filter(function(w){
-      return currentJLPT==='N3' ? !mastered[w.cat][w.id] : !(mastered[currentJLPT]||{})[w.id];
-    });
-  }
-  if (searchQuery) {
+  if(filter==='done') words=words.filter(function(w){
+    return currentJLPT==='N3'?!!mastered[w.cat][w.id]:!!(mastered[currentJLPT]||{})[w.id];
+  });
+  if(filter==='todo') words=words.filter(function(w){
+    return currentJLPT==='N3'?!mastered[w.cat][w.id]:!(mastered[currentJLPT]||{})[w.id];
+  });
+  if(searchQuery){
     var q=searchQuery.toLowerCase();
     words=words.filter(function(w){
       return w.jp.toLowerCase().indexOf(q)>=0||w.rom.toLowerCase().indexOf(q)>=0||w.id_.toLowerCase().indexOf(q)>=0;
     });
   }
 
-  var countEl=document.getElementById('review-count');
-  if (countEl) countEl.textContent='Menampilkan '+words.length+' kata';
+  var cntEl=document.getElementById('review-count');
+  if(cntEl) cntEl.textContent='Menampilkan '+words.length+' kata';
+
   var grid=document.getElementById('vocab-grid');
-  if (!grid) return;
-  if (!words.length) {
+  if(!grid) return;
+  if(!words.length){
     grid.innerHTML='<div style="text-align:center;padding:40px;color:var(--mist);grid-column:1/-1"><div style="font-size:32px">🔍</div>Tidak ada kata yang cocok</div>';
     return;
   }
-  grid.innerHTML=words.map(function(w){
-    var done=currentJLPT==='N3'?!!mastered[w.cat][w.id]:!!(mastered[currentJLPT]||{})[w.id];
-    var catBadge='';
-    if(w.cat==='kanji') catBadge='<span style="font-size:9px;background:rgba(192,57,43,.1);color:var(--red);padding:1px 5px;border-radius:4px;flex-shrink:0">動</span>';
-    else if(w.cat==='grammar') catBadge='<span style="font-size:9px;background:rgba(44,122,46,.1);color:var(--jade);padding:1px 5px;border-radius:4px;flex-shrink:0">形</span>';
-    return '<div class="vocab-item '+(done?'mastered':'')+'">'
+
+  grid.innerHTML = words.map(function(w){
+    var done = currentJLPT==='N3' ? !!mastered[w.cat][w.id] : !!(mastered[currentJLPT]||{})[w.id];
+    var wId = w.id; var wCat = w.cat||'vocab';
+    return '<div class="vocab-item '+(done?'mastered':'')+'" data-wid="'+wId+'" data-wcat="'+wCat+'" onclick="openWordModal(this.dataset.wid,this.dataset.wcat)" style="cursor:pointer">'
       +'<div class="status-dot '+(done?'done':'todo')+'"></div>'
       +'<div style="flex:1;min-width:0">'
       +'<div class="jp">'+w.jp+'</div>'
       +'<div class="id-meaning">'+w.id_+'</div>'
       +'<div style="font-size:10px;color:var(--mist)">'+w.rom+'</div>'
-      +'</div>'+catBadge+'</div>';
+      +'</div>'
+      +(done
+        ? '<span style="font-size:16px" title="Hafal">✅</span>'
+        : '<span style="font-size:16px;opacity:.3" title="Belum hafal">○</span>'
+      )
+      +'</div>';
   }).join('');
 }
 
