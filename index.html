@@ -1188,6 +1188,7 @@ nav button.active {
     </div>
     <p class="tap-hint" id="tap-hint">👆 Tap kartu untuk lihat arti</p>
     <div class="action-row hidden" id="action-row">
+      <button id="undo-btn" onclick="undoCard()" title="Kembali ke kartu sebelumnya" style="padding:0 14px;border:1px solid var(--border);background:white;border-radius:10px;cursor:pointer;font-size:18px;opacity:.3;flex-shrink:0">↩</button>
       <button class="btn-no" onclick="markCard(false)">✗ &nbsp; Belum Hafal</button>
       <button class="btn-yes" onclick="markCard(true)">✓ &nbsp; Sudah Hafal!</button>
     </div>
@@ -1285,6 +1286,7 @@ nav button.active {
     </div>
     <p class="tap-hint" id="kf-tap-hint">👆 Tap kartu untuk lihat furigana & arti</p>
     <div class="action-row hidden" id="kf-action-row">
+      <button id="kf-undo-btn" onclick="undoKanjiCard()" title="Kembali ke kartu sebelumnya" style="padding:0 14px;border:1px solid var(--border);background:white;border-radius:10px;cursor:pointer;font-size:18px;opacity:.3;flex-shrink:0">↩</button>
       <button class="btn-no" onclick="markKanjiFlash(false)">✗ &nbsp; Belum Bisa</button>
       <button class="btn-yes" onclick="markKanjiFlash(true)">✓ &nbsp; Bisa Baca!</button>
     </div>
@@ -3591,7 +3593,7 @@ function updateOverview() {
 // FLASHCARD STUDY
 // ============================================================
 function startStudy(cat) {
-  sessionCat=cat; sessionReviewed=0; sessionMastered=0; revealed=false;
+  sessionCat=cat; sessionReviewed=0; sessionMastered=0; revealed=false; sessionHistory=[];
   var words, unmastered, done;
   if (currentJLPT==='N3') {
     words=ALL_WORDS[cat];
@@ -3773,7 +3775,7 @@ function updateKanjiMenu() {
 }
 
 function startKanjiFlash(cat) {
-  kfCat=cat; kfReviewed=0; kfMastered=0; kfRevealed=false;
+  kfCat=cat; kfReviewed=0; kfMastered=0; kfRevealed=false; kfHistory=[];
   var words;
   if(currentJLPT==='N3'){
     words=ALL_WORDS[cat];
@@ -3836,24 +3838,42 @@ function revealKanjiCard() {
 }
 
 function markKanjiFlash(hafal) {
-  const w = kfQueue[kfIdx];
-  const wasMastered = kfIsMastered(w.id);
-  kfSetMastered(w.id, hafal);
+  var w = kfQueue[kfIdx];
+  var wasMastered = kfIsMastered(w.id);
+  // Push undo history
+  kfHistory.push({idx:kfIdx, wordId:w.id, wasMastered:wasMastered});
+  if (kfHistory.length>20) kfHistory.shift();
 
+  kfSetMastered(w.id, hafal);
   if (hafal && !wasMastered) { kfMastered++; todayCount++; }
 
-  // Update streak
-  const today = new Date().toDateString();
-  if (lastStudyDate !== today) {
-    const yesterday = new Date(Date.now() - 86400000).toDateString();
-    streak = (lastStudyDate === yesterday) ? streak + 1 : 1;
-    lastStudyDate = today;
+  var today=new Date().toDateString();
+  if(lastStudyDate!==today){
+    var yesterday=new Date(Date.now()-86400000).toDateString();
+    streak=(lastStudyDate===yesterday)?streak+1:1;
+    lastStudyDate=today;
   }
-
   save();
   kfReviewed++;
   kfIdx++;
+  updateKfUndoBtn();
   showKanjiCard();
+}
+
+function undoKanjiCard() {
+  if (!kfHistory.length) return;
+  var last = kfHistory.pop();
+  kfSetMastered(last.wordId, last.wasMastered);
+  kfIdx = last.idx;
+  if (kfReviewed>0) kfReviewed--;
+  save();
+  updateKfUndoBtn();
+  showKanjiCard();
+}
+
+function updateKfUndoBtn() {
+  var btn = document.getElementById('kf-undo-btn');
+  if (btn) btn.style.opacity = kfHistory.length>0 ? '1' : '0.3';
 }
 
 function endKanjiFlash() {
