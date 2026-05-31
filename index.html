@@ -4063,12 +4063,62 @@ function renderReview(filter) {
 const chatHistory = [];
 
 async function sendMsg() {
-  var inp=document.getElementById('chat-input');
-  var msg=inp.value.trim();
-  if(!msg) return;
-  inp.value='';
-  addMsg('user',msg);
-  addMsg('ai','🤖 Tanya Sensei sedang dalam maintenance. Akan segera kembali! がんばれ！💪');
+  var inp = document.getElementById('chat-input');
+  var msg = inp.value.trim();
+  if (!msg) return;
+  inp.value = '';
+  document.getElementById('chat-send').disabled = true;
+
+  addMsg('user', msg);
+  chatHistory.push({role:'user', content:msg});
+
+  var typing = document.createElement('div');
+  typing.className = 'msg ai'; typing.id = 'typing';
+  typing.innerHTML = '<span class="typing"><span></span><span></span><span></span></span>';
+  document.getElementById('chat-box').appendChild(typing);
+  scrollChat();
+
+  try {
+    // Get Groq key from app config
+    var groqKey = _GROQ_KEY || 'gsk_placeholder';
+    var res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer ' + groqKey
+      },
+      body: JSON.stringify({
+        model: 'llama-3.3-70b-versatile',
+        max_tokens: 1000,
+        messages: [
+          {role:'system', content:'Kamu adalah sensei bahasa Jepang ahli untuk JLPT N3/N4/N5. Bantu pelajar Indonesia memahami kosakata, grammar, dan kanji. Jawab dalam Bahasa Indonesia yang mudah dipahami. Sertakan contoh kalimat Jepang + terjemahan. Akhiri dengan semangat dalam bahasa Jepang.'},
+          ...chatHistory
+        ]
+      })
+    });
+    var d = await res.json();
+    var el = document.getElementById('typing');
+    if (el) el.remove();
+
+    if (d.error) {
+      var errMsg = d.error.code === 'invalid_api_key'
+        ? '🔑 API key tidak valid. Mohon update key di GitHub.'
+        : '⚠️ Error: ' + (d.error.message || 'Coba lagi ya!');
+      addMsg('ai', errMsg);
+    } else {
+      var reply = d.choices && d.choices[0] && d.choices[0].message
+        ? d.choices[0].message.content
+        : 'Maaf, coba lagi ya!';
+      chatHistory.push({role:'assistant', content:reply});
+      addMsg('ai', reply);
+    }
+  } catch(err) {
+    var el = document.getElementById('typing');
+    if (el) el.remove();
+    addMsg('ai', '⚠️ Koneksi bermasalah. Pastikan internet aktif lalu coba lagi!');
+    console.error('Sensei error:', err);
+  }
+  document.getElementById('chat-send').disabled = false;
   scrollChat();
 }
 
