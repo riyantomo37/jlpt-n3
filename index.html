@@ -2812,7 +2812,7 @@ async function buildReadingSections(words) {
   try {
     var res = await fetch('https://api.groq.com/openai/v1/chat/completions',{
       method:'POST',
-      headers:{'Content-Type':'application/json','Authorization':'Bearer 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'},
+      headers:{'Content-Type':'application/json','Authorization':'Bearer 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'},
       body:JSON.stringify({model:'llama-3.3-70b-versatile',max_tokens:2000,temperature:0.6,
         messages:[
           {role:'system',content:'Pembuat soal JLPT 読解 profesional. Jawab HANYA JSON valid.'},
@@ -4074,49 +4074,47 @@ async function sendMsg() {
 
   var typing = document.createElement('div');
   typing.className = 'msg ai'; typing.id = 'typing';
-  typing.innerHTML = '<span class="typing"><span></span><span></span><span></span></span>';
+  typing.innerHTML = '...';
   document.getElementById('chat-box').appendChild(typing);
   scrollChat();
 
   try {
-    // Get Groq key from app config
-    var groqKey = _GROQ_KEY || 'gsk_placeholder';
     var res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': 'Bearer ' + groqKey
+        'Authorization': 'Bearer ' + _GROQ_KEY
       },
       body: JSON.stringify({
         model: 'llama-3.3-70b-versatile',
         max_tokens: 1000,
         messages: [
-          {role:'system', content:'Kamu adalah sensei bahasa Jepang ahli untuk JLPT N3/N4/N5. Bantu pelajar Indonesia memahami kosakata, grammar, dan kanji. Jawab dalam Bahasa Indonesia yang mudah dipahami. Sertakan contoh kalimat Jepang + terjemahan. Akhiri dengan semangat dalam bahasa Jepang.'},
-          ...chatHistory
-        ]
+          {role:'system', content:'Kamu adalah sensei bahasa Jepang untuk JLPT. Jawab dalam Bahasa Indonesia. Sertakan contoh kalimat Jepang + terjemahan.'},
+        ].concat(chatHistory)
       })
     });
+
     var d = await res.json();
     var el = document.getElementById('typing');
     if (el) el.remove();
 
-    if (d.error) {
-      var errMsg = d.error.code === 'invalid_api_key'
-        ? '🔑 API key tidak valid. Mohon update key di GitHub.'
-        : '⚠️ Error: ' + (d.error.message || 'Coba lagi ya!');
-      addMsg('ai', errMsg);
+    if (!res.ok) {
+      var code = d.error ? d.error.code : res.status;
+      if (code === 'invalid_api_key' || res.status === 401) {
+        addMsg('ai', '🔑 API key tidak valid / expired. Silakan update _GROQ_KEY di GitHub dengan key baru dari console.groq.com');
+      } else {
+        addMsg('ai', '⚠️ Error ' + res.status + ': ' + (d.error ? d.error.message : 'Unknown error'));
+      }
     } else {
-      var reply = d.choices && d.choices[0] && d.choices[0].message
-        ? d.choices[0].message.content
-        : 'Maaf, coba lagi ya!';
+      var reply = d.choices && d.choices[0] ? d.choices[0].message.content : 'Maaf, coba lagi!';
       chatHistory.push({role:'assistant', content:reply});
       addMsg('ai', reply);
     }
   } catch(err) {
     var el = document.getElementById('typing');
     if (el) el.remove();
-    addMsg('ai', '⚠️ Koneksi bermasalah. Pastikan internet aktif lalu coba lagi!');
-    console.error('Sensei error:', err);
+    addMsg('ai', '⚠️ Fetch error: ' + err.message + '. Cek koneksi internet.');
+    console.error(err);
   }
   document.getElementById('chat-send').disabled = false;
   scrollChat();
