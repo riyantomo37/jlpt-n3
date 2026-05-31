@@ -2768,7 +2768,7 @@ async function buildGrammarSections(words) {
     try {
       var res = await fetch('https://api.groq.com/openai/v1/chat/completions',{
         method:'POST',
-        headers:{'Content-Type':'application/json','Authorization':'Bearer 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'},
+        headers:{'Content-Type':'application/json','Authorization':'Bearer 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'},
         body:JSON.stringify({model:'llama-3.3-70b-versatile',max_tokens:2000,temperature:0.5,
           messages:[
             {role:'system',content:'Pembuat soal JLPT profesional. Jawab HANYA JSON array valid.'},
