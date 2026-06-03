@@ -2050,7 +2050,7 @@ const KANJI_DATA = [
 // ============================================================
 // STATE — tambah kanji read progress
 // ============================================================
-let mastered = { kanji:{}, vocab:{}, grammar:{}, N5:{}, N4:{}, N2:{}, N1:{} };
+let mastered = { kanji:{}, vocab:{}, grammar:{}, N5:{}, N4:{}, N2:{}, N1:{}, kf_N3:{}, kf_N4:{}, kf_N5:{} };
 let kanjiReadMastered = {}; // separate progress for kanji reading
 let todayDate = new Date().toDateString();
 let todayCount = 0;
@@ -3378,23 +3378,29 @@ function hideLoginScreen() {
 async function loadFromFirestore() {
   if (!currentUser) return;
   try {
-    const doc = await db.collection('users').doc(currentUser.uid).get();
+    var doc = await db.collection('users').doc(currentUser.uid).get();
     if (doc.exists) {
-      const data = doc.data();
-      if (data.mastered)         mastered         = data.mastered;
+      var data = doc.data();
+      if (data.mastered) {
+        var loaded = data.mastered;
+        ['kanji','vocab','grammar','N5','N4','N2','N1','kf_N3','kf_N4','kf_N5'].forEach(function(k){
+          if (loaded[k]) mastered[k] = loaded[k];
+        });
+      }
+      if (data.kfMastered) {
+        if (data.kfMastered.N4) mastered['kf_N4'] = data.kfMastered.N4;
+        if (data.kfMastered.N5) mastered['kf_N5'] = data.kfMastered.N5;
+      }
       if (data.kanjiReadMastered) kanjiReadMastered = data.kanjiReadMastered;
-      if (data.streak)           streak           = data.streak;
-      if (data.lastStudyDate)    lastStudyDate    = data.lastStudyDate;
-      // todayCount — only if same day
+      if (data.streak)            streak            = data.streak;
+      if (data.lastStudyDate)     lastStudyDate     = data.lastStudyDate;
       if (data.todayDate === new Date().toDateString()) {
-        todayDate  = data.todayDate;
         todayCount = data.todayCount || 0;
       }
     }
     setSyncBadge('synced');
   } catch(e) {
     console.error('Load error:', e);
-    // Fallback to localStorage
     loadFromLocal();
     setSyncBadge('offline');
   }
@@ -3404,7 +3410,6 @@ async function saveToFirestore() {
   if (!currentUser) { saveToLocal(); return; }
   setSyncBadge('syncing');
   try {
-    // Calculate mastered counts per level for leaderboard
     var n3Total = masteredAll();
     var tma = {};
     ['N5','N4','N2','N1'].forEach(function(lvl){
@@ -3418,8 +3423,9 @@ async function saveToFirestore() {
       todayDate: new Date().toDateString(),
       todayCount: todayCount,
       updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
-      displayName: currentUser.displayName,
-      email: currentUser.email,
+      displayName: currentUser.displayName || 'Pelajar',
+      photoURL: currentUser.photoURL || '',
+      email: currentUser.email || '',
       totalMastered: n3Total,
       totalMasteredAll: tma,
       lastSeen: firebase.firestore.FieldValue.serverTimestamp(),
@@ -3769,53 +3775,74 @@ let kfRevealed = false;
 
 // Progress tersendiri untuk kanji flashcard (per word id)
 // Disimpan di dalam mastered yang sama tapi key berbeda: 'kf_' + id
-function kfIsMastered(id) { return !!kanjiReadMastered['kf_' + id]; }
+function kfIsMastered(id) {
+  if (currentJLPT === 'N3') {
+    return !!kanjiReadMastered['kf_' + id];
+  }
+  // N4/N5 — use mastered object with level key
+  var key = 'kf_' + currentJLPT;
+  return !!(mastered[key] && mastered[key][id]);
+}
 function kfSetMastered(id, val) {
-  if (val) kanjiReadMastered['kf_' + id] = true;
-  else delete kanjiReadMastered['kf_' + id];
+  if (currentJLPT === 'N3') {
+    if (val) kanjiReadMastered['kf_' + id] = true;
+    else delete kanjiReadMastered['kf_' + id];
+  } else {
+    var key = 'kf_' + currentJLPT;
+    if (!mastered[key]) mastered[key] = {};
+    if (val) mastered[key][id] = true;
+    else delete mastered[key][id];
+  }
 }
 function kfCountMastered(cat) {
-  return ALL_WORDS[cat].filter(w => kfIsMastered(w.id)).length;
+  if (currentJLPT === 'N3') {
+    return ALL_WORDS[cat].filter(function(w){ return kfIsMastered(w.id); }).length;
+  }
+  // N4/N5 — count by category
+  var key = 'kf_' + currentJLPT;
+  var kfMast = mastered[key] || {};
+  var words = (JLPT_DATA[currentJLPT] || []).filter(function(w){
+    return (w.cat || 'vocab') === cat;
+  });
+  return words.filter(function(w){ return !!kfMast[w.id]; }).length;
 }
 
 function updateKanjiMenu() {
-  var color=JLPT_COLORS[currentJLPT]||'var(--red)';
-  var badge=document.getElementById('km-level-badge');
-  if(badge){badge.textContent=currentJLPT;badge.style.background=color;}
+  var color = JLPT_COLORS[currentJLPT] || 'var(--red)';
+  var badge = document.getElementById('km-level-badge');
+  if (badge) { badge.textContent=currentJLPT; badge.style.background=color; }
 
-  var n3sec=document.getElementById('km-n3-section');
-  var flatSec=document.getElementById('km-flat-section');
+  var n3sec  = document.getElementById('km-n3-section');
+  var flatSec = document.getElementById('km-flat-section');
 
-  // Always show 3 categories (N3/N4/N5 all have cat data)
-  if(n3sec)n3sec.style.display='';
-  if(flatSec)flatSec.style.display='none';
+  // Always show 3 categories
+  if (n3sec)  n3sec.style.display = '';
+  if (flatSec) flatSec.style.display = 'none';
 
-  var cats=JLPT_CAT_COUNTS&&JLPT_CAT_COUNTS[currentJLPT]?JLPT_CAT_COUNTS[currentJLPT]:{kanji:242,vocab:389,grammar:140};
+  var cats = (typeof JLPT_CAT_COUNTS !== 'undefined' && JLPT_CAT_COUNTS[currentJLPT])
+    ? JLPT_CAT_COUNTS[currentJLPT]
+    : {kanji:242, vocab:389, grammar:140};
 
-  function catDoneKf(cat){
-    if(currentJLPT==='N3') return kfCountMastered(cat);
-    var kfKey='kf_'+currentJLPT+'_'+cat;
-    return Object.values(mastered[kfKey]||{}).filter(Boolean).length;
-  }
-
-  var kd=catDoneKf('kanji'),vd=catDoneKf('vocab'),gd=catDoneKf('grammar');
-  var kt=cats.kanji,vt=cats.vocab,gt=cats.grammar;
+  var kd = kfCountMastered('kanji');
+  var vd = kfCountMastered('vocab');
+  var gd = kfCountMastered('grammar');
+  var kt = cats.kanji, vt = cats.vocab, gt = cats.grammar;
 
   function setEl(id,val){var el=document.getElementById(id);if(el)el.textContent=val;}
   function setW(id,pct){var el=document.getElementById(id);if(el)el.style.width=Math.min(pct,100)+'%';}
 
-  setEl('km-douji-done', kd+' / '+kt+' hafal');
-  setEl('km-meishi-done',vd+' / '+vt+' hafal');
-  setEl('km-keiyou-done',gd+' / '+gt+' hafal');
-  setEl('km-douji-pct',  Math.round(kd/kt*100)+'%');
-  setEl('km-meishi-pct', Math.round(vd/vt*100)+'%');
-  setEl('km-keiyou-pct', Math.round(gd/gt*100)+'%');
-  setW('km-bar-douji',   Math.round(kd/kt*100));
-  setW('km-bar-meishi',  Math.round(vd/vt*100));
-  setW('km-bar-keiyou',  Math.round(gd/gt*100));
-  setEl('km-cat-count-kanji',  kt+' kata kerja');
-  setEl('km-cat-count-vocab',  vt+' kata benda');
-  setEl('km-cat-count-grammar',gt+' kata sifat');
+  setEl('km-douji-done',  kd+' / '+kt+' hafal');
+  setEl('km-meishi-done', vd+' / '+vt+' hafal');
+  setEl('km-keiyou-done', gd+' / '+gt+' hafal');
+  setEl('km-douji-pct',   Math.round(kd/Math.max(kt,1)*100)+'%');
+  setEl('km-meishi-pct',  Math.round(vd/Math.max(vt,1)*100)+'%');
+  setEl('km-keiyou-pct',  Math.round(gd/Math.max(gt,1)*100)+'%');
+  setW('km-bar-douji',    Math.round(kd/Math.max(kt,1)*100));
+  setW('km-bar-meishi',   Math.round(vd/Math.max(vt,1)*100));
+  setW('km-bar-keiyou',   Math.round(gd/Math.max(gt,1)*100));
+  setEl('km-cat-count-kanji',   kt+' kata kerja');
+  setEl('km-cat-count-vocab',   vt+' kata benda');
+  setEl('km-cat-count-grammar', gt+' kata sifat');
 }
 
 function startKanjiFlash(cat) {
