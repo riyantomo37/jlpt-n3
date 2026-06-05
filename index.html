@@ -2766,9 +2766,9 @@ async function buildGrammarSections(words) {
     var prompt = 'Buat 10 soal JLPT '+currentJLPT+' bagian 文法 bahasa Indonesia. Kata: '+sample
       +'. Format HANYA JSON: [{"q":"kalimat dgn ___","c":["pilihan1","pilihan2","pilihan3","pilihan4"],"a":0,"e":"penjelasan"}]';
     try {
-      var res = await fetch('https://api.groq.com/openai/v1/chat/completions',{
+      var res = await fetch('/api/groq',{
         method:'POST',
-        headers:{'Content-Type':'application/json','Authorization':'Bearer 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'},
+        headers:{'Content-Type':'application/json'},
         body:JSON.stringify({model:'llama-3.3-70b-versatile',max_tokens:2000,temperature:0.5,
           messages:[
             {role:'system',content:'Pembuat soal JLPT profesional. Jawab HANYA JSON array valid.'},
@@ -2810,9 +2810,9 @@ async function buildReadingSections(words) {
     +' Format JSON: {"passage":"teks Jepang disini","questions":[{"q":"pertanyaan","choices":["A","B","C","D"],"answer":0,"exp":"penjelasan"}]}';
 
   try {
-    var res = await fetch('https://api.groq.com/openai/v1/chat/completions',{
+    var res = await fetch('/api/groq',{
       method:'POST',
-      headers:{'Content-Type':'application/json','Authorization':'Bearer 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'},
+      headers:{'Content-Type':'application/json'},
       body:JSON.stringify({model:'llama-3.3-70b-versatile',max_tokens:2000,temperature:0.6,
         messages:[
           {role:'system',content:'Pembuat soal JLPT 読解 profesional. Jawab HANYA JSON valid.'},
@@ -4106,11 +4106,10 @@ async function sendMsg() {
   scrollChat();
 
   try {
-    var res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+    var res = await fetch('/api/groq', {
       method: 'POST',
       headers: {
-        'Content-Type': 'application/json',
-        'Authorization': 'Bearer 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'
+        'Content-Type': 'application/json'
       },
       body: JSON.stringify({
         model: 'llama-3.3-70b-versatile',
