@@ -1,0 +1,6 @@
+worker.js
+wrangler.toml
+.assetsignore
+SETUP_CLOUDFLARE.md
+*.md
+.git
