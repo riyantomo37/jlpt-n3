@@ -31,16 +31,41 @@ export default {
       // --- Ubah format Groq (messages) -> format Gemini (contents) ---
       const messages = Array.isArray(payload.messages) ? payload.messages : [];
       const systemParts = [];
-      const contents = [];
+      let contents = [];
+
       for (const m of messages) {
+        const text = String(m.content == null ? "" : m.content);
         if (m.role === "system") {
-          systemParts.push({ text: String(m.content || "") });
+          systemParts.push({ text: text });
         } else {
-          contents.push({
-            role: m.role === "assistant" ? "model" : "user",
-            parts: [{ text: String(m.content || "") }],
-          });
+          const role = m.role === "assistant" ? "model" : "user";
+          contents.push({ role: role, parts: [{ text: text }] });
         }
+      }
+
+      // Gemini menolak kalau:
+      //  - contents diawali role "model" (giliran pertama harus "user")
+      //  - ada dua role sama berturut-turut
+      // Jadi kita bersihkan dulu.
+      // 1) Buang pesan "model" di awal sampai ketemu "user".
+      while (contents.length && contents[0].role === "model") {
+        contents.shift();
+      }
+      // 2) Gabungkan role yang sama bila berurutan.
+      const merged = [];
+      for (const c of contents) {
+        const last = merged[merged.length - 1];
+        if (last && last.role === c.role) {
+          last.parts[0].text += "\n" + c.parts[0].text;
+        } else {
+          merged.push({ role: c.role, parts: [{ text: c.parts[0].text }] });
+        }
+      }
+      contents = merged;
+
+      // Kalau kosong (mis. cuma ada sapaan model), kasih placeholder user.
+      if (!contents.length) {
+        contents = [{ role: "user", parts: [{ text: "Halo" }] }];
       }
 
       const geminiBody = {
@@ -80,6 +105,13 @@ export default {
           text = "";
         }
 
+        if (!text) {
+          // Bisa kejadian kalau diblokir safety / finishReason bukan STOP.
+          let reason = "";
+          try { reason = data.candidates[0].finishReason || ""; } catch (e) {}
+          return groqStyle("Gemini tidak mengembalikan teks" + (reason ? " (finishReason: " + reason + ")" : ""), 502);
+        }
+
         // --- Bungkus ulang jadi format Groq supaya index.html bisa baca ---
         return new Response(JSON.stringify({
           choices: [{ message: { role: "assistant", content: text } }],
@@ -97,12 +129,13 @@ export default {
   },
 };
 
-// Balas dalam bentuk yang sama dengan respons Groq, supaya index.html
-// (yang baca choices[0].message.content) tetap jalan walau ada error.
+// Balas dalam format yang index.html mengerti, baik saat sukses maupun error.
+// index.html membaca d.choices[0].message.content (untuk ditampilkan)
+// dan d.error.message (saat res tidak ok), jadi kita sediakan keduanya.
 function groqStyle(message, status) {
   return new Response(JSON.stringify({
-    choices: [{ message: { role: "assistant", content: "[Error] " + message } }],
-    error: message,
+    choices: [{ message: { role: "assistant", content: "⚠️ " + message } }],
+    error: { message: message, code: status },
   }), {
     status: status || 200,
     headers: { "Content-Type": "application/json" },
