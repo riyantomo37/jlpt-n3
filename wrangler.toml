@@ -1,0 +1,9 @@
+name = "jlpt-n3"
+main = "worker.js"
+compatibility_date = "2026-06-06"
+
+[assets]
+directory = "./"
+binding = "ASSETS"
+# Requests that don't match a static file fall through to the Worker,
+# which only handles /api/groq. index.html is served directly by assets.
