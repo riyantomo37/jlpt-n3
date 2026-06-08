@@ -2108,7 +2108,7 @@ async function loadLeaderboard(level) {
   var total=JLPT_TOTALS[lbCurrentLevel]||771;
   var color=JLPT_COLORS[lbCurrentLevel]||'var(--red)';
   var sub=document.getElementById('lb-subtitle');
-  if(sub) sub.textContent='Ranking '+lbCurrentLevel+' · Poin = Kata Hafal + Poin Ujian';
+  if(sub) sub.textContent='Ranking '+lbCurrentLevel+' · Poin = Kata + Kanji + Ujian';
   var tw=document.getElementById('lb-total-words');
   if(tw) tw.textContent=total;
   listEl.innerHTML='<div style="text-align:center;padding:32px;color:var(--mist)">⏳ Memuat...</div>';
@@ -2123,14 +2123,16 @@ async function loadLeaderboard(level) {
     snap.forEach(function(doc){
       var d=doc.data();
       // Points = mastered words for this level + exam points for this level
-      var wordPts = lbCurrentLevel==='N3'
+      var vocabPts = lbCurrentLevel==='N3'
         ? (d.totalMastered||0)
         : ((d.totalMasteredAll||{})[lbCurrentLevel]||0);
-      // Exam points are global — weight by level multiplier
-      var examPtsMult = {N5:1, N4:1, N3:1, N2:1, N1:1};
-      var examPts = (d.examPoints||0) * (examPtsMult[lbCurrentLevel]||1);
-      var lm = wordPts + Math.floor(examPts * 0.3); // 30% exam contribution
-      users.push(Object.assign({uid:doc.id},d,{lvlMastered:lm,wordPts:wordPts,examPts:Math.floor(examPts*0.3)}));
+      // Kanji flashcard hafal untuk level ini (sebelumnya tidak dihitung)
+      var kanjiPts = (d.kfMasteredAll||{})[lbCurrentLevel]||0;
+      var wordPts = vocabPts + kanjiPts;
+      // Exam points global, dihitung penuh (sama seperti di profil)
+      var examPts = d.examPoints||0;
+      var lm = wordPts + examPts;
+      users.push(Object.assign({uid:doc.id},d,{lvlMastered:lm,wordPts:wordPts,examPts:examPts}));
     });
     users.sort(function(a,b){return b.lvlMastered-a.lvlMastered;});
 
@@ -2257,11 +2259,14 @@ var EXAM_BONUS_80           = { N5:5,  N4:8,  N3:10, N2:15, N1:20 };
 function getTotalPoints(userData) {
   var wordPts = 0;
   if (userData) {
-    // N3
+    // N3 vocab
     wordPts += userData.totalMastered || 0;
-    // N4/N5
+    // N4/N5 vocab
     var tma = userData.totalMasteredAll || {};
     Object.keys(tma).forEach(function(lvl){ wordPts += tma[lvl]||0; });
+    // Kanji flashcard semua level
+    var kfa = userData.kfMasteredAll || {};
+    Object.keys(kfa).forEach(function(lvl){ wordPts += kfa[lvl]||0; });
   }
   var examPts = userData ? (userData.examPoints || 0) : 0;
   return wordPts + examPts;
@@ -3415,6 +3420,11 @@ async function saveToFirestore() {
     ['N5','N4','N2','N1'].forEach(function(lvl){
       tma[lvl] = Object.values(mastered[lvl]||{}).filter(Boolean).length;
     });
+    // Kanji flashcard hafal per level (sebelumnya tidak masuk ranking)
+    var kfa = {};
+    ['N5','N4','N3','N2','N1'].forEach(function(lvl){
+      kfa[lvl] = kfTotalForLevel(lvl);
+    });
     await db.collection('users').doc(currentUser.uid).set({
       mastered: mastered,
       kanjiReadMastered: kanjiReadMastered,
@@ -3428,6 +3438,7 @@ async function saveToFirestore() {
       email: currentUser.email || '',
       totalMastered: n3Total,
       totalMasteredAll: tma,
+      kfMasteredAll: kfa,
       lastSeen: firebase.firestore.FieldValue.serverTimestamp(),
     }, { merge: true });
     setSyncBadge('synced');
@@ -3575,6 +3586,15 @@ function countMastered(cat) {
   return Object.values(mastered[cat] || {}).filter(Boolean).length;
 }
 function totalAll() { return 242 + 389 + 140; }
+// Hitung total kanji flashcard yang hafal untuk SUATU level (dipakai ranking).
+// N3 simpan di kanjiReadMastered (key: kf_<cat>_<id>), N4/N5 di mastered['kf_'+level].
+function kfTotalForLevel(level) {
+  if (level === 'N3') {
+    return Object.values(kanjiReadMastered || {}).filter(Boolean).length;
+  }
+  var key = 'kf_' + level;
+  return Object.values(mastered[key] || {}).filter(Boolean).length;
+}
 function masteredAll() { return countMastered('kanji') + countMastered('vocab') + countMastered('grammar'); }
 
 function updateOverview() {
@@ -3777,7 +3797,7 @@ let kfRevealed = false;
 // Disimpan di dalam mastered yang sama tapi key berbeda: 'kf_' + id
 function kfIsMastered(id) {
   if (currentJLPT === 'N3') {
-    return !!kanjiReadMastered['kf_' + id];
+    return !!kanjiReadMastered['kf_' + kfCat + '_' + id];
   }
   // N4/N5 — use mastered object with level key
   var key = 'kf_' + currentJLPT;
@@ -3785,8 +3805,8 @@ function kfIsMastered(id) {
 }
 function kfSetMastered(id, val) {
   if (currentJLPT === 'N3') {
-    if (val) kanjiReadMastered['kf_' + id] = true;
-    else delete kanjiReadMastered['kf_' + id];
+    if (val) kanjiReadMastered['kf_' + kfCat + '_' + id] = true;
+    else delete kanjiReadMastered['kf_' + kfCat + '_' + id];
   } else {
     var key = 'kf_' + currentJLPT;
     if (!mastered[key]) mastered[key] = {};
@@ -3796,7 +3816,7 @@ function kfSetMastered(id, val) {
 }
 function kfCountMastered(cat) {
   if (currentJLPT === 'N3') {
-    return ALL_WORDS[cat].filter(function(w){ return kfIsMastered(w.id); }).length;
+    return ALL_WORDS[cat].filter(function(w){ return !!kanjiReadMastered['kf_' + cat + '_' + w.id]; }).length;
   }
   // N4/N5 — count by category
   var key = 'kf_' + currentJLPT;
@@ -3855,7 +3875,7 @@ function startKanjiFlash(cat) {
     words=all.filter(function(w){return (w.cat||'vocab')===cat;});
     if(!words.length) words=all; // fallback
   }
-  var kfKey=currentJLPT==='N3'?null:'kf_'+currentJLPT+'_'+cat;
+  var kfKey=currentJLPT==='N3'?null:'kf_'+currentJLPT;
   function isMast(w){
     if(currentJLPT==='N3') return !!kanjiReadMastered['kf_'+cat+'_'+w.id];
     return !!(mastered[kfKey]||{})[w.id];
