@@ -1054,6 +1054,7 @@ nav button.active {
   <button class="active" onclick="gotoScreen('overview')">🏠 Dashboard</button>
   <button onclick="gotoScreen('flashmenu')">📚 Flashcard</button>
   <button onclick="gotoScreen('kanjimenu')">漢字 Kanji</button>
+  <button onclick="gotoScreen('bunpomenu')">文法 Bunpo</button>
   <button onclick="gotoScreen('review')">📋 Semua Kata</button>
   <button onclick="gotoScreen('leaderboard')">🏆 Ranking</button>
   <button onclick="gotoScreen('exam')">📝 Ujian</button>
@@ -1322,6 +1323,45 @@ nav button.active {
     <button class="btn-continue" onclick="continueKanjiFlash()">▶ Lanjut Sesi</button>
     <button class="btn-back-home" onclick="exitKanjiFlash()">← Kembali</button>
   </div>
+</div>
+
+<!-- ====== BUNPO MENU (daftar stage) ====== -->
+<div id="screen-bunpomenu" class="screen">
+  <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px">
+    <span id="bm-level-badge" style="background:var(--red);color:white;padding:3px 12px;border-radius:20px;font-family:'DM Mono',monospace;font-size:12px;font-weight:700">N5</span>
+    <div class="section-title" style="margin:0">文法 Bunpo — Tata Bahasa</div>
+  </div>
+  <div style="font-size:13px;color:var(--mist);margin-bottom:18px">Belajar 3 pola tata bahasa per sesi: penjelasan, rumus, contoh, lalu kuis.</div>
+  <div id="bm-stage-list"></div>
+  <div id="bm-empty" style="display:none;background:white;border:1px solid var(--border);border-radius:16px;padding:36px 24px;text-align:center">
+    <div style="font-size:44px;margin-bottom:12px">📖</div>
+    <div style="font-weight:700;font-size:16px;margin-bottom:6px">Bunpo untuk level ini belum tersedia</div>
+    <div style="font-size:13px;color:var(--mist)">Saat ini Bunpo tersedia untuk N5 dan N4.</div>
+  </div>
+</div>
+
+<!-- ====== BUNPO STUDY (belajar pola) ====== -->
+<div id="screen-bunpostudy" class="screen">
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
+    <button onclick="gotoScreen('bunpomenu')" style="background:none;border:none;color:var(--mist);cursor:pointer;font-size:13px">← Kembali</button>
+    <span id="bs-progress" style="font-family:'DM Mono',monospace;font-size:12px;color:var(--mist)">1 / 3</span>
+  </div>
+  <div id="bs-card" style="background:white;border:1px solid var(--border);border-radius:16px;padding:24px"></div>
+  <div style="display:flex;gap:10px;margin-top:16px">
+    <button id="bs-prev" onclick="bunpoStudyPrev()" style="flex:1;padding:12px;border-radius:10px;border:1px solid var(--border);background:white;color:var(--ink);cursor:pointer;font-weight:600">← Sebelumnya</button>
+    <button id="bs-next" onclick="bunpoStudyNext()" style="flex:2;padding:12px;border-radius:10px;border:none;background:var(--red);color:white;cursor:pointer;font-weight:600">Lanjut →</button>
+  </div>
+</div>
+
+<!-- ====== BUNPO QUIZ (soal dari Gemini) ====== -->
+<div id="screen-bunpoquiz" class="screen">
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
+    <div style="font-weight:700">クイズ Kuis</div>
+    <span id="bq-progress" style="font-family:'DM Mono',monospace;font-size:12px;color:var(--mist)">Soal 1</span>
+  </div>
+  <div id="bq-loading" style="text-align:center;padding:40px;color:var(--mist);display:none">⏳ Menyiapkan soal...</div>
+  <div id="bq-card" style="background:white;border:1px solid var(--border);border-radius:16px;padding:24px"></div>
+  <div id="bq-actions" style="margin-top:16px"></div>
 </div>
 
 <!-- ====== LEADERBOARD ====== -->
@@ -2054,6 +2094,7 @@ const KANJI_DATA = [
 // STATE — tambah kanji read progress
 // ============================================================
 let mastered = { kanji:{}, vocab:{}, grammar:{}, N5:{}, N4:{}, N2:{}, N1:{}, kf_N3:{}, kf_N4:{}, kf_N5:{} };
+var bunpoProgress = {};  // {N5: jumlahStageSelesai, N4: ...}
 let kanjiReadMastered = {}; // separate progress for kanji reading
 let todayDate = new Date().toDateString();
 let todayCount = 0;
@@ -3400,6 +3441,7 @@ async function loadFromFirestore() {
         if (data.kfMastered.N5) mastered['kf_N5'] = data.kfMastered.N5;
       }
       if (data.kanjiReadMastered) kanjiReadMastered = data.kanjiReadMastered;
+      if (data.bunpoProgress) bunpoProgress = data.bunpoProgress;
       if (data.streak)            streak            = data.streak;
       if (data.lastStudyDate)     lastStudyDate     = data.lastStudyDate;
       if (data.todayDate === new Date().toDateString()) {
@@ -3442,6 +3484,7 @@ async function saveToFirestore() {
       totalMastered: n3Total,
       totalMasteredAll: tma,
       kfMasteredAll: kfa,
+      bunpoProgress: bunpoProgress,
       lastSeen: firebase.firestore.FieldValue.serverTimestamp(),
     }, { merge: true });
     setSyncBadge('synced');
@@ -3515,16 +3558,375 @@ function updateCountdown() {
 // ============================================================
 // SCREEN NAVIGATION
 // ============================================================
+// ============================================================
+// BUNPŌ (文法) — Data tata bahasa terstruktur
+// Tiap pola: pattern, arti, penjelasan panjang, rumus, contoh[], 
+// Soal di-generate Gemini saat sesi kuis.
+// Dibagi per stage = 3 pola.
+// ============================================================
+var BUNPO_DATA = {
+  N5: [
+    {
+      id:'n5b_1', pattern:'～は～です', arti:'~ adalah ~',
+      penjelasan:'Pola paling dasar dalam bahasa Jepang untuk menyatakan "A adalah B". 「は」(dibaca "wa") adalah partikel topik yang menandai subjek pembicaraan, dan 「です」adalah kata kerja bantu sopan yang berarti "adalah". Pola ini dipakai untuk memperkenalkan diri, menyebut identitas, profesi, kewarganegaraan, dan sifat suatu benda. Bentuk 「です」membuat kalimat menjadi sopan (teineigo), cocok dipakai kepada siapa saja.',
+      rumus:'[Topik] は [Keterangan] です',
+      contoh:[
+        {jp:'わたしは がくせいです。', rom:'watashi wa gakusei desu.', id:'Saya adalah pelajar.'},
+        {jp:'これは ほんです。', rom:'kore wa hon desu.', id:'Ini adalah buku.'},
+        {jp:'たなかさんは せんせいです。', rom:'Tanaka-san wa sensei desu.', id:'Tuan Tanaka adalah guru.'}
+      ]
+    },
+    {
+      id:'n5b_2', pattern:'～は～ではありません', arti:'~ bukan ~',
+      penjelasan:'Bentuk negatif (penyangkalan) dari 「～です」. Untuk mengatakan "A bukan B", 「です」diubah menjadi 「ではありません」. Dalam percakapan sehari-hari yang lebih santai, 「では」sering disingkat menjadi 「じゃ」, sehingga menjadi 「じゃありません」. Keduanya sama-sama sopan; 「じゃありません」terdengar sedikit lebih kasual.',
+      rumus:'[Topik] は [Keterangan] ではありません／じゃありません',
+      contoh:[
+        {jp:'わたしは せんせいではありません。', rom:'watashi wa sensei dewa arimasen.', id:'Saya bukan guru.'},
+        {jp:'これは わたしの かさじゃありません。', rom:'kore wa watashi no kasa ja arimasen.', id:'Ini bukan payung saya.'},
+        {jp:'かれは にほんじんじゃありません。', rom:'kare wa nihonjin ja arimasen.', id:'Dia bukan orang Jepang.'}
+      ]
+    },
+    {
+      id:'n5b_3', pattern:'～か', arti:'partikel tanya (apakah ~?)',
+      penjelasan:'Partikel 「か」diletakkan di akhir kalimat untuk mengubahnya menjadi pertanyaan. Tidak perlu mengubah urutan kata seperti dalam bahasa Inggris — cukup tambahkan 「か」di akhir. Dalam tulisan, tanda tanya (?) biasanya tidak wajib karena 「か」sudah menandakan pertanyaan. Nada bicara naik di akhir saat diucapkan.',
+      rumus:'[Kalimat pernyataan] + か',
+      contoh:[
+        {jp:'あなたは がくせいですか。', rom:'anata wa gakusei desu ka.', id:'Apakah kamu pelajar?'},
+        {jp:'これは ほんですか。', rom:'kore wa hon desu ka.', id:'Apakah ini buku?'},
+        {jp:'たなかさんは せんせいですか。', rom:'Tanaka-san wa sensei desu ka.', id:'Apakah Tuan Tanaka seorang guru?'}
+      ]
+    },
+    {
+      id:'n5b_4', pattern:'～の～', arti:'partikel kepemilikan (~nya ~)',
+      penjelasan:'Partikel 「の」menghubungkan dua kata benda, paling sering untuk menyatakan kepemilikan atau hubungan, seperti "milik" atau "-nya". Kata benda pemilik diletakkan sebelum 「の」, dan benda yang dimiliki sesudahnya. Selain kepemilikan, 「の」juga dipakai untuk menyatakan asal, jenis, atau atribut suatu benda.',
+      rumus:'[Pemilik] の [Benda]',
+      contoh:[
+        {jp:'わたしの ほんです。', rom:'watashi no hon desu.', id:'Ini buku saya.'},
+        {jp:'たなかさんの くるまです。', rom:'Tanaka-san no kuruma desu.', id:'Ini mobil Tuan Tanaka.'},
+        {jp:'にほんごの ほんです。', rom:'nihongo no hon desu.', id:'Ini buku bahasa Jepang.'}
+      ]
+    },
+    {
+      id:'n5b_5', pattern:'～も', arti:'juga',
+      penjelasan:'Partikel 「も」berarti "juga" dan menggantikan partikel 「は」, 「が」, atau 「を」ketika menyatakan bahwa sesuatu memiliki sifat atau melakukan hal yang sama dengan yang disebut sebelumnya. Dengan 「も」, kita tidak mengulang informasi tetapi menambahkan subjek/objek yang serupa.',
+      rumus:'[Topik] も [Keterangan] です',
+      contoh:[
+        {jp:'わたしも がくせいです。', rom:'watashi mo gakusei desu.', id:'Saya juga pelajar.'},
+        {jp:'これも ほんです。', rom:'kore mo hon desu.', id:'Ini juga buku.'},
+        {jp:'かれも にほんじんです。', rom:'kare mo nihonjin desu.', id:'Dia juga orang Jepang.'}
+      ]
+    },
+    {
+      id:'n5b_6', pattern:'～を～ます', arti:'partikel objek + kata kerja',
+      penjelasan:'Partikel 「を」(dibaca "o") menandai objek langsung dari sebuah kata kerja — yaitu benda yang dikenai tindakan. Kata kerja diletakkan di akhir kalimat, dalam bentuk sopan 「～ます」. Ini adalah pola dasar kalimat dengan kata kerja transitif (kata kerja yang memerlukan objek), seperti makan, minum, membaca.',
+      rumus:'[Objek] を [Kata Kerja]ます',
+      contoh:[
+        {jp:'ごはんを たべます。', rom:'gohan o tabemasu.', id:'(Saya) makan nasi.'},
+        {jp:'みずを のみます。', rom:'mizu o nomimasu.', id:'(Saya) minum air.'},
+        {jp:'ほんを よみます。', rom:'hon o yomimasu.', id:'(Saya) membaca buku.'}
+      ]
+    }
+  ],
+  N4: [
+    {
+      id:'n4b_1', pattern:'～ています', arti:'sedang ~ / keadaan berlangsung',
+      penjelasan:'Pola 「～ています」dibentuk dari bentuk-te kata kerja + 「います」. Punya dua makna utama: (1) tindakan yang sedang berlangsung saat ini ("sedang makan"), dan (2) keadaan/kebiasaan yang berlanjut ("sudah menikah", "tinggal di Tokyo"). Konteks menentukan makna mana yang dimaksud.',
+      rumus:'[Kata Kerja bentuk-te] + います',
+      contoh:[
+        {jp:'いま ごはんを たべています。', rom:'ima gohan o tabete imasu.', id:'Sekarang sedang makan nasi.'},
+        {jp:'とうきょうに すんでいます。', rom:'Tōkyō ni sunde imasu.', id:'(Saya) tinggal di Tokyo.'},
+        {jp:'かれは けっこんしています。', rom:'kare wa kekkon shite imasu.', id:'Dia sudah menikah.'}
+      ]
+    },
+    {
+      id:'n4b_2', pattern:'～たことがあります', arti:'pernah ~',
+      penjelasan:'Pola untuk menyatakan pengalaman — pernah melakukan sesuatu di masa lalu. Dibentuk dari kata kerja bentuk-ta (bentuk lampau biasa) + 「ことがあります」. Berbeda dari sekadar bentuk lampau, pola ini menekankan "pengalaman pernah", bukan kejadian spesifik yang baru terjadi.',
+      rumus:'[Kata Kerja bentuk-ta] + ことがあります',
+      contoh:[
+        {jp:'にほんに いったことがあります。', rom:'Nihon ni itta koto ga arimasu.', id:'(Saya) pernah pergi ke Jepang.'},
+        {jp:'すしを たべたことがあります。', rom:'sushi o tabeta koto ga arimasu.', id:'(Saya) pernah makan sushi.'},
+        {jp:'そのえいがを みたことがあります。', rom:'sono eiga o mita koto ga arimasu.', id:'(Saya) pernah menonton film itu.'}
+      ]
+    },
+    {
+      id:'n4b_3', pattern:'～なければなりません', arti:'harus ~',
+      penjelasan:'Pola untuk menyatakan kewajiban atau keharusan ("harus melakukan ~"). Dibentuk dari bentuk-nai kata kerja, hilangkan 「ない」, lalu tambahkan 「なければなりません」. Dalam percakapan santai sering disingkat menjadi 「～なきゃ」. Pola ini menekankan bahwa tidak melakukannya bukan pilihan.',
+      rumus:'[Kata Kerja bentuk-nai tanpa ない] + なければなりません',
+      contoh:[
+        {jp:'べんきょうしなければなりません。', rom:'benkyō shinakereba narimasen.', id:'(Saya) harus belajar.'},
+        {jp:'くすりを のまなければなりません。', rom:'kusuri o nomanakereba narimasen.', id:'(Saya) harus minum obat.'},
+        {jp:'はやく いかなければなりません。', rom:'hayaku ikanakereba narimasen.', id:'(Saya) harus pergi cepat-cepat.'}
+      ]
+    },
+    {
+      id:'n4b_4', pattern:'～てもいいです', arti:'boleh ~',
+      penjelasan:'Pola untuk memberi atau meminta izin ("boleh melakukan ~"). Dibentuk dari kata kerja bentuk-te + 「もいいです」. Untuk bertanya apakah boleh, tambahkan 「か」di akhir. Jawaban "ya boleh" bisa 「はい、いいです」, sedangkan untuk melarang dipakai pola lain (～てはいけません).',
+      rumus:'[Kata Kerja bentuk-te] + もいいです',
+      contoh:[
+        {jp:'ここに すわってもいいですか。', rom:'koko ni suwatte mo ii desu ka.', id:'Bolehkah (saya) duduk di sini?'},
+        {jp:'しゃしんを とってもいいです。', rom:'shashin o totte mo ii desu.', id:'Boleh mengambil foto.'},
+        {jp:'みずを のんでもいいですか。', rom:'mizu o nonde mo ii desu ka.', id:'Bolehkah (saya) minum air?'}
+      ]
+    },
+    {
+      id:'n4b_5', pattern:'～てはいけません', arti:'tidak boleh ~ / dilarang ~',
+      penjelasan:'Pola untuk melarang ("tidak boleh ~"). Dibentuk dari kata kerja bentuk-te + 「はいけません」. Ini larangan yang cukup tegas, sering dipakai untuk aturan, rambu, atau peringatan. Lawan dari 「～てもいいです」(boleh).',
+      rumus:'[Kata Kerja bentuk-te] + はいけません',
+      contoh:[
+        {jp:'ここで たばこを すってはいけません。', rom:'koko de tabako o sutte wa ikemasen.', id:'Tidak boleh merokok di sini.'},
+        {jp:'しゃしんを とってはいけません。', rom:'shashin o totte wa ikemasen.', id:'Dilarang mengambil foto.'},
+        {jp:'はいってはいけません。', rom:'haitte wa ikemasen.', id:'Dilarang masuk.'}
+      ]
+    },
+    {
+      id:'n4b_6', pattern:'～つもりです', arti:'berniat / berencana ~',
+      penjelasan:'Pola untuk menyatakan niat atau rencana yang sudah dipikirkan ("berniat melakukan ~"). Dibentuk dari kata kerja bentuk kamus + 「つもりです」. Menunjukkan tekad pribadi yang cukup kuat, berbeda dari sekadar keinginan. Untuk niat negatif: kata kerja bentuk-nai + 「つもりです」.',
+      rumus:'[Kata Kerja bentuk kamus] + つもりです',
+      contoh:[
+        {jp:'らいねん にほんへ いくつもりです。', rom:'rainen Nihon e iku tsumori desu.', id:'(Saya) berniat pergi ke Jepang tahun depan.'},
+        {jp:'あした べんきょうするつもりです。', rom:'ashita benkyō suru tsumori desu.', id:'(Saya) berencana belajar besok.'},
+        {jp:'なにも かわないつもりです。', rom:'nani mo kawanai tsumori desu.', id:'(Saya) berniat tidak membeli apa-apa.'}
+      ]
+    }
+  ]
+};
+
+// ============================================================
+// BUNPŌ — Logic (menu stage, study, quiz via Gemini, progres)
+// ============================================================
+var STAGE_SIZE = 3;            // 3 pola per sesi
+var bunpoState = { stageIdx:0, patternIdx:0, patterns:[], quiz:[], quizIdx:0, score:0 };
+// Progres: bunpoProgress[level] = jumlah stage selesai. Disimpan ke Firestore.
+
+function bunpoStagesFor(level){
+  var d = BUNPO_DATA[level] || [];
+  var stages = [];
+  for (var i=0; i<d.length; i+=STAGE_SIZE){
+    stages.push(d.slice(i, i+STAGE_SIZE));
+  }
+  return stages;
+}
+
+function updateBunpoMenu(){
+  var color = JLPT_COLORS[currentJLPT] || 'var(--red)';
+  var badge = document.getElementById('bm-level-badge');
+  if (badge){ badge.textContent = currentJLPT; badge.style.background = color; }
+  var list = document.getElementById('bm-stage-list');
+  var empty = document.getElementById('bm-empty');
+  var stages = bunpoStagesFor(currentJLPT);
+  if (!stages.length){
+    if (list) list.innerHTML = '';
+    if (empty) empty.style.display = '';
+    return;
+  }
+  if (empty) empty.style.display = 'none';
+  var done = (bunpoProgress[currentJLPT] || 0);
+  var html = '';
+  for (var i=0;i<stages.length;i++){
+    var unlocked = (i <= done);   // stage 0 selalu terbuka; berikutnya terbuka jika stage sebelumnya selesai
+    var isDone = (i < done);
+    var patterns = stages[i].map(function(x){return x.pattern;}).join(' · ');
+    var status = isDone ? '✅ Selesai' : (unlocked ? '▶ Mulai' : '🔒 Terkunci');
+    var bg = unlocked ? 'white' : '#f0f0f0';
+    var opacity = unlocked ? '1' : '0.55';
+    html += '<div style="background:'+bg+';opacity:'+opacity+';border:1px solid var(--border);border-radius:14px;padding:16px;margin-bottom:12px">'
+      + '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">'
+      + '<div style="font-weight:700;font-size:15px;color:'+color+'">Sesi '+(i+1)+'</div>'
+      + '<div style="font-size:12px;color:var(--mist)">'+status+'</div></div>'
+      + '<div style="font-size:13px;color:var(--ink);margin-bottom:12px">'+patterns+'</div>'
+      + (unlocked
+          ? '<button onclick="startBunpoStage('+i+')" style="width:100%;padding:10px;border-radius:10px;border:none;background:'+color+';color:white;cursor:pointer;font-weight:600">'+(isDone?'Pelajari Lagi':'Mulai Sesi')+'</button>'
+          : '<button disabled style="width:100%;padding:10px;border-radius:10px;border:1px solid var(--border);background:#e8e8e8;color:#aaa;cursor:not-allowed;font-weight:600">Selesaikan sesi sebelumnya dulu</button>')
+      + '</div>';
+  }
+  if (list) list.innerHTML = html;
+}
+
+function startBunpoStage(idx){
+  var stages = bunpoStagesFor(currentJLPT);
+  if (idx < 0 || idx >= stages.length) return;
+  bunpoState.stageIdx = idx;
+  bunpoState.patterns = stages[idx];
+  bunpoState.patternIdx = 0;
+  bunpoState.quiz = [];
+  bunpoState.quizIdx = 0;
+  bunpoState.score = 0;
+  renderBunpoStudy();
+  gotoScreenRaw('bunpostudy');
+}
+
+function renderBunpoStudy(){
+  var p = bunpoState.patterns[bunpoState.patternIdx];
+  var color = JLPT_COLORS[currentJLPT] || 'var(--red)';
+  var prog = document.getElementById('bs-progress');
+  if (prog) prog.textContent = (bunpoState.patternIdx+1)+' / '+bunpoState.patterns.length;
+  var contohHtml = p.contoh.map(function(c){
+    return '<div style="background:#f8f8fb;border-radius:10px;padding:12px;margin-bottom:8px">'
+      + '<div style="font-size:17px;font-weight:600;margin-bottom:3px">'+c.jp+'</div>'
+      + '<div style="font-family:\'DM Mono\',monospace;font-size:12px;color:var(--mist);margin-bottom:3px">'+c.rom+'</div>'
+      + '<div style="font-size:13px;color:var(--ink)">'+c.id+'</div></div>';
+  }).join('');
+  var card = document.getElementById('bs-card');
+  if (card) card.innerHTML =
+      '<div style="font-size:24px;font-weight:800;color:'+color+';margin-bottom:4px">'+p.pattern+'</div>'
+    + '<div style="font-size:14px;color:var(--ink);margin-bottom:16px">'+p.arti+'</div>'
+    + '<div style="font-size:13px;line-height:1.7;color:var(--ink);margin-bottom:16px">'+p.penjelasan+'</div>'
+    + '<div style="background:'+color+';color:white;border-radius:10px;padding:12px 14px;margin-bottom:16px">'
+    + '<div style="font-size:11px;opacity:.8;margin-bottom:4px">RUMUS</div>'
+    + '<div style="font-weight:700;font-size:15px">'+p.rumus+'</div></div>'
+    + '<div style="font-size:12px;color:var(--mist);margin-bottom:8px">CONTOH KALIMAT</div>'
+    + contohHtml;
+  // tombol terakhir -> mulai kuis
+  var nextBtn = document.getElementById('bs-next');
+  if (nextBtn) nextBtn.textContent = (bunpoState.patternIdx === bunpoState.patterns.length-1) ? 'Mulai Kuis ✏️' : 'Lanjut →';
+  var prevBtn = document.getElementById('bs-prev');
+  if (prevBtn) prevBtn.style.visibility = (bunpoState.patternIdx===0) ? 'hidden' : 'visible';
+}
+
+function bunpoStudyPrev(){
+  if (bunpoState.patternIdx > 0){ bunpoState.patternIdx--; renderBunpoStudy(); }
+}
+function bunpoStudyNext(){
+  if (bunpoState.patternIdx < bunpoState.patterns.length-1){
+    bunpoState.patternIdx++; renderBunpoStudy();
+  } else {
+    startBunpoQuiz();
+  }
+}
+
+// ── Kuis: generate soal dari Gemini via /api/groq ──
+async function startBunpoQuiz(){
+  gotoScreenRaw('bunpoquiz');
+  document.getElementById('bq-loading').style.display = 'block';
+  document.getElementById('bq-card').innerHTML = '';
+  document.getElementById('bq-actions').innerHTML = '';
+  bunpoState.quizIdx = 0; bunpoState.score = 0; bunpoState.quiz = [];
+
+  var patternList = bunpoState.patterns.map(function(p){
+    return p.pattern + ' (' + p.arti + ')';
+  }).join(', ');
+
+  var prompt = 'Buatkan 5 soal pilihan ganda bahasa Jepang JLPT '+currentJLPT
+    + ' untuk menguji pemahaman pola tata bahasa berikut: '+patternList+'. '
+    + 'Setiap soal berupa kalimat dengan satu bagian rumpang, dan 4 pilihan jawaban. '
+    + 'Jawaban dan penjelasan singkat dalam Bahasa Indonesia. '
+    + 'WAJIB balas HANYA JSON valid tanpa teks lain, tanpa markdown, format: '
+    + '{"soal":[{"q":"kalimat dengan ___","opsi":["a","b","c","d"],"jawab":0,"penjelasan":"..."}]}. '
+    + 'jawab = indeks (0-3) opsi yang benar.';
+
+  try {
+    var res = await fetch('/api/groq', {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({
+        messages:[
+          {role:'system', content:'Kamu pembuat soal JLPT. Selalu balas JSON valid saja.'},
+          {role:'user', content: prompt}
+        ],
+        temperature:0.7
+      })
+    });
+    var d = await res.json();
+    var txt = (d.choices && d.choices[0] && d.choices[0].message.content) || '';
+    txt = txt.replace(/```json/gi,'').replace(/```/g,'').trim();
+    var parsed = JSON.parse(txt);
+    bunpoState.quiz = (parsed.soal||[]).filter(function(q){return q.opsi && q.opsi.length>=2;});
+  } catch(e){
+    bunpoState.quiz = [];
+  }
+  document.getElementById('bq-loading').style.display = 'none';
+  if (!bunpoState.quiz.length){
+    document.getElementById('bq-card').innerHTML =
+      '<div style="text-align:center;color:var(--mist)">⚠️ Gagal memuat soal. Periksa koneksi atau coba lagi.</div>';
+    document.getElementById('bq-actions').innerHTML =
+      '<button onclick="startBunpoQuiz()" style="width:100%;padding:12px;border-radius:10px;border:none;background:var(--red);color:white;cursor:pointer;font-weight:600;margin-top:12px">Coba Lagi</button>';
+    return;
+  }
+  renderBunpoQuiz();
+}
+
+function renderBunpoQuiz(){
+  var q = bunpoState.quiz[bunpoState.quizIdx];
+  var color = JLPT_COLORS[currentJLPT] || 'var(--red)';
+  document.getElementById('bq-progress').textContent = 'Soal '+(bunpoState.quizIdx+1)+' / '+bunpoState.quiz.length;
+  var opsiHtml = q.opsi.map(function(o,i){
+    return '<button onclick="answerBunpoQuiz('+i+')" data-i="'+i+'" class="bq-opt" style="display:block;width:100%;text-align:left;padding:12px 14px;margin-bottom:8px;border-radius:10px;border:1px solid var(--border);background:white;color:var(--ink);cursor:pointer;font-size:14px">'+o+'</button>';
+  }).join('');
+  document.getElementById('bq-card').innerHTML =
+      '<div style="font-size:16px;font-weight:600;margin-bottom:16px;line-height:1.6">'+q.q+'</div>'+opsiHtml;
+  document.getElementById('bq-actions').innerHTML = '';
+}
+
+function answerBunpoQuiz(choice){
+  var q = bunpoState.quiz[bunpoState.quizIdx];
+  var correct = q.jawab;
+  if (choice === correct) bunpoState.score++;
+  document.querySelectorAll('.bq-opt').forEach(function(btn){
+    var i = parseInt(btn.getAttribute('data-i'));
+    btn.disabled = true;
+    if (i === correct){ btn.style.background='#d4f5dd'; btn.style.borderColor='#3cb371'; }
+    else if (i === choice){ btn.style.background='#fde0e0'; btn.style.borderColor='var(--red)'; }
+  });
+  var expl = q.penjelasan ? '<div style="background:#f8f8fb;border-radius:10px;padding:12px;margin-top:12px;font-size:13px;line-height:1.6"><b>Penjelasan:</b> '+q.penjelasan+'</div>' : '';
+  var last = (bunpoState.quizIdx === bunpoState.quiz.length-1);
+  document.getElementById('bq-actions').innerHTML = expl +
+    '<button onclick="'+(last?'finishBunpoQuiz()':'nextBunpoQuiz()')+'" style="width:100%;padding:12px;border-radius:10px;border:none;background:var(--red);color:white;cursor:pointer;font-weight:600;margin-top:12px">'+(last?'Selesai':'Soal Berikutnya →')+'</button>';
+}
+
+function nextBunpoQuiz(){
+  bunpoState.quizIdx++;
+  renderBunpoQuiz();
+}
+
+function finishBunpoQuiz(){
+  var color = JLPT_COLORS[currentJLPT] || 'var(--red)';
+  var total = bunpoState.quiz.length;
+  var score = bunpoState.score;
+  var passed = (score >= Math.ceil(total*0.6));
+  // Tandai stage selesai jika lulus & ini stage baru
+  if (passed){
+    var done = bunpoProgress[currentJLPT] || 0;
+    if (bunpoState.stageIdx === done){
+      bunpoProgress[currentJLPT] = done + 1;
+      if (typeof saveToFirestore === 'function') saveToFirestore();
+    }
+  }
+  var stages = bunpoStagesFor(currentJLPT);
+  var hasNext = (bunpoState.stageIdx + 1) < stages.length;
+  document.getElementById('bq-progress').textContent = 'Selesai';
+  document.getElementById('bq-card').innerHTML =
+      '<div style="text-align:center">'
+    + '<div style="font-size:44px;margin-bottom:10px">'+(passed?'🎉':'💪')+'</div>'
+    + '<div style="font-weight:800;font-size:20px;color:'+color+';margin-bottom:6px">Skor: '+score+' / '+total+'</div>'
+    + '<div style="font-size:14px;color:var(--mist)">'+(passed?'Bagus! Sesi ini selesai.':'Belum lulus (min. 60%). Pelajari lagi yuk.')+'</div></div>';
+  // Pilihan akhir: lanjut sesi berikutnya / pelajari lagi sesi ini
+  var actions = '';
+  if (passed && hasNext){
+    actions += '<button onclick="startBunpoStage('+(bunpoState.stageIdx+1)+')" style="width:100%;padding:12px;border-radius:10px;border:none;background:'+color+';color:white;cursor:pointer;font-weight:600;margin-top:12px">Lanjut Sesi Berikutnya →</button>';
+  }
+  actions += '<button onclick="startBunpoStage('+bunpoState.stageIdx+')" style="width:100%;padding:12px;border-radius:10px;border:1px solid var(--border);background:white;color:var(--ink);cursor:pointer;font-weight:600;margin-top:10px">Pelajari Lagi Sesi Ini</button>';
+  actions += '<button onclick="gotoScreen(\'bunpomenu\')" style="width:100%;padding:12px;border-radius:10px;border:none;background:transparent;color:var(--mist);cursor:pointer;font-weight:600;margin-top:6px">Kembali ke Daftar Sesi</button>';
+  document.getElementById('bq-actions').innerHTML = actions;
+}
+
+// gotoScreen versi mentah (tanpa nav highlight khusus) untuk sub-screen bunpo
+function gotoScreenRaw(name){
+  document.querySelectorAll('.screen').forEach(function(s){s.classList.remove('active');});
+  var el = document.getElementById('screen-'+name);
+  if (el) el.classList.add('active');
+}
+
 function gotoScreen(name) {
   document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
   document.getElementById('screen-' + name).classList.add('active');
   document.querySelectorAll('nav button').forEach((b, i) => {
-    b.classList.toggle('active', ['overview','flashmenu','kanjimenu','review','leaderboard','exam','ai'][i] === name);
+    b.classList.toggle('active', ['overview','flashmenu','kanjimenu','bunpomenu','review','leaderboard','exam','ai'][i] === name);
   });
   if (name === 'overview') updateOverview();
   if (name === 'flashmenu') updateFlashMenu();
   if (name === 'kanjimenu') updateKanjiMenu();
   if (name === 'review') { renderReview('all'); } else if (name === '___DUMMY___') renderReview('all');
+  if (name === 'bunpomenu') updateBunpoMenu();
 }
 
 function updateFlashMenu() {
