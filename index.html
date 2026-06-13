@@ -1108,6 +1108,14 @@ nav button.active {
       <div style="background:rgba(26,26,46,.08);border-radius:3px;height:5px;overflow:hidden"><div id="bar-keiyou" style="height:100%;background:var(--jade);border-radius:3px;width:0%;transition:width .6s"></div></div>
     </div>
   </div>
+
+  <div style="display:flex;justify-content:space-between;align-items:center;margin:24px 0 12px">
+    <div class="section-title" style="margin:0">🏆 Ranking <span id="ov-lb-level">N3</span></div>
+    <span onclick="gotoScreen('leaderboard')" style="font-size:12px;color:var(--indigo);cursor:pointer;font-weight:600">Lihat semua ›</span>
+  </div>
+  <div id="ov-lb-list" style="display:flex;flex-direction:column;gap:8px">
+    <div style="text-align:center;padding:16px;color:var(--mist);font-size:13px">Memuat ranking…</div>
+  </div>
 </div>
 
 <!-- ====== FLASHCARD MENU SCREEN ====== -->
@@ -1368,6 +1376,7 @@ nav button.active {
     <button class="filter-btn" id="lb-filter-N4" onclick="loadLeaderboard('N4')">N4</button>
     <button class="filter-btn" id="lb-filter-N2" onclick="loadLeaderboard('N2')">N2</button>
     <button class="filter-btn" id="lb-filter-N1" onclick="loadLeaderboard('N1')">N1</button>
+    <button class="filter-btn" id="lb-filter-SSW" onclick="loadLeaderboard('SSW')" style="white-space:nowrap">SSW食品</button>
     <button onclick="loadLeaderboard(lbCurrentLevel)" style="margin-left:auto;border:1px solid var(--border);background:white;padding:5px 12px;border-radius:8px;cursor:pointer;font-size:12px;color:var(--mist)">↻</button>
   </div>
 
@@ -2141,7 +2150,7 @@ async function loadLeaderboard(level) {
   var total=JLPT_TOTALS[lbCurrentLevel]||771;
   var color=JLPT_COLORS[lbCurrentLevel]||'var(--red)';
   var sub=document.getElementById('lb-subtitle');
-  if(sub) sub.textContent='Ranking '+lbCurrentLevel+' · Poin = Kata + Kanji + Ujian';
+  if(sub) sub.textContent='Ranking '+(lbCurrentLevel==='SSW'?'SSW Pengolahan Makanan':lbCurrentLevel)+' · Poin = Kata + Kanji + Ujian';
   var tw=document.getElementById('lb-total-words');
   if(tw) tw.textContent=total;
   listEl.innerHTML='<div style="text-align:center;padding:32px;color:var(--mist)">⏳ Memuat...</div>';
@@ -2214,6 +2223,8 @@ async function loadLeaderboard(level) {
 
 async function loadDashboardLeaderboard() {
   var lbEl = document.getElementById('ov-lb-list');
+  var lvlLabel = document.getElementById('ov-lb-level');
+  if (lvlLabel) lvlLabel.textContent = currentJLPT==='SSW' ? 'Pengolahan Makanan' : currentJLPT;
   if (!lbEl || !db) return;
   var total = getCurrentTotal();
   var color = JLPT_COLORS[currentJLPT] || 'var(--indigo)';
@@ -4018,7 +4029,7 @@ function gotoScreen(name) {
 function updateFlashMenu() {
   var color=JLPT_COLORS[currentJLPT]||'var(--red)';
   var badge=document.getElementById('fm-level-badge');
-  if(badge){badge.textContent=currentJLPT;badge.style.background=color;}
+  if(badge){badge.textContent=currentJLPT==='SSW'?'SSW 食品':currentJLPT;badge.style.background=color;badge.title=levelName();}
 
   var hasCats = currentJLPT==='N3' || (JLPT_DATA[currentJLPT]&&JLPT_DATA[currentJLPT].some(function(w){return w.cat==='kanji';}));
   var n3sec=document.getElementById('fm-n3-section');
@@ -4070,7 +4081,8 @@ function updateFlashMenu() {
       ];
       var lvlMastS=mastered['SSW']||{};
       var allS=JLPT_DATA['SSW']||[];
-      var html='<div style=\"font-weight:700;font-size:18px;margin-bottom:4px;color:'+color+'\">SSW 飲食料品製造業</div>'
+      var html='<div style=\"font-weight:700;font-size:18px;margin-bottom:2px;color:'+color+'\">SSW 飲食料品製造業</div>'
+        +'<div style=\"font-size:12px;color:var(--mist);margin-bottom:2px\">Pengolahan Makanan & Minuman</div>'
         +'<div style=\"font-size:13px;color:var(--mist);margin-bottom:18px\">'+done2+' / '+total2+' kata hafal · '+pct2+'%</div>'
         +'<div style=\"display:grid;grid-template-columns:repeat(2,1fr);gap:12px\">';
       sswTopics.forEach(function(t){
@@ -4510,7 +4522,7 @@ function kfCountMastered(cat) {
 function updateKanjiMenu() {
   var color = JLPT_COLORS[currentJLPT] || 'var(--red)';
   var badge = document.getElementById('km-level-badge');
-  if (badge) { badge.textContent=currentJLPT; badge.style.background=color; }
+  if (badge) { badge.textContent=currentJLPT==='SSW'?'SSW 食品':currentJLPT; badge.style.background=color; badge.title=levelName(); }
 
   var n3sec  = document.getElementById('km-n3-section');
   var flatSec = document.getElementById('km-flat-section');
@@ -5052,6 +5064,11 @@ const LEVELS = [
   {lv:6,min:650,max:771, jp:'達人',        id:'Ahli',         cls:'lv6'},
   {lv:7,min:771,max:771, jp:'満点マスター',id:'Master',       cls:'lv7'},
 ];
+function levelName(lv){
+  var l = lv || currentJLPT;
+  if(l==='SSW') return 'SSW 飲食料品製造業 (Pengolahan Makanan)';
+  return 'JLPT '+l;
+}
 function getLevel(n){
   for(var i=LEVELS.length-1;i>=0;i--) if(n>=LEVELS[i].min) return LEVELS[i];
   return LEVELS[0];
