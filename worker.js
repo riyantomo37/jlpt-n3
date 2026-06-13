@@ -72,7 +72,12 @@ export default {
         contents: contents,
         generationConfig: {
           temperature: typeof payload.temperature === "number" ? payload.temperature : 0.7,
-          maxOutputTokens: payload.max_tokens || 1024,
+          // Plafon tinggi supaya jawaban tidak terpotong. Model gemini-2.5-flash
+          // mendukung hingga 65535; 8192 sudah sangat lega untuk app ini.
+          maxOutputTokens: payload.max_tokens || 8192,
+          // PENTING: matikan "thinking". Pada gemini-2.5-flash, token thinking
+          // dihitung terhadap maxOutputTokens dan sering bikin jawaban kosong/terpotong.
+          thinkingConfig: { thinkingBudget: 0 },
         },
       };
       if (systemParts.length) {
