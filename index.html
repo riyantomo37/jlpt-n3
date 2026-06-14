@@ -106,6 +106,11 @@ nav button.active {
   margin-bottom:6px;
 }
 .stat-card .sub { font-size:11px; color:var(--mist); text-transform:uppercase; letter-spacing:1px; }
+.stats-mini { display:grid; grid-template-columns:repeat(3,1fr); gap:8px; margin-bottom:24px; }
+.mini-card { background:white; border:1px solid var(--border); border-radius:10px; padding:12px 8px; text-align:center; box-shadow:var(--shadow); }
+.mini-num { font-family:'DM Mono',monospace; font-size:20px; line-height:1; margin-bottom:4px; font-weight:700; }
+.mini-lbl { font-size:10px; color:var(--mist); text-transform:uppercase; letter-spacing:.5px; }
+@media (max-width:360px){ .mini-num{font-size:17px;} .stats-mini{gap:6px;} }
 .stat-card .bar-wrap { background:rgba(26,26,46,.08); border-radius:3px; height:5px; margin-top:10px; overflow:hidden; }
 .stat-card .bar-fill { height:100%; border-radius:3px; transition:width .6s ease; }
 
@@ -1064,66 +1069,30 @@ nav button.active {
 
 <!-- ====== OVERVIEW ====== -->
 <div id="screen-overview" class="screen active">
-  <div class="section-title" style="margin-bottom:20px">Progress Keseluruhan</div>
-  <div class="stats-grid">
-    <div class="stat-card">
-      <div class="big" id="ov-total" style="color:var(--indigo)">0/771</div>
-      <div class="sub">Total Kata Hafal</div>
-      <div class="bar-wrap"><div class="bar-fill" id="ov-bar" style="width:0%;background:var(--indigo)"></div></div>
+  <div class="section-title" style="margin-bottom:12px">Progress <span id="ov-level-name" style="color:var(--ink)"></span></div>
+  <!-- Hero: total kata -->
+  <div style="background:white;border:1px solid var(--border);border-radius:14px;padding:16px 18px;box-shadow:var(--shadow);margin-bottom:12px">
+    <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:8px">
+      <span style="font-size:12px;color:var(--mist);text-transform:uppercase;letter-spacing:1px">Total Kata Hafal</span>
+      <span class="big" id="ov-total" style="font-family:'DM Mono',monospace;font-size:24px;color:var(--indigo)">0/771</span>
     </div>
-    <div class="stat-card">
-      <div class="big" id="ov-streak" style="color:var(--gold)">0🔥</div>
-      <div class="sub">Hari Berturut-turut</div>
-    </div>
-    <div class="stat-card">
-      <div class="big" id="ov-today" style="color:var(--jade)">0</div>
-      <div class="sub">Kata Hafal Hari Ini</div>
-    </div>
-    <div class="stat-card">
-      <div class="big" id="ov-kanji" style="color:var(--gold)">0</div>
-      <div class="sub">Kanji Dihafalkan</div>
-    </div>
-    <div class="stat-card">
-      <div class="big" id="ov-bunpo" style="color:#7a5cc4">0</div>
-      <div class="sub">Bunpo Dipahami</div>
-    </div>
-    <div class="stat-card">
-      <div class="big" id="ov-exam-count" style="color:var(--red)">0</div>
-      <div class="sub">Ujian Dikerjakan</div>
-    </div>
-    <div class="stat-card">
-      <div class="big" id="ov-exam-pts" style="color:var(--indigo)">0</div>
-      <div class="sub">Poin Ujian</div>
-    </div>
+    <div style="background:rgba(26,26,46,.08);border-radius:4px;height:7px;overflow:hidden"><div class="bar-fill" id="ov-bar" style="height:100%;width:0%;background:var(--indigo);border-radius:4px;transition:width .6s"></div></div>
+  </div>
+  <!-- Mini stats grid -->
+  <div class="stats-mini">
+    <div class="mini-card"><div class="mini-num" id="ov-streak" style="color:var(--gold)">0🔥</div><div class="mini-lbl">Hari Streak</div></div>
+    <div class="mini-card"><div class="mini-num" id="ov-today" style="color:var(--jade)">0</div><div class="mini-lbl">Hari Ini</div></div>
+    <div class="mini-card"><div class="mini-num" id="ov-kanji" style="color:var(--gold)">0</div><div class="mini-lbl">Kanji</div></div>
+    <div class="mini-card"><div class="mini-num" id="ov-bunpo" style="color:#7a5cc4">0</div><div class="mini-lbl">Bunpo</div></div>
+    <div class="mini-card"><div class="mini-num" id="ov-exam-count" style="color:var(--red)">0</div><div class="mini-lbl">Ujian</div></div>
+    <div class="mini-card"><div class="mini-num" id="ov-exam-pts" style="color:var(--indigo)">0</div><div class="mini-lbl">Poin Ujian</div></div>
   </div>
 
   <div class="section-title">Menu Belajar</div>
   <div id="ov-menu-grid" style="display:grid;grid-template-columns:repeat(2,1fr);gap:12px;margin-bottom:24px"></div>
 
   <div class="section-title">Progress Per Kategori</div>
-  <div style="display:flex;flex-direction:column;gap:10px">
-    <div style="background:white;border:1px solid var(--border);border-radius:10px;padding:14px 18px">
-      <div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:6px">
-        <span style="font-weight:600">動詞 Kata Kerja</span>
-        <span style="font-family:'DM Mono',monospace;color:var(--mist)" id="cat-douji-done">0 / 242</span>
-      </div>
-      <div style="background:rgba(26,26,46,.08);border-radius:3px;height:5px;overflow:hidden"><div id="bar-douji" style="height:100%;background:var(--red);border-radius:3px;width:0%;transition:width .6s"></div></div>
-    </div>
-    <div style="background:white;border:1px solid var(--border);border-radius:10px;padding:14px 18px">
-      <div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:6px">
-        <span style="font-weight:600">名詞 Kata Benda</span>
-        <span style="font-family:'DM Mono',monospace;color:var(--mist)" id="cat-meishi-done">0 / 389</span>
-      </div>
-      <div style="background:rgba(26,26,46,.08);border-radius:3px;height:5px;overflow:hidden"><div id="bar-meishi" style="height:100%;background:var(--indigo);border-radius:3px;width:0%;transition:width .6s"></div></div>
-    </div>
-    <div style="background:white;border:1px solid var(--border);border-radius:10px;padding:14px 18px">
-      <div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:6px">
-        <span style="font-weight:600">形容詞 Kata Sifat</span>
-        <span style="font-family:'DM Mono',monospace;color:var(--mist)" id="cat-keiyou-done">0 / 140</span>
-      </div>
-      <div style="background:rgba(26,26,46,.08);border-radius:3px;height:5px;overflow:hidden"><div id="bar-keiyou" style="height:100%;background:var(--jade);border-radius:3px;width:0%;transition:width .6s"></div></div>
-    </div>
-  </div>
+  <div id="ov-cat-wrap" style="background:white;border:1px solid var(--border);border-radius:12px;padding:14px 16px;display:flex;flex-direction:column;gap:12px"></div>
 
   <div style="display:flex;justify-content:space-between;align-items:center;margin:24px 0 12px">
     <div class="section-title" style="margin:0">🏆 Ranking <span id="ov-lb-level">N3</span></div>
@@ -2271,18 +2240,6 @@ async function loadDashboardLeaderboard() {
         +'<div style="font-size:10px;color:var(--mist)">poin</div></div></div>';
     }).join('') || '<div style="padding:20px;text-align:center;color:var(--mist)">Belum ada data 🎌</div>';
 
-    // member bubbles
-    var membEl = document.getElementById('ov-members');
-    if (membEl) {
-      membEl.innerHTML = users.map(function(u){
-        var isMe=u.uid===(currentUser&&currentUser.uid);
-        var av=u.photoURL?'<img src="'+u.photoURL+'" style="width:100%;height:100%;object-fit:cover;">'
-          :'<span style="font-size:16px;font-weight:700">'+(u.displayName||'U')[0].toUpperCase()+'</span>';
-        +'<div onclick="gotoScreen(' + "'" + 'leaderboard' + "'" + ')" title="'+(u.displayName||'?')+' — '+u._lm+' kata" style="display:flex;flex-direction:column;align-items:center;gap:4px;cursor:pointer">'
-          +'<div style="width:44px;height:44px;border-radius:50%;background:'+color+';display:flex;align-items:center;justify-content:center;color:white;overflow:hidden;border:2px solid '+(isMe?'var(--gold)':'transparent')+'">'+av+'</div>'
-          +'<div style="font-size:10px;color:var(--mist);max-width:44px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-align:center">'+(u.displayName||'?').split(' ')[0]+'</div></div>';
-      }).join('');
-    }
   } catch(e) {
     if (lbEl) lbEl.innerHTML = '<div style="padding:16px;text-align:center;color:var(--mist);font-size:12px">Perlu koneksi internet</div>';
   }
@@ -4593,6 +4550,8 @@ function masteredAll() { return countMastered('kanji') + countMastered('vocab') 
 
 function updateOverview() {
   var color = JLPT_COLORS[currentJLPT] || 'var(--red)';
+  var lnEl=document.getElementById('ov-level-name');
+  if(lnEl){ lnEl.textContent = currentJLPT==='SSW'?'SSW Pengolahan Makanan':currentJLPT; lnEl.style.color=color; }
   var total = getCurrentTotal();
   var done  = getCurrentMastered();
   var pct   = total ? Math.round(done / total * 100) : 0;
@@ -4656,50 +4615,45 @@ function renderOverviewMenu(){
 
 // Category progress bars on the dashboard — adapts per level.
 function renderOverviewCategories(){
+  var wrap=document.getElementById('ov-cat-wrap');
+  if(!wrap) return;
   var color=JLPT_COLORS[currentJLPT]||'var(--red)';
-  var titleEl=document.querySelector('#screen-overview .section-title:nth-of-type(2)');
-  function setRow(barId, doneId, label, dn, tot){
-    var bar=document.getElementById(barId), de=document.getElementById(doneId);
-    var labEl=de?de.parentElement.querySelector('span'):null;
-    if(labEl) labEl.textContent=label;
-    if(de) de.textContent=dn+' / '+tot;
-    if(bar){ bar.style.width=(tot?Math.min(Math.round(dn/tot*100),100):0)+'%'; bar.style.background=color; }
-  }
-  function hideRow(barId, doneId){
-    var de=document.getElementById(doneId);
-    if(de && de.closest) { var row=de.closest('div[style*="background:white"]'); if(row) row.style.display='none'; }
-  }
-  function showRow(doneId){
-    var de=document.getElementById(doneId);
-    if(de && de.closest){ var row=de.closest('div[style*="background:white"]'); if(row) row.style.display=''; }
-  }
-  ['cat-douji-done','cat-meishi-done','cat-keiyou-done'].forEach(showRow);
-
+  var rows=[];
   if(currentJLPT==='N3'){
-    setRow('bar-douji','cat-douji-done','動詞 Kata Kerja',countMastered('kanji'),242);
-    setRow('bar-meishi','cat-meishi-done','名詞 Kata Benda',countMastered('vocab'),389);
-    setRow('bar-keiyou','cat-keiyou-done','形容詞 Kata Sifat',countMastered('grammar'),140);
+    rows=[['動詞 Kata Kerja',countMastered('kanji'),242],
+          ['名詞 Kata Benda',countMastered('vocab'),389],
+          ['形容詞 Kata Sifat',countMastered('grammar'),140]];
   } else if(currentJLPT==='SSW'){
     var allS=JLPT_DATA['SSW']||[], mS=mastered['SSW']||{};
-    function topicDone(k){return allS.filter(function(w){return w.cat===k&&!!mS[w.id];}).length;}
-    function topicTot(k){return allS.filter(function(w){return w.cat===k;}).length;}
-    setRow('bar-douji','cat-douji-done','衛生 Higiene',topicDone('eisei'),topicTot('eisei'));
-    setRow('bar-meishi','cat-meishi-done','危害要因 Bahaya',topicDone('kigai'),topicTot('kigai'));
-    setRow('bar-keiyou','cat-keiyou-done','HACCP + 安全',topicDone('haccp')+topicDone('anzen'),topicTot('haccp')+topicTot('anzen'));
+    function td(k){return allS.filter(function(w){return w.cat===k&&!!mS[w.id];}).length;}
+    function tt(k){return allS.filter(function(w){return w.cat===k;}).length;}
+    rows=[['衛生 Higiene',td('eisei'),tt('eisei')],
+          ['危害要因 Bahaya',td('kigai'),tt('kigai')],
+          ['HACCP',td('haccp'),tt('haccp')],
+          ['労働安全 Keselamatan',td('anzen'),tt('anzen')]];
   } else {
     var cats=JLPT_CAT_COUNTS[currentJLPT];
     var allW=JLPT_DATA[currentJLPT]||[], mW=mastered[currentJLPT]||{};
     function cd(cat){return allW.filter(function(w){return (w.cat||'vocab')===cat&&!!mW[w.id];}).length;}
     if(cats){
-      setRow('bar-douji','cat-douji-done','漢字 Kanji',cd('kanji'),cats.kanji);
-      setRow('bar-meishi','cat-meishi-done','語彙 Kosakata',cd('vocab'),cats.vocab);
-      setRow('bar-keiyou','cat-keiyou-done','文法 Grammar',cd('grammar'),cats.grammar);
+      rows=[['漢字 Kanji',cd('kanji'),cats.kanji],
+            ['語彙 Kosakata',cd('vocab'),cats.vocab],
+            ['文法 Grammar',cd('grammar'),cats.grammar]];
     } else {
-      setRow('bar-douji','cat-douji-done',currentJLPT+' Kosakata',getCurrentMastered(),getCurrentTotal());
-      hideRow('bar-meishi','cat-meishi-done');
-      hideRow('bar-keiyou','cat-keiyou-done');
+      rows=[[currentJLPT+' Kosakata',getCurrentMastered(),getCurrentTotal()]];
     }
   }
+  wrap.innerHTML=rows.map(function(r){
+    var label=r[0], dn=r[1], tot=r[2];
+    var pct=tot?Math.min(Math.round(dn/tot*100),100):0;
+    return '<div>'
+      +'<div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:5px">'
+      +'<span style="font-weight:600">'+label+'</span>'
+      +'<span style="font-family:DM Mono,monospace;color:var(--mist);font-size:12px">'+dn+' / '+tot+'</span></div>'
+      +'<div style="background:rgba(26,26,46,.08);border-radius:3px;height:5px;overflow:hidden">'
+      +'<div style="height:100%;width:'+pct+'%;background:'+color+';border-radius:3px;transition:width .6s"></div></div>'
+      +'</div>';
+  }).join('');
 }
 
 // ============================================================
