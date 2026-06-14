@@ -1584,6 +1584,15 @@ nav button.active {
 
 </div><!-- end #app -->
 
+<!-- User Preview Modal -->
+<div id="user-preview-modal" style="display:none;position:fixed;inset:0;z-index:600;background:rgba(0,0,0,.5);align-items:flex-end;justify-content:center" onclick="closeUserPreview(event)">
+  <div style="background:white;border-radius:20px 20px 0 0;padding:24px;width:100%;max-width:480px;max-height:85vh;overflow-y:auto;animation:slideUp .25s ease" onclick="event.stopPropagation()">
+    <div style="width:40px;height:4px;background:var(--border);border-radius:2px;margin:0 auto 20px"></div>
+    <div id="up-body"></div>
+    <button onclick="closeUserPreview()" style="width:100%;margin-top:18px;padding:13px;background:var(--ink);color:white;border:none;border-radius:12px;font-family:inherit;font-size:14px;font-weight:600;cursor:pointer">Tutup</button>
+  </div>
+</div>
+
 <!-- Word Modal -->
 <div id="word-modal" style="display:none;position:fixed;inset:0;z-index:500;background:rgba(0,0,0,.5);align-items:flex-end;justify-content:center">
   <div style="background:white;border-radius:20px 20px 0 0;padding:24px;width:100%;max-width:480px;animation:slideUp .25s ease">
@@ -2124,6 +2133,92 @@ document.addEventListener('click', e => {
 
 // Init Firebase setelah semua SDK selesai load
 
+async function showUserPreview(uid){
+  var users = window._lbUsers || [];
+  var u = users.filter(function(x){return x.uid===uid;})[0];
+  if(!u){ return; }
+  var color = JLPT_COLORS[currentJLPT] || 'var(--indigo)';
+  var name = u.displayName || 'Pelajar';
+  var av = u.photoURL
+    ? '<img src="'+u.photoURL+'" style="width:64px;height:64px;border-radius:50%;object-fit:cover">'
+    : '<div style="width:64px;height:64px;border-radius:50%;background:'+color+';display:flex;align-items:center;justify-content:center;color:white;font-size:26px;font-weight:700">'+name[0].toUpperCase()+'</div>';
+
+  // Per-level word mastery
+  function lvlWords(lv){
+    if(lv==='N3') return u.totalMastered||0;
+    return (u.totalMasteredAll||{})[lv]||0;
+  }
+  function lvlKanji(lv){ return (u.kfMasteredAll||{})[lv]||0; }
+  var LEVELS=['N5','N4','N3','SSW'];
+  var LEVELTOTAL={N5:718,N4:668,N3:771,SSW:109};
+
+  // Current-level breakdown
+  var curWords = lvlWords(currentJLPT);
+  var curKanji = lvlKanji(currentJLPT);
+  var curExam  = u.examPoints||0;
+  var curTotal = curWords + curKanji + curExam;
+
+  // Bunpo understood (current level)
+  var bunpoDone = 0;
+  try {
+    var bp = (u.bunpoProgress||{})[currentJLPT]||0;
+    var totPat = (BUNPO_DATA[currentJLPT]||[]).length;
+    bunpoDone = Math.min(bp*(typeof STAGE_SIZE!=='undefined'?STAGE_SIZE:3), totPat);
+  } catch(e){}
+
+  // Exam count (current level)
+  var examCount = ((u.examHistory||[]).filter(function(e){return e.level===currentJLPT;})).length;
+
+  function statBox(num,lbl,c){
+    return '<div style="flex:1;background:var(--paper,#faf8f3);border:1px solid var(--border);border-radius:10px;padding:10px 4px;text-align:center">'
+      +'<div style="font-family:DM Mono,monospace;font-size:18px;font-weight:700;color:'+c+'">'+num+'</div>'
+      +'<div style="font-size:9px;color:var(--mist);text-transform:uppercase;letter-spacing:.5px;margin-top:2px">'+lbl+'</div></div>';
+  }
+
+  // Per-level progress bars
+  var lvlRows = LEVELS.map(function(lv){
+    var w = lvlWords(lv)+lvlKanji(lv);
+    var t = LEVELTOTAL[lv]||1;
+    var pct = Math.min(Math.round(w/t*100),100);
+    var lc = JLPT_COLORS[lv]||'var(--mist)';
+    var lab = lv==='SSW'?'SSW':lv;
+    return '<div style="margin-bottom:8px">'
+      +'<div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:3px">'
+      +'<span style="font-weight:600">'+lab+'</span>'
+      +'<span style="font-family:DM Mono,monospace;color:var(--mist);font-size:11px">'+w+' / '+t+'</span></div>'
+      +'<div style="background:rgba(26,26,46,.08);border-radius:3px;height:5px;overflow:hidden">'
+      +'<div style="height:100%;width:'+pct+'%;background:'+lc+';border-radius:3px"></div></div></div>';
+  }).join('');
+
+  var html =
+    '<div style="display:flex;align-items:center;gap:14px;margin-bottom:18px">'
+    + av
+    + '<div style="min-width:0">'
+    + '<div style="font-size:18px;font-weight:700">'+name+'</div>'
+    + '<div style="font-size:12px;color:var(--mist)">🔥 '+(u.streak||0)+' hari streak</div>'
+    + '</div></div>'
+    + '<div style="font-size:11px;color:var(--mist);text-transform:uppercase;letter-spacing:1px;margin-bottom:8px">Progress '+(currentJLPT==='SSW'?'SSW':currentJLPT)+'</div>'
+    + '<div style="display:flex;gap:6px;margin-bottom:8px">'
+    + statBox(curWords,'Kata',color)
+    + statBox(curKanji,'Kanji','var(--gold)')
+    + statBox(bunpoDone,'Bunpo','#7a5cc4')
+    + '</div>'
+    + '<div style="display:flex;gap:6px;margin-bottom:18px">'
+    + statBox(examCount,'Ujian','var(--red)')
+    + statBox(curExam,'Poin Ujian','var(--indigo)')
+    + statBox(curTotal,'Total Poin',color)
+    + '</div>'
+    + '<div style="font-size:11px;color:var(--mist);text-transform:uppercase;letter-spacing:1px;margin-bottom:10px">Semua Level</div>'
+    + lvlRows;
+
+  document.getElementById('up-body').innerHTML = html;
+  document.getElementById('user-preview-modal').style.display = 'flex';
+}
+
+function closeUserPreview(){
+  document.getElementById('user-preview-modal').style.display = 'none';
+}
+
 async function loadLeaderboard(level) {
   if(level) lbCurrentLevel=level;
   var listEl=document.getElementById('lb-list');
@@ -2161,6 +2256,7 @@ async function loadLeaderboard(level) {
       var lm = wordPts + examPts;
       users.push(Object.assign({uid:doc.id},d,{lvlMastered:lm,wordPts:wordPts,examPts:examPts}));
     });
+    window._lbUsers = users;
     users.sort(function(a,b){return b.lvlMastered-a.lvlMastered;});
 
     var tu=document.getElementById('lb-total-users');
@@ -2186,7 +2282,7 @@ async function loadLeaderboard(level) {
         var d=Math.floor((Date.now()-u.lastSeen.toDate())/86400000);
         lastSeen=d===0?'hari ini':d===1?'kemarin':d+'h lalu';
       }
-      return '<div style="display:flex;align-items:center;gap:10px;padding:10px 14px;background:'+(isMe?'rgba(212,160,23,.08)':'white')+';border:1px solid '+(isMe?'var(--gold)':'var(--border)')+';border-radius:10px">'
+      return '<div onclick="showUserPreview(&apos;'+u.uid+'&apos;)" style="display:flex;align-items:center;gap:10px;padding:10px 14px;background:'+(isMe?'rgba(212,160,23,.08)':'white')+';border:1px solid '+(isMe?'var(--gold)':'var(--border)')+';border-radius:10px;cursor:pointer;transition:transform .12s" onmouseover="this.style.transform=&apos;scale(1.01)&apos;" onmouseout="this.style.transform=&apos;&apos;">'
         +'<div style="font-size:'+(rank<=3?'20px':'13px')+';font-weight:700;width:28px;text-align:center;flex-shrink:0;color:'+(rank<=3?'':'var(--mist)')+'">'+icon+'</div>'
         +'<div style="flex:1;min-width:0">'
         +'<div style="font-size:13px;font-weight:600;display:flex;align-items:center;gap:6px">'
@@ -2225,13 +2321,14 @@ async function loadDashboardLeaderboard() {
       users.push(Object.assign({uid:doc.id},d,{_lm:lm,_words:vocabPts+kanjiPts}));
     });
     users.sort(function(a,b){ return b._lm-a._lm; });
+    window._lbUsers = users;
     lbEl.innerHTML = users.slice(0,5).map(function(u,i){
       var rank=i+1, isMe=u.uid===(currentUser&&currentUser.uid);
       var tot=u._lm, pct=Math.round(((u._words||0)/total)*100);
       var icon=rank===1?'🥇':rank===2?'🥈':rank===3?'🥉':'#'+rank;
       var av=u.photoURL?'<img src="'+u.photoURL+'" style="width:100%;height:100%;object-fit:cover;border-radius:50%">'
         :'<span style="font-size:13px;font-weight:700">'+(u.displayName||'U')[0].toUpperCase()+'</span>';
-      return '<div style="background:white;border:1px solid '+(isMe?'var(--gold)':'var(--border)')+';border-radius:10px;padding:10px 14px;display:flex;align-items:center;gap:10px">'
+      return '<div onclick="showUserPreview(&apos;'+u.uid+'&apos;)" style="background:white;border:1px solid '+(isMe?'var(--gold)':'var(--border)')+';border-radius:10px;padding:10px 14px;display:flex;align-items:center;gap:10px;cursor:pointer">'
         +'<div style="font-size:18px;width:28px;text-align:center;flex-shrink:0">'+icon+'</div>'
         +'<div style="width:32px;height:32px;border-radius:50%;background:'+color+';display:flex;align-items:center;justify-content:center;color:white;flex-shrink:0;overflow:hidden">'+av+'</div>'
         +'<div style="flex:1;min-width:0"><div style="font-size:13px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+(u.displayName||'Pelajar')+(isMe?' ⭐':'')+'</div>'
