@@ -2155,7 +2155,7 @@ async function showUserPreview(uid){
   // Current-level breakdown
   var curWords = lvlWords(currentJLPT);
   var curKanji = lvlKanji(currentJLPT);
-  var curExam  = u.examPoints||0;
+  var curExam  = examPtsForLevel(u, currentJLPT);
   var curTotal = curWords + curKanji + curExam;
 
   // Bunpo understood (current level)
@@ -2219,6 +2219,18 @@ function closeUserPreview(){
   document.getElementById('user-preview-modal').style.display = 'none';
 }
 
+// Hitung poin ujian per-level dari examHistory (bukan total global).
+// Fallback ke d.examPoints hanya jika examHistory tidak ada (data lama).
+function examPtsForLevel(d, level){
+  if(d && Array.isArray(d.examHistory)){
+    return d.examHistory.reduce(function(s,e){
+      return s + ((e && e.level===level) ? (e.points||0) : 0);
+    }, 0);
+  }
+  // Data lama tanpa examHistory: hanya hitung untuk N3 (level default lama)
+  return (level==='N3') ? (d && d.examPoints || 0) : 0;
+}
+
 async function loadLeaderboard(level) {
   if(level) lbCurrentLevel=level;
   var listEl=document.getElementById('lb-list');
@@ -2251,8 +2263,8 @@ async function loadLeaderboard(level) {
       // Kanji flashcard hafal untuk level ini (sebelumnya tidak dihitung)
       var kanjiPts = (d.kfMasteredAll||{})[lbCurrentLevel]||0;
       var wordPts = vocabPts + kanjiPts;
-      // Exam points global, dihitung penuh (sama seperti di profil)
-      var examPts = d.examPoints||0;
+      // Exam points untuk LEVEL ini saja (dari examHistory)
+      var examPts = examPtsForLevel(d, lbCurrentLevel);
       var lm = wordPts + examPts;
       users.push(Object.assign({uid:doc.id},d,{lvlMastered:lm,wordPts:wordPts,examPts:examPts}));
     });
@@ -2294,7 +2306,7 @@ async function loadLeaderboard(level) {
         +'</div>'
         +'<div style="text-align:right;flex-shrink:0">'
         +'<div style="font-family:DM Mono,monospace;font-size:18px;font-weight:700;color:'+color+'">'+tot+'</div>'
-        +'<div style="font-size:10px;color:var(--mist)">'+(u.examPts>0?'📝+'+u.examPts:'kata')+'</div>'
+        +'<div style="font-size:10px;color:var(--mist)">'+(u.examPts>0?'poin · 📝'+u.examPts:'poin')+'</div>'
         +'</div></div>';
     }).join('');
   } catch(err) {
@@ -2316,7 +2328,7 @@ async function loadDashboardLeaderboard() {
       var d = doc.data();
       var vocabPts = currentJLPT==='N3'?(d.totalMastered||0):((d.totalMasteredAll||{})[currentJLPT]||0);
       var kanjiPts = (d.kfMasteredAll||{})[currentJLPT]||0;
-      var examPts  = d.examPoints||0;
+      var examPts  = examPtsForLevel(d, currentJLPT);
       var lm = vocabPts + kanjiPts + examPts;
       users.push(Object.assign({uid:doc.id},d,{_lm:lm,_words:vocabPts+kanjiPts}));
     });
