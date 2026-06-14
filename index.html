@@ -4209,6 +4209,736 @@ var BUNPO_DATA = {
       rumus:'[A] + は + [jumlah/tingkat] + くらいです',
       contoh:[{jp:'値段は 1000円くらいです。',rom:'nedan wa sen-en kurai desu.',id:'Harganya kira-kira 1000 yen.'},{jp:'距離は 5キロくらいです。',rom:'kyori wa go-kiro kurai desu.',id:'Jaraknya sekitar 5 kilometer.'},{jp:'参加者は 30人くらいです。',rom:'sankasha wa sanjūnin kurai desu.',id:'Peserta sekitar 30 orang.'}]
     }
+  ],
+  N2: [
+    {
+      id:'n2b_1', pattern:'～ばいいのに', arti:'seharusnya ~ saja (penyesalan/saran)',
+      penjelasan:'Menyatakan saran atau penyesalan ringan bahwa lebih baik melakukan sesuatu (\'seharusnya ~ saja\', \'kalau saja ~\').',
+      rumus:'[Kata Kerja bentuk-ba] + いいのに',
+      contoh:[{jp:'もっと 早く 来れば いいのに。',rom:'motto hayaku kureba ii noni.',id:'Padahal kalau datang lebih awal kan bagus.'},{jp:'休めば いいのに、無理して いる。',rom:'yasumeba ii noni, muri shite iru.',id:'Seharusnya istirahat saja, malah memaksakan diri.'},{jp:'言ってくれれば いいのに。',rom:'itte kurereba ii noni.',id:'Kan enak kalau bilang dari tadi.'}]
+    },
+    {
+      id:'n2b_2', pattern:'～わけです', arti:'memang wajar ~ / artinya ~',
+      penjelasan:'Menyatakan kesimpulan logis atau penjelasan (\'artinya ~\', \'pantas saja ~\').',
+      rumus:'[bentuk biasa] + わけです',
+      contoh:[{jp:'3年 住んでいたから、日本語が 上手な わけだ。',rom:'sannen sunde ita kara, nihongo ga jōzu na wake da.',id:'Tinggal 3 tahun, pantas saja jago bahasa Jepang.'},{jp:'つまり 行けない わけですね。',rom:'tsumari ikenai wake desu ne.',id:'Jadi artinya tidak bisa pergi ya.'},{jp:'道理で 寒い わけだ。',rom:'dōri de samui wake da.',id:'Pantas saja dingin.'}]
+    },
+    {
+      id:'n2b_3', pattern:'～にあたる', arti:'menjelang / setara dengan ~',
+      penjelasan:'Menyatakan momen penting (\'saat/menjelang ~\') atau kesetaraan (\'setara dengan\').',
+      rumus:'[Kata Benda / Kata Kerja bentuk-kamus] + にあたる',
+      contoh:[{jp:'卒業に あたって、一言 述べたい。',rom:'sotsugyō ni atatte, hitokoto nobetai.',id:'Menjelang kelulusan, ingin sampaikan sepatah kata.'},{jp:'これは 月給 二か月分に あたる。',rom:'kore wa gekkyū nikagetsubun ni ataru.',id:'Ini setara dua bulan gaji.'},{jp:'試験に あたって 注意する。',rom:'shiken ni atatte chūi suru.',id:'Memberi perhatian menjelang ujian.'}]
+    },
+    {
+      id:'n2b_4', pattern:'以外の', arti:'selain ~',
+      penjelasan:'Menyatakan pengecualian (\'selain ~\').',
+      rumus:'[Kata Benda] + 以外の',
+      contoh:[{jp:'これ 以外の 方法は ない。',rom:'kore igai no hōhō wa nai.',id:'Tidak ada cara selain ini.'},{jp:'日本語 以外の 言語も 話せる。',rom:'nihongo igai no gengo mo hanaseru.',id:'Bisa bahasa selain Jepang juga.'},{jp:'彼 以外 知らない。',rom:'kare igai shiranai.',id:'Tidak tahu selain dia.'}]
+    },
+    {
+      id:'n2b_5', pattern:'～というわけではない', arti:'bukan berarti ~',
+      penjelasan:'Menyangkal kesimpulan yang mungkin diambil (\'bukan berarti ~\').',
+      rumus:'[bentuk biasa] + というわけではない',
+      contoh:[{jp:'嫌いだと いうわけでは ない。',rom:'kirai da to iu wake de wa nai.',id:'Bukan berarti benci.'},{jp:'全部 できないと いうわけでは ない。',rom:'zenbu dekinai to iu wake de wa nai.',id:'Bukan berarti tidak bisa semuanya.'},{jp:'高いから いいと いうわけでは ない。',rom:'takai kara ii to iu wake de wa nai.',id:'Bukan berarti mahal itu pasti bagus.'}]
+    },
+    {
+      id:'n2b_6', pattern:'別に～ない', arti:'tidak terlalu / tidak begitu ~',
+      penjelasan:'Menyatakan ketiadaan hal khusus (\'tidak terlalu ~\', \'tidak ada yang istimewa\').',
+      rumus:'別に + [Kata Kerja/adj bentuk-nai]',
+      contoh:[{jp:'別に 問題は ない。',rom:'betsu ni mondai wa nai.',id:'Tidak ada masalah khusus.'},{jp:'別に 行きたくない。',rom:'betsu ni ikitakunai.',id:'Tidak terlalu ingin pergi.'},{jp:'別に 何も ない。',rom:'betsu ni nani mo nai.',id:'Tidak ada apa-apa.'}]
+    },
+    {
+      id:'n2b_7', pattern:'何といっても', arti:'apa pun yang dikatakan, yang pasti ~',
+      penjelasan:'Menyatakan hal yang paling utama/tak terbantahkan (\'yang pasti\', \'di atas segalanya\').',
+      rumus:'何といっても + [klausa]',
+      contoh:[{jp:'何といっても 健康が 一番だ。',rom:'nan to itte mo kenkō ga ichiban da.',id:'Apa pun katanya, kesehatan nomor satu.'},{jp:'何といっても 彼が リーダーだ。',rom:'nan to itte mo kare ga rīdā da.',id:'Yang pasti dialah pemimpinnya.'},{jp:'夏は 何といっても 海だ。',rom:'natsu wa nan to itte mo umi da.',id:'Musim panas ya jelas ke laut.'}]
+    },
+    {
+      id:'n2b_8', pattern:'～と言っても', arti:'meskipun dibilang ~, sebenarnya ~',
+      penjelasan:'Mengoreksi kesan berlebihan (\'meski dibilang ~, sebenarnya tidak seberapa\').',
+      rumus:'[bentuk biasa] + と言っても',
+      contoh:[{jp:'料理が できると 言っても、卵焼きだけだ。',rom:'ryōri ga dekiru to itte mo, tamagoyaki dake da.',id:'Meski katanya bisa masak, cuma telur dadar.'},{jp:'近いと 言っても、歩いて 30分だ。',rom:'chikai to itte mo, aruite sanjuppun da.',id:'Meski dibilang dekat, jalan kaki 30 menit.'},{jp:'休みと 言っても、仕事が ある。',rom:'yasumi to itte mo, shigoto ga aru.',id:'Meski dibilang libur, ada kerjaan.'}]
+    },
+    {
+      id:'n2b_9', pattern:'～は～に限る', arti:'yang terbaik adalah ~',
+      penjelasan:'Menyatakan pendapat bahwa sesuatu paling baik (\'untuk ~, yang terbaik adalah ~\').',
+      rumus:'[Kata Benda / Kata Kerja] + に限る',
+      contoh:[{jp:'疲れた ときは 寝るに 限る。',rom:'tsukareta toki wa neru ni kagiru.',id:'Saat lelah, paling baik tidur.'},{jp:'夏は ビールに 限る。',rom:'natsu wa bīru ni kagiru.',id:'Musim panas paling enak bir.'},{jp:'風邪の ときは 休むに 限る。',rom:'kaze no toki wa yasumu ni kagiru.',id:'Saat flu, paling baik istirahat.'}]
+    },
+    {
+      id:'n2b_10', pattern:'～に気をつける', arti:'berhati-hati terhadap ~',
+      penjelasan:'Menyatakan kewaspadaan (\'berhati-hati terhadap ~\').',
+      rumus:'[Kata Benda] + に 気をつける',
+      contoh:[{jp:'車に 気をつけて。',rom:'kuruma ni ki o tsukete.',id:'Hati-hati dengan mobil.'},{jp:'健康に 気をつける。',rom:'kenkō ni ki o tsukeru.',id:'Menjaga kesehatan.'},{jp:'足元に 気をつけてください。',rom:'ashimoto ni ki o tsukete kudasai.',id:'Hati-hati dengan pijakan.'}]
+    },
+    {
+      id:'n2b_11', pattern:'せいか', arti:'mungkin karena ~',
+      penjelasan:'Menyatakan sebab yang tidak pasti (\'mungkin karena ~\').',
+      rumus:'[bentuk biasa] + せいか',
+      contoh:[{jp:'年の せいか、疲れやすい。',rom:'toshi no sei ka, tsukareyasui.',id:'Mungkin karena usia, mudah lelah.'},{jp:'雨の せいか、客が 少ない。',rom:'ame no sei ka, kyaku ga sukunai.',id:'Mungkin karena hujan, pelanggan sedikit.'},{jp:'緊張した せいか、失敗した。',rom:'kinchō shita sei ka, shippai shita.',id:'Mungkin karena gugup, jadi gagal.'}]
+    },
+    {
+      id:'n2b_12', pattern:'～に越したことはない', arti:'tak ada yang lebih baik dari ~',
+      penjelasan:'Menyatakan bahwa sesuatu adalah pilihan terbaik (\'tak ada salahnya ~\', \'lebih baik ~\').',
+      rumus:'[Kata Kerja/adj bentuk-kamus] + に越したことはない',
+      contoh:[{jp:'安いに 越したことは ない。',rom:'yasui ni koshita koto wa nai.',id:'Tak ada salahnya kalau murah.'},{jp:'健康なのに 越したことは ない。',rom:'kenkō na noni koshita koto wa nai.',id:'Lebih baik kalau sehat.'},{jp:'用心するに 越したことは ない。',rom:'yōjin suru ni koshita koto wa nai.',id:'Lebih baik berhati-hati.'}]
+    },
+    {
+      id:'n2b_13', pattern:'くせに', arti:'padahal ~ (cela)',
+      penjelasan:'Menyatakan kontras dengan nuansa mencela/kesal (\'padahal ~ tapi\').',
+      rumus:'[bentuk biasa (na-adj+な/Kata Benda+の)] + くせに',
+      contoh:[{jp:'知っている くせに、教えて くれない。',rom:'shitte iru kuse ni, oshiete kurenai.',id:'Padahal tahu, tidak mau memberitahu.'},{jp:'子供の くせに、生意気だ。',rom:'kodomo no kuse ni, namaiki da.',id:'Padahal masih anak-anak, sombong.'},{jp:'できない くせに、文句を 言う。',rom:'dekinai kuse ni, monku o iu.',id:'Padahal tidak bisa, malah mengeluh.'}]
+    },
+    {
+      id:'n2b_14', pattern:'ゆえに', arti:'oleh karena itu ~ (formal)',
+      penjelasan:'Penghubung sebab-akibat formal/tulis (\'oleh karena itu\', \'karena ~\').',
+      rumus:'[Kata Benda + の / bentuk biasa] + ゆえに',
+      contoh:[{jp:'貧しさ ゆえに 学校に 行けなかった。',rom:'mazushisa yue ni gakkō ni ikenakatta.',id:'Karena kemiskinan, tidak bisa sekolah.'},{jp:'我 思う ゆえに 我 あり。',rom:'ware omou yue ni ware ari.',id:'Aku berpikir, maka aku ada.'},{jp:'経験不足 ゆえの 失敗。',rom:'keiken busoku yue no shippai.',id:'Kegagalan akibat kurang pengalaman.'}]
+    },
+    {
+      id:'n2b_15', pattern:'および', arti:'dan / serta (formal)',
+      penjelasan:'Penghubung formal antara kata benda (\'dan\', \'serta\').',
+      rumus:'[A] + および + [B]',
+      contoh:[{jp:'氏名 および 住所を 書いて ください。',rom:'shimei oyobi jūsho o kaite kudasai.',id:'Tulis nama serta alamat.'},{jp:'東京 および 大阪で 開催する。',rom:'Tōkyō oyobi Ōsaka de kaisai suru.',id:'Diadakan di Tokyo dan Osaka.'},{jp:'教師 および 学生。',rom:'kyōshi oyobi gakusei.',id:'Guru dan siswa.'}]
+    },
+    {
+      id:'n2b_16', pattern:'万一', arti:'seandainya/jika sampai ~',
+      penjelasan:'Menyatakan kemungkinan kecil/darurat (\'seandainya sampai ~\').',
+      rumus:'万一 + [klausa]',
+      contoh:[{jp:'万一 火事に なったら、逃げて ください。',rom:'man\'ichi kaji ni nattara, nigete kudasai.',id:'Seandainya terjadi kebakaran, larilah.'},{jp:'万一の 場合に 備える。',rom:'man\'ichi no baai ni sonaeru.',id:'Bersiap untuk keadaan darurat.'},{jp:'万一 遅れたら、連絡 する。',rom:'man\'ichi okuretara, renraku suru.',id:'Kalau sampai terlambat, akan menghubungi.'}]
+    },
+    {
+      id:'n2b_17', pattern:'あえて', arti:'dengan sengaja/berani ~',
+      penjelasan:'Menyatakan melakukan sesuatu meski sulit/tak perlu (\'berani ~\', \'sengaja ~\').',
+      rumus:'あえて + [Kata Kerja]',
+      contoh:[{jp:'あえて 危険を 冒す。',rom:'aete kiken o okasu.',id:'Berani mengambil risiko.'},{jp:'あえて 言わない。',rom:'aete iwanai.',id:'Sengaja tidak mengatakannya.'},{jp:'あえて 反対する。',rom:'aete hantai suru.',id:'Berani menentang.'}]
+    },
+    {
+      id:'n2b_18', pattern:'がてら', arti:'sekalian ~',
+      penjelasan:'Menyatakan melakukan dua hal sekaligus (\'sekalian ~\').',
+      rumus:'[Kata Benda / Kata Kerja bentuk-masu] + がてら',
+      contoh:[{jp:'散歩 がてら 買い物する。',rom:'sanpo gatera kaimono suru.',id:'Jalan-jalan sekalian belanja.'},{jp:'見物 がてら 友人を 訪ねる。',rom:'kenbutsu gatera yūjin o tazuneru.',id:'Jalan-jalan sekalian mengunjungi teman.'},{jp:'運動 がてら 歩く。',rom:'undō gatera aruku.',id:'Berjalan sekalian olahraga.'}]
+    },
+    {
+      id:'n2b_19', pattern:'にかけては', arti:'kalau soal ~ (keunggulan)',
+      penjelasan:'Menyatakan keunggulan dalam suatu bidang (\'kalau soal ~, tidak ada yang menandingi\').',
+      rumus:'[Kata Benda] + にかけては',
+      contoh:[{jp:'料理に かけては 彼が 一番だ。',rom:'ryōri ni kakete wa kare ga ichiban da.',id:'Kalau soal masak, dia nomor satu.'},{jp:'足の 速さに かけては 負けない。',rom:'ashi no hayasa ni kakete wa makenai.',id:'Kalau soal lari cepat, tidak kalah.'},{jp:'記憶力に かけては 自信が ある。',rom:'kiokuryoku ni kakete wa jishin ga aru.',id:'Kalau soal daya ingat, percaya diri.'}]
+    },
+    {
+      id:'n2b_20', pattern:'かねない', arti:'bisa jadi ~ (negatif)',
+      penjelasan:'Menyatakan kemungkinan hal buruk terjadi (\'bisa-bisa ~\', \'jangan-jangan ~\').',
+      rumus:'[Kata Kerja bentuk-masu (tanpa masu)] + かねない',
+      contoh:[{jp:'無理を すると 倒れかねない。',rom:'muri o suru to taorekanenai.',id:'Kalau memaksakan diri, bisa-bisa tumbang.'},{jp:'彼なら やりかねない。',rom:'kare nara yarikanenai.',id:'Kalau dia, bisa saja melakukannya.'},{jp:'事故に なりかねない。',rom:'jiko ni narikanenai.',id:'Bisa-bisa jadi kecelakaan.'}]
+    },
+    {
+      id:'n2b_21', pattern:'～からなる', arti:'terdiri dari ~',
+      penjelasan:'Menyatakan komposisi (\'terdiri dari ~\').',
+      rumus:'[Kata Benda] + からなる',
+      contoh:[{jp:'チームは 5人から なる。',rom:'chīmu wa gonin kara naru.',id:'Tim terdiri dari 5 orang.'},{jp:'この 本は 三章から なる。',rom:'kono hon wa sanshō kara naru.',id:'Buku ini terdiri dari 3 bab.'},{jp:'水は 水素と 酸素から なる。',rom:'mizu wa suiso to sanso kara naru.',id:'Air terdiri dari hidrogen dan oksigen.'}]
+    },
+    {
+      id:'n2b_22', pattern:'～ないで済む', arti:'tidak perlu sampai ~',
+      penjelasan:'Menyatakan terhindar dari keharusan (\'untungnya tidak perlu ~\').',
+      rumus:'[Kata Kerja bentuk-nai] + で済む',
+      contoh:[{jp:'お金を 払わないで 済んだ。',rom:'okane o harawanai de sunda.',id:'Untungnya tidak perlu membayar.'},{jp:'手術しないで 済んだ。',rom:'shujutsu shinai de sunda.',id:'Tidak perlu sampai operasi.'},{jp:'待たないで 済んだ。',rom:'matanai de sunda.',id:'Tidak perlu menunggu.'}]
+    },
+    {
+      id:'n2b_23', pattern:'～わけにはいかない', arti:'tidak bisa (karena alasan moral) ~',
+      penjelasan:'Menyatakan tidak bisa melakukan sesuatu karena alasan sosial/moral (\'tidak mungkin bisa ~\').',
+      rumus:'[Kata Kerja bentuk-kamus] + わけにはいかない',
+      contoh:[{jp:'約束したから、行かない わけには いかない。',rom:'yakusoku shita kara, ikanai wake ni wa ikanai.',id:'Sudah janji, jadi tidak mungkin tidak pergi.'},{jp:'ここで 諦める わけには いかない。',rom:'koko de akirameru wake ni wa ikanai.',id:'Tidak mungkin menyerah di sini.'},{jp:'仕事を 休む わけには いかない。',rom:'shigoto o yasumu wake ni wa ikanai.',id:'Tidak bisa bolos kerja.'}]
+    },
+    {
+      id:'n2b_24', pattern:'～た上で', arti:'setelah ~ (lalu memutuskan)',
+      penjelasan:'Menyatakan melakukan sesuatu setelah menyelesaikan tahap penting dulu (\'setelah ~, baru ~\').',
+      rumus:'[Kata Kerja bentuk-ta / Kata Benda + の] + 上で',
+      contoh:[{jp:'よく 考えた 上で 決める。',rom:'yoku kangaeta ue de kimeru.',id:'Memutuskan setelah berpikir matang.'},{jp:'確認した 上で 返事します。',rom:'kakunin shita ue de henji shimasu.',id:'Akan menjawab setelah memastikan.'},{jp:'相談の 上で 決定する。',rom:'sōdan no ue de kettei suru.',id:'Memutuskan setelah berdiskusi.'}]
+    },
+    {
+      id:'n2b_25', pattern:'～ような気がする', arti:'rasanya seperti ~',
+      penjelasan:'Menyatakan firasat/kesan (\'rasanya seperti ~\').',
+      rumus:'[bentuk biasa] + ような気がする',
+      contoh:[{jp:'どこかで 会った ような 気が する。',rom:'dokoka de atta yō na ki ga suru.',id:'Rasanya pernah bertemu di suatu tempat.'},{jp:'雨が 降る ような 気が する。',rom:'ame ga furu yō na ki ga suru.',id:'Rasanya akan hujan.'},{jp:'うまく いく ような 気が する。',rom:'umaku iku yō na ki ga suru.',id:'Rasanya akan berjalan lancar.'}]
+    },
+    {
+      id:'n2b_26', pattern:'やむをえず', arti:'terpaksa ~',
+      penjelasan:'Menyatakan tindakan terpaksa karena tak ada pilihan (\'terpaksa ~\').',
+      rumus:'やむをえず + [Kata Kerja]',
+      contoh:[{jp:'やむをえず 中止した。',rom:'yamu o ezu chūshi shita.',id:'Terpaksa dibatalkan.'},{jp:'やむをえず 欠席する。',rom:'yamu o ezu kesseki suru.',id:'Terpaksa tidak hadir.'},{jp:'やむをえず 借金した。',rom:'yamu o ezu shakkin shita.',id:'Terpaksa berutang.'}]
+    },
+    {
+      id:'n2b_27', pattern:'～ではないだろうか', arti:'bukankah ~? (dugaan halus)',
+      penjelasan:'Menyatakan dugaan/pendapat secara halus (\'bukankah ~?\').',
+      rumus:'[bentuk biasa] + ではないだろうか',
+      contoh:[{jp:'それは 間違いでは ないだろうか。',rom:'sore wa machigai de wa nai darō ka.',id:'Bukankah itu salah?'},{jp:'彼は 知っているのでは ないだろうか。',rom:'kare wa shitte iru no de wa nai darō ka.',id:'Bukankah dia tahu?'},{jp:'無理なのでは ないだろうか。',rom:'muri na no de wa nai darō ka.',id:'Bukankah itu mustahil?'}]
+    },
+    {
+      id:'n2b_28', pattern:'ろくに～ない', arti:'tidak ~ dengan benar',
+      penjelasan:'Menyatakan sesuatu tidak dilakukan dengan memadai (\'tidak ~ dengan benar\').',
+      rumus:'ろくに + [Kata Kerja bentuk-nai]',
+      contoh:[{jp:'ろくに 寝ていない。',rom:'roku ni nete inai.',id:'Tidak tidur dengan benar.'},{jp:'ろくに 勉強しない。',rom:'roku ni benkyō shinai.',id:'Tidak belajar dengan benar.'},{jp:'ろくに 食べていない。',rom:'roku ni tabete inai.',id:'Tidak makan dengan benar.'}]
+    },
+    {
+      id:'n2b_29', pattern:'～より仕方がない', arti:'tak ada pilihan selain ~',
+      penjelasan:'Menyatakan tak ada jalan lain (\'tak ada pilihan selain ~\').',
+      rumus:'[Kata Kerja bentuk-kamus] + より仕方がない',
+      contoh:[{jp:'諦めるより 仕方が ない。',rom:'akirameru yori shikata ga nai.',id:'Tak ada pilihan selain menyerah.'},{jp:'待つより 仕方が ない。',rom:'matsu yori shikata ga nai.',id:'Tak ada pilihan selain menunggu.'},{jp:'自分で やるより 仕方が ない。',rom:'jibun de yaru yori shikata ga nai.',id:'Tak ada pilihan selain melakukan sendiri.'}]
+    },
+    {
+      id:'n2b_30', pattern:'せめて', arti:'setidaknya ~',
+      penjelasan:'Menyatakan harapan minimum (\'setidaknya ~\').',
+      rumus:'せめて + [jumlah/hal]',
+      contoh:[{jp:'せめて 一目 会いたい。',rom:'semete hitome aitai.',id:'Setidaknya ingin bertemu sekilas.'},{jp:'せめて 連絡 ぐらい して。',rom:'semete renraku gurai shite.',id:'Setidaknya kabari lah.'},{jp:'せめて 3日 ほしい。',rom:'semete mikka hoshii.',id:'Setidaknya butuh 3 hari.'}]
+    },
+    {
+      id:'n2b_31', pattern:'～ものですから', arti:'soalnya ~ (alasan/dalih)',
+      penjelasan:'Menyatakan alasan/pembelaan secara sopan (\'soalnya ~\').',
+      rumus:'[bentuk biasa (na-adj+な)] + ものですから',
+      contoh:[{jp:'急いでいた ものですから、失礼しました。',rom:'isoide ita mono desu kara, shitsurei shimashita.',id:'Soalnya sedang buru-buru, maaf.'},{jp:'子供が 小さい ものですから。',rom:'kodomo ga chiisai mono desu kara.',id:'Soalnya anaknya masih kecil.'},{jp:'知らなかった ものですから。',rom:'shiranakatta mono desu kara.',id:'Soalnya tidak tahu.'}]
+    },
+    {
+      id:'n2b_32', pattern:'～が気になる', arti:'jadi memikirkan ~ / khawatir',
+      penjelasan:'Menyatakan rasa penasaran/khawatir (\'jadi memikirkan ~\').',
+      rumus:'[Kata Benda] + が気になる',
+      contoh:[{jp:'試験の 結果が 気に なる。',rom:'shiken no kekka ga ki ni naru.',id:'Khawatir soal hasil ujian.'},{jp:'彼の 一言が 気に なる。',rom:'kare no hitokoto ga ki ni naru.',id:'Jadi memikirkan ucapannya.'},{jp:'音が 気に なって 眠れない。',rom:'oto ga ki ni natte nemurenai.',id:'Terganggu suara, jadi tak bisa tidur.'}]
+    },
+    {
+      id:'n2b_33', pattern:'思うように', arti:'sesuai keinginan / tidak sesuai harapan',
+      penjelasan:'Menyatakan apakah sesuatu berjalan sesuai harapan (\'sesuai keinginan\').',
+      rumus:'思うように + [Kata Kerja]',
+      contoh:[{jp:'思うように 進まない。',rom:'omou yō ni susumanai.',id:'Tidak berjalan sesuai harapan.'},{jp:'思うように 体が 動かない。',rom:'omou yō ni karada ga ugokanai.',id:'Tubuh tak bergerak sesuai keinginan.'},{jp:'思うように 行けば いい。',rom:'omou yō ni ikeba ii.',id:'Semoga berjalan sesuai keinginan.'}]
+    },
+    {
+      id:'n2b_34', pattern:'よっぽど', arti:'sangat / benar-benar (dugaan)',
+      penjelasan:'Menyatakan tingkat tinggi/dugaan kuat (\'pasti sangat ~\', \'benar-benar\').',
+      rumus:'よっぽど + [klausa]',
+      contoh:[{jp:'よっぽど 疲れていたのだろう。',rom:'yoppodo tsukarete ita no darō.',id:'Pasti benar-benar lelah.'},{jp:'よっぽど お腹が 空いていたんだ。',rom:'yoppodo onaka ga suite ita n da.',id:'Pasti benar-benar lapar.'},{jp:'よっぽど 言おうと 思った。',rom:'yoppodo iō to omotta.',id:'Hampir saja mau mengatakannya.'}]
+    },
+    {
+      id:'n2b_35', pattern:'さすがに', arti:'seperti diduga / memang pantas ~',
+      penjelasan:'Menyatakan hasil yang sesuai reputasi (\'memang pantas ~\', \'sebagaimana diharapkan\').',
+      rumus:'さすがに + [klausa]',
+      contoh:[{jp:'さすがに プロは 違う。',rom:'sasuga ni puro wa chigau.',id:'Memang beda, namanya juga profesional.'},{jp:'さすがに 疲れた。',rom:'sasuga ni tsukareta.',id:'Lelah juga akhirnya.'},{jp:'さすがの 彼も 失敗した。',rom:'sasuga no kare mo shippai shita.',id:'Bahkan dia yang hebat pun gagal.'}]
+    },
+    {
+      id:'n2b_36', pattern:'ものの', arti:'meskipun ~ namun',
+      penjelasan:'Menyatakan kontras (\'meskipun ~, namun ~\').',
+      rumus:'[bentuk biasa] + ものの',
+      contoh:[{jp:'買った ものの、使っていない。',rom:'katta mono no, tsukatte inai.',id:'Meski sudah beli, tapi tidak dipakai.'},{jp:'難しい ものの、面白い。',rom:'muzukashii mono no, omoshiroi.',id:'Meski sulit, tapi menarik.'},{jp:'約束した ものの、忘れて しまった。',rom:'yakusoku shita mono no, wasurete shimatta.',id:'Meski sudah janji, malah lupa.'}]
+    },
+    {
+      id:'n2b_37', pattern:'一方では', arti:'di sisi lain ~',
+      penjelasan:'Menyatakan dua sisi/aspek (\'di satu sisi ~, di sisi lain ~\').',
+      rumus:'[klausa] + 一方では',
+      contoh:[{jp:'便利な 一方で、危険も ある。',rom:'benri na ippō de, kiken mo aru.',id:'Praktis, tapi di sisi lain ada bahaya.'},{jp:'喜ぶ 一方で、不安も ある。',rom:'yorokobu ippō de, fuan mo aru.',id:'Senang, di sisi lain juga cemas.'},{jp:'一方では 反対意見も ある。',rom:'ippō de wa hantai iken mo aru.',id:'Di sisi lain ada pendapat yang menentang.'}]
+    },
+    {
+      id:'n2b_38', pattern:'それにしても', arti:'walau begitu / sungguh ~',
+      penjelasan:'Menyatakan keheranan meski sudah memahami situasi (\'walau begitu ~\', \'sungguh ~\').',
+      rumus:'それにしても + [klausa]',
+      contoh:[{jp:'それにしても 暑いね。',rom:'sore ni shite mo atsui ne.',id:'Walau begitu, panas sekali ya.'},{jp:'それにしても 遅いね。',rom:'sore ni shite mo osoi ne.',id:'Lama sekali sih.'},{jp:'それにしても よく 食べる。',rom:'sore ni shite mo yoku taberu.',id:'Sungguh makannya banyak.'}]
+    },
+    {
+      id:'n2b_39', pattern:'～を～にまかせる', arti:'menyerahkan ~ pada ~',
+      penjelasan:'Menyatakan mempercayakan sesuatu pada seseorang (\'menyerahkan ~ kepada ~\').',
+      rumus:'[A] + を + [B] + にまかせる',
+      contoh:[{jp:'仕事を 彼に まかせる。',rom:'shigoto o kare ni makaseru.',id:'Menyerahkan pekerjaan padanya.'},{jp:'運を 天に まかせる。',rom:'un o ten ni makaseru.',id:'Menyerahkan nasib pada Tuhan/langit.'},{jp:'後を よろしく まかせた。',rom:'ato o yoroshiku makaseta.',id:'Menyerahkan sisanya padamu.'}]
+    },
+    {
+      id:'n2b_40', pattern:'至るまで', arti:'sampai-sampai / hingga ~',
+      penjelasan:'Menyatakan rentang ekstrem (\'hingga ~\', \'sampai-sampai pada ~\').',
+      rumus:'[Kata Benda] + に至るまで',
+      contoh:[{jp:'頭から 足の 先に 至るまで。',rom:'atama kara ashi no saki ni itaru made.',id:'Dari kepala hingga ujung kaki.'},{jp:'細部に 至るまで 確認する。',rom:'saibu ni itaru made kakunin suru.',id:'Memeriksa hingga ke detail.'},{jp:'子供から 大人に 至るまで。',rom:'kodomo kara otona ni itaru made.',id:'Dari anak-anak sampai dewasa.'}]
+    },
+    {
+      id:'n2b_41', pattern:'かねる', arti:'tidak bisa/sulit ~ (sopan)',
+      penjelasan:'Menyatakan ketidaksanggupan secara halus (\'sulit untuk ~\', \'tidak bisa ~\').',
+      rumus:'[Kata Kerja bentuk-masu (tanpa masu)] + かねる',
+      contoh:[{jp:'その 件は 分かりかねます。',rom:'sono ken wa wakarikanemasu.',id:'Untuk hal itu, saya kurang paham.'},{jp:'お答えしかねます。',rom:'okotae shikanemasu.',id:'Sulit untuk saya jawab.'},{jp:'賛成しかねる。',rom:'sansei shikaneru.',id:'Sulit untuk menyetujui.'}]
+    },
+    {
+      id:'n2b_42', pattern:'さしつかえない', arti:'tidak masalah / boleh ~',
+      penjelasan:'Menyatakan izin/ketiadaan keberatan (\'tidak masalah\', \'boleh saja\').',
+      rumus:'[Kata Kerja bentuk-te] + さしつかえない',
+      contoh:[{jp:'写真を 撮っても さしつかえ ない。',rom:'shashin o totte mo sashitsukae nai.',id:'Memotret pun tidak masalah.'},{jp:'質問しても さしつかえ ありません。',rom:'shitsumon shite mo sashitsukae arimasen.',id:'Boleh saja bertanya.'},{jp:'これで さしつかえ ない。',rom:'kore de sashitsukae nai.',id:'Dengan ini tidak masalah.'}]
+    },
+    {
+      id:'n2b_43', pattern:'たちまち', arti:'seketika / dalam sekejap',
+      penjelasan:'Menyatakan kejadian sangat cepat (\'seketika\', \'dalam sekejap\').',
+      rumus:'たちまち + [Kata Kerja]',
+      contoh:[{jp:'噂は たちまち 広がった。',rom:'uwasa wa tachimachi hirogatta.',id:'Rumor menyebar dalam sekejap.'},{jp:'たちまち 売り切れた。',rom:'tachimachi urikireta.',id:'Seketika habis terjual.'},{jp:'たちまち 元気に なった。',rom:'tachimachi genki ni natta.',id:'Seketika jadi sehat kembali.'}]
+    },
+    {
+      id:'n2b_44', pattern:'なにしろ', arti:'bagaimanapun / soalnya ~',
+      penjelasan:'Menekankan alasan utama (\'soalnya ~\', \'bagaimanapun ~\').',
+      rumus:'なにしろ + [klausa]',
+      contoh:[{jp:'なにしろ 初めてだから、緊張する。',rom:'nani shiro hajimete da kara, kinchō suru.',id:'Soalnya pertama kali, jadi gugup.'},{jp:'なにしろ 人が 多い。',rom:'nani shiro hito ga ōi.',id:'Yang jelas orangnya banyak.'},{jp:'なにしろ 忙しい。',rom:'nani shiro isogashii.',id:'Pokoknya sibuk.'}]
+    },
+    {
+      id:'n2b_45', pattern:'かたわら', arti:'sambil (di samping pekerjaan utama) ~',
+      penjelasan:'Menyatakan kegiatan sampingan selain yang utama (\'sambil ~\', \'di samping ~\').',
+      rumus:'[Kata Kerja bentuk-kamus / Kata Benda + の] + かたわら',
+      contoh:[{jp:'仕事の かたわら、小説を 書く。',rom:'shigoto no katawara, shōsetsu o kaku.',id:'Di samping bekerja, menulis novel.'},{jp:'勉強の かたわら、バイトを する。',rom:'benkyō no katawara, baito o suru.',id:'Sambil kuliah, kerja paruh waktu.'},{jp:'育児の かたわら 働く。',rom:'ikuji no katawara hataraku.',id:'Bekerja sambil mengasuh anak.'}]
+    },
+    {
+      id:'n2b_46', pattern:'ごとし', arti:'seperti ~ (sastra)',
+      penjelasan:'Perumpamaan gaya klasik/sastra (\'seperti ~\'). 「ごとく」 untuk adverbia.',
+      rumus:'[Kata Benda + の / Kata Kerja + が] + ごとし',
+      contoh:[{jp:'光陰 矢の ごとし。',rom:'kōin ya no gotoshi.',id:'Waktu berlalu seperti anak panah.'},{jp:'彼の ごとき 天才。',rom:'kare no gotoki tensai.',id:'Jenius seperti dia.'},{jp:'水の ごとく 流れる。',rom:'mizu no gotoku nagareru.',id:'Mengalir seperti air.'}]
+    },
+    {
+      id:'n2b_47', pattern:'たまらない', arti:'tak tertahankan ~',
+      penjelasan:'Menyatakan perasaan/keadaan yang sangat kuat (\'tak tertahankan\', \'sangat ~\').',
+      rumus:'[i-adj(て形)/Kata Kerja(たくて)] + たまらない',
+      contoh:[{jp:'暑くて たまらない。',rom:'atsukute tamaranai.',id:'Panas tak tertahankan.'},{jp:'会いたくて たまらない。',rom:'aitakute tamaranai.',id:'Ingin sekali bertemu.'},{jp:'嬉しくて たまらない。',rom:'ureshikute tamaranai.',id:'Senang luar biasa.'}]
+    },
+    {
+      id:'n2b_48', pattern:'とうてい～ない', arti:'sama sekali tidak mungkin ~',
+      penjelasan:'Menyatakan kemustahilan (\'sama sekali tidak mungkin ~\').',
+      rumus:'とうてい + [Kata Kerja potensial bentuk-nai]',
+      contoh:[{jp:'とうてい 信じられない。',rom:'tōtei shinjirarenai.',id:'Sama sekali tak bisa dipercaya.'},{jp:'とうてい 間に合わない。',rom:'tōtei maniawanai.',id:'Sama sekali tak akan keburu.'},{jp:'とうてい 無理だ。',rom:'tōtei muri da.',id:'Sama sekali mustahil.'}]
+    },
+    {
+      id:'n2b_49', pattern:'のぼる', arti:'mencapai (jumlah besar) ~',
+      penjelasan:'Menyatakan jumlah yang mencapai angka besar (\'mencapai ~\').',
+      rumus:'[jumlah] + にのぼる',
+      contoh:[{jp:'死者は 千人に のぼった。',rom:'shisha wa sennin ni nobotta.',id:'Korban tewas mencapai seribu orang.'},{jp:'被害額は 億に のぼる。',rom:'higaigaku wa oku ni noboru.',id:'Kerugian mencapai ratusan juta.'},{jp:'参加者は 数千人に のぼる。',rom:'sankasha wa sūsennin ni noboru.',id:'Peserta mencapai ribuan orang.'}]
+    },
+    {
+      id:'n2b_50', pattern:'なるべく', arti:'sebisa mungkin ~',
+      penjelasan:'Menyatakan usaha semaksimal mungkin (\'sebisa mungkin ~\').',
+      rumus:'なるべく + [Kata Kerja]',
+      contoh:[{jp:'なるべく 早く 来て ください。',rom:'narubeku hayaku kite kudasai.',id:'Tolong datang sebisa mungkin cepat.'},{jp:'なるべく 安いのが いい。',rom:'narubeku yasui no ga ii.',id:'Sebisa mungkin yang murah.'},{jp:'なるべく 運動する。',rom:'narubeku undō suru.',id:'Sebisa mungkin berolahraga.'}]
+    },
+    {
+      id:'n2b_51', pattern:'たしか', arti:'kalau tidak salah ~',
+      penjelasan:'Menyatakan ingatan yang tidak pasti (\'kalau tidak salah ~\').',
+      rumus:'たしか + [klausa]',
+      contoh:[{jp:'たしか 去年 会った はずだ。',rom:'tashika kyonen atta hazu da.',id:'Kalau tidak salah bertemu tahun lalu.'},{jp:'たしか 3時だった。',rom:'tashika sanji datta.',id:'Kalau tidak salah jam 3.'},{jp:'たしか ここに あった。',rom:'tashika koko ni atta.',id:'Kalau tidak salah tadi ada di sini.'}]
+    },
+    {
+      id:'n2b_52', pattern:'やっぱり', arti:'ternyata memang ~ / seperti dugaan',
+      penjelasan:'Menyatakan kesesuaian dengan dugaan (\'ternyata memang ~\').',
+      rumus:'やっぱり + [klausa]',
+      contoh:[{jp:'やっぱり 彼が 正しかった。',rom:'yappari kare ga tadashikatta.',id:'Ternyata memang dia yang benar.'},{jp:'やっぱり 行くのを やめる。',rom:'yappari iku no o yameru.',id:'Akhirnya batal pergi (sesuai pikiran).'},{jp:'やっぱり 本物は 違う。',rom:'yappari honmono wa chigau.',id:'Memang beda yang asli.'}]
+    },
+    {
+      id:'n2b_53', pattern:'いよいよ', arti:'akhirnya / semakin ~',
+      penjelasan:'Menyatakan klimaks/peningkatan (\'akhirnya ~\', \'semakin ~\').',
+      rumus:'いよいよ + [klausa]',
+      contoh:[{jp:'いよいよ 試験だ。',rom:'iyoiyo shiken da.',id:'Akhirnya ujian tiba.'},{jp:'いよいよ 雨が 強く なった。',rom:'iyoiyo ame ga tsuyoku natta.',id:'Hujan semakin deras.'},{jp:'いよいよ 始まる。',rom:'iyoiyo hajimaru.',id:'Akhirnya akan dimulai.'}]
+    },
+    {
+      id:'n2b_54', pattern:'いつのまにか', arti:'tanpa terasa / entah sejak kapan',
+      penjelasan:'Menyatakan perubahan yang terjadi tanpa disadari (\'tanpa terasa ~\').',
+      rumus:'いつのまにか + [klausa]',
+      contoh:[{jp:'いつのまにか 夜に なった。',rom:'itsu no ma ni ka yoru ni natta.',id:'Tanpa terasa sudah malam.'},{jp:'いつのまにか 眠っていた。',rom:'itsu no ma ni ka nemutte ita.',id:'Tanpa sadar tertidur.'},{jp:'いつのまにか 春だ。',rom:'itsu no ma ni ka haru da.',id:'Tahu-tahu sudah musim semi.'}]
+    },
+    {
+      id:'n2b_55', pattern:'せっかく', arti:'susah-susah / mumpung ~',
+      penjelasan:'Menyatakan kesempatan/usaha yang sayang disia-siakan (\'mumpung ~\', \'susah-susah ~\').',
+      rumus:'せっかく + [klausa]',
+      contoh:[{jp:'せっかく 来たのに、留守だった。',rom:'sekkaku kita noni, rusu datta.',id:'Susah-susah datang, malah tidak ada orang.'},{jp:'せっかくだから、食べて いこう。',rom:'sekkaku da kara, tabete ikō.',id:'Mumpung di sini, makan dulu yuk.'},{jp:'せっかくの 休みだ。',rom:'sekkaku no yasumi da.',id:'Mumpung libur.'}]
+    },
+    {
+      id:'n2b_56', pattern:'～ないわけにはいかない', arti:'mau tak mau harus ~',
+      penjelasan:'Menyatakan keharusan karena alasan moral (\'mau tak mau harus ~\').',
+      rumus:'[Kata Kerja bentuk-nai] + わけにはいかない',
+      contoh:[{jp:'行かない わけには いかない。',rom:'ikanai wake ni wa ikanai.',id:'Mau tak mau harus pergi.'},{jp:'謝らない わけには いかない。',rom:'ayamaranai wake ni wa ikanai.',id:'Mau tak mau harus minta maaf.'},{jp:'やらない わけには いかない。',rom:'yaranai wake ni wa ikanai.',id:'Mau tak mau harus melakukannya.'}]
+    },
+    {
+      id:'n2b_57', pattern:'～でいいです', arti:'cukup dengan ~ saja',
+      penjelasan:'Menyatakan sesuatu sudah memadai (\'cukup ~ saja\').',
+      rumus:'[Kata Benda] + でいいです',
+      contoh:[{jp:'水で いいです。',rom:'mizu de ii desu.',id:'Air saja cukup.'},{jp:'これで いいです。',rom:'kore de ii desu.',id:'Ini saja sudah cukup.'},{jp:'明日で いいですか。',rom:'ashita de ii desu ka.',id:'Besok pun tidak apa-apa?'}]
+    },
+    {
+      id:'n2b_58', pattern:'なかなか～ない', arti:'tak kunjung ~',
+      penjelasan:'Menyatakan sesuatu sulit/tak kunjung terjadi (\'tak kunjung ~\').',
+      rumus:'なかなか + [Kata Kerja bentuk-nai]',
+      contoh:[{jp:'バスが なかなか 来ない。',rom:'basu ga nakanaka konai.',id:'Bus tak kunjung datang.'},{jp:'なかなか 終わらない。',rom:'nakanaka owaranai.',id:'Tak kunjung selesai.'},{jp:'なかなか 決まらない。',rom:'nakanaka kimaranai.',id:'Tak kunjung terputuskan.'}]
+    }
+  ],
+  N1: [
+    {
+      id:'n1b_1', pattern:'～めく', arti:'tampak/berkesan ~',
+      penjelasan:'Menyatakan sesuatu mulai menunjukkan ciri/suasana tertentu (\'berkesan ~\', \'tampak seperti ~\').',
+      rumus:'[Kata Benda] + めく',
+      contoh:[{jp:'春めいて きた。',rom:'harumeite kita.',id:'Mulai terasa seperti musim semi.'},{jp:'皮肉めいた 言い方。',rom:'hiniku meita iikata.',id:'Cara bicara yang berkesan menyindir.'},{jp:'謎めいた 微笑み。',rom:'nazomeita hohoemi.',id:'Senyum yang penuh misteri.'}]
+    },
+    {
+      id:'n1b_2', pattern:'～と思いきや', arti:'disangka ~, ternyata ~',
+      penjelasan:'Menyatakan dugaan yang ternyata meleset (\'dikira ~, ternyata ~\').',
+      rumus:'[bentuk biasa] + と思いきや',
+      contoh:[{jp:'晴れると 思いきや、雨に なった。',rom:'hareru to omoikiya, ame ni natta.',id:'Dikira cerah, ternyata hujan.'},{jp:'簡単だと 思いきや、難しかった。',rom:'kantan da to omoikiya, muzukashikatta.',id:'Dikira mudah, ternyata sulit.'},{jp:'負けると 思いきや、勝った。',rom:'makeru to omoikiya, katta.',id:'Dikira kalah, ternyata menang.'}]
+    },
+    {
+      id:'n1b_3', pattern:'～が早いか', arti:'begitu ~, langsung ~',
+      penjelasan:'Menyatakan dua kejadian nyaris bersamaan (\'begitu ~, langsung ~\').',
+      rumus:'[Kata Kerja bentuk-kamus] + が早いか',
+      contoh:[{jp:'ベルが 鳴るが 早いか、教室を 出た。',rom:'beru ga naru ga hayai ka, kyōshitsu o deta.',id:'Begitu bel bunyi, langsung keluar kelas.'},{jp:'座るが 早いか、寝て しまった。',rom:'suwaru ga hayai ka, nete shimatta.',id:'Begitu duduk, langsung tertidur.'},{jp:'見るが 早いか、走り出した。',rom:'miru ga hayai ka, hashiridashita.',id:'Begitu melihat, langsung berlari.'}]
+    },
+    {
+      id:'n1b_4', pattern:'ただ～のみ', arti:'hanya ~ saja',
+      penjelasan:'Menyatakan keterbatasan/eksklusivitas formal (\'hanya ~ saja\').',
+      rumus:'ただ + [Kata Benda/Kata Kerja] + のみ',
+      contoh:[{jp:'ただ 待つのみだ。',rom:'tada matsu nomi da.',id:'Hanya bisa menunggu saja.'},{jp:'ただ 努力あるのみ。',rom:'tada doryoku aru nomi.',id:'Yang ada hanyalah usaha.'},{jp:'ただ 前進するのみ。',rom:'tada zenshin suru nomi.',id:'Hanya maju ke depan.'}]
+    },
+    {
+      id:'n1b_5', pattern:'～なり', arti:'begitu ~, langsung ~',
+      penjelasan:'Menyatakan aksi langsung setelah aksi lain (\'begitu ~, langsung ~\'), sering tak terduga.',
+      rumus:'[Kata Kerja bentuk-kamus] + なり',
+      contoh:[{jp:'家に 帰るなり、寝て しまった。',rom:'ie ni kaeru nari, nete shimatta.',id:'Begitu pulang, langsung tidur.'},{jp:'顔を 見るなり、泣き出した。',rom:'kao o miru nari, nakidashita.',id:'Begitu melihat wajahnya, langsung menangis.'},{jp:'着くなり、文句を 言った。',rom:'tsuku nari, monku o itta.',id:'Begitu sampai, langsung mengeluh.'}]
+    },
+    {
+      id:'n1b_6', pattern:'～や否や', arti:'begitu ~, segera ~',
+      penjelasan:'Menyatakan dua kejadian berurutan cepat (\'begitu ~, segera ~\'). Formal.',
+      rumus:'[Kata Kerja bentuk-kamus] + や否や',
+      contoh:[{jp:'ドアを 開けるや 否や、犬が 飛び出した。',rom:'doa o akeru ya ina ya, inu ga tobidashita.',id:'Begitu pintu dibuka, anjing langsung melompat keluar.'},{jp:'発表するや 否や、話題に なった。',rom:'happyō suru ya ina ya, wadai ni natta.',id:'Begitu diumumkan, langsung jadi perbincangan.'},{jp:'聞くや 否や、出かけた。',rom:'kiku ya ina ya, dekaketa.',id:'Begitu mendengar, langsung berangkat.'}]
+    },
+    {
+      id:'n1b_7', pattern:'～を皮切りに', arti:'diawali dengan ~ (lalu meluas)',
+      penjelasan:'Menyatakan titik awal suatu rangkaian (\'diawali dengan ~, lalu berlanjut\').',
+      rumus:'[Kata Benda] + を皮切りに',
+      contoh:[{jp:'東京を 皮切りに、全国を 回る。',rom:'Tōkyō o kawakiri ni, zenkoku o mawaru.',id:'Diawali Tokyo, lalu keliling seluruh negeri.'},{jp:'彼の 発言を 皮切りに、議論が 始まった。',rom:'kare no hatsugen o kawakiri ni, giron ga hajimatta.',id:'Diawali ucapannya, diskusi pun dimulai.'},{jp:'初公演を 皮切りに ツアーが 続く。',rom:'shokōen o kawakiri ni tsuā ga tsuzuku.',id:'Diawali pentas perdana, tur berlanjut.'}]
+    },
+    {
+      id:'n1b_8', pattern:'～をもって', arti:'dengan ~ / per ~',
+      penjelasan:'Menyatakan sarana/batas waktu formal (\'dengan ~\', \'per tanggal ~\').',
+      rumus:'[Kata Benda] + をもって',
+      contoh:[{jp:'本日を もって 閉店します。',rom:'honjitsu o motte heiten shimasu.',id:'Per hari ini kami tutup.'},{jp:'実力を もって 証明する。',rom:'jitsuryoku o motte shōmei suru.',id:'Membuktikan dengan kemampuan.'},{jp:'これを もって 終了します。',rom:'kore o motte shūryō shimasu.',id:'Dengan ini kami akhiri.'}]
+    },
+    {
+      id:'n1b_9', pattern:'～が最後', arti:'sekali ~, maka pasti ~',
+      penjelasan:'Menyatakan begitu sesuatu terjadi, akibat buruk pasti mengikuti (\'sekali ~, maka ~\').',
+      rumus:'[Kata Kerja bentuk-ta] + が最後',
+      contoh:[{jp:'彼に 貸したが 最後、戻って こない。',rom:'kare ni kashita ga saigo, modotte konai.',id:'Sekali dipinjamkan ke dia, takkan kembali.'},{jp:'寝たが 最後、起きられない。',rom:'neta ga saigo, okirarenai.',id:'Sekali tidur, takkan bisa bangun.'},{jp:'始めたが 最後、止められない。',rom:'hajimeta ga saigo, tomerarenai.',id:'Sekali mulai, takkan bisa berhenti.'}]
+    },
+    {
+      id:'n1b_10', pattern:'～まみれ', arti:'berlumuran ~',
+      penjelasan:'Menyatakan permukaan penuh kotoran/cairan (\'berlumuran ~\').',
+      rumus:'[Kata Benda] + まみれ',
+      contoh:[{jp:'汗まみれに なった。',rom:'ase mamire ni natta.',id:'Berlumuran keringat.'},{jp:'泥まみれの 服。',rom:'doro mamire no fuku.',id:'Baju berlumuran lumpur.'},{jp:'血まみれの 手。',rom:'chi mamire no te.',id:'Tangan berlumuran darah.'}]
+    },
+    {
+      id:'n1b_11', pattern:'～とあれば', arti:'kalau memang ~ (demi)',
+      penjelasan:'Menyatakan kesediaan jika syarat tertentu terpenuhi (\'kalau memang demi ~\').',
+      rumus:'[Kata Benda / bentuk biasa] + とあれば',
+      contoh:[{jp:'子供の ためと あれば、何でも する。',rom:'kodomo no tame to areba, nan demo suru.',id:'Kalau demi anak, apa pun dilakukan.'},{jp:'必要と あれば 行きます。',rom:'hitsuyō to areba ikimasu.',id:'Kalau memang perlu, saya pergi.'},{jp:'頼みと あれば 断れない。',rom:'tanomi to areba kotowarenai.',id:'Kalau memang permintaan, tak bisa menolak.'}]
+    },
+    {
+      id:'n1b_12', pattern:'～ともなると', arti:'kalau sudah jadi ~',
+      penjelasan:'Menyatakan bahwa pada tingkat/posisi tertentu, situasi berubah (\'kalau sudah ~, maka ~\').',
+      rumus:'[Kata Benda / Kata Kerja] + ともなると',
+      contoh:[{jp:'社長と もなると、責任が 重い。',rom:'shachō to mo naru to, sekinin ga omoi.',id:'Kalau sudah jadi direktur, tanggung jawabnya berat.'},{jp:'年末と もなると、忙しく なる。',rom:'nenmatsu to mo naru to, isogashiku naru.',id:'Kalau sudah akhir tahun, jadi sibuk.'},{jp:'プロと もなると 違う。',rom:'puro to mo naru to chigau.',id:'Kalau sudah profesional, beda.'}]
+    },
+    {
+      id:'n1b_13', pattern:'～なくしては', arti:'tanpa ~, tidak ~',
+      penjelasan:'Menyatakan syarat mutlak (\'tanpa ~, tidak mungkin ~\').',
+      rumus:'[Kata Benda] + なくしては',
+      contoh:[{jp:'努力 なくしては 成功は ない。',rom:'doryoku nakushite wa seikō wa nai.',id:'Tanpa usaha, tak ada keberhasilan.'},{jp:'彼の 助け なくしては できなかった。',rom:'kare no tasuke nakushite wa dekinakatta.',id:'Tanpa bantuannya, takkan bisa.'},{jp:'愛 なくしては 生きられない。',rom:'ai nakushite wa ikirarenai.',id:'Tanpa cinta, tak bisa hidup.'}]
+    },
+    {
+      id:'n1b_14', pattern:'～ならでは', arti:'khas/hanya bisa dari ~',
+      penjelasan:'Menyatakan keunikan yang hanya dimiliki sesuatu (\'khas ~\', \'hanya ~ yang bisa\').',
+      rumus:'[Kata Benda] + ならでは',
+      contoh:[{jp:'プロ ならではの 技術。',rom:'puro narade wa no gijutsu.',id:'Teknik khas profesional.'},{jp:'この 店 ならではの 味。',rom:'kono mise narade wa no aji.',id:'Rasa khas toko ini.'},{jp:'彼 ならではの 発想。',rom:'kare narade wa no hassō.',id:'Ide yang hanya khas dia.'}]
+    },
+    {
+      id:'n1b_15', pattern:'～に足る', arti:'layak/cukup untuk ~',
+      penjelasan:'Menyatakan kelayakan (\'layak untuk ~\', \'cukup untuk ~\').',
+      rumus:'[Kata Kerja bentuk-kamus / Kata Benda] + に足る',
+      contoh:[{jp:'信頼するに 足る 人物。',rom:'shinrai suru ni taru jinbutsu.',id:'Sosok yang layak dipercaya.'},{jp:'満足に 足る 結果。',rom:'manzoku ni taru kekka.',id:'Hasil yang cukup memuaskan.'},{jp:'尊敬に 足る 先生。',rom:'sonkei ni taru sensei.',id:'Guru yang layak dihormati.'}]
+    },
+    {
+      id:'n1b_16', pattern:'～とあって', arti:'karena (situasi khusus) ~',
+      penjelasan:'Menyatakan sebab dari situasi khusus (\'berhubung ~\', \'karena ~\').',
+      rumus:'[bentuk biasa / Kata Benda] + とあって',
+      contoh:[{jp:'連休と あって、道が 混んでいる。',rom:'renkyū to atte, michi ga konde iru.',id:'Berhubung libur panjang, jalan macet.'},{jp:'有名人が 来ると あって、人が 集まった.',rom:'yūmeijin ga kuru to atte, hito ga atsumatta.',id:'Karena artis datang, orang berkumpul.'},{jp:'初優勝と あって、町は 沸いた。',rom:'hatsuyūshō to atte, machi wa waita.',id:'Karena juara perdana, kota bersukacita.'}]
+    },
+    {
+      id:'n1b_17', pattern:'～べく', arti:'demi/untuk ~ (formal)',
+      penjelasan:'Menyatakan tujuan secara formal/tulis (\'demi ~\', \'untuk ~\').',
+      rumus:'[Kata Kerja bentuk-kamus] + べく',
+      contoh:[{jp:'成功すべく 努力する。',rom:'seikō su beku doryoku suru.',id:'Berusaha demi keberhasilan.'},{jp:'真実を 知るべく 調査した。',rom:'shinjitsu o shiru beku chōsa shita.',id:'Menyelidiki untuk mengetahui kebenaran.'},{jp:'試験に 受かるべく 勉強した。',rom:'shiken ni ukaru beku benkyō shita.',id:'Belajar demi lulus ujian.'}]
+    },
+    {
+      id:'n1b_18', pattern:'～かたがた', arti:'sekaligus ~ (formal sopan)',
+      penjelasan:'Menyatakan dua tujuan formal (\'sekaligus ~\'). Sering surat resmi.',
+      rumus:'[Kata Benda] + かたがた',
+      contoh:[{jp:'お礼 かたがた ご挨拶に 伺います。',rom:'orei katagata goaisatsu ni ukagaimasu.',id:'Berkunjung untuk menyapa sekaligus berterima kasih.'},{jp:'報告 かたがた 相談する。',rom:'hōkoku katagata sōdan suru.',id:'Berkonsultasi sekaligus melapor.'},{jp:'見舞い かたがた 訪ねる。',rom:'mimai katagata tazuneru.',id:'Mengunjungi sekaligus menjenguk.'}]
+    },
+    {
+      id:'n1b_19', pattern:'～たところで', arti:'meskipun ~, tetap tidak ~',
+      penjelasan:'Menyatakan kesia-siaan (\'meski ~ pun, percuma\').',
+      rumus:'[Kata Kerja bentuk-ta] + ところで',
+      contoh:[{jp:'急いだ ところで、間に合わない。',rom:'isoida tokoro de, maniawanai.',id:'Meski buru-buru pun, takkan keburu.'},{jp:'謝った ところで、許されない。',rom:'ayamatta tokoro de, yurusarenai.',id:'Meski minta maaf, takkan dimaafkan.'},{jp:'言った ところで、無駄だ。',rom:'itta tokoro de, muda da.',id:'Meski dikatakan pun, percuma.'}]
+    },
+    {
+      id:'n1b_20', pattern:'～であれ', arti:'apa pun/siapa pun ~',
+      penjelasan:'Menyatakan \'apa pun/siapa pun ~, tetap\'. Sering dgn kata tanya.',
+      rumus:'[Kata Benda / kata tanya] + であれ',
+      contoh:[{jp:'誰で あれ、ルールを 守る べきだ。',rom:'dare de are, rūru o mamoru beki da.',id:'Siapa pun, harus patuh aturan.'},{jp:'どんな 理由で あれ、暴力は だめだ。',rom:'donna riyū de are, bōryoku wa dame da.',id:'Apa pun alasannya, kekerasan tak boleh.'},{jp:'結果が どうで あれ、後悔しない。',rom:'kekka ga dō de are, kōkai shinai.',id:'Apa pun hasilnya, tak menyesal.'}]
+    },
+    {
+      id:'n1b_21', pattern:'～にたえない', arti:'tak tertahankan untuk ~ / sangat ~',
+      penjelasan:'Menyatakan sesuatu tak sanggup dilihat/didengar, atau rasa mendalam (\'tak tahan untuk ~\').',
+      rumus:'[Kata Kerja bentuk-kamus / Kata Benda] + にたえない',
+      contoh:[{jp:'見るに たえない 光景。',rom:'miru ni taenai kōkei.',id:'Pemandangan yang tak tega dilihat.'},{jp:'聞くに たえない 話。',rom:'kiku ni taenai hanashi.',id:'Cerita yang tak tahan didengar.'},{jp:'感謝に たえません。',rom:'kansha ni taemasen.',id:'Sungguh tak terhingga rasa terima kasih.'}]
+    },
+    {
+      id:'n1b_22', pattern:'～を限りに', arti:'mulai ~ berhenti / sekuat ~',
+      penjelasan:'Menyatakan batas akhir (\'mulai ~ berhenti\') atau sekuat tenaga (\'sekuat ~\').',
+      rumus:'[Kata Benda] + を限りに',
+      contoh:[{jp:'今日を 限りに タバコを やめる。',rom:'kyō o kagiri ni tabako o yameru.',id:'Mulai hari ini berhenti merokok.'},{jp:'声を 限りに 叫んだ。',rom:'koe o kagiri ni sakenda.',id:'Berteriak sekuat suara.'},{jp:'本日を 限りに 閉店。',rom:'honjitsu o kagiri ni heiten.',id:'Tutup mulai hari ini.'}]
+    },
+    {
+      id:'n1b_23', pattern:'～ところを', arti:'di saat ~ (sopan)',
+      penjelasan:'Menyatakan situasi saat sesuatu terjadi, sering ungkapan sopan (\'di saat ~ yang ~\').',
+      rumus:'[bentuk biasa / Kata Benda + の] + ところを',
+      contoh:[{jp:'お忙しい ところを すみません。',rom:'oisogashii tokoro o sumimasen.',id:'Maaf mengganggu di saat sibuk.'},{jp:'寝ている ところを 起こされた。',rom:'nete iru tokoro o okosareta.',id:'Dibangunkan saat sedang tidur.'},{jp:'お休みの ところを 失礼します。',rom:'oyasumi no tokoro o shitsurei shimasu.',id:'Maaf di saat Anda istirahat.'}]
+    },
+    {
+      id:'n1b_24', pattern:'～にそくして', arti:'sesuai dengan ~',
+      penjelasan:'Menyatakan kesesuaian dengan aturan/fakta (\'sesuai dengan ~\').',
+      rumus:'[Kata Benda] + に即して',
+      contoh:[{jp:'法律に 即して 処理する。',rom:'hōritsu ni sokushite shori suru.',id:'Memproses sesuai hukum.'},{jp:'事実に 即して 話す。',rom:'jijitsu ni sokushite hanasu.',id:'Berbicara sesuai fakta.'},{jp:'現実に 即した 計画。',rom:'genjitsu ni sokushita keikaku.',id:'Rencana yang sesuai realita.'}]
+    },
+    {
+      id:'n1b_25', pattern:'～とはいえ', arti:'meskipun ~, namun ~',
+      penjelasan:'Menyatakan konsesi (\'meski dibilang ~, namun ~\').',
+      rumus:'[bentuk biasa / Kata Benda] + とはいえ',
+      contoh:[{jp:'春とは いえ、まだ 寒い。',rom:'haru to wa ie, mada samui.',id:'Meski musim semi, masih dingin.'},{jp:'子供とは いえ、油断できない。',rom:'kodomo to wa ie, yudan dekinai.',id:'Meski anak-anak, tak bisa lengah.'},{jp:'休みとは いえ、仕事が ある。',rom:'yasumi to wa ie, shigoto ga aru.',id:'Meski libur, ada kerjaan.'}]
+    },
+    {
+      id:'n1b_26', pattern:'～ものを', arti:'padahal seharusnya ~ (sesal)',
+      penjelasan:'Menyatakan penyesalan/kekesalan (\'padahal seharusnya ~\').',
+      rumus:'[bentuk biasa] + ものを',
+      contoh:[{jp:'早く 言えば いい ものを。',rom:'hayaku ieba ii mono o.',id:'Padahal kan tinggal bilang dari awal.'},{jp:'休めば いい ものを、無理を する。',rom:'yasumeba ii mono o, muri o suru.',id:'Padahal tinggal istirahat, malah memaksa.'},{jp:'謝れば 済む ものを。',rom:'ayamareba sumu mono o.',id:'Padahal cukup minta maaf saja.'}]
+    },
+    {
+      id:'n1b_27', pattern:'～ようが', arti:'mau ~ bagaimanapun',
+      penjelasan:'Menyatakan ketidakpedulian pada hasil (\'mau ~ bagaimanapun, tetap\').',
+      rumus:'[Kata Kerja bentuk kemauan] + が',
+      contoh:[{jp:'何を 言われようが 気に しない。',rom:'nani o iwareyō ga ki ni shinai.',id:'Mau dibilang apa pun, tak peduli.'},{jp:'雨が 降ろうが 行く。',rom:'ame ga furō ga iku.',id:'Mau hujan pun, tetap pergi.'},{jp:'どうなろうが 関係ない。',rom:'dō narō ga kankei nai.',id:'Mau jadi apa pun, tak ada urusan.'}]
+    },
+    {
+      id:'n1b_28', pattern:'～いかん', arti:'tergantung ~',
+      penjelasan:'Menyatakan ketergantungan pada sesuatu (\'tergantung ~\').',
+      rumus:'[Kata Benda (+の)] + いかん',
+      contoh:[{jp:'結果 いかんで 判断する。',rom:'kekka ikan de handan suru.',id:'Memutuskan tergantung hasilnya.'},{jp:'天気の いかんに かかわらず 決行する。',rom:'tenki no ikan ni kakawarazu kekkō suru.',id:'Tetap dilaksanakan apa pun cuacanya.'},{jp:'成績 いかんでは 留年する。',rom:'seiseki ikan de wa ryūnen suru.',id:'Tergantung nilai, bisa tinggal kelas.'}]
+    },
+    {
+      id:'n1b_29', pattern:'～と相まって', arti:'berpadu dengan ~',
+      penjelasan:'Menyatakan dua faktor saling memperkuat (\'berpadu dengan ~\').',
+      rumus:'[Kata Benda] + と相まって',
+      contoh:[{jp:'努力が 才能と 相まって 成功した。',rom:'doryoku ga sainō to aimatte seikō shita.',id:'Usaha berpadu bakat membawa sukses.'},{jp:'天候が 不運と 相まって 失敗した。',rom:'tenkō ga fuun to aimatte shippai shita.',id:'Cuaca berpadu nasib buruk jadi gagal.'},{jp:'景色が 音楽と 相まって 感動的だ。',rom:'keshiki ga ongaku to aimatte kandōteki da.',id:'Pemandangan berpadu musik jadi mengharukan.'}]
+    },
+    {
+      id:'n1b_30', pattern:'～をよそに', arti:'mengabaikan ~',
+      penjelasan:'Menyatakan bertindak tanpa mempedulikan sesuatu (\'tanpa peduli ~\').',
+      rumus:'[Kata Benda] + をよそに',
+      contoh:[{jp:'親の 心配を よそに、遊んで いる。',rom:'oya no shinpai o yoso ni, asonde iru.',id:'Tak peduli kecemasan orang tua, malah bermain.'},{jp:'周囲の 反対を よそに、結婚した。',rom:'shūi no hantai o yoso ni, kekkon shita.',id:'Mengabaikan tentangan sekitar, menikah.'},{jp:'危険を よそに 進む。',rom:'kiken o yoso ni susumu.',id:'Maju tanpa peduli bahaya.'}]
+    },
+    {
+      id:'n1b_31', pattern:'～ないまでも', arti:'kalaupun tidak ~, setidaknya ~',
+      penjelasan:'Menyatakan tingkat minimum (\'kalaupun tak sampai ~, setidaknya ~\').',
+      rumus:'[Kata Kerja bentuk-nai] + までも',
+      contoh:[{jp:'毎日とは いかないまでも、時々 運動する。',rom:'mainichi to wa ikanai made mo, tokidoki undō suru.',id:'Kalaupun tak tiap hari, sesekali olahraga.'},{jp:'完璧で ないまでも、よく できた。',rom:'kanpeki de nai made mo, yoku dekita.',id:'Kalaupun tak sempurna, sudah bagus.'},{jp:'謝らないまでも、連絡 ぐらい しろ。',rom:'ayamaranai made mo, renraku gurai shiro.',id:'Kalaupun tak minta maaf, setidaknya kabari.'}]
+    },
+    {
+      id:'n1b_32', pattern:'～たる', arti:'sebagai ~ yang seharusnya',
+      penjelasan:'Menyatakan status/kedudukan dgn tuntutan moral (\'sebagai ~ yang ~\').',
+      rumus:'[Kata Benda] + たる',
+      contoh:[{jp:'教師 たる もの、模範に なるべきだ。',rom:'kyōshi taru mono, mohan ni naru beki da.',id:'Sebagai guru, harus jadi teladan.'},{jp:'リーダー たる 者の 責任。',rom:'rīdā taru mono no sekinin.',id:'Tanggung jawab seorang pemimpin.'},{jp:'親 たる もの。',rom:'oya taru mono.',id:'Selayaknya seorang orang tua.'}]
+    },
+    {
+      id:'n1b_33', pattern:'～まじき', arti:'yang tak pantas ~',
+      penjelasan:'Menyatakan sesuatu yang tak selayaknya dilakukan (\'yang tak pantas ~\').',
+      rumus:'[Kata Kerja bentuk-kamus] + まじき',
+      contoh:[{jp:'あるまじき 行為。',rom:'arumajiki kōi.',id:'Perbuatan yang tak selayaknya.'},{jp:'教師として あるまじき 発言。',rom:'kyōshi to shite arumajiki hatsugen.',id:'Ucapan yang tak pantas bagi guru.'},{jp:'許すまじき 罪。',rom:'yurusumajiki tsumi.',id:'Dosa yang tak termaafkan.'}]
+    },
+    {
+      id:'n1b_34', pattern:'～極まる', arti:'sangat ~ (ekstrem)',
+      penjelasan:'Menyatakan tingkat ekstrem (\'amat sangat ~\').',
+      rumus:'[na-adj] + 極まる / 極まりない',
+      contoh:[{jp:'失礼 極まる 態度。',rom:'shitsurei kiwamaru taido.',id:'Sikap yang amat tidak sopan.'},{jp:'危険 極まりない。',rom:'kiken kiwamarinai.',id:'Sangat berbahaya.'},{jp:'感激 極まって 泣いた。',rom:'kangeki kiwamatte naita.',id:'Terharu hingga menangis.'}]
+    },
+    {
+      id:'n1b_35', pattern:'～にかこつけて', arti:'dengan dalih ~',
+      penjelasan:'Menyatakan memakai sesuatu sebagai alasan (\'dengan dalih ~\').',
+      rumus:'[Kata Benda] + にかこつけて',
+      contoh:[{jp:'仕事に かこつけて 飲みに 行く。',rom:'shigoto ni kakotsukete nomi ni iku.',id:'Dengan dalih kerja, pergi minum.'},{jp:'病気に かこつけて 休む。',rom:'byōki ni kakotsukete yasumu.',id:'Dengan dalih sakit, bolos.'},{jp:'勉強に かこつけて 部屋に こもる。',rom:'benkyō ni kakotsukete heya ni komoru.',id:'Dengan dalih belajar, mengurung diri.'}]
+    },
+    {
+      id:'n1b_36', pattern:'～にはあたらない', arti:'tak perlu sampai ~',
+      penjelasan:'Menyatakan reaksi berlebihan tak diperlukan (\'tak perlu sampai ~\').',
+      rumus:'[Kata Kerja bentuk-kamus] + にはあたらない',
+      contoh:[{jp:'驚くには あたらない。',rom:'odoroku ni wa ataranai.',id:'Tak perlu sampai terkejut.'},{jp:'感心するには あたらない。',rom:'kanshin suru ni wa ataranai.',id:'Tak perlu sampai kagum.'},{jp:'非難するには あたらない。',rom:'hinan suru ni wa ataranai.',id:'Tak perlu sampai mencela.'}]
+    },
+    {
+      id:'n1b_37', pattern:'～にかたくない', arti:'mudah untuk ~',
+      penjelasan:'Menyatakan sesuatu mudah dibayangkan/dipahami (\'tidak sulit untuk ~\').',
+      rumus:'[Kata Kerja bentuk-kamus / Kata Benda] + にかたくない',
+      contoh:[{jp:'想像に かたくない。',rom:'sōzō ni katakunai.',id:'Mudah dibayangkan.'},{jp:'察するに かたくない。',rom:'sassuru ni katakunai.',id:'Tidak sulit untuk mengerti.'},{jp:'理解に かたくない。',rom:'rikai ni katakunai.',id:'Mudah dipahami.'}]
+    },
+    {
+      id:'n1b_38', pattern:'～べからず', arti:'dilarang ~ (larangan formal)',
+      penjelasan:'Larangan gaya formal/papan pengumuman (\'dilarang ~\').',
+      rumus:'[Kata Kerja bentuk-kamus] + べからず',
+      contoh:[{jp:'ここに 入るべからず。',rom:'koko ni hairu bekarazu.',id:'Dilarang masuk ke sini.'},{jp:'写真を 撮るべからず。',rom:'shashin o toru bekarazu.',id:'Dilarang memotret.'},{jp:'初心 忘るべからず。',rom:'shoshin wasuru bekarazu.',id:'Jangan lupakan niat awal.'}]
+    },
+    {
+      id:'n1b_39', pattern:'～を禁じ得ない', arti:'tak bisa menahan ~ (perasaan)',
+      penjelasan:'Menyatakan tak bisa menahan perasaan (\'tak bisa menahan ~\').',
+      rumus:'[Kata Benda] + を禁じ得ない',
+      contoh:[{jp:'涙を 禁じ得ない。',rom:'namida o kinjienai.',id:'Tak bisa menahan air mata.'},{jp:'怒りを 禁じ得ない。',rom:'ikari o kinjienai.',id:'Tak bisa menahan amarah.'},{jp:'同情を 禁じ得ない。',rom:'dōjō o kinjienai.',id:'Tak bisa menahan rasa iba.'}]
+    },
+    {
+      id:'n1b_40', pattern:'～たりとも', arti:'sekecil ~ pun tidak',
+      penjelasan:'Menyatakan penyangkalan total bahkan untuk unit terkecil (\'sekecil ~ pun tidak\').',
+      rumus:'[1 + satuan] + たりとも',
+      contoh:[{jp:'一秒 たりとも 無駄に できない。',rom:'ichibyō tari to mo muda ni dekinai.',id:'Sedetik pun tak boleh sia-sia.'},{jp:'一円 たりとも 渡さない。',rom:'ichien tari to mo watasanai.',id:'Sesen pun takkan kuberikan.'},{jp:'一日 たりとも 忘れない。',rom:'ichinichi tari to mo wasurenai.',id:'Sehari pun takkan lupa.'}]
+    },
+    {
+      id:'n1b_41', pattern:'～きらいがある', arti:'cenderung ~ (negatif)',
+      penjelasan:'Menyatakan kecenderungan buruk (\'cenderung ~\').',
+      rumus:'[Kata Kerja bentuk-kamus / Kata Benda + の] + きらいがある',
+      contoh:[{jp:'彼は 大げさに 言う きらいが ある。',rom:'kare wa ōgesa ni iu kirai ga aru.',id:'Dia cenderung melebih-lebihkan.'},{jp:'物事を 悲観的に 見る きらいが ある。',rom:'monogoto o hikanteki ni miru kirai ga aru.',id:'Cenderung melihat segala hal secara pesimis.'},{jp:'自分を 責める きらいが ある。',rom:'jibun o semeru kirai ga aru.',id:'Cenderung menyalahkan diri sendiri.'}]
+    },
+    {
+      id:'n1b_42', pattern:'～しまつだ', arti:'akhirnya malah ~ (buruk)',
+      penjelasan:'Menyatakan hasil akhir yang buruk (\'ujung-ujungnya malah ~\').',
+      rumus:'[Kata Kerja bentuk-kamus] + しまつだ',
+      contoh:[{jp:'喧嘩して、最後は 泣き出す しまつだ。',rom:'kenka shite, saigo wa nakidasu shimatsu da.',id:'Bertengkar, ujung-ujungnya malah menangis.'},{jp:'借金を 重ねる しまつだ。',rom:'shakkin o kasaneru shimatsu da.',id:'Ujung-ujungnya malah menumpuk utang.'},{jp:'逃げ出す しまつだ。',rom:'nigedasu shimatsu da.',id:'Akhirnya malah kabur.'}]
+    },
+    {
+      id:'n1b_43', pattern:'～を余儀なくされる', arti:'terpaksa ~ (oleh keadaan)',
+      penjelasan:'Menyatakan dipaksa keadaan (\'terpaksa ~\').',
+      rumus:'[Kata Benda] + を余儀なくされる',
+      contoh:[{jp:'中止を 余儀なくされた。',rom:'chūshi o yoginaku sareta.',id:'Terpaksa dibatalkan.'},{jp:'退職を 余儀なくされた。',rom:'taishoku o yoginaku sareta.',id:'Terpaksa mengundurkan diri.'},{jp:'変更を 余儀なくされる。',rom:'henkō o yoginaku sareru.',id:'Terpaksa diubah.'}]
+    },
+    {
+      id:'n1b_44', pattern:'～てやまない', arti:'sangat ~ (perasaan mendalam)',
+      penjelasan:'Menyatakan perasaan kuat tak berkesudahan (\'sangat ~\', \'senantiasa ~\').',
+      rumus:'[Kata Kerja bentuk-te] + やまない',
+      contoh:[{jp:'成功を 願って やまない。',rom:'seikō o negatte yamanai.',id:'Senantiasa mendoakan keberhasilan.'},{jp:'尊敬して やまない。',rom:'sonkei shite yamanai.',id:'Sangat menghormati.'},{jp:'愛して やまない。',rom:'aishite yamanai.',id:'Mencintai sepenuh hati.'}]
+    },
+    {
+      id:'n1b_45', pattern:'～かいもなく', arti:'sia-sia tanpa hasil ~',
+      penjelasan:'Menyatakan usaha tak membuahkan hasil (\'sia-sia ~\').',
+      rumus:'[Kata Kerja bentuk-ta / Kata Benda + の] + かいもなく',
+      contoh:[{jp:'看病の かいも なく、亡くなった。',rom:'kanbyō no kai mo naku, nakunatta.',id:'Perawatan sia-sia, ia meninggal.'},{jp:'努力の かいも なく 落ちた。',rom:'doryoku no kai mo naku ochita.',id:'Usaha sia-sia, gagal.'},{jp:'待った かいも なく 来なかった。',rom:'matta kai mo naku konakatta.',id:'Sia-sia menunggu, ia tak datang.'}]
+    },
+    {
+      id:'n1b_46', pattern:'～だけまし', arti:'setidaknya masih mending ~',
+      penjelasan:'Menyatakan rasa syukur relatif (\'setidaknya masih mending ~\').',
+      rumus:'[bentuk biasa] + だけまし',
+      contoh:[{jp:'生きているだけ ましだ。',rom:'ikite iru dake mashi da.',id:'Setidaknya masih hidup, sudah mending.'},{jp:'雨で 済むだけ ましだ。',rom:'ame de sumu dake mashi da.',id:'Masih mending cuma hujan.'},{jp:'怪我が 軽いだけ ましだ。',rom:'kega ga karui dake mashi da.',id:'Untung lukanya ringan.'}]
+    },
+    {
+      id:'n1b_47', pattern:'～ないではすまない', arti:'mau tak mau harus ~',
+      penjelasan:'Menyatakan keharusan moral/sosial (\'mau tak mau harus ~\').',
+      rumus:'[Kata Kerja bentuk-nai] + ではすまない',
+      contoh:[{jp:'謝らないでは すまない。',rom:'ayamaranai de wa sumanai.',id:'Mau tak mau harus minta maaf.'},{jp:'弁償しないでは すまない。',rom:'benshō shinai de wa sumanai.',id:'Mau tak mau harus mengganti rugi.'},{jp:'説明しないでは すまない。',rom:'setsumei shinai de wa sumanai.',id:'Mau tak mau harus menjelaskan.'}]
+    },
+    {
+      id:'n1b_48', pattern:'～をふまえて', arti:'berdasarkan ~',
+      penjelasan:'Menyatakan dasar pertimbangan (\'berdasarkan ~\', \'dengan mempertimbangkan ~\').',
+      rumus:'[Kata Benda] + を踏まえて',
+      contoh:[{jp:'結果を 踏まえて 検討する。',rom:'kekka o fumaete kentō suru.',id:'Mempertimbangkan berdasarkan hasil.'},{jp:'意見を 踏まえて 決める。',rom:'iken o fumaete kimeru.',id:'Memutuskan berdasarkan pendapat.'},{jp:'事実を 踏まえて 判断する。',rom:'jijitsu o fumaete handan suru.',id:'Menilai berdasarkan fakta.'}]
+    },
+    {
+      id:'n1b_49', pattern:'～をおして', arti:'memaksakan diri meski ~',
+      penjelasan:'Menyatakan bertindak meski ada rintangan (\'memaksakan diri meski ~\').',
+      rumus:'[Kata Benda] + をおして',
+      contoh:[{jp:'病気を おして 出席した。',rom:'byōki o oshite shusseki shita.',id:'Hadir memaksakan diri meski sakit.'},{jp:'反対を おして 実行する。',rom:'hantai o oshite jikkō suru.',id:'Melaksanakan meski ditentang.'},{jp:'雨を おして 出かけた。',rom:'ame o oshite dekaketa.',id:'Pergi memaksakan diri meski hujan.'}]
+    },
+    {
+      id:'n1b_50', pattern:'～ゆえ', arti:'karena ~ (formal sastra)',
+      penjelasan:'Penghubung sebab formal/tulis (\'karena ~\').',
+      rumus:'[Kata Benda / bentuk biasa] + ゆえ',
+      contoh:[{jp:'若さ ゆえの 過ち。',rom:'wakasa yue no ayamachi.',id:'Kesalahan karena masih muda.'},{jp:'貧しい ゆえに 苦労した。',rom:'mazushii yue ni kurō shita.',id:'Menderita karena miskin.'},{jp:'無知 ゆえの 行動。',rom:'muchi yue no kōdō.',id:'Tindakan akibat ketidaktahuan.'}]
+    },
+    {
+      id:'n1b_51', pattern:'～ながらも', arti:'meskipun ~ namun',
+      penjelasan:'Menyatakan kontras (\'meskipun ~, namun ~\').',
+      rumus:'[Kata Kerja bentuk-masu / i-adj / na-adj] + ながらも',
+      contoh:[{jp:'狭い ながらも、楽しい 我が家。',rom:'semai nagara mo, tanoshii wagaya.',id:'Meski sempit, rumahku menyenangkan.'},{jp:'知っていながらも、黙っていた。',rom:'shitte inagara mo, damatte ita.',id:'Meski tahu, tetap diam.'},{jp:'子供ながらも しっかりしている。',rom:'kodomo nagara mo shikkari shite iru.',id:'Meski masih kecil, tapi mandiri.'}]
+    },
+    {
+      id:'n1b_52', pattern:'～ことなしに', arti:'tanpa ~',
+      penjelasan:'Menyatakan tanpa melakukan sesuatu (\'tanpa ~\').',
+      rumus:'[Kata Kerja bentuk-kamus] + ことなしに',
+      contoh:[{jp:'努力する ことなしに 成功は ない。',rom:'doryoku suru koto nashi ni seikō wa nai.',id:'Tanpa usaha tak ada keberhasilan.'},{jp:'休む ことなしに 働く。',rom:'yasumu koto nashi ni hataraku.',id:'Bekerja tanpa istirahat.'},{jp:'傷つける ことなしに 伝える。',rom:'kizutsukeru koto nashi ni tsutaeru.',id:'Menyampaikan tanpa menyakiti.'}]
+    },
+    {
+      id:'n1b_53', pattern:'～ではあるまいし', arti:'kan bukan ~ (jadi seharusnya)',
+      penjelasan:'Menyatakan alasan/teguran (\'kan bukan ~, jadi ~\').',
+      rumus:'[Kata Benda / bentuk biasa] + ではあるまいし',
+      contoh:[{jp:'子供では あるまいし、自分で やりなさい。',rom:'kodomo de wa arumai shi, jibun de yarinasai.',id:'Kan bukan anak kecil, lakukan sendiri.'},{jp:'神では あるまいし、完璧は 無理だ。',rom:'kami de wa arumai shi, kanpeki wa muri da.',id:'Kan bukan Tuhan, mustahil sempurna.'},{jp:'初めてでは あるまいし。',rom:'hajimete de wa arumai shi.',id:'Kan bukan pertama kali.'}]
+    },
+    {
+      id:'n1b_54', pattern:'～てからというもの', arti:'sejak ~ (perubahan besar)',
+      penjelasan:'Menyatakan perubahan berkelanjutan sejak suatu peristiwa (\'sejak ~, terus ~\').',
+      rumus:'[Kata Kerja bentuk-te] + からというもの',
+      contoh:[{jp:'日本に 来てからと いうもの、毎日 楽しい。',rom:'Nihon ni kite kara to iu mono, mainichi tanoshii.',id:'Sejak datang ke Jepang, tiap hari menyenangkan.'},{jp:'結婚してからと いうもの、変わった。',rom:'kekkon shite kara to iu mono, kawatta.',id:'Sejak menikah, ia berubah.'},{jp:'病気して からというもの、健康に 気を つける。',rom:'byōki shite kara to iu mono, kenkō ni ki o tsukeru.',id:'Sejak sakit, jadi jaga kesehatan.'}]
+    },
+    {
+      id:'n1b_55', pattern:'～としたところで', arti:'meskipun ~ pun, tetap ~',
+      penjelasan:'Menyatakan kesia-siaan meski berusaha (\'meski ~ pun, tetap tak ~\').',
+      rumus:'[bentuk biasa] + としたところで',
+      contoh:[{jp:'急いだ と したところで、間に合わない。',rom:'isoida to shita tokoro de, maniawanai.',id:'Meski buru-buru pun, takkan keburu.'},{jp:'反対した と したところで、変わらない。',rom:'hantai shita to shita tokoro de, kawaranai.',id:'Meski menentang pun, takkan berubah.'},{jp:'謝った と したところで、遅い。',rom:'ayamatta to shita tokoro de, osoi.',id:'Meski minta maaf pun, sudah terlambat.'}]
+    },
+    {
+      id:'n1b_56', pattern:'～すら', arti:'bahkan ~ pun',
+      penjelasan:'Menyatakan contoh ekstrem (\'bahkan ~ pun\'). Lebih formal dari さえ.',
+      rumus:'[Kata Benda] + すら',
+      contoh:[{jp:'名前 すら 知らない。',rom:'namae sura shiranai.',id:'Bahkan namanya pun tak tahu.'},{jp:'水 すら 飲めなかった。',rom:'mizu sura nomenakatta.',id:'Bahkan air pun tak bisa diminum.'},{jp:'専門家 ですら 間違える。',rom:'senmonka de sura machigaeru.',id:'Bahkan ahli pun bisa salah.'}]
+    },
+    {
+      id:'n1b_57', pattern:'～といえども', arti:'meskipun ~ (sekalipun)',
+      penjelasan:'Menyatakan konsesi formal (\'meskipun ~ sekalipun\').',
+      rumus:'[Kata Benda / bentuk biasa] + といえども',
+      contoh:[{jp:'子供と いえども 許さない。',rom:'kodomo to iedomo yurusanai.',id:'Sekalipun anak-anak, tak kumaafkan.'},{jp:'専門家と いえども 間違う。',rom:'senmonka to iedomo machigau.',id:'Sekalipun ahli, bisa salah.'},{jp:'一瞬と いえども 気を 抜けない。',rom:'isshun to iedomo ki o nukenai.',id:'Sekejap pun tak boleh lengah.'}]
+    },
+    {
+      id:'n1b_58', pattern:'～っぱなし', arti:'dibiarkan ~ terus',
+      penjelasan:'Menyatakan keadaan dibiarkan begitu saja (\'dibiarkan ~ terus\').',
+      rumus:'[Kata Kerja bentuk-masu (tanpa masu)] + っぱなし',
+      contoh:[{jp:'電気を つけっぱなしに した。',rom:'denki o tsukeppanashi ni shita.',id:'Membiarkan lampu menyala terus.'},{jp:'窓を 開けっぱなし。',rom:'mado o akeppanashi.',id:'Jendela dibiarkan terbuka terus.'},{jp:'立ちっぱなしで 疲れた。',rom:'tachippanashi de tsukareta.',id:'Lelah karena berdiri terus.'}]
+    },
+    {
+      id:'n1b_59', pattern:'～ずくめ', arti:'serba ~ / penuh ~',
+      penjelasan:'Menyatakan segala sesuatunya satu macam (\'serba ~\').',
+      rumus:'[Kata Benda] + ずくめ',
+      contoh:[{jp:'黒ずくめの 服装。',rom:'kurozukume no fukusō.',id:'Pakaian serba hitam.'},{jp:'いいこと ずくめだ。',rom:'ii koto zukume da.',id:'Serba hal baik.'},{jp:'規則 ずくめの 生活。',rom:'kisoku zukume no seikatsu.',id:'Hidup penuh aturan.'}]
+    },
+    {
+      id:'n1b_60', pattern:'～ながらに', arti:'dalam keadaan ~ / sambil ~',
+      penjelasan:'Menyatakan keadaan yang tetap (\'dalam keadaan ~\', \'sambil ~\').',
+      rumus:'[Kata Benda / Kata Kerja bentuk-masu] + ながらに',
+      contoh:[{jp:'涙ながらに 訴えた。',rom:'namida nagara ni uttaeta.',id:'Memohon sambil menangis.'},{jp:'生まれながらに 才能が ある。',rom:'umare nagara ni sainō ga aru.',id:'Berbakat sejak lahir.'},{jp:'昔ながらの 製法。',rom:'mukashi nagara no seihō.',id:'Metode pembuatan ala lama.'}]
+    },
+    {
+      id:'n1b_61', pattern:'～にもまして', arti:'lebih dari ~',
+      penjelasan:'Menyatakan tingkat melebihi (\'lebih dari ~\').',
+      rumus:'[Kata Benda] + にもまして',
+      contoh:[{jp:'以前に もまして 忙しい。',rom:'izen ni mo mashite isogashii.',id:'Lebih sibuk dari sebelumnya.'},{jp:'何に もまして 健康が 大事だ。',rom:'nani ni mo mashite kenkō ga daiji da.',id:'Lebih dari apa pun, kesehatan penting.'},{jp:'去年に もまして 暑い。',rom:'kyonen ni mo mashite atsui.',id:'Lebih panas dari tahun lalu.'}]
+    },
+    {
+      id:'n1b_62', pattern:'～にひきかえ', arti:'berbeda dengan ~ / sebaliknya',
+      penjelasan:'Menyatakan kontras tajam (\'berbeda dengan ~, sebaliknya ~\').',
+      rumus:'[Kata Benda + の / bentuk biasa + の] + にひきかえ',
+      contoh:[{jp:'兄に ひきかえ、弟は おとなしい。',rom:'ani ni hikikae, otōto wa otonashii.',id:'Berbeda dengan kakak, adik pendiam.'},{jp:'去年に ひきかえ、今年は 豊作だ。',rom:'kyonen ni hikikae, kotoshi wa hōsaku da.',id:'Berbeda dengan tahun lalu, tahun ini panen melimpah.'},{jp:'彼に ひきかえ、私は 不器用だ。',rom:'kare ni hikikae, watashi wa bukiyō da.',id:'Berbeda dengan dia, aku canggung.'}]
+    },
+    {
+      id:'n1b_63', pattern:'～はおろか', arti:'jangankan ~ (bahkan ~ pun)',
+      penjelasan:'Menyatakan \'jangankan ~, bahkan ~ pun tidak\'.',
+      rumus:'[Kata Benda] + はおろか',
+      contoh:[{jp:'漢字は おろか、ひらがなも 読めない。',rom:'kanji wa oroka, hiragana mo yomenai.',id:'Jangankan kanji, hiragana pun tak bisa baca.'},{jp:'外国は おろか、隣町にも 行ったことが ない。',rom:'gaikoku wa oroka, tonarimachi ni mo itta koto ga nai.',id:'Jangankan luar negeri, kota sebelah pun belum pernah.'},{jp:'会話は おろか、挨拶も できない。',rom:'kaiwa wa oroka, aisatsu mo dekinai.',id:'Jangankan ngobrol, menyapa pun tak bisa.'}]
+    }
   ]
 };
 
@@ -4327,7 +5057,7 @@ async function startBunpoQuiz(){
     return p.pattern + ' (' + p.arti + ')';
   }).join(', ');
 
-  var prompt = 'Buatkan 4 soal pilihan ganda bahasa Jepang JLPT '+currentJLPT
+  var prompt = 'Buatkan 6 soal pilihan ganda bahasa Jepang JLPT '+currentJLPT
     + ' untuk menguji pemahaman pola tata bahasa berikut: '+patternList+'. '
     + 'Setiap soal berupa kalimat dengan satu bagian rumpang (___), dan 4 pilihan jawaban. '
     + 'Penjelasan singkat (maksimal 1 kalimat) dalam Bahasa Indonesia. '
@@ -4507,6 +5237,14 @@ function updateFlashMenu() {
     if(flatSec)flatSec.style.display='';
     var total2=getCurrentTotal(),done2=getCurrentMastered(),pct2=Math.round(done2/total2*100);
     var el=document.getElementById('fm-flat-info');
+    var vocabEmpty=!(JLPT_DATA[currentJLPT]&&JLPT_DATA[currentJLPT].length);
+    if(vocabEmpty && currentJLPT!=='SSW'){
+      if(el)el.innerHTML='<div style=\"font-size:40px;margin-bottom:10px\">📖</div>'
+        +'<div style=\"font-weight:700;font-size:17px;margin-bottom:6px;color:'+color+'\">Kosakata '+currentJLPT+' belum tersedia</div>'
+        +'<div style=\"font-size:13px;color:var(--mist);margin-bottom:18px;line-height:1.5\">Untuk '+currentJLPT+', materi tata bahasa (Bunpo) sudah tersedia. Daftar kosakata akan ditambahkan kemudian.</div>'
+        +'<button class=\"start-study-btn\" style=\"background:#7a5cc4;display:inline-block;width:auto;padding:12px 28px\" onclick=\"gotoScreen(&apos;bunpomenu&apos;)\">文法 Pelajari Bunpo '+currentJLPT+' →</button>';
+      return;
+    }
     if(currentJLPT==='SSW'){
       var sswTopics=[
         {k:'eisei', jp:'衛生', id:'Higiene & Sanitasi', emo:'🧼'},
@@ -4736,8 +5474,14 @@ function renderOverviewCategories(){
       rows=[['漢字 Kanji',cd('kanji'),cats.kanji],
             ['語彙 Kosakata',cd('vocab'),cats.vocab],
             ['文法 Grammar',cd('grammar'),cats.grammar]];
-    } else {
+    } else if(allW.length){
       rows=[[currentJLPT+' Kosakata',getCurrentMastered(),getCurrentTotal()]];
+    } else {
+      // Vocab belum ada (N2/N1) — tampilkan progres Bunpo
+      var bp=(bunpoProgress[currentJLPT]||0);
+      var totPat=(BUNPO_DATA[currentJLPT]||[]).length;
+      var bpDone=Math.min(bp*(typeof STAGE_SIZE!=='undefined'?STAGE_SIZE:3),totPat);
+      rows=[['文法 Grammar '+currentJLPT,bpDone,totPat]];
     }
   }
   wrap.innerHTML=rows.map(function(r){
@@ -5552,9 +6296,13 @@ function setWordMastered(w,val){
 }
 function switchJLPT(level){
   if(currentJLPT===level) return;
-  if((level==='N2'||level==='N1')&&(!JLPT_DATA[level]||!JLPT_DATA[level].length)){
-    alert('Data '+level+' belum tersedia. Tersedia: N3, N4, N5');
-    return;
+  if((level==='N2'||level==='N1')){
+    var hasVocab=JLPT_DATA[level]&&JLPT_DATA[level].length;
+    var hasBunpo=BUNPO_DATA[level]&&BUNPO_DATA[level].length;
+    if(!hasVocab&&!hasBunpo){
+      alert('Data '+level+' belum tersedia.');
+      return;
+    }
   }
   currentJLPT=level;
   lbCurrentLevel=level;
