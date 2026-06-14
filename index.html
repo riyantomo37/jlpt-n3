@@ -1415,8 +1415,17 @@ nav button.active {
       <div class="section-title" style="margin:0">📝 Simulasi Ujian JLPT</div>
       <span id="exam-level-badge" style="font-family:'DM Mono',monospace;font-size:11px;padding:3px 10px;border-radius:10px;font-weight:700;background:var(--red);color:white">N3</span>
     </div>
-    <p style="font-size:13px;color:var(--mist);margin-bottom:20px">Format soal seperti ujian JLPT asli · Pilih bagian yang ingin dilatih</p>
+    <p style="font-size:13px;color:var(--mist);margin-bottom:16px">Pilih tipe ujian</p>
 
+    <!-- Mode toggle: Generate AI vs Bank Soal -->
+    <div style="display:flex;gap:8px;margin-bottom:20px;background:rgba(26,26,46,.05);padding:4px;border-radius:12px">
+      <button id="exam-mode-ai" onclick="setExamMode('ai')" style="flex:1;padding:11px;border:none;border-radius:9px;font-family:inherit;font-size:13px;font-weight:700;cursor:pointer;background:var(--red);color:white">🤖 Generate AI</button>
+      <button id="exam-mode-bank" onclick="setExamMode('bank')" style="flex:1;padding:11px;border:none;border-radius:9px;font-family:inherit;font-size:13px;font-weight:700;cursor:pointer;background:transparent;color:var(--mist)">📚 Bank Soal Asli</button>
+    </div>
+
+    <!-- AI mode: existing generated sections -->
+    <div id="exam-ai-mode">
+    <p style="font-size:12px;color:var(--mist);margin-bottom:14px">Soal dibuat otomatis oleh AI · bisa dinilai &amp; direview</p>
     <div style="display:flex;flex-direction:column;gap:10px;margin-bottom:24px">
 
       <!-- 文字・語彙 -->
@@ -1485,6 +1494,15 @@ nav button.active {
         <span style="font-size:15px">⚡ Full Mock Test</span>
         <span style="font-size:11px;opacity:.8">Semua bagian · ~60 menit</span>
       </button>
+    </div>
+    </div><!-- end #exam-ai-mode -->
+
+    <!-- Bank Soal mode: real past-exam sessions -->
+    <div id="exam-bank-mode" style="display:none">
+      <p style="font-size:12px;color:var(--mist);margin-bottom:14px;line-height:1.5">Soal asli ujian JLPT dari arsip resmi. Teks hasil OCR (mungkin ada kesalahan karakter) — untuk membaca &amp; berlatih dengan soal nyata.</p>
+      <div id="exam-bank-list" style="display:flex;flex-direction:column;gap:8px;margin-bottom:24px">
+        <div style="text-align:center;padding:20px;color:var(--mist);font-size:13px">Memuat daftar sesi…</div>
+      </div>
     </div>
 
     <!-- Riwayat -->
@@ -1560,6 +1578,20 @@ nav button.active {
     </button>
     <!-- Full review -->
     <div id="result-review" style="padding-bottom:80px"></div>
+  </div>
+
+  <!-- Bank Soal reader -->
+  <div id="exam-bank-reader" style="display:none;padding:16px">
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px">
+      <button onclick="showExamSection('exam-menu')" style="background:white;border:1px solid var(--border);border-radius:10px;padding:8px 12px;font-family:inherit;font-size:13px;cursor:pointer">← Kembali</button>
+      <div id="bank-reader-title" style="font-weight:700;font-size:15px"></div>
+    </div>
+    <div id="bank-reader-pager" style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:12px">
+      <button onclick="bankReaderPrev()" style="background:white;border:1px solid var(--border);border-radius:8px;padding:8px 14px;font-family:inherit;cursor:pointer">‹</button>
+      <span id="bank-reader-pageinfo" style="font-size:12px;color:var(--mist)"></span>
+      <button onclick="bankReaderNext()" style="background:white;border:1px solid var(--border);border-radius:8px;padding:8px 14px;font-family:inherit;cursor:pointer">›</button>
+    </div>
+    <div id="bank-reader-content" style="background:white;border:1px solid var(--border);border-radius:12px;padding:18px;font-size:15px;line-height:2;white-space:pre-wrap;font-family:'Noto Sans JP',sans-serif;min-height:300px;padding-bottom:60px"></div>
   </div>
 
 </div>
@@ -2412,8 +2444,101 @@ function calcExamPoints(correct, total, level) {
 }
 
 
+// ═══════════ BANK SOAL (real past-exam) ═══════════
+var examMode = 'ai';            // 'ai' | 'bank'
+var bankIndex = null;           // {level, sessions:[...]}
+var bankCurrent = null;         // loaded session {id, session, pages:[...]}
+var bankPage = 0;
+
+function setExamMode(mode){
+  examMode = mode;
+  var aiBtn=document.getElementById('exam-mode-ai');
+  var bankBtn=document.getElementById('exam-mode-bank');
+  var aiSec=document.getElementById('exam-ai-mode');
+  var bankSec=document.getElementById('exam-bank-mode');
+  var color=JLPT_COLORS[currentJLPT]||'var(--red)';
+  if(mode==='ai'){
+    if(aiBtn){aiBtn.style.background=color;aiBtn.style.color='white';}
+    if(bankBtn){bankBtn.style.background='transparent';bankBtn.style.color='var(--mist)';}
+    if(aiSec)aiSec.style.display='';
+    if(bankSec)bankSec.style.display='none';
+  } else {
+    if(bankBtn){bankBtn.style.background=color;bankBtn.style.color='white';}
+    if(aiBtn){aiBtn.style.background='transparent';aiBtn.style.color='var(--mist)';}
+    if(aiSec)aiSec.style.display='none';
+    if(bankSec)bankSec.style.display='';
+    loadBankIndex();
+  }
+}
+
+function bankBasePath(){ return 'bank/' + currentJLPT.toLowerCase() + '/'; }
+
+async function loadBankIndex(){
+  var listEl=document.getElementById('exam-bank-list');
+  if(!listEl) return;
+  // Cache per level
+  if(bankIndex && bankIndex.level===currentJLPT){ renderBankList(); return; }
+  listEl.innerHTML='<div style="text-align:center;padding:20px;color:var(--mist);font-size:13px">Memuat daftar sesi…</div>';
+  try {
+    var res=await fetch(bankBasePath()+'index.json');
+    if(!res.ok) throw new Error('not found');
+    bankIndex=await res.json();
+    bankIndex.level=currentJLPT;
+    renderBankList();
+  } catch(e){
+    listEl.innerHTML='<div style="text-align:center;padding:24px;color:var(--mist);font-size:13px;line-height:1.6">📭 Bank soal untuk '+currentJLPT+' belum tersedia.<br>Saat ini baru N3 yang punya arsip soal asli.</div>';
+  }
+}
+
+function renderBankList(){
+  var listEl=document.getElementById('exam-bank-list');
+  if(!listEl||!bankIndex) return;
+  var color=JLPT_COLORS[currentJLPT]||'var(--red)';
+  var sessions=(bankIndex.sessions||[]).slice().sort(function(a,b){return (b.year-a.year)||(b.month-a.month);});
+  listEl.innerHTML=sessions.map(function(s){
+    var label=s.session||s.id;
+    return '<div onclick="openBankSession(&apos;'+s.id+'&apos;)" style="display:flex;align-items:center;justify-content:space-between;background:white;border:1px solid var(--border);border-left:3px solid '+color+';border-radius:10px;padding:13px 16px;cursor:pointer;transition:transform .12s" onmouseover="this.style.transform=&apos;translateX(3px)&apos;" onmouseout="this.style.transform=&apos;&apos;">'
+      +'<div><div style="font-weight:700;font-size:14px">'+label+'</div>'
+      +'<div style="font-size:11px;color:var(--mist)">'+(s.pages||0)+' halaman soal</div></div>'
+      +'<span style="color:'+color+';font-size:18px">›</span></div>';
+  }).join('');
+}
+
+async function openBankSession(id){
+  showExamSection('exam-bank-reader');
+  var titleEl=document.getElementById('bank-reader-title');
+  var contentEl=document.getElementById('bank-reader-content');
+  if(titleEl)titleEl.textContent='Memuat…';
+  if(contentEl)contentEl.textContent='';
+  try {
+    var res=await fetch(bankBasePath()+id+'.json');
+    if(!res.ok) throw new Error('not found');
+    bankCurrent=await res.json();
+    bankPage=0;
+    if(titleEl)titleEl.textContent=bankCurrent.session||id;
+    renderBankPage();
+  } catch(e){
+    if(contentEl)contentEl.textContent='Gagal memuat soal. Coba lagi.';
+  }
+}
+
+function renderBankPage(){
+  if(!bankCurrent) return;
+  var pages=bankCurrent.pages||[];
+  if(!pages.length) return;
+  if(bankPage<0)bankPage=0;
+  if(bankPage>=pages.length)bankPage=pages.length-1;
+  var contentEl=document.getElementById('bank-reader-content');
+  var info=document.getElementById('bank-reader-pageinfo');
+  if(contentEl)contentEl.textContent=pages[bankPage].t||'';
+  if(info)info.textContent='Halaman '+(bankPage+1)+' / '+pages.length;
+  if(contentEl)contentEl.scrollTop=0;
+}
+function bankReaderPrev(){ if(bankCurrent){ bankPage--; renderBankPage(); } }
+function bankReaderNext(){ if(bankCurrent){ bankPage++; renderBankPage(); } }
+
 function showExamSection(id) {
-  ['exam-menu','exam-loading','exam-session','exam-result'].forEach(function(s){
+  ['exam-menu','exam-loading','exam-session','exam-result','exam-bank-reader'].forEach(function(s){
     var el=document.getElementById(s);
     if(el) el.style.display = s===id?'':'none';
   });
@@ -5201,6 +5326,7 @@ function gotoScreen(name) {
   if (name === 'kanjimenu') updateKanjiMenu();
   if (name === 'review') { renderReview('all'); } else if (name === '___DUMMY___') renderReview('all');
   if (name === 'bunpomenu') updateBunpoMenu();
+  if (name === 'exam') { showExamSection('exam-menu'); updateExamLevelBadge(); setExamMode('ai'); bankIndex=null; updateExamHistory(); }
 }
 
 function updateFlashMenu() {
