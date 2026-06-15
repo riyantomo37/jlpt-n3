@@ -1591,7 +1591,8 @@ nav button.active {
       <span id="bank-reader-pageinfo" style="font-size:12px;color:var(--mist)"></span>
       <button onclick="bankReaderNext()" style="background:white;border:1px solid var(--border);border-radius:8px;padding:8px 14px;font-family:inherit;cursor:pointer">›</button>
     </div>
-    <div id="bank-reader-content" style="background:white;border:1px solid var(--border);border-radius:12px;padding:18px;font-size:15px;line-height:2;white-space:pre-wrap;font-family:'Noto Sans JP',sans-serif;min-height:300px;padding-bottom:60px"></div>
+    <div id="bank-reader-content" style="background:white;border:1px solid var(--border);border-radius:12px;padding:18px;font-size:15px;font-family:'Noto Sans JP',sans-serif;min-height:300px;padding-bottom:60px"></div>
+    <button id="bank-finish-btn" onclick="gradeBankQuiz()" style="display:none;width:100%;margin-top:14px;padding:14px;background:var(--jade);color:white;border:none;border-radius:12px;font-family:inherit;font-size:15px;font-weight:700;cursor:pointer">✓ Selesai & Lihat Nilai</button>
   </div>
 
 </div>
@@ -2449,6 +2450,9 @@ var examMode = 'ai';            // 'ai' | 'bank'
 var bankIndex = null;           // {level, sessions:[...]}
 var bankCurrent = null;         // loaded session {id, session, pages:[...]}
 var bankPage = 0;
+var bankQuiz = [];
+var bankQ = 0;
+var bankAnswers = {};
 
 function setExamMode(mode){
   examMode = mode;
@@ -2497,45 +2501,123 @@ function renderBankList(){
   var sessions=(bankIndex.sessions||[]).slice().sort(function(a,b){return (b.year-a.year)||(b.month-a.month);});
   listEl.innerHTML=sessions.map(function(s){
     var label=s.session||s.id;
+    var meta = s.graded ? ((s.questions||0)+' soal · bisa dinilai ✓') : ((s.pages||0)+' halaman · baca saja');
     return '<div onclick="openBankSession(&apos;'+s.id+'&apos;)" style="display:flex;align-items:center;justify-content:space-between;background:white;border:1px solid var(--border);border-left:3px solid '+color+';border-radius:10px;padding:13px 16px;cursor:pointer;transition:transform .12s" onmouseover="this.style.transform=&apos;translateX(3px)&apos;" onmouseout="this.style.transform=&apos;&apos;">'
       +'<div><div style="font-weight:700;font-size:14px">'+label+'</div>'
-      +'<div style="font-size:11px;color:var(--mist)">'+(s.pages||0)+' halaman soal</div></div>'
+      +'<div style="font-size:11px;color:var(--mist)">'+meta+'</div></div>'
       +'<span style="color:'+color+';font-size:18px">›</span></div>';
   }).join('');
 }
 
 async function openBankSession(id){
   showExamSection('exam-bank-reader');
+  var pgr=document.getElementById('bank-reader-pager'); if(pgr)pgr.style.display='flex';
   var titleEl=document.getElementById('bank-reader-title');
   var contentEl=document.getElementById('bank-reader-content');
   if(titleEl)titleEl.textContent='Memuat…';
-  if(contentEl)contentEl.textContent='';
+  if(contentEl)contentEl.innerHTML='<div style="text-align:center;padding:30px;color:var(--mist)">⏳ Memuat soal…</div>';
   try {
     var res=await fetch(bankBasePath()+id+'.json');
     if(!res.ok) throw new Error('not found');
     bankCurrent=await res.json();
-    bankPage=0;
-    if(titleEl)titleEl.textContent=bankCurrent.session||id;
-    renderBankPage();
+    // Flatten semua soal dari semua section, bawa passage ikut
+    bankQuiz=[];
+    (bankCurrent.sections||[]).forEach(function(sec){
+      var secPassage=sec.passage||null;
+      (sec.questions||[]).forEach(function(q){
+        var item=Object.assign({}, q);
+        item._section=sec.name||'';
+        // passage: dari section, atau dari soal sendiri (passage field)
+        if(q.passage) item._passage=q.passage;
+        else if(secPassage) item._passage=secPassage;
+        else item._passage=null;
+        bankQuiz.push(item);
+      });
+    });
+    bankQ=0;
+    bankAnswers={};
+    if(titleEl)titleEl.textContent=(bankCurrent.session||id)+' · '+bankQuiz.length+' soal';
+    renderBankQuiz();
   } catch(e){
-    if(contentEl)contentEl.textContent='Gagal memuat soal. Coba lagi.';
+    if(contentEl)contentEl.innerHTML='<div style="text-align:center;padding:30px;color:var(--mist)">Gagal memuat soal. Coba lagi.</div>';
   }
 }
 
-function renderBankPage(){
-  if(!bankCurrent) return;
-  var pages=bankCurrent.pages||[];
-  if(!pages.length) return;
-  if(bankPage<0)bankPage=0;
-  if(bankPage>=pages.length)bankPage=pages.length-1;
+function renderBankQuiz(){
+  if(!bankQuiz||!bankQuiz.length) return;
+  if(bankQ<0)bankQ=0;
+  if(bankQ>=bankQuiz.length)bankQ=bankQuiz.length-1;
+  var q=bankQuiz[bankQ];
+  var color=JLPT_COLORS[currentJLPT]||'var(--red)';
   var contentEl=document.getElementById('bank-reader-content');
   var info=document.getElementById('bank-reader-pageinfo');
-  if(contentEl)contentEl.textContent=pages[bankPage].t||'';
-  if(info)info.textContent='Halaman '+(bankPage+1)+' / '+pages.length;
-  if(contentEl)contentEl.scrollTop=0;
+  var picked=bankAnswers[bankQ];
+  var html='';
+  // Section label
+  html+='<div style="font-size:11px;color:'+color+';font-weight:700;text-transform:uppercase;letter-spacing:1px;margin-bottom:10px">'+(q._section||'')+'</div>';
+  // Passage (bacaan) bila ada
+  if(q._passage){
+    html+='<div style="background:var(--paper,#faf8f3);border:1px solid var(--border);border-radius:10px;padding:14px;margin-bottom:14px;font-size:14px;line-height:1.9;white-space:pre-wrap">'+q._passage+'</div>';
+  }
+  // Pertanyaan
+  html+='<div style="font-size:15px;font-weight:600;line-height:1.7;margin-bottom:14px">'+(q.q||q.pattern||('問'+(q.no||(bankQ+1))))+'</div>';
+  // Pilihan
+  (q.choices||[]).forEach(function(c,idx){
+    var sel=picked===idx;
+    html+='<div onclick="answerBank('+idx+')" style="display:flex;gap:10px;align-items:flex-start;padding:12px 14px;margin-bottom:8px;border:2px solid '+(sel?color:'var(--border)')+';border-radius:10px;cursor:pointer;background:'+(sel?'rgba(192,57,43,.06)':'white')+';transition:all .12s">'
+      +'<span style="flex-shrink:0;width:22px;height:22px;border-radius:50%;background:'+(sel?color:'rgba(26,26,46,.08)')+';color:'+(sel?'white':'var(--mist)')+';display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700">'+(idx+1)+'</span>'
+      +'<span style="font-size:14px;line-height:1.6">'+c+'</span></div>';
+  });
+  if(contentEl){ contentEl.innerHTML=html; contentEl.scrollTop=0; }
+  if(info)info.textContent='Soal '+(bankQ+1)+' / '+bankQuiz.length;
+  // Tampilkan tombol selesai bila soal terakhir
+  var fin=document.getElementById('bank-finish-btn');
+  if(fin) fin.style.display=(bankQ===bankQuiz.length-1)?'':'none';
 }
-function bankReaderPrev(){ if(bankCurrent){ bankPage--; renderBankPage(); } }
-function bankReaderNext(){ if(bankCurrent){ bankPage++; renderBankPage(); } }
+
+function answerBank(idx){
+  bankAnswers[bankQ]=idx;
+  renderBankQuiz();
+}
+
+function gradeBankQuiz(){
+  if(!bankQuiz||!bankQuiz.length) return;
+  var color=JLPT_COLORS[currentJLPT]||'var(--red)';
+  var correct=0, answered=0;
+  var reviewHtml='';
+  bankQuiz.forEach(function(q,i){
+    var picked=bankAnswers[i];
+    var ans=q.answer;
+    var isAns=(picked===ans);
+    if(picked!==undefined) answered++;
+    if(isAns) correct++;
+    reviewHtml+='<div style="border:1px solid var(--border);border-left:3px solid '+(isAns?'var(--jade)':'var(--red)')+';border-radius:8px;padding:12px 14px;margin-bottom:10px">'
+      +'<div style="font-size:11px;color:var(--mist);margin-bottom:4px">'+(q._section||'')+' · '+(isAns?'✓ Benar':'✗ Salah')+(q.conf==='med'?' · ⚠️kunci tebakan':'')+'</div>'
+      +'<div style="font-size:13px;font-weight:600;margin-bottom:8px;line-height:1.6">'+(bankQ_short(q))+'</div>';
+    (q.choices||[]).forEach(function(c,idx){
+      var mark='', bg='transparent', cc='var(--ink)';
+      if(idx===ans){ mark=' ✓'; bg='rgba(45,160,80,.1)'; cc='var(--jade)'; }
+      else if(idx===picked && !isAns){ mark=' ✗'; bg='rgba(192,57,43,.08)'; cc='var(--red)'; }
+      reviewHtml+='<div style="font-size:12px;padding:5px 8px;border-radius:6px;background:'+bg+';color:'+cc+';margin-bottom:3px">'+(idx+1)+'. '+c+mark+'</div>';
+    });
+    reviewHtml+='</div>';
+  });
+  var pct=Math.round(correct/bankQuiz.length*100);
+  var contentEl=document.getElementById('bank-reader-content');
+  var head='<div style="text-align:center;padding:18px;background:white;border:1px solid var(--border);border-radius:14px;margin-bottom:16px">'
+    +'<div style="font-size:40px;font-weight:700;font-family:DM Mono,monospace;color:'+color+'">'+correct+' / '+bankQuiz.length+'</div>'
+    +'<div style="font-size:14px;color:var(--mist);margin-top:4px">Benar '+pct+'% · Dijawab '+answered+'/'+bankQuiz.length+'</div>'
+    +'<div style="font-size:11px;color:var(--mist);margin-top:8px;line-height:1.5">⚠️ Kunci jawaban ditebak dari konteks (bukan kunci resmi). Soal bertanda "kunci tebakan" mungkin kurang tepat.</div></div>';
+  if(contentEl){ contentEl.innerHTML=head+reviewHtml; contentEl.scrollTop=0; }
+  var info=document.getElementById('bank-reader-pageinfo'); if(info)info.textContent='Hasil';
+  var fin=document.getElementById('bank-finish-btn'); if(fin)fin.style.display='none';
+  var pager=document.getElementById('bank-reader-pager'); if(pager)pager.style.display='none';
+}
+
+function bankReaderPrev(){ if(bankQuiz){ bankQ--; renderBankQuiz(); } }
+function bankReaderNext(){ if(bankQuiz){ bankQ++; renderBankQuiz(); } }
+function bankQ_short(q){ var s=q.q||q.pattern||''; return s.length>60?s.slice(0,60)+'…':s; }
+
 
 function showExamSection(id) {
   ['exam-menu','exam-loading','exam-session','exam-result','exam-bank-reader'].forEach(function(s){
