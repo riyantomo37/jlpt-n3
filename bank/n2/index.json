@@ -1,0 +1,13 @@
+{
+ "level": "N2",
+ "sessions": [
+  {
+   "id": "N2-2010-12",
+   "session": "2010年12月",
+   "year": 2010,
+   "month": 12,
+   "questions": 70,
+   "graded": true
+  }
+ ]
+}
