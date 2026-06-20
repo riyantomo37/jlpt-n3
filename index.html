@@ -6458,16 +6458,61 @@ function _pbar(done,total,color){
   return '<div style="background:rgba(26,26,46,.08);border-radius:4px;height:7px;overflow:hidden;margin-top:6px">'
     +'<div style="height:100%;width:'+pct+'%;background:'+color+';border-radius:4px;transition:width .5s"></div></div>';
 }
-function _progCard(emo,label,done,total,color,sub){
+function _progCard(emo,label,done,total,color,sub,resetKey){
+  var resetBtn = resetKey
+    ? '<button onclick="resetHafalan(\''+resetKey+'\')" title="Reset progress '+label+'" style="border:1px solid var(--border);background:white;color:var(--mist);font-size:10px;padding:3px 8px;border-radius:8px;cursor:pointer;white-space:nowrap">↺ Reset</button>'
+    : '';
   return '<div style="background:white;border:1px solid var(--border);border-radius:12px;padding:14px;box-shadow:var(--shadow)">'
     +'<div style="display:flex;justify-content:space-between;align-items:baseline">'
     +'<span style="font-size:13px;font-weight:700;color:var(--ink)">'+emo+' '+label+'</span>'
     +'<span style="font-family:\'DM Mono\',monospace;font-size:13px;color:'+color+';font-weight:700">'+done+'<span style="color:var(--mist);font-size:11px">/'+total+'</span></span>'
     +'</div>'
     +_pbar(done,total,color)
-    +(sub?'<div style="font-size:10px;color:var(--mist);margin-top:6px">'+sub+'</div>':'')
+    +'<div style="display:flex;justify-content:space-between;align-items:center;margin-top:8px">'
+    +'<span style="font-size:10px;color:var(--mist)">'+(sub||'')+'</span>'
+    + resetBtn
+    +'</div>'
     +'</div>';
 }
+// ── Reset progress hafalan PER kategori, PER level aktif ──
+function resetHafalan(key){
+  var labels={kotoba:'Kotoba (Kosakata)',kanji:'Kanji',sifat:'Kata Sifat',bunpou:'Bunpou',ujian:'Riwayat Ujian'};
+  var lbl=labels[key]||key;
+  if(!confirm('Reset progress "'+lbl+'" untuk level '+currentJLPT+'?\n\nHanya kategori ini di level '+currentJLPT+' yang dihapus. Progress kategori & level lain TIDAK terpengaruh. Tindakan ini tidak bisa dibatalkan.')) return;
+
+  // mapping kategori → cat kata
+  var catMap={kotoba:'vocab',kanji:'kanji',sifat:'grammar'};
+
+  if(key==='kotoba'||key==='kanji'||key==='sifat'){
+    var cat=catMap[key];
+    if(currentJLPT==='N3'){
+      mastered[cat]={};
+      if(key==='kanji') kanjiReadMastered={};   // reset progress baca kanji N3 juga
+    } else {
+      // level lain: mastered[level] dicampur per-id; hapus hanya id milik cat ini
+      var mlvl=mastered[currentJLPT]||{};
+      var ws=(JLPT_DATA[currentJLPT]||[]);
+      ws.forEach(function(w){ if((w.cat||'vocab')===cat && mlvl[w.id]) delete mlvl[w.id]; });
+      mastered[currentJLPT]=mlvl;
+    }
+  } else if(key==='bunpou'){
+    bunpoProgress[currentJLPT]=0;
+  } else if(key==='ujian'){
+    // hapus riwayat ujian level aktif saja
+    examHistory=(examHistory||[]).filter(function(e){ return e.level!==currentJLPT; });
+    try{ localStorage.setItem('examHistory',JSON.stringify(examHistory)); }catch(e){}
+  }
+
+  // persist
+  if(typeof save==='function') save();
+  else { try{ saveToLocal(); }catch(e){} }
+
+  // refresh tampilan
+  renderProgressDashboard();
+  if(typeof renderReview==='function') renderReview(currentFilter||'all');
+  if(typeof updateOverview==='function') try{ updateOverview(); }catch(e){}
+}
+
 function renderProgressDashboard(){
   var host=document.getElementById('progress-dashboard');
   if(!host) return;
@@ -6500,10 +6545,10 @@ function renderProgressDashboard(){
   var bunpoDone=Math.min(stagesDone*STAGE_SIZE, totPat);
 
   var cards='<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">';
-  cards+=_progCard('📦','Kotoba (Kosakata)',kotobaDone,kotobaTot,'var(--indigo)');
-  cards+=_progCard('漢字','Kanji',kanjiDone,kanjiTot,'var(--gold)');
-  cards+=_progCard('形','Kata Sifat',sifatDone,sifatTot,'var(--jade)');
-  if(!isSSW) cards+=_progCard('文法','Bunpou',bunpoDone,totPat,'#7a5cc4',stagesDone+' sesi selesai');
+  cards+=_progCard('📦','Kotoba (Kosakata)',kotobaDone,kotobaTot,'var(--indigo)','','kotoba');
+  cards+=_progCard('漢字','Kanji',kanjiDone,kanjiTot,'var(--gold)','','kanji');
+  cards+=_progCard('形','Kata Sifat',sifatDone,sifatTot,'var(--jade)','','sifat');
+  if(!isSSW) cards+=_progCard('文法','Bunpou',bunpoDone,totPat,'#7a5cc4',stagesDone+' sesi selesai','bunpou');
   cards+='</div>';
 
   // ── Riwayat Ujian lintas level ──
@@ -6538,7 +6583,10 @@ function renderProgressDashboard(){
     +'<div style="background:white;border:1px solid var(--border);border-radius:12px;padding:14px;box-shadow:var(--shadow)">'
     +'<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">'
     +'<span style="font-size:13px;font-weight:700">🗂️ Riwayat Ujian (semua level)</span>'
+    +'<div style="display:flex;align-items:center;gap:8px">'
     +'<span style="font-size:11px;color:var(--mist)">'+totExams+' ujian · rata² '+avgPct+'%</span>'
+    +(totExams?'<button onclick="resetHafalan(\'ujian\')" title="Reset riwayat ujian '+currentJLPT+'" style="border:1px solid var(--border);background:white;color:var(--mist);font-size:10px;padding:3px 8px;border-radius:8px;cursor:pointer;white-space:nowrap">↺ Reset</button>':'')
+    +'</div>'
     +'</div>'
     + histHtml
     +'</div>';
