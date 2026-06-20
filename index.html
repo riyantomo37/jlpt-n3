@@ -355,6 +355,18 @@ nav button.active {
   color:var(--mist);
 }
 .filter-btn.active { background:var(--ink); color:white; border-color:var(--ink); }
+.kfilter-btn {
+  padding:7px 16px;
+  border-radius:20px;
+  border:1px solid var(--border);
+  background:white;
+  font-family:'Noto Sans JP',sans-serif;
+  font-size:12px;
+  cursor:pointer;
+  transition:all .2s;
+  color:var(--mist);
+}
+.kfilter-btn.active { background:var(--ink); color:white; border-color:var(--ink); }
 .vocab-grid {
   display:grid;
   grid-template-columns:repeat(auto-fill,minmax(220px,1fr));
@@ -1403,33 +1415,56 @@ header:has(.user-menu.open) { z-index:1000; }
   <!-- ===== PROGRESS HAFALAN DASHBOARD ===== -->
   <div id="progress-dashboard"></div>
 
-  <div class="section-title" style="font-size:14px;margin:18px 0 10px">📖 Daftar Kata — tandai hafal</div>
-
-  <!-- Search -->
-  <div style="display:flex;gap:8px;margin-bottom:12px">
-    <div style="position:relative;flex:1">
-      <input id="search-input" type="text" placeholder="🔍  Cari kanji, romaji, atau arti..."
-        style="width:100%;padding:11px 40px 11px 14px;border:2px solid var(--border);border-radius:10px;font-family:'Noto Sans JP',sans-serif;font-size:13px;outline:none;background:white;box-sizing:border-box;transition:border-color .2s"
-        onkeydown="if(event.key==='Enter')doSearch()"
-        onfocus="this.style.borderColor='var(--indigo)'"
-        onblur="this.style.borderColor='var(--border)'">
-      <button onclick="clearSearch()" id="search-clear" style="display:none;position:absolute;right:10px;top:50%;transform:translateY(-50%);border:none;background:none;cursor:pointer;font-size:15px;color:var(--mist)">✕</button>
+  <!-- ===== DAFTAR KOSAKATA (hafal arti) — DROPDOWN ===== -->
+  <div style="background:white;border:1px solid var(--border);border-radius:12px;box-shadow:var(--shadow);margin-top:14px;overflow:hidden">
+    <div onclick="toggleListSection('kosakata')" style="display:flex;justify-content:space-between;align-items:center;padding:13px 14px;cursor:pointer">
+      <span style="font-size:14px;font-weight:700">📖 Daftar Kosakata <span style="font-size:11px;color:var(--mist);font-weight:400">(hafal arti)</span></span>
+      <span style="display:flex;align-items:center;gap:8px">
+        <span id="kosakata-count" style="font-size:11px;color:var(--mist)"></span>
+        <span id="kosakata-arrow" style="font-size:11px;color:var(--mist)">▼</span>
+      </span>
     </div>
-    <button onclick="doSearch()" style="padding:0 18px;background:var(--indigo);color:white;border:none;border-radius:10px;cursor:pointer;font-size:13px;font-weight:600;white-space:nowrap;flex-shrink:0">🔍 Cari</button>
+    <div id="kosakata-body" style="display:none;padding:0 14px 14px">
+      <div style="display:flex;gap:8px;margin-bottom:10px">
+        <input id="search-input" type="text" placeholder="🔍 Cari kosakata..."
+          style="flex:1;padding:10px 14px;border:2px solid var(--border);border-radius:10px;font-family:'Noto Sans JP',sans-serif;font-size:13px;outline:none;background:white;box-sizing:border-box"
+          oninput="doSearch()">
+        <button onclick="clearSearch()" id="search-clear" style="display:none;padding:0 14px;border:1px solid var(--border);background:white;border-radius:10px;cursor:pointer;font-size:13px;color:var(--mist)">✕</button>
+      </div>
+      <div id="review-filter-bar" style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px">
+        <button class="filter-btn active" onclick="setFilter('all',this)">Semua</button>
+        <button class="filter-btn" onclick="setFilter('done',this)">✓ Hafal</button>
+        <button class="filter-btn" onclick="setFilter('todo',this)">✗ Belum</button>
+      </div>
+      <div style="font-size:12px;color:var(--mist);margin-bottom:10px" id="review-count">Memuat...</div>
+      <div class="vocab-grid" id="vocab-grid"></div>
+    </div>
   </div>
 
-  <!-- Filter -->
-  <div id="review-filter-bar" style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px">
-    <button class="filter-btn active" onclick="setFilter('all',this)">Semua</button>
-    <button class="filter-btn" id="rb-kanji" onclick="setFilter('kanji',this)">動詞 Kata Kerja</button>
-    <button class="filter-btn" id="rb-vocab" onclick="setFilter('vocab',this)">名詞 Kata Benda</button>
-    <button class="filter-btn" id="rb-grammar" onclick="setFilter('grammar',this)">形容詞 Kata Sifat</button>
-    <button class="filter-btn" onclick="setFilter('done',this)">✓ Hafal</button>
-    <button class="filter-btn" onclick="setFilter('todo',this)">✗ Belum</button>
+  <!-- ===== DAFTAR KANJI (hafal baca) — DROPDOWN ===== -->
+  <div style="background:white;border:1px solid var(--border);border-radius:12px;box-shadow:var(--shadow);margin-top:12px;overflow:hidden">
+    <div onclick="toggleListSection('kanjilist')" style="display:flex;justify-content:space-between;align-items:center;padding:13px 14px;cursor:pointer">
+      <span style="font-size:14px;font-weight:700">漢字 Daftar Kanji <span style="font-size:11px;color:var(--mist);font-weight:400">(hafal baca)</span></span>
+      <span style="display:flex;align-items:center;gap:8px">
+        <span id="kanjilist-count" style="font-size:11px;color:var(--mist)"></span>
+        <span id="kanjilist-arrow" style="font-size:11px;color:var(--mist)">▼</span>
+      </span>
+    </div>
+    <div id="kanjilist-body" style="display:none;padding:0 14px 14px">
+      <div style="display:flex;gap:8px;margin-bottom:10px">
+        <input id="kanji-search-input" type="text" placeholder="🔍 Cari kanji..."
+          style="flex:1;padding:10px 14px;border:2px solid var(--border);border-radius:10px;font-family:'Noto Sans JP',sans-serif;font-size:13px;outline:none;background:white;box-sizing:border-box"
+          oninput="doKanjiSearch()">
+      </div>
+      <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px">
+        <button class="kfilter-btn active" onclick="setKanjiFilter('all',this)">Semua</button>
+        <button class="kfilter-btn" onclick="setKanjiFilter('done',this)">✓ Hafal</button>
+        <button class="kfilter-btn" onclick="setKanjiFilter('todo',this)">✗ Belum</button>
+      </div>
+      <div style="font-size:12px;color:var(--mist);margin-bottom:10px" id="kanjilist-detail">Memuat...</div>
+      <div class="vocab-grid" id="kanji-grid"></div>
+    </div>
   </div>
-
-  <div style="font-size:12px;color:var(--mist);margin-bottom:12px" id="review-count">Memuat...</div>
-  <div class="vocab-grid" id="vocab-grid"></div>
 </div>
 
 <!-- ====== AI PLACEHOLDER --><!-- ====== EXAM SCREEN ====== -->
@@ -5687,8 +5722,10 @@ function gotoScreen(name) {
   if (typeof stopAudio === 'function') stopAudio();
   document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
   document.getElementById('screen-' + name).classList.add('active');
-  document.querySelectorAll('nav button').forEach((b, i) => {
-    b.classList.toggle('active', ['overview','flashmenu','kanjimenu','bunpomenu','review','leaderboard','exam','ai'][i] === name);
+  document.querySelectorAll('nav button').forEach(function(b){
+    var oc = b.getAttribute('onclick') || '';
+    var m = oc.match(/gotoScreen\(['"]([^'"]+)['"]\)/);
+    b.classList.toggle('active', !!m && m[1] === name);
   });
   if (name === 'overview') updateOverview();
   if (name === 'flashmenu') updateFlashMenu();
@@ -6401,9 +6438,10 @@ let currentFilter = 'all';
 
 function setFilter(f, btn) {
   currentFilter = f;
-  document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
-  btn.classList.add('active');
-  renderReview(f);
+  var bar=btn?btn.parentNode:null;
+  if(bar) bar.querySelectorAll('.filter-btn').forEach(function(b){b.classList.remove('active');});
+  if(btn) btn.classList.add('active');
+  renderKosakataList();
 }
 
 
@@ -6415,7 +6453,7 @@ function doSearch() {
   searchQuery = val.toLowerCase();
   var cl = document.getElementById('search-clear');
   if (cl) cl.style.display = val ? 'block' : 'none';
-  renderReview(currentFilter);
+  renderKosakataList();
 }
 
 function clearSearch() {
@@ -6424,7 +6462,7 @@ function clearSearch() {
   searchQuery = '';
   var cl = document.getElementById('search-clear');
   if (cl) cl.style.display = 'none';
-  renderReview(currentFilter);
+  renderKosakataList();
 }
 
 
@@ -6620,66 +6658,128 @@ function renderReview(filter) {
   if(titleEl) titleEl.textContent='📊 Progress Hafalan';
   if(badgeEl){badgeEl.textContent=currentJLPT;badgeEl.style.background=color;}
   renderProgressDashboard();
+  renderKosakataList();
+  renderKanjiList();
+}
 
-  // Show/hide category filters
-  var rbKanji=document.getElementById('rb-kanji');
-  var rbVocab=document.getElementById('rb-vocab');
-  var rbGram=document.getElementById('rb-grammar');
-  var show3 = currentJLPT==='N3'||(JLPT_DATA[currentJLPT]&&JLPT_DATA[currentJLPT].some(function(w){return w.cat==='kanji';}));
-  if(rbKanji) rbKanji.style.display=show3?'':'none';
-  if(rbVocab) rbVocab.style.display=show3?'':'none';
-  if(rbGram)  rbGram.style.display=show3?'':'none';
-
-  var words = [];
+// ── DAFTAR KOSAKATA (hafal ARTI) ──
+function renderKosakataList(){
+  var grid=document.getElementById('vocab-grid');
+  if(!grid) return;
+  var words=[];
   if(currentJLPT==='N3'){
     ['kanji','vocab','grammar'].forEach(function(cat){
       ALL_WORDS[cat].forEach(function(w){ words.push(Object.assign({},w,{cat:cat})); });
     });
-    if(filter==='kanji')   words=words.filter(function(w){return w.cat==='kanji';});
-    if(filter==='vocab')   words=words.filter(function(w){return w.cat==='vocab';});
-    if(filter==='grammar') words=words.filter(function(w){return w.cat==='grammar';});
   } else {
     words=(JLPT_DATA[currentJLPT]||[]).slice();
   }
-  if(filter==='done') words=words.filter(function(w){
-    return currentJLPT==='N3'?!!mastered[w.cat][w.id]:!!(mastered[currentJLPT]||{})[w.id];
-  });
-  if(filter==='todo') words=words.filter(function(w){
-    return currentJLPT==='N3'?!mastered[w.cat][w.id]:!(mastered[currentJLPT]||{})[w.id];
-  });
+  function isDone(w){ return currentJLPT==='N3' ? !!mastered[w.cat][w.id] : !!(mastered[currentJLPT]||{})[w.id]; }
+  var totalAll=words.length, doneAll=words.filter(isDone).length;
+
+  if(currentFilter==='done') words=words.filter(isDone);
+  if(currentFilter==='todo') words=words.filter(function(w){return !isDone(w);});
   if(searchQuery){
     var q=searchQuery.toLowerCase();
     words=words.filter(function(w){
-      return w.jp.toLowerCase().indexOf(q)>=0||w.rom.toLowerCase().indexOf(q)>=0||w.id_.toLowerCase().indexOf(q)>=0;
+      return w.jp.toLowerCase().indexOf(q)>=0||(w.rom||'').toLowerCase().indexOf(q)>=0||(w.id_||'').toLowerCase().indexOf(q)>=0;
     });
   }
-
+  var hdr=document.getElementById('kosakata-count');
+  if(hdr) hdr.textContent=doneAll+' / '+totalAll+' hafal';
   var cntEl=document.getElementById('review-count');
   if(cntEl) cntEl.textContent='Menampilkan '+words.length+' kata';
 
-  var grid=document.getElementById('vocab-grid');
-  if(!grid) return;
   if(!words.length){
-    grid.innerHTML='<div style="text-align:center;padding:40px;color:var(--mist);grid-column:1/-1"><div style="font-size:32px">🔍</div>Tidak ada kata yang cocok</div>';
+    grid.innerHTML='<div style="text-align:center;padding:30px;color:var(--mist);grid-column:1/-1"><div style="font-size:28px">🔍</div>Tidak ada kata yang cocok</div>';
     return;
   }
-
   grid.innerHTML = words.map(function(w){
-    var done = currentJLPT==='N3' ? !!mastered[w.cat][w.id] : !!(mastered[currentJLPT]||{})[w.id];
-    var wId = w.id; var wCat = w.cat||'vocab';
-    return '<div class="vocab-item '+(done?'mastered':'')+'" data-wid="'+wId+'" data-wcat="'+wCat+'" onclick="openWordModal(this.dataset.wid,this.dataset.wcat)" style="cursor:pointer">'
+    var done = isDone(w);
+    var wCat = w.cat||'vocab';
+    return '<div class="vocab-item '+(done?'mastered':'')+'" data-wid="'+w.id+'" data-wcat="'+wCat+'" onclick="openWordModal(this.dataset.wid,this.dataset.wcat)" style="cursor:pointer">'
       +'<div class="status-dot '+(done?'done':'todo')+'"></div>'
       +'<div style="flex:1;min-width:0">'
       +'<div class="jp">'+w.jp+'</div>'
-      +'<div class="id-meaning">'+w.id_+'</div>'
-      +'<div style="font-size:10px;color:var(--mist)">'+w.rom+'</div>'
+      +'<div class="id-meaning">'+(w.id_||'')+'</div>'
+      +'<div style="font-size:10px;color:var(--mist)">'+(w.rom||'')+'</div>'
       +'</div>'
-      +(done
-        ? '<span style="font-size:16px" title="Hafal">✅</span>'
-        : '<span style="font-size:16px;opacity:.3" title="Belum hafal">○</span>'
-      )
+      +(done?'<span style="font-size:16px" title="Hafal">✅</span>':'<span style="font-size:16px;opacity:.3" title="Belum hafal">○</span>')
       +'</div>';
   }).join('');
+}
+
+// ── DAFTAR KANJI (hafal BACA) ──
+var kanjiFilter='all';
+var kanjiSearchQuery='';
+function setKanjiFilter(f,btn){
+  kanjiFilter=f;
+  var bar=btn?btn.parentNode:null;
+  if(bar) bar.querySelectorAll('.kfilter-btn').forEach(function(b){b.classList.remove('active');});
+  if(btn) btn.classList.add('active');
+  renderKanjiList();
+}
+function doKanjiSearch(){
+  var el=document.getElementById('kanji-search-input');
+  kanjiSearchQuery=(el?el.value:'').trim().toLowerCase();
+  renderKanjiList();
+}
+// Apakah baca-kanji sudah hafal? N3: kanjiReadMastered['kf_<cat>_<id>'], lain: mastered['kf_'+level][id]
+function _kanjiReadDone(w){
+  if(currentJLPT==='N3') return !!kanjiReadMastered['kf_'+(w.cat||'vocab')+'_'+w.id];
+  return !!(mastered['kf_'+currentJLPT]||{})[w.id];
+}
+function renderKanjiList(){
+  var grid=document.getElementById('kanji-grid');
+  if(!grid) return;
+  var words=[];
+  if(currentJLPT==='N3'){
+    ['kanji','vocab','grammar'].forEach(function(cat){
+      ALL_WORDS[cat].forEach(function(w){ if(/[一-鿿]/.test(w.jp)) words.push(Object.assign({},w,{cat:cat})); });
+    });
+  } else {
+    words=(JLPT_DATA[currentJLPT]||[]).filter(function(w){return /[一-鿿]/.test(w.jp);}).slice();
+  }
+  var totalAll=words.length, doneAll=words.filter(_kanjiReadDone).length;
+
+  if(kanjiFilter==='done') words=words.filter(_kanjiReadDone);
+  if(kanjiFilter==='todo') words=words.filter(function(w){return !_kanjiReadDone(w);});
+  if(kanjiSearchQuery){
+    var q=kanjiSearchQuery;
+    words=words.filter(function(w){
+      return w.jp.toLowerCase().indexOf(q)>=0||(w.rom||'').toLowerCase().indexOf(q)>=0||(w.id_||'').toLowerCase().indexOf(q)>=0;
+    });
+  }
+  var hdr=document.getElementById('kanjilist-count');
+  if(hdr) hdr.textContent=doneAll+' / '+totalAll+' hafal';
+  var det=document.getElementById('kanjilist-detail');
+  if(det) det.textContent='Menampilkan '+words.length+' kanji';
+
+  if(!words.length){
+    grid.innerHTML='<div style="text-align:center;padding:30px;color:var(--mist);grid-column:1/-1"><div style="font-size:28px">🔍</div>Tidak ada kanji yang cocok</div>';
+    return;
+  }
+  grid.innerHTML = words.map(function(w){
+    var done=_kanjiReadDone(w);
+    return '<div class="vocab-item '+(done?'mastered':'')+'" data-wid="'+w.id+'" data-wcat="'+(w.cat||'vocab')+'" onclick="openWordModal(this.dataset.wid,this.dataset.wcat)" style="cursor:pointer">'
+      +'<div class="status-dot '+(done?'done':'todo')+'"></div>'
+      +'<div style="flex:1;min-width:0">'
+      +'<div class="jp">'+w.jp+'</div>'
+      +'<div style="font-size:11px;color:var(--mist)">'+(w.rom||'')+'</div>'
+      +'</div>'
+      +(done?'<span style="font-size:16px" title="Hafal baca">✅</span>':'<span style="font-size:16px;opacity:.3" title="Belum hafal baca">○</span>')
+      +'</div>';
+  }).join('');
+}
+
+// Buka/tutup dropdown daftar
+function toggleListSection(which){
+  var body=document.getElementById(which+'-body');
+  var arr=document.getElementById(which+'-arrow');
+  if(!body) return;
+  var open=body.style.display==='none'||!body.style.display;
+  body.style.display=open?'block':'none';
+  if(arr) arr.textContent=open?'▲':'▼';
 }
 
 // ============================================================
