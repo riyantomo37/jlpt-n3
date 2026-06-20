@@ -3264,7 +3264,6 @@ function renderQuestionHTML(q, num, total) {
       + '</div>'
       + '<div id="script_'+q.id+'" style="font-size:13px;line-height:1.8;display:none">'+q.script.split(NL).join('<br>')+'</div>'
       + '</div>';
-    setTimeout(function(){ readScript(q.script); }, 800);
   }
 
   // Choices — use q.choices (already formatted) or q.c (raw)
@@ -3614,10 +3613,15 @@ function readScript(text) {
 function playScript(btn) {
   var qId = btn.getAttribute('data-script');
   var scriptEl = document.getElementById('script_'+qId);
+  // Hentikan audio apa pun yang sedang berbunyi sebelum aksi baru
+  stopAudio();
+  var willShow = false;
   if (scriptEl) {
-    scriptEl.style.display = scriptEl.style.display==='none' ? '' : 'none';
+    willShow = (scriptEl.style.display === 'none');
+    scriptEl.style.display = willShow ? '' : 'none';
   }
-  // Find the question
+  // Hanya putar saat membuka script; menutup = berhenti saja
+  if (!willShow) return;
   var q = null;
   examSections.forEach(function(sec){
     sec.questions.forEach(function(sq){ if(sq.id===qId) q=sq; });
@@ -5522,6 +5526,7 @@ function gotoScreenRaw(name){
 }
 
 function gotoScreen(name) {
+  if (typeof stopAudio === 'function') stopAudio();
   document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
   document.getElementById('screen-' + name).classList.add('active');
   document.querySelectorAll('nav button').forEach((b, i) => {
