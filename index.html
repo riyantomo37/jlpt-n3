@@ -6455,109 +6455,134 @@ function closeDropdowns() {
 // ============================================================
 function _pbar(done,total,color){
   var pct = total>0 ? Math.round(done/total*100) : 0;
-  return '<div style="background:rgba(26,26,46,.08);border-radius:4px;height:7px;overflow:hidden;margin-top:6px">'
+  return '<div style="background:rgba(26,26,46,.08);border-radius:4px;height:7px;overflow:hidden;margin-top:8px">'
     +'<div style="height:100%;width:'+pct+'%;background:'+color+';border-radius:4px;transition:width .5s"></div></div>';
 }
-function _progCard(emo,label,done,total,color,sub,resetKey){
+// Kartu progress yang BISA DIKLIK → pindah ke tab terkait.
+function _progCard(emo,label,done,total,color,gotoScr,resetKey){
+  var pct = total>0 ? Math.round(done/total*100) : 0;
   var resetBtn = resetKey
-    ? '<button onclick="resetHafalan(\''+resetKey+'\')" title="Reset progress '+label+'" style="border:1px solid var(--border);background:white;color:var(--mist);font-size:10px;padding:3px 8px;border-radius:8px;cursor:pointer;white-space:nowrap">↺ Reset</button>'
+    ? '<button onclick="event.stopPropagation();resetHafalan(\''+resetKey+'\')" title="Reset '+label+' '+currentJLPT+'" style="border:1px solid var(--border);background:white;color:var(--mist);font-size:10px;padding:3px 9px;border-radius:8px;cursor:pointer;white-space:nowrap">↺ Reset</button>'
     : '';
-  return '<div style="background:white;border:1px solid var(--border);border-radius:12px;padding:14px;box-shadow:var(--shadow)">'
+  return '<div onclick="gotoScreen(\''+gotoScr+'\')" style="background:white;border:1px solid var(--border);border-left:3px solid '+color+';border-radius:12px;padding:13px 14px;box-shadow:var(--shadow);cursor:pointer;transition:transform .12s" onmouseover="this.style.transform=\'translateY(-2px)\'" onmouseout="this.style.transform=\'\'">'
     +'<div style="display:flex;justify-content:space-between;align-items:baseline">'
     +'<span style="font-size:13px;font-weight:700;color:var(--ink)">'+emo+' '+label+'</span>'
-    +'<span style="font-family:\'DM Mono\',monospace;font-size:13px;color:'+color+';font-weight:700">'+done+'<span style="color:var(--mist);font-size:11px">/'+total+'</span></span>'
+    +'<span style="font-family:\'DM Mono\',monospace;font-size:13px;color:'+color+';font-weight:700">'+pct+'%</span>'
     +'</div>'
     +_pbar(done,total,color)
     +'<div style="display:flex;justify-content:space-between;align-items:center;margin-top:8px">'
-    +'<span style="font-size:10px;color:var(--mist)">'+(sub||'')+'</span>'
+    +'<span style="font-size:11px;color:var(--mist)">'+done+' / '+total+' hafal</span>'
     + resetBtn
     +'</div>'
     +'</div>';
 }
 // ── Reset progress hafalan PER kategori, PER level aktif ──
 function resetHafalan(key){
-  var labels={kotoba:'Kotoba (Kosakata)',kanji:'Kanji',sifat:'Kata Sifat',bunpou:'Bunpou',ujian:'Riwayat Ujian'};
+  var labels={kotoba:'Kotoba (arti)',kanji:'Kanji (baca)',bunpou:'Bunpou',ujian:'Riwayat Ujian'};
   var lbl=labels[key]||key;
-  if(!confirm('Reset progress "'+lbl+'" untuk level '+currentJLPT+'?\n\nHanya kategori ini di level '+currentJLPT+' yang dihapus. Progress kategori & level lain TIDAK terpengaruh. Tindakan ini tidak bisa dibatalkan.')) return;
+  if(!confirm('Reset progress "'+lbl+'" untuk level '+currentJLPT+'?\n\nHanya bagian ini di level '+currentJLPT+' yang dihapus. Bagian & level lain TIDAK terpengaruh. Tidak bisa dibatalkan.')) return;
 
-  // mapping kategori → cat kata
-  var catMap={kotoba:'vocab',kanji:'kanji',sifat:'grammar'};
-
-  if(key==='kotoba'||key==='kanji'||key==='sifat'){
-    var cat=catMap[key];
+  if(key==='kotoba'){
+    // hafalan ARTI (flashcard): mastered
     if(currentJLPT==='N3'){
-      mastered[cat]={};
-      if(key==='kanji') kanjiReadMastered={};   // reset progress baca kanji N3 juga
+      mastered.vocab={}; mastered.kanji={}; mastered.grammar={};
     } else {
-      // level lain: mastered[level] dicampur per-id; hapus hanya id milik cat ini
-      var mlvl=mastered[currentJLPT]||{};
-      var ws=(JLPT_DATA[currentJLPT]||[]);
-      ws.forEach(function(w){ if((w.cat||'vocab')===cat && mlvl[w.id]) delete mlvl[w.id]; });
-      mastered[currentJLPT]=mlvl;
+      mastered[currentJLPT]={};
+    }
+  } else if(key==='kanji'){
+    // hafalan BACA kanji: kanjiReadMastered (N3) / mastered['kf_'+level]
+    if(currentJLPT==='N3'){
+      Object.keys(kanjiReadMastered||{}).forEach(function(k){ delete kanjiReadMastered[k]; });
+    } else {
+      mastered['kf_'+currentJLPT]={};
     }
   } else if(key==='bunpou'){
     bunpoProgress[currentJLPT]=0;
   } else if(key==='ujian'){
-    // hapus riwayat ujian level aktif saja
     examHistory=(examHistory||[]).filter(function(e){ return e.level!==currentJLPT; });
     try{ localStorage.setItem('examHistory',JSON.stringify(examHistory)); }catch(e){}
   }
 
-  // persist
   if(typeof save==='function') save();
   else { try{ saveToLocal(); }catch(e){} }
 
-  // refresh tampilan
   renderProgressDashboard();
   if(typeof renderReview==='function') renderReview(currentFilter||'all');
   if(typeof updateOverview==='function') try{ updateOverview(); }catch(e){}
 }
 
+// Hitung kotoba (ARTI) hafal untuk level aktif
+function _countKotoba(){
+  if(currentJLPT==='N3'){
+    var d=0,t=0;
+    ['vocab','kanji','grammar'].forEach(function(c){
+      t+=ALL_WORDS[c].length;
+      d+=ALL_WORDS[c].filter(function(w){return !!mastered[c][w.id];}).length;
+    });
+    return {done:d,total:t};
+  }
+  var ws=(JLPT_DATA[currentJLPT]||[]); var m=mastered[currentJLPT]||{};
+  return {done:ws.filter(function(w){return !!m[w.id];}).length, total:ws.length};
+}
+// Hitung kanji (BACA) hafal untuk level aktif
+function _countKanji(){
+  if(currentJLPT==='N3'){
+    var d=0,t=0;
+    ['vocab','kanji','grammar'].forEach(function(c){
+      ALL_WORDS[c].forEach(function(w){
+        if(/[一-鿿]/.test(w.jp)){ t++; if(kanjiReadMastered['kf_'+c+'_'+w.id]) d++; }
+      });
+    });
+    return {done:d,total:t};
+  }
+  var ws=(JLPT_DATA[currentJLPT]||[]).filter(function(w){return /[一-鿿]/.test(w.jp);});
+  var m=mastered['kf_'+currentJLPT]||{};
+  return {done:ws.filter(function(w){return !!m[w.id];}).length, total:ws.length};
+}
+
+var _examDropOpen=false;
+function toggleExamHistory(){
+  _examDropOpen=!_examDropOpen;
+  var body=document.getElementById('exam-hist-body');
+  var arr=document.getElementById('exam-hist-arrow');
+  if(body) body.style.display=_examDropOpen?'block':'none';
+  if(arr) arr.textContent=_examDropOpen?'▲':'▼';
+}
+
 function renderProgressDashboard(){
   var host=document.getElementById('progress-dashboard');
   if(!host) return;
-  var color=JLPT_COLORS[currentJLPT]||'var(--red)';
   var isSSW=currentJLPT==='SSW';
 
-  // ── Hitung kotoba/kanji/sifat untuk level aktif ──
-  var kotobaDone=0,kotobaTot=0, kanjiDone=0,kanjiTot=0, sifatDone=0,sifatTot=0;
-  if(currentJLPT==='N3'){
-    kanjiTot=ALL_WORDS.kanji.length;
-    kanjiDone=ALL_WORDS.kanji.filter(function(w){return !!mastered.kanji[w.id];}).length;
-    kotobaTot=ALL_WORDS.vocab.length;
-    kotobaDone=ALL_WORDS.vocab.filter(function(w){return !!mastered.vocab[w.id];}).length;
-    sifatTot=ALL_WORDS.grammar.length;
-    sifatDone=ALL_WORDS.grammar.filter(function(w){return !!mastered.grammar[w.id];}).length;
-  } else {
-    var ws=(JLPT_DATA[currentJLPT]||[]);
-    var mlvl=mastered[currentJLPT]||{};
-    var kanjiArr=ws.filter(function(w){return w.cat==='kanji';});
-    var vocabArr=ws.filter(function(w){return w.cat==='vocab';});
-    var gramArr =ws.filter(function(w){return w.cat==='grammar';});
-    kanjiTot=kanjiArr.length; kanjiDone=kanjiArr.filter(function(w){return !!mlvl[w.id];}).length;
-    kotobaTot=vocabArr.length; kotobaDone=vocabArr.filter(function(w){return !!mlvl[w.id];}).length;
-    sifatTot=gramArr.length; sifatDone=gramArr.filter(function(w){return !!mlvl[w.id];}).length;
-  }
-
-  // ── Bunpou ──
+  var ko=_countKotoba();
+  var ka=_countKanji();
   var totPat=(BUNPO_DATA[currentJLPT]||[]).length;
-  var stagesDone=(bunpoProgress[currentJLPT]||0);
-  var bunpoDone=Math.min(stagesDone*STAGE_SIZE, totPat);
+  var bunpoDone=Math.min((bunpoProgress[currentJLPT]||0)*STAGE_SIZE, totPat);
 
-  var cards='<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">';
-  cards+=_progCard('📦','Kotoba (Kosakata)',kotobaDone,kotobaTot,'var(--indigo)','','kotoba');
-  cards+=_progCard('漢字','Kanji',kanjiDone,kanjiTot,'var(--gold)','','kanji');
-  cards+=_progCard('形','Kata Sifat',sifatDone,sifatTot,'var(--jade)','','sifat');
-  if(!isSSW) cards+=_progCard('文法','Bunpou',bunpoDone,totPat,'#7a5cc4',stagesDone+' sesi selesai','bunpou');
+  // ── Kartu ringkas, bisa diklik ──
+  var cards='<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px">';
+  cards+=_progCard('📦','Kotoba',ko.done,ko.total,'var(--indigo)','flashmenu','kotoba');
+  cards+=_progCard('漢字','Kanji',ka.done,ka.total,'var(--gold)','kanjimenu','kanji');
+  if(!isSSW) cards+=_progCard('文法','Bunpou',bunpoDone,totPat,'#7a5cc4','bunpomenu','bunpou');
+  var exN=(examHistory||[]).filter(function(e){return e.level===currentJLPT;}).length;
+  cards+='<div onclick="gotoScreen(\'exam\')" style="background:white;border:1px solid var(--border);border-left:3px solid var(--red);border-radius:12px;padding:13px 14px;box-shadow:var(--shadow);cursor:pointer;transition:transform .12s" onmouseover="this.style.transform=\'translateY(-2px)\'" onmouseout="this.style.transform=\'\'">'
+    +'<div style="display:flex;justify-content:space-between;align-items:baseline">'
+    +'<span style="font-size:13px;font-weight:700;color:var(--ink)">📝 Ujian</span>'
+    +'<span style="font-family:\'DM Mono\',monospace;font-size:18px;color:var(--red);font-weight:700">'+exN+'</span>'
+    +'</div>'
+    +'<div style="font-size:11px;color:var(--mist);margin-top:8px">ujian '+currentJLPT+' selesai</div>'
+    +'</div>';
   cards+='</div>';
 
-  // ── Riwayat Ujian lintas level ──
+  // ── Riwayat ujian → DROPDOWN (tertutup default) ──
   var hist=(examHistory||[]).slice().sort(function(a,b){return (b.ts||'').localeCompare(a.ts||'');});
-  var histHtml;
+  var totExams=hist.length;
+  var avgPct=totExams?Math.round(hist.reduce(function(s,e){return s+(e.pct||0);},0)/totExams):0;
+  var histRows;
   if(!hist.length){
-    histHtml='<div style="text-align:center;color:var(--mist);font-size:12px;padding:18px">Belum ada riwayat ujian. Kerjakan satu di tab 📝 Ujian.</div>';
+    histRows='<div style="text-align:center;color:var(--mist);font-size:12px;padding:16px">Belum ada riwayat ujian.</div>';
   } else {
-    histHtml=hist.slice(0,30).map(function(e){
+    histRows=hist.slice(0,30).map(function(e){
       var gc = e.pct>=80?'var(--jade)':(e.pct>=65?'var(--gold)':'var(--red)');
       return '<div style="display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid var(--border)">'
         +'<span style="font-family:\'DM Mono\',monospace;font-size:11px;font-weight:700;padding:2px 7px;border-radius:8px;background:'+(JLPT_COLORS[e.level]||'var(--red)')+';color:white">'+(e.level||'?')+'</span>'
@@ -6566,29 +6591,24 @@ function renderProgressDashboard(){
         +'<div style="font-size:10px;color:var(--mist)">'+(e.date||'')+' · '+(e.score||0)+'/'+(e.total||0)+' soal</div>'
         +'</div>'
         +'<span style="font-family:\'DM Mono\',monospace;font-size:15px;font-weight:700;color:'+gc+'">'+(e.pct||0)+'%</span>'
-        +'<span style="font-size:13px;font-weight:700;color:'+gc+'">'+(e.grade||'')+'</span>'
         +'</div>';
     }).join('');
   }
 
-  // ── Ringkasan total lintas level ──
-  var totExams=hist.length;
-  var avgPct=totExams?Math.round(hist.reduce(function(s,e){return s+(e.pct||0);},0)/totExams):0;
-
   host.innerHTML =
-    '<div style="background:white;border:1px solid var(--border);border-top:3px solid '+color+';border-radius:12px;padding:14px;box-shadow:var(--shadow);margin-bottom:12px">'
-    +'<div style="font-size:13px;font-weight:700;margin-bottom:10px">Hafalan '+currentJLPT+'</div>'
-    + cards
-    +'</div>'
-    +'<div style="background:white;border:1px solid var(--border);border-radius:12px;padding:14px;box-shadow:var(--shadow)">'
-    +'<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">'
-    +'<span style="font-size:13px;font-weight:700">🗂️ Riwayat Ujian (semua level)</span>'
-    +'<div style="display:flex;align-items:center;gap:8px">'
+    cards
+    +'<div style="background:white;border:1px solid var(--border);border-radius:12px;box-shadow:var(--shadow);overflow:hidden">'
+    +'<div onclick="toggleExamHistory()" style="display:flex;justify-content:space-between;align-items:center;padding:13px 14px;cursor:pointer">'
+    +'<span style="font-size:13px;font-weight:700">🗂️ Riwayat Ujian</span>'
+    +'<span style="display:flex;align-items:center;gap:8px">'
     +'<span style="font-size:11px;color:var(--mist)">'+totExams+' ujian · rata² '+avgPct+'%</span>'
-    +(totExams?'<button onclick="resetHafalan(\'ujian\')" title="Reset riwayat ujian '+currentJLPT+'" style="border:1px solid var(--border);background:white;color:var(--mist);font-size:10px;padding:3px 8px;border-radius:8px;cursor:pointer;white-space:nowrap">↺ Reset</button>':'')
+    +'<span id="exam-hist-arrow" style="font-size:11px;color:var(--mist)">'+(_examDropOpen?'▲':'▼')+'</span>'
+    +'</span>'
     +'</div>'
+    +'<div id="exam-hist-body" style="display:'+(_examDropOpen?'block':'none')+';padding:0 14px 8px">'
+    +(totExams?'<div style="display:flex;justify-content:flex-end;margin-bottom:4px"><button onclick="resetHafalan(\'ujian\')" style="border:1px solid var(--border);background:white;color:var(--mist);font-size:10px;padding:3px 9px;border-radius:8px;cursor:pointer">↺ Reset riwayat '+currentJLPT+'</button></div>':'')
+    + histRows
     +'</div>'
-    + histHtml
     +'</div>';
 }
 
