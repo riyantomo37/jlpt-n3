@@ -1065,9 +1065,9 @@ header:has(.user-menu.open) { z-index:1000; }
   <button onclick="gotoScreen('flashmenu')">📚 Flashcard</button>
   <button onclick="gotoScreen('kanjimenu')">漢字 Kanji</button>
   <button onclick="gotoScreen('bunpomenu')">文法 Bunpo</button>
-  <button onclick="gotoScreen('review')">📋 Semua Kata</button>
-  <button onclick="gotoScreen('leaderboard')">🏆 Ranking</button>
   <button onclick="gotoScreen('exam')">📝 Ujian</button>
+  <button onclick="gotoScreen('review')">📊 Progress</button>
+  <button onclick="gotoScreen('leaderboard')">🏆 Ranking</button>
   <button onclick="gotoScreen('ai')">🤖 Sensei</button>
 </nav>
 
@@ -1396,9 +1396,14 @@ header:has(.user-menu.open) { z-index:1000; }
 <!-- ====== REVIEW SCREEN ====== -->
 <div id="screen-review" class="screen">
   <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
-    <div class="section-title" style="margin:0" id="review-title">Semua Kata N3</div>
+    <div class="section-title" style="margin:0" id="review-title">📊 Progress Hafalan</div>
     <span id="review-level-badge" style="font-family:'DM Mono',monospace;font-size:11px;padding:3px 10px;border-radius:10px;font-weight:700;background:var(--red);color:white">N3</span>
   </div>
+
+  <!-- ===== PROGRESS HAFALAN DASHBOARD ===== -->
+  <div id="progress-dashboard"></div>
+
+  <div class="section-title" style="font-size:14px;margin:18px 0 10px">📖 Daftar Kata — tandai hafal</div>
 
   <!-- Search -->
   <div style="display:flex;gap:8px;margin-bottom:12px">
@@ -2843,12 +2848,47 @@ function buildDynamicBank(words, level) {
     if(q) bank.mondai4.push(q);
   });
 
-  // 問題5 用法
+  // 問題5 用法 — target word disisipkan ke 4 kalimat berbeda; hanya satu yang
+  // memakai kata itu secara wajar. Trap = kalimat yang benar untuk JENIS kata lain
+  // (meniru gaya bank: 「丁寧に説明する」○ vs 「丁寧が降っています」×).
+  function posOf(w){
+    var m=(w.id_||'').toLowerCase();
+    var jp=w.jp||'';
+    if(w.cat==='grammar' && /i$|い$/.test(jp)) return 'iadj';           // i-adjektiva
+    if(/^(ber|me[nm]|meng|men|mem|menyuc)/.test(m) || /(る|う|く|ぐ|す|つ|ぬ|ぶ|む)$/.test(jp) && w.cat==='kanji') return 'verb';
+    if(w.cat==='grammar') return 'naadj';                                // sifat-na
+    return 'noun';
+  }
+  // bank kalimat per POS: [kalimat benar untuk POS itu]
+  var usageFrames = {
+    noun:  function(x){ return x+'はとても役に立ちます。'; },
+    verb:  function(x){ return '毎日かならず'+x+'。'; },
+    iadj:  function(x){ return '今日はとても'+x+'です。'; },
+    naadj: function(x){ return 'この部屋はとても'+x+'です。'; }
+  };
+  // trap frames (akan salah dipakai untuk POS lain)
+  var trapByPos = {
+    noun:  ['毎日かならず','今日はとても','この部屋はとても'],   // verb/iadj/naadj frame -> noun salah
+    verb:  ['はとても役に立ちます。','は赤い色です。','が机の上にあります。'],
+    iadj:  ['を毎日食べます。','に乗って行きます。','を買いました。'],
+    naadj: ['を飲みました。','が降っています。','を読みました。']
+  };
   idOk.slice(0,40).forEach(function(w){
-    var correct=w.jp+'を使います。';
-    var ch=rnd([correct,w.jp+'が降っています。',w.jp+'を食べました。',w.jp+'に乗ります。']);
-    bank.mondai5.push({q:'「'+w.jp+'」の使い方として最もよいものはどれですか。',
-      c:ch,a:ch.indexOf(correct),e:'「'+w.jp+'」('+w.id_+')の正しい使い方です。'});
+    var pos=posOf(w);
+    var correct=usageFrames[pos](w.jp);
+    var traps;
+    if(pos==='verb'){
+      traps=[w.jp+'はとても役に立ちます。', w.jp+'は赤い色です。', w.jp+'が机の上にあります。'];
+    } else if(pos==='iadj'){
+      traps=[w.jp+'を毎日食べます。', w.jp+'に乗って行きます。', w.jp+'を買いました。'];
+    } else if(pos==='naadj'){
+      traps=[w.jp+'を飲みました。', w.jp+'が降っています。', w.jp+'を読みました。'];
+    } else { // noun -> trap pakai frame verb/adj
+      traps=['毎日かならず'+w.jp+'。', '今日はとても'+w.jp+'です。', 'この部屋はとても'+w.jp+'です。'];
+    }
+    var ch=rnd([correct,traps[0],traps[1],traps[2]]);
+    bank.mondai5.push({q:'「'+w.jp+'」（'+w.id_+'）の使い方として最もよいものはどれですか。',
+      c:ch,a:ch.indexOf(correct),e:'「'+w.jp+'」は'+w.id_+'という意味で、正しい使い方は他の選択肢のような不自然な文ではありません。'});
   });
 
   // Add unique ids to all questions
@@ -3001,30 +3041,30 @@ function buildListeningSections(words) {
       };
     });
   } else {
-    // N4/N5 — generate listening from word data
-    shuffle(words);
-    var sample = words.slice(0,6);
+    // N4/N5 — pakai script alami yang sudah jadi (TIDAK menyuntik kosakata acak,
+    // karena itu menyebabkan kalimat tak masuk akal seperti
+    // 「この近くにお兄さんはありますか」).
     var scripts = [
       {
-        s: '女：すみません、この近くに'+( sample[0]?sample[0].jp:'コンビニ')+'はありますか。\n男：ええ、駅の前にありますよ。\n女：ありがとうございます。',
+        s: '女：すみません、この近くにコンビニはありますか。\n男：ええ、駅の前にありますよ。\n女：ありがとうございます。',
         q: '女の人は何を探していますか。',
-        c: [sample[0]?sample[0].jp:'コンビニ', '駅', '学校', '銀行'],
+        c: ['コンビニ', '駅', '学校', '銀行'],
         a: 0,
-        e: '女の人は「'+( sample[0]?sample[0].jp:'コンビニ')+'はありますか」と聞いています。'
+        e: '女の人は「この近くにコンビニはありますか」と聞いています。'
       },
       {
-        s: '先生：明日のテストの範囲は'+( sample[1]?sample[1].jp:'第三課')+'からです。よく復習してください。\n学生：はい、わかりました。',
+        s: '先生：明日のテストの範囲は第三課からです。よく復習してください。\n学生：はい、わかりました。',
         q: 'テストについて正しいのはどれですか。',
         c: ['明日テストがある','今日テストがある','テストはない','テストは来週だ'],
         a: 0,
         e: '「明日のテスト」と言っています。'
       },
       {
-        s: '男：昨日、映画を見に行ったんですが、とても'+( sample[2]?sample[2].jp:'おもしろかった')+'です。\n女：そうですか。私も見たいです。',
+        s: '男：昨日、映画を見に行ったんですが、とてもおもしろかったです。\n女：そうですか。私も見たいです。',
         q: '男の人は映画についてどう言いましたか。',
-        c: [sample[2]?sample[2].jp:'おもしろかった','つまらなかった','怖かった','長かった'],
+        c: ['おもしろかった','つまらなかった','怖かった','長かった'],
         a: 0,
-        e: '「とても'+( sample[2]?sample[2].jp:'おもしろかった')+'です」と言っています。'
+        e: '「とてもおもしろかったです」と言っています。'
       },
       {
         s: 'アナウンス：お客様にお知らせします。ただいまエレベーターは点検中のため使用できません。ご不便をおかけして申し訳ありません。',
@@ -3039,9 +3079,31 @@ function buildListeningSections(words) {
         c: ['頭が痛くて熱もある','おなかが痛い','足が痛い','元気だ'],
         a: 0,
         e: '「頭が痛くて、少し熱もあります」と言っています。'
+      },
+      {
+        s: '男：すみません、この電車は東京駅に止まりますか。\n駅員：いいえ、この電車は急行ですから、止まりません。次の各駅停車に乗ってください。\n男：わかりました。ありがとうございます。',
+        q: '男の人はどうすればいいですか。',
+        c: ['次の各駅停車に乗る','この電車に乗ったままでいる','タクシーに乗る','バスに乗る'],
+        a: 0,
+        e: '駅員は「次の各駅停車に乗ってください」と言っています。'
+      },
+      {
+        s: '女：もしもし、田中さんですか。今日の約束ですが、少し遅れそうです。\n男：大丈夫ですよ。何時ごろになりますか。\n女：３０分ほど遅れます。すみません。',
+        q: '女の人は何を伝えていますか。',
+        c: ['約束に３０分遅れること','約束をやめること','場所を変えること','早く着くこと'],
+        a: 0,
+        e: '「３０分ほど遅れます」と言っています。'
+      },
+      {
+        s: '店員：いらっしゃいませ。何かお探しですか。\n女：はい、青いセーターを探しているんですが。\n店員：こちらはいかがですか。今、安くなっていますよ。\n女：いいですね。これをください。',
+        q: '女の人は何を買いますか。',
+        c: ['青いセーター','赤いセーター','白いシャツ','黒いコート'],
+        a: 0,
+        e: '女の人は「青いセーターを探している」と言い、「これをください」と言っています。'
       }
     ];
-    pool = scripts.map(function(item,i){
+    shuffle(scripts);
+    pool = scripts.slice(0,5).map(function(item,i){
       return {
         id:'lst_'+i,
         script: item.s,
@@ -3128,15 +3190,20 @@ async function buildGrammarSections(words) {
   if (!sections.length) {
     shuffle(words);
     var sample = words.slice(0,12).map(function(w){ return w.jp+'='+w.id_; }).join('; ');
-    var prompt = 'Buat 10 soal JLPT '+currentJLPT+' bagian 文法 bahasa Indonesia. Kata: '+sample
-      +'. Format HANYA JSON: [{"q":"kalimat dgn ___","c":["pilihan1","pilihan2","pilihan3","pilihan4"],"a":0,"e":"penjelasan"}]';
+    var prompt = 'Buatkan 10 soal JLPT '+currentJLPT+' bagian 文法 (tata bahasa). '
+      +'SEMUA isi soal (kalimat soal, 4 pilihan, dan penjelasan) HARUS dalam BAHASA JEPANG, bukan bahasa Indonesia. '
+      +'Setiap soal berupa kalimat dengan satu bagian kosong （　）, dan pelajar memilih pola/partikel yang paling tepat. '
+      +'WAJIB: ketiga pilihan yang SALAH harus berupa jebakan yang mirip dan masuk akal (partikel/pola yang gramatikal serupa, misal なら／ので／から／ため, atau pola yang artinya berdekatan), '
+      +'BUKAN pilihan acak yang jelas salah. Hanya satu jawaban benar. Penjelasan (e) singkat dalam bahasa Jepang mengapa jawaban itu benar. '
+      +'Gunakan kosakata level '+currentJLPT+' ini bila cocok: '+sample+'. '
+      +'Format HANYA JSON array valid: [{"q":"…（　）…","c":["…","…","…","…"],"a":0,"e":"…"}]';
     try {
       var res = await fetch('/api/groq',{
         method:'POST',
         headers:{'Content-Type':'application/json'},
         body:JSON.stringify({model:'llama-3.3-70b-versatile',max_tokens:2000,temperature:0.5,
           messages:[
-            {role:'system',content:'Pembuat soal JLPT profesional. Jawab HANYA JSON array valid.'},
+            {role:'system',content:'あなたはプロのJLPT問題作成者です。文法問題はすべて日本語で作り、不正解の選択肢は紛らわしい引っかけにしてください。出力は有効なJSON配列のみ。'},
             {role:'user',content:prompt}
           ]
         })
@@ -3170,9 +3237,11 @@ async function buildGrammarSections(words) {
 async function buildReadingSections(words) {
   shuffle(words);
   var sample = words.slice(0,8).map(function(w){ return w.jp; }).join('、');
-  var prompt = 'Buat 1 teks pendek Jepang (4-6 kalimat, level '+currentJLPT+') lalu 3 soal pilihan ganda tentang teks itu dalam Bahasa Indonesia.'
-    +' Gunakan kata-kata ini jika memungkinkan: '+sample+'.'
-    +' Format JSON: {"passage":"teks Jepang disini","questions":[{"q":"pertanyaan","choices":["A","B","C","D"],"answer":0,"exp":"penjelasan"}]}';
+  var prompt = 'Buatkan 1 teks pendek berbahasa Jepang (4-6 kalimat, level '+currentJLPT+') lalu 3 soal pilihan ganda tentang isi teks itu. '
+    +'SEMUA isi (teks, pertanyaan, 4 pilihan, dan penjelasan) HARUS dalam BAHASA JEPANG, bukan bahasa Indonesia. '
+    +'WAJIB: tiga pilihan yang salah harus berupa jebakan yang masuk akal dan berkaitan dengan teks (bukan acak), sehingga pelajar harus benar-benar memahami teks. Hanya satu jawaban benar. '
+    +'Gunakan kata-kata ini bila memungkinkan: '+sample+'. '
+    +'Format HANYA JSON valid: {"passage":"日本語の本文","questions":[{"q":"日本語の質問","choices":["…","…","…","…"],"answer":0,"exp":"日本語の説明"}]}';
 
   try {
     var res = await fetch('/api/groq',{
@@ -3180,7 +3249,7 @@ async function buildReadingSections(words) {
       headers:{'Content-Type':'application/json'},
       body:JSON.stringify({model:'llama-3.3-70b-versatile',max_tokens:2000,temperature:0.6,
         messages:[
-          {role:'system',content:'Pembuat soal JLPT 読解 profesional. Jawab HANYA JSON valid.'},
+          {role:'system',content:'あなたはプロのJLPT読解問題作成者です。本文・質問・選択肢・説明はすべて日本語で作り、不正解の選択肢は紛らわしい引っかけにしてください。出力は有効なJSONのみ。'},
           {role:'user',content:prompt}
         ]
       })
@@ -3254,15 +3323,15 @@ function renderQuestionHTML(q, num, total) {
   var qText = (q.question||q.text||q.q||'').split(NL).join('<br>');
   var info = q.info ? '<div style="font-size:11px;color:var(--mist);margin-bottom:8px">'+q.info+'</div>' : '';
 
-  // Listening
+  // Listening — AUDIO ONLY (script tidak ditampilkan, hanya tombol putar)
   var listenHtml = '';
   if (q.listening && q.script) {
     listenHtml = '<div style="background:rgba(142,68,173,.06);border:1px solid rgba(142,68,173,.2);border-radius:10px;padding:12px;margin-bottom:12px">'
-      + '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">'
-      + '<span style="font-size:12px;font-weight:600;color:#8e44ad">🎧 スクリプト</span>'
-      + '<button data-script="'+q.id+'" onclick="playScript(this)" style="padding:6px 14px;background:#8e44ad;color:white;border:none;border-radius:8px;cursor:pointer;font-size:12px">▶ 再生</button>'
+      + '<div style="display:flex;align-items:center;justify-content:space-between">'
+      + '<span style="font-size:12px;font-weight:600;color:#8e44ad">🎧 録音を聞いてください</span>'
+      + '<button data-script="'+q.id+'" data-playing="0" onclick="playScript(this)" style="padding:6px 14px;background:#8e44ad;color:white;border:none;border-radius:8px;cursor:pointer;font-size:12px">▶ 再生</button>'
       + '</div>'
-      + '<div id="script_'+q.id+'" style="font-size:13px;line-height:1.8;display:none">'+q.script.split(NL).join('<br>')+'</div>'
+      + '<div style="font-size:11px;color:var(--mist);margin-top:6px">音声のみ・スクリプトは表示されません</div>'
       + '</div>';
   }
 
@@ -3595,41 +3664,127 @@ function exitExam() { confirmExitExam(); }
 var ttsUtterance = null;
 var ttsSupported = typeof window !== 'undefined' && 'speechSynthesis' in window;
 
+// Pilih voice Jepang: kalau ada beberapa, bedakan female vs male.
+function pickJpVoices() {
+  var voices = window.speechSynthesis.getVoices();
+  var jp = voices.filter(function(v){ return (v.lang||'').toLowerCase().indexOf('ja') === 0 || (v.lang||'').toLowerCase().indexOf('ja-') === 0 || (v.lang||'').indexOf('ja') !== -1; });
+  var female=null, male=null;
+  jp.forEach(function(v){
+    var n=(v.name||'').toLowerCase();
+    if (!female && /female|kyoko|haruka|o-ren|sayaka|nanami|ayumi|woman|女/.test(n)) female=v;
+    if (!male && /male|otoya|ichiro|takeshi|keita|man|男/.test(n)) male=v;
+  });
+  // Fallback bila label tak jelas
+  if (!female) female = jp[0] || null;
+  if (!male) male = jp[1] || jp[0] || null;
+  return { all: jp, female: female, male: male };
+}
+
+// Tentukan karakter pembicara dari label (女:/男:/先生:/店員: dst).
+function speakerProfile(label) {
+  var L = (label||'').replace(/[：:\s]/g,'');
+  // gender
+  var isFemale = /女|母|妻|姉|妹|娘|おばあ|祖母|彼女|女性|店員|先生(?=.*女)|ウェイトレス|お母さん|お姉さん/.test(L);
+  var isMale   = /男|父|夫|兄|弟|息子|おじい|祖父|彼(?!女)|男性|お父さん|お兄さん|店長/.test(L);
+  // umur / karakter
+  var isChild  = /子供|子ども|男の子|女の子|息子|娘|赤ちゃん|生徒(?!.*大)/.test(L);
+  var isElder  = /おじい|おばあ|祖父|祖母|老人|お年寄り/.test(L);
+  var isMature = /先生|店長|社長|部長|課長|医者|校長|大人|お父さん|お母さん/.test(L);
+
+  var gender = isFemale ? 'f' : (isMale ? 'm' : 'n');
+  var rate = 0.92, pitch = 1.0;
+  if (isChild)      { rate = 1.12; pitch = 1.55; }
+  else if (isElder) { rate = 0.78; pitch = 0.80; }
+  else if (isMature){ rate = 0.90; pitch = (gender==='f'?1.05:0.92); }
+  else              { rate = 0.95; pitch = (gender==='f'?1.18:0.85); }
+  return { gender: gender, rate: rate, pitch: pitch };
+}
+
+// Pecah script jadi baris-baris {speaker, text}. Label TIDAK dibacakan.
+function parseScriptLines(text) {
+  var NL = String.fromCharCode(10);
+  var lines = (text||'').split(NL);
+  var out = [];
+  lines.forEach(function(line){
+    var raw = (line||'').trim();
+    if (!raw) return;
+    // cocokkan "ラベル：本文" atau "ラベル: 本文" (label = sebelum titik dua pertama, maks ~8 char)
+    var m = raw.match(/^([^：:]{1,12})[：:]\s*(.*)$/);
+    if (m && m[2]) {
+      out.push({ speaker: m[1], text: m[2] });
+    } else {
+      out.push({ speaker: '', text: raw });
+    }
+  });
+  return out;
+}
+
+var _ttsQueue = [];
+var _ttsActive = false;
+
 function readScript(text) {
   if (!ttsSupported) { alert('Browser kamu tidak mendukung fitur audio. Gunakan Chrome.'); return; }
   window.speechSynthesis.cancel();
-  var utt = new SpeechSynthesisUtterance(text);
+  _ttsQueue = [];
+  _ttsActive = true;
+  var vo = pickJpVoices();
+  var lines = parseScriptLines(text);
+  // Mapping pembicara→voice agar konsisten dalam satu dialog
+  var assigned = {};
+  lines.forEach(function(ln){
+    var prof = speakerProfile(ln.speaker);
+    var voice = null;
+    if (prof.gender === 'f') voice = vo.female;
+    else if (prof.gender === 'm') voice = vo.male;
+    else voice = vo.female || vo.male;
+    // Hanya bacakan BODY teks, bukan label pembicara
+    _ttsQueue.push({ text: ln.text, voice: voice, rate: prof.rate, pitch: prof.pitch });
+  });
+  if (!_ttsQueue.length && text) {
+    _ttsQueue.push({ text: text, voice: vo.female||vo.male, rate: 0.9, pitch: 1.0 });
+  }
+  _speakNext();
+}
+
+function _speakNext() {
+  if (!_ttsActive || !_ttsQueue.length) { _ttsActive = false; return; }
+  var item = _ttsQueue.shift();
+  var utt = new SpeechSynthesisUtterance(item.text);
   utt.lang = 'ja-JP';
-  utt.rate = 0.85;
-  utt.pitch = 1.0;
-  // Try to use Japanese voice
-  var voices = window.speechSynthesis.getVoices();
-  var jpVoice = voices.find(function(v){ return v.lang.includes('ja'); });
-  if (jpVoice) utt.voice = jpVoice;
+  utt.rate = item.rate;
+  utt.pitch = item.pitch;
+  if (item.voice) utt.voice = item.voice;
+  utt.onend = function(){ setTimeout(_speakNext, 220); };
+  utt.onerror = function(){ _ttsActive = false; };
   ttsUtterance = utt;
   window.speechSynthesis.speak(utt);
 }
 
 function playScript(btn) {
   var qId = btn.getAttribute('data-script');
-  var scriptEl = document.getElementById('script_'+qId);
-  // Hentikan audio apa pun yang sedang berbunyi sebelum aksi baru
+  // Audio-only: tidak ada teks script yang ditampilkan.
+  var wasPlaying = (btn.getAttribute('data-playing') === '1');
   stopAudio();
-  var willShow = false;
-  if (scriptEl) {
-    willShow = (scriptEl.style.display === 'none');
-    scriptEl.style.display = willShow ? '' : 'none';
-  }
-  // Hanya putar saat membuka script; menutup = berhenti saja
-  if (!willShow) return;
+  // reset semua tombol play lain
+  document.querySelectorAll('[data-script]').forEach(function(b){
+    b.setAttribute('data-playing','0');
+    b.innerHTML = '▶ 再生';
+  });
+  if (wasPlaying) return; // klik kedua = berhenti
   var q = null;
   examSections.forEach(function(sec){
     sec.questions.forEach(function(sq){ if(sq.id===qId) q=sq; });
   });
-  if (q && q.script) readScript(q.script);
+  if (q && q.script) {
+    btn.setAttribute('data-playing','1');
+    btn.innerHTML = '⏸ 停止';
+    readScript(q.script);
+  }
 }
 
 function stopAudio() {
+  _ttsActive = false;
+  _ttsQueue = [];
   if (ttsSupported) window.speechSynthesis.cancel();
 }
 
@@ -5391,6 +5546,9 @@ async function startBunpoQuiz(){
   var prompt = 'Buatkan '+nSoal+' soal pilihan ganda bahasa Jepang JLPT '+currentJLPT
     + fokus
     + 'Setiap soal berupa kalimat dengan satu bagian rumpang (___), dan 4 pilihan jawaban. '
+    + 'WAJIB: ketiga pilihan yang SALAH harus berupa jebakan yang mirip dan masuk akal '
+    + '(pola/partikel yang gramatikal serupa atau artinya berdekatan dengan jawaban benar), '
+    + 'BUKAN pilihan acak yang jelas salah, supaya benar-benar menguji pemahaman. Hanya satu jawaban benar. '
     + 'Penjelasan singkat (maksimal 1 kalimat) dalam Bahasa Indonesia. '
     + 'Balas HANYA JSON valid, tanpa teks lain, tanpa markdown, tanpa ```. Format persis: '
     + '{"soal":[{"q":"...___...","opsi":["a","b","c","d"],"jawab":0,"penjelasan":"..."}]} '
@@ -5780,8 +5938,8 @@ function renderOverviewMenu(){
     {scr:'flashmenu', emo:'📚', t:'Flashcard', d:'Hafal kosakata '+currentJLPT, c:color},
     {scr:'kanjimenu', emo:'漢字', t:'Baca Kanji', d:'Latihan baca kanji', c:'var(--gold)'},
     {scr:'bunpomenu', emo:'文法', t:'Bunpo', d:'Belajar tata bahasa', c:'#7a5cc4', hide:isSSW},
-    {scr:'review',    emo:'📋', t:'Semua Kata', d:'Tinjau & tandai hafal', c:'var(--jade)'},
     {scr:'exam',      emo:'📝', t:'Ujian', d:'Simulasi soal JLPT', c:'var(--red)'},
+    {scr:'review',    emo:'📊', t:'Progress Hafalan', d:'Kotoba · Kanji · Bunpou · Ujian', c:'var(--jade)'},
     {scr:'leaderboard',emo:'🏆', t:'Ranking', d:'Peringkat poin', c:'#d08700'},
     {scr:'ai',        emo:'🤖', t:'Tanya Sensei', d:'Tanya grammar & arti', c:'var(--indigo)'}
   ];
@@ -6292,13 +6450,108 @@ function toggleDropdown(id) {
 function closeDropdowns() {
   document.querySelectorAll('.dropdown-panel').forEach(function(p){ p.classList.remove('open'); });
 }
+// ============================================================
+// PROGRESS HAFALAN DASHBOARD
+// ============================================================
+function _pbar(done,total,color){
+  var pct = total>0 ? Math.round(done/total*100) : 0;
+  return '<div style="background:rgba(26,26,46,.08);border-radius:4px;height:7px;overflow:hidden;margin-top:6px">'
+    +'<div style="height:100%;width:'+pct+'%;background:'+color+';border-radius:4px;transition:width .5s"></div></div>';
+}
+function _progCard(emo,label,done,total,color,sub){
+  return '<div style="background:white;border:1px solid var(--border);border-radius:12px;padding:14px;box-shadow:var(--shadow)">'
+    +'<div style="display:flex;justify-content:space-between;align-items:baseline">'
+    +'<span style="font-size:13px;font-weight:700;color:var(--ink)">'+emo+' '+label+'</span>'
+    +'<span style="font-family:\'DM Mono\',monospace;font-size:13px;color:'+color+';font-weight:700">'+done+'<span style="color:var(--mist);font-size:11px">/'+total+'</span></span>'
+    +'</div>'
+    +_pbar(done,total,color)
+    +(sub?'<div style="font-size:10px;color:var(--mist);margin-top:6px">'+sub+'</div>':'')
+    +'</div>';
+}
+function renderProgressDashboard(){
+  var host=document.getElementById('progress-dashboard');
+  if(!host) return;
+  var color=JLPT_COLORS[currentJLPT]||'var(--red)';
+  var isSSW=currentJLPT==='SSW';
+
+  // ── Hitung kotoba/kanji/sifat untuk level aktif ──
+  var kotobaDone=0,kotobaTot=0, kanjiDone=0,kanjiTot=0, sifatDone=0,sifatTot=0;
+  if(currentJLPT==='N3'){
+    kanjiTot=ALL_WORDS.kanji.length;
+    kanjiDone=ALL_WORDS.kanji.filter(function(w){return !!mastered.kanji[w.id];}).length;
+    kotobaTot=ALL_WORDS.vocab.length;
+    kotobaDone=ALL_WORDS.vocab.filter(function(w){return !!mastered.vocab[w.id];}).length;
+    sifatTot=ALL_WORDS.grammar.length;
+    sifatDone=ALL_WORDS.grammar.filter(function(w){return !!mastered.grammar[w.id];}).length;
+  } else {
+    var ws=(JLPT_DATA[currentJLPT]||[]);
+    var mlvl=mastered[currentJLPT]||{};
+    var kanjiArr=ws.filter(function(w){return w.cat==='kanji';});
+    var vocabArr=ws.filter(function(w){return w.cat==='vocab';});
+    var gramArr =ws.filter(function(w){return w.cat==='grammar';});
+    kanjiTot=kanjiArr.length; kanjiDone=kanjiArr.filter(function(w){return !!mlvl[w.id];}).length;
+    kotobaTot=vocabArr.length; kotobaDone=vocabArr.filter(function(w){return !!mlvl[w.id];}).length;
+    sifatTot=gramArr.length; sifatDone=gramArr.filter(function(w){return !!mlvl[w.id];}).length;
+  }
+
+  // ── Bunpou ──
+  var totPat=(BUNPO_DATA[currentJLPT]||[]).length;
+  var stagesDone=(bunpoProgress[currentJLPT]||0);
+  var bunpoDone=Math.min(stagesDone*STAGE_SIZE, totPat);
+
+  var cards='<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">';
+  cards+=_progCard('📦','Kotoba (Kosakata)',kotobaDone,kotobaTot,'var(--indigo)');
+  cards+=_progCard('漢字','Kanji',kanjiDone,kanjiTot,'var(--gold)');
+  cards+=_progCard('形','Kata Sifat',sifatDone,sifatTot,'var(--jade)');
+  if(!isSSW) cards+=_progCard('文法','Bunpou',bunpoDone,totPat,'#7a5cc4',stagesDone+' sesi selesai');
+  cards+='</div>';
+
+  // ── Riwayat Ujian lintas level ──
+  var hist=(examHistory||[]).slice().sort(function(a,b){return (b.ts||'').localeCompare(a.ts||'');});
+  var histHtml;
+  if(!hist.length){
+    histHtml='<div style="text-align:center;color:var(--mist);font-size:12px;padding:18px">Belum ada riwayat ujian. Kerjakan satu di tab 📝 Ujian.</div>';
+  } else {
+    histHtml=hist.slice(0,30).map(function(e){
+      var gc = e.pct>=80?'var(--jade)':(e.pct>=65?'var(--gold)':'var(--red)');
+      return '<div style="display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid var(--border)">'
+        +'<span style="font-family:\'DM Mono\',monospace;font-size:11px;font-weight:700;padding:2px 7px;border-radius:8px;background:'+(JLPT_COLORS[e.level]||'var(--red)')+';color:white">'+(e.level||'?')+'</span>'
+        +'<div style="flex:1;min-width:0">'
+        +'<div style="font-size:13px;font-weight:600;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+(e.type||e.section||'Ujian')+'</div>'
+        +'<div style="font-size:10px;color:var(--mist)">'+(e.date||'')+' · '+(e.score||0)+'/'+(e.total||0)+' soal</div>'
+        +'</div>'
+        +'<span style="font-family:\'DM Mono\',monospace;font-size:15px;font-weight:700;color:'+gc+'">'+(e.pct||0)+'%</span>'
+        +'<span style="font-size:13px;font-weight:700;color:'+gc+'">'+(e.grade||'')+'</span>'
+        +'</div>';
+    }).join('');
+  }
+
+  // ── Ringkasan total lintas level ──
+  var totExams=hist.length;
+  var avgPct=totExams?Math.round(hist.reduce(function(s,e){return s+(e.pct||0);},0)/totExams):0;
+
+  host.innerHTML =
+    '<div style="background:white;border:1px solid var(--border);border-top:3px solid '+color+';border-radius:12px;padding:14px;box-shadow:var(--shadow);margin-bottom:12px">'
+    +'<div style="font-size:13px;font-weight:700;margin-bottom:10px">Hafalan '+currentJLPT+'</div>'
+    + cards
+    +'</div>'
+    +'<div style="background:white;border:1px solid var(--border);border-radius:12px;padding:14px;box-shadow:var(--shadow)">'
+    +'<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">'
+    +'<span style="font-size:13px;font-weight:700">🗂️ Riwayat Ujian (semua level)</span>'
+    +'<span style="font-size:11px;color:var(--mist)">'+totExams+' ujian · rata² '+avgPct+'%</span>'
+    +'</div>'
+    + histHtml
+    +'</div>';
+}
+
 function renderReview(filter) {
   currentFilter = filter || 'all';
   var color = JLPT_COLORS[currentJLPT] || 'var(--red)';
   var titleEl=document.getElementById('review-title');
   var badgeEl=document.getElementById('review-level-badge');
-  if(titleEl) titleEl.textContent='Semua Kata '+currentJLPT;
+  if(titleEl) titleEl.textContent='📊 Progress Hafalan';
   if(badgeEl){badgeEl.textContent=currentJLPT;badgeEl.style.background=color;}
+  renderProgressDashboard();
 
   // Show/hide category filters
   var rbKanji=document.getElementById('rb-kanji');
