@@ -1313,8 +1313,26 @@ header:has(.user-menu.open) { z-index:1000; }
     <span id="bm-level-badge" style="background:var(--red);color:white;padding:3px 12px;border-radius:20px;font-family:'DM Mono',monospace;font-size:12px;font-weight:700">N5</span>
     <div class="section-title" style="margin:0">文法 Bunpo — Tata Bahasa</div>
   </div>
-  <div style="font-size:13px;color:var(--mist);margin-bottom:18px">Belajar 3 pola tata bahasa per sesi: penjelasan, rumus, contoh, lalu kuis.</div>
-  <div id="bm-stage-list"></div>
+
+  <!-- Pemilih cara belajar -->
+  <div id="bm-mode-picker" style="display:flex;gap:10px;margin-bottom:18px">
+    <button id="bm-tab-list" onclick="setBunpoMode('list')" style="flex:1;padding:12px;border-radius:12px;border:1px solid var(--border);background:white;color:var(--ink);cursor:pointer;font-weight:700;font-size:14px">📜 List Bunpou</button>
+    <button id="bm-tab-kilat" onclick="setBunpoMode('kilat')" style="flex:1;padding:12px;border-radius:12px;border:1px solid var(--border);background:white;color:var(--ink);cursor:pointer;font-weight:700;font-size:14px">⚡ Kilat (Sesi)</button>
+  </div>
+
+  <!-- MODE LIST: cari & pelajari fokus 1 pola -->
+  <div id="bm-list-wrap">
+    <div style="font-size:13px;color:var(--mist);margin-bottom:12px">Pilih satu pola untuk dipelajari fokus, lalu kerjakan 5 soal khusus pola itu.</div>
+    <input id="bm-search" type="text" oninput="renderBunpoList()" placeholder="🔍 Cari pola atau arti..." style="width:100%;padding:11px 14px;border-radius:10px;border:1px solid var(--border);background:white;color:var(--ink);font-size:14px;margin-bottom:14px;box-sizing:border-box">
+    <div id="bm-list"></div>
+  </div>
+
+  <!-- MODE KILAT: sesi 3 pola (lama) -->
+  <div id="bm-kilat-wrap" style="display:none">
+    <div style="font-size:13px;color:var(--mist);margin-bottom:18px">Belajar 3 pola tata bahasa per sesi: penjelasan, rumus, contoh, lalu kuis.</div>
+    <div id="bm-stage-list"></div>
+  </div>
+
   <div id="bm-empty" style="display:none;background:white;border:1px solid var(--border);border-radius:16px;padding:36px 24px;text-align:center">
     <div style="font-size:44px;margin-bottom:12px">📖</div>
     <div style="font-weight:700;font-size:16px;margin-bottom:6px">Bunpo untuk level ini belum tersedia</div>
@@ -5169,7 +5187,73 @@ var BUNPO_DATA = {
 // BUNPŌ — Logic (menu stage, study, quiz via Gemini, progres)
 // ============================================================
 var STAGE_SIZE = 3;            // 3 pola per sesi
-var bunpoState = { stageIdx:0, patternIdx:0, patterns:[], quiz:[], quizIdx:0, score:0 };
+var bunpoState = { stageIdx:0, patternIdx:0, patterns:[], quiz:[], quizIdx:0, score:0, single:false, singleId:null };
+var bunpoViewMode = 'list';   // 'list' (fokus 1 pola) atau 'kilat' (sesi 3 pola)
+
+function setBunpoMode(mode){
+  bunpoViewMode = mode;
+  var tabL = document.getElementById('bm-tab-list');
+  var tabK = document.getElementById('bm-tab-kilat');
+  var color = JLPT_COLORS[currentJLPT] || 'var(--red)';
+  if (tabL && tabK){
+    var active = mode==='list';
+    tabL.style.background = active ? color : 'white';
+    tabL.style.color = active ? 'white' : 'var(--ink)';
+    tabL.style.borderColor = active ? color : 'var(--border)';
+    tabK.style.background = !active ? color : 'white';
+    tabK.style.color = !active ? 'white' : 'var(--ink)';
+    tabK.style.borderColor = !active ? color : 'var(--border)';
+  }
+  var lw = document.getElementById('bm-list-wrap');
+  var kw = document.getElementById('bm-kilat-wrap');
+  if (lw) lw.style.display = (mode==='list') ? '' : 'none';
+  if (kw) kw.style.display = (mode==='kilat') ? '' : 'none';
+  if (mode==='list') renderBunpoList(); else updateBunpoStageList();
+}
+
+// Render daftar SEMUA pola (mode List), dengan pencarian
+function renderBunpoList(){
+  var data = BUNPO_DATA[currentJLPT] || [];
+  var box = document.getElementById('bm-list');
+  if (!box) return;
+  var color = JLPT_COLORS[currentJLPT] || 'var(--red)';
+  var q = (document.getElementById('bm-search')||{}).value || '';
+  q = q.trim().toLowerCase();
+  var rows = data.filter(function(p){
+    if (!q) return true;
+    return (p.pattern||'').toLowerCase().indexOf(q)>=0
+        || (p.arti||'').toLowerCase().indexOf(q)>=0;
+  });
+  if (!rows.length){
+    box.innerHTML = '<div style="text-align:center;color:var(--mist);padding:24px;font-size:13px">Tidak ada pola yang cocok.</div>';
+    return;
+  }
+  var html = '';
+  rows.forEach(function(p){
+    html += '<div onclick="startBunpoSingle(\''+p.id+'\')" style="background:white;border:1px solid var(--border);border-left:4px solid '+color+';border-radius:12px;padding:13px 15px;margin-bottom:9px;cursor:pointer;transition:transform .12s" onmouseover="this.style.transform=\'translateX(3px)\'" onmouseout="this.style.transform=\'\'">'
+      + '<div style="font-weight:700;font-size:15px;color:'+color+';margin-bottom:2px">'+p.pattern+'</div>'
+      + '<div style="font-size:12px;color:var(--mist)">'+(p.arti||'')+'</div>'
+      + '</div>';
+  });
+  box.innerHTML = html;
+}
+
+// Mulai belajar fokus 1 pola (mode List)
+function startBunpoSingle(id){
+  var data = BUNPO_DATA[currentJLPT] || [];
+  var p = null;
+  for (var i=0;i<data.length;i++){ if (data[i].id===id){ p=data[i]; break; } }
+  if (!p) return;
+  bunpoState.single = true;
+  bunpoState.singleId = id;
+  bunpoState.patterns = [p];
+  bunpoState.patternIdx = 0;
+  bunpoState.quiz = [];
+  bunpoState.quizIdx = 0;
+  bunpoState.score = 0;
+  renderBunpoStudy();
+  gotoScreenRaw('bunpostudy');
+}
 // Progres: bunpoProgress[level] = jumlah stage selesai. Disimpan ke Firestore.
 
 function bunpoStagesFor(level){
@@ -5185,15 +5269,28 @@ function updateBunpoMenu(){
   var color = JLPT_COLORS[currentJLPT] || 'var(--red)';
   var badge = document.getElementById('bm-level-badge');
   if (badge){ badge.textContent = currentJLPT; badge.style.background = color; }
-  var list = document.getElementById('bm-stage-list');
   var empty = document.getElementById('bm-empty');
+  var picker = document.getElementById('bm-mode-picker');
+  var lw = document.getElementById('bm-list-wrap');
+  var kw = document.getElementById('bm-kilat-wrap');
   var stages = bunpoStagesFor(currentJLPT);
   if (!stages.length){
-    if (list) list.innerHTML = '';
     if (empty) empty.style.display = '';
+    if (picker) picker.style.display = 'none';
+    if (lw) lw.style.display = 'none';
+    if (kw) kw.style.display = 'none';
     return;
   }
   if (empty) empty.style.display = 'none';
+  if (picker) picker.style.display = 'flex';
+  // terapkan mode aktif (default 'list')
+  setBunpoMode(bunpoViewMode);
+}
+
+function updateBunpoStageList(){
+  var color = JLPT_COLORS[currentJLPT] || 'var(--red)';
+  var list = document.getElementById('bm-stage-list');
+  var stages = bunpoStagesFor(currentJLPT);
   var done = (bunpoProgress[currentJLPT] || 0);
   var html = '';
   for (var i=0;i<stages.length;i++){
@@ -5219,6 +5316,8 @@ function updateBunpoMenu(){
 function startBunpoStage(idx){
   var stages = bunpoStagesFor(currentJLPT);
   if (idx < 0 || idx >= stages.length) return;
+  bunpoState.single = false;
+  bunpoState.singleId = null;
   bunpoState.stageIdx = idx;
   bunpoState.patterns = stages[idx];
   bunpoState.patternIdx = 0;
@@ -5280,8 +5379,13 @@ async function startBunpoQuiz(){
     return p.pattern + ' (' + p.arti + ')';
   }).join(', ');
 
-  var prompt = 'Buatkan 6 soal pilihan ganda bahasa Jepang JLPT '+currentJLPT
-    + ' untuk menguji pemahaman pola tata bahasa berikut: '+patternList+'. '
+  var nSoal = bunpoState.single ? 5 : 6;
+  var fokus = bunpoState.single
+    ? ' SEMUA soal HARUS fokus menguji pola ini saja: '+patternList+'. '
+    : ' untuk menguji pemahaman pola tata bahasa berikut: '+patternList+'. ';
+
+  var prompt = 'Buatkan '+nSoal+' soal pilihan ganda bahasa Jepang JLPT '+currentJLPT
+    + fokus
     + 'Setiap soal berupa kalimat dengan satu bagian rumpang (___), dan 4 pilihan jawaban. '
     + 'Penjelasan singkat (maksimal 1 kalimat) dalam Bahasa Indonesia. '
     + 'Balas HANYA JSON valid, tanpa teks lain, tanpa markdown, tanpa ```. Format persis: '
@@ -5368,6 +5472,22 @@ function finishBunpoQuiz(){
   var total = bunpoState.quiz.length;
   var score = bunpoState.score;
   var passed = (score >= Math.ceil(total*0.6));
+
+  // === MODE LIST (fokus 1 pola): tidak menyentuh progress sesi ===
+  if (bunpoState.single){
+    document.getElementById('bq-progress').textContent = 'Selesai';
+    document.getElementById('bq-card').innerHTML =
+        '<div style="text-align:center">'
+      + '<div style="font-size:44px;margin-bottom:10px">'+(passed?'🎉':'💪')+'</div>'
+      + '<div style="font-weight:800;font-size:20px;color:'+color+';margin-bottom:6px">Skor: '+score+' / '+total+'</div>'
+      + '<div style="font-size:14px;color:var(--mist)">'+(passed?'Mantap! Pola ini sudah kamu kuasai.':'Coba pelajari pola ini lagi ya.')+'</div></div>';
+    var aL = '';
+    aL += '<button onclick="startBunpoSingle(\''+bunpoState.singleId+'\')" style="width:100%;padding:12px;border-radius:10px;border:1px solid var(--border);background:white;color:var(--ink);cursor:pointer;font-weight:600;margin-top:12px">Pelajari Lagi Pola Ini</button>';
+    aL += '<button onclick="gotoScreen(\'bunpomenu\')" style="width:100%;padding:12px;border-radius:10px;border:none;background:'+color+';color:white;cursor:pointer;font-weight:600;margin-top:10px">← Kembali ke List Bunpou</button>';
+    document.getElementById('bq-actions').innerHTML = aL;
+    return;
+  }
+
   // Tandai stage selesai jika lulus & ini stage baru
   if (passed){
     var done = bunpoProgress[currentJLPT] || 0;
