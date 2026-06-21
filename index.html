@@ -2173,6 +2173,7 @@ const KANJI_DATA = [
 // ============================================================
 let mastered = { kanji:{}, vocab:{}, grammar:{}, N5:{}, N4:{}, N2:{}, N1:{}, SSW:{}, kf_N3:{}, kf_N4:{}, kf_N5:{}, kf_SSW:{} };
 var bunpoProgress = {};  // {N5: jumlahStageSelesai, N4: ...}
+var bunpoLearned = {};   // {N5:{patternId:true,...}, ...} — pola yang sudah dipelajari (mode List)
 let kanjiReadMastered = {}; // separate progress for kanji reading
 let todayDate = new Date().toDateString();
 let todayCount = 0;
@@ -4018,6 +4019,7 @@ async function loadFromFirestore() {
       }
       if (data.kanjiReadMastered) kanjiReadMastered = data.kanjiReadMastered;
       if (data.bunpoProgress) bunpoProgress = data.bunpoProgress;
+      if (data.bunpoLearned)  bunpoLearned  = data.bunpoLearned;
       if (data.streak)            streak            = data.streak;
       if (data.lastStudyDate)     lastStudyDate     = data.lastStudyDate;
       if (data.todayDate === new Date().toDateString()) {
@@ -4070,6 +4072,7 @@ async function saveToFirestore() {
       kfMasteredAll: kfa,
       examHistory: examHistory,
       bunpoProgress: bunpoProgress,
+      bunpoLearned: bunpoLearned,
       lastSeen: firebase.firestore.FieldValue.serverTimestamp(),
     }, { merge: true });
     setSyncBadge('synced');
@@ -4102,6 +4105,8 @@ function saveToLocal() {
     localStorage.setItem('n3_krmastered', JSON.stringify(kanjiReadMastered));
     localStorage.setItem('n3_today',      JSON.stringify({ date: todayDate, count: todayCount }));
     localStorage.setItem('n3_streak',     JSON.stringify({ streak, lastStudyDate }));
+    localStorage.setItem('n3_bunpoprog',  JSON.stringify(bunpoProgress));
+    localStorage.setItem('n3_bunpolearned', JSON.stringify(bunpoLearned));
   } catch(e) {}
 }
 
@@ -4115,6 +4120,10 @@ function loadFromLocal() {
     if (t) { const td = JSON.parse(t); if (td.date === new Date().toDateString()) { todayDate = td.date; todayCount = td.count; } }
     const s = localStorage.getItem('n3_streak');
     if (s) { const sd = JSON.parse(s); streak = sd.streak; lastStudyDate = sd.lastStudyDate; }
+    const bp = localStorage.getItem('n3_bunpoprog');
+    if (bp) bunpoProgress = JSON.parse(bp);
+    const bl = localStorage.getItem('n3_bunpolearned');
+    if (bl) bunpoLearned = JSON.parse(bl);
   } catch(e) {}
 }
 
@@ -5372,7 +5381,7 @@ var BUNPO_DATA = {
 // BUNPŌ — Logic (menu stage, study, quiz via Gemini, progres)
 // ============================================================
 var STAGE_SIZE = 3;            // 3 pola per sesi
-var bunpoState = { stageIdx:0, patternIdx:0, patterns:[], quiz:[], quizIdx:0, score:0, single:false, singleId:null };
+var bunpoState = { stageIdx:0, patternIdx:0, patterns:[], quiz:[], quizIdx:0, score:0, single:false, singleId:null, answers:[] };
 var bunpoViewMode = 'list';   // 'list' (fokus 1 pola) atau 'kilat' (sesi 3 pola)
 
 function setBunpoMode(mode){
@@ -5414,10 +5423,21 @@ function renderBunpoList(){
     return;
   }
   var html = '';
+  var learned = bunpoLearned[currentJLPT] || {};
   rows.forEach(function(p){
-    html += '<div onclick="startBunpoSingle(\''+p.id+'\')" style="background:white;border:1px solid var(--border);border-left:4px solid '+color+';border-radius:12px;padding:13px 15px;margin-bottom:9px;cursor:pointer;transition:transform .12s" onmouseover="this.style.transform=\'translateX(3px)\'" onmouseout="this.style.transform=\'\'">'
-      + '<div style="font-weight:700;font-size:15px;color:'+color+';margin-bottom:2px">'+p.pattern+'</div>'
+    var isDone = !!learned[p.id];
+    var lblBorder = isDone ? 'var(--jade)' : color;
+    var badge = isDone
+      ? '<span style="font-size:10px;font-weight:700;color:var(--jade);background:rgba(16,160,116,.12);padding:3px 8px;border-radius:20px;white-space:nowrap">✓ Dipelajari</span>'
+      : '<span style="font-size:10px;font-weight:700;color:var(--mist);background:rgba(26,26,46,.06);padding:3px 8px;border-radius:20px;white-space:nowrap">Belum</span>';
+    html += '<div onclick="startBunpoSingle(\''+p.id+'\')" style="background:white;border:1px solid var(--border);border-left:4px solid '+lblBorder+';border-radius:12px;padding:13px 15px;margin-bottom:9px;cursor:pointer;transition:transform .12s" onmouseover="this.style.transform=\'translateX(3px)\'" onmouseout="this.style.transform=\'\'">'
+      + '<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px">'
+      + '<div style="min-width:0">'
+      + '<div style="font-weight:700;font-size:15px;color:'+lblBorder+';margin-bottom:2px">'+p.pattern+'</div>'
       + '<div style="font-size:12px;color:var(--mist)">'+(p.arti||'')+'</div>'
+      + '</div>'
+      + badge
+      + '</div>'
       + '</div>';
   });
   box.innerHTML = html;
@@ -5450,6 +5470,40 @@ function bunpoStagesFor(level){
   return stages;
 }
 
+// Tandai 1 pola sebagai sudah dipelajari (list ATAU kilat), lalu sinkronkan unlock kilat.
+function markBunpoLearned(ids){
+  if(!Array.isArray(ids)) ids=[ids];
+  if(!bunpoLearned[currentJLPT]) bunpoLearned[currentJLPT]={};
+  var changed=false;
+  ids.forEach(function(id){
+    if(id && !bunpoLearned[currentJLPT][id]){ bunpoLearned[currentJLPT][id]=true; changed=true; }
+  });
+  var unlockChanged = syncBunpoUnlock();
+  if(changed || unlockChanged){
+    if (typeof save === 'function') save(); else { try{ saveToLocal(); }catch(e){} }
+    if (typeof saveToFirestore === 'function') saveToFirestore();
+  }
+  return changed||unlockChanged;
+}
+
+// bunpoProgress (jumlah stage kilat terbuka) = jumlah stage berurutan dari awal
+// yang SEMUA polanya sudah ada di bunpoLearned. Mengikat list → kilat.
+function syncBunpoUnlock(){
+  var stages = bunpoStagesFor(currentJLPT);
+  var learned = bunpoLearned[currentJLPT] || {};
+  var n = 0;
+  for (var i=0;i<stages.length;i++){
+    var allDone = stages[i].every(function(p){ return !!learned[p.id]; });
+    if (allDone) n = i+1; else break;
+  }
+  var prev = bunpoProgress[currentJLPT] || 0;
+  // Jangan turunkan progress yang sudah dicapai lewat kilat (sekuensial); ambil maksimum.
+  var next = Math.max(prev, n);
+  if (next !== prev){ bunpoProgress[currentJLPT] = next; return true; }
+  bunpoProgress[currentJLPT] = next;
+  return false;
+}
+
 function updateBunpoMenu(){
   var color = JLPT_COLORS[currentJLPT] || 'var(--red)';
   var badge = document.getElementById('bm-level-badge');
@@ -5468,6 +5522,7 @@ function updateBunpoMenu(){
   }
   if (empty) empty.style.display = 'none';
   if (picker) picker.style.display = 'flex';
+  try{ syncBunpoUnlock(); }catch(e){}
   // terapkan mode aktif (default 'list')
   setBunpoMode(bunpoViewMode);
 }
@@ -5513,14 +5568,42 @@ function startBunpoStage(idx){
   gotoScreenRaw('bunpostudy');
 }
 
+// Bungkus kemunculan pola tata bahasa di dalam kalimat contoh dengan warna.
+// Mendukung field opsional c.hl (array substring) bila tersedia di data.
+function highlightPatternInText(text, pattern, color){
+  if(text==null) return '';
+  var esc=function(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');};
+  var raw=String(text);
+  // kandidat token dari pola: buang penanda non-inti, pecah pada pemisah umum
+  var cand=[];
+  String(pattern||'')
+    .split(/[\/／、,（）()\[\]{}\s]+/)
+    .forEach(function(seg){
+      seg=seg.replace(/[〜～\.]+/g,'').trim();
+      if(seg.length>=1) cand.push(seg);
+    });
+  // urutkan terpanjang dulu supaya match paling spesifik
+  cand.sort(function(a,b){return b.length-a.length;});
+  // cari satu kandidat yang benar-benar muncul di kalimat
+  var hit=null;
+  for(var i=0;i<cand.length;i++){ if(raw.indexOf(cand[i])>=0){ hit=cand[i]; break; } }
+  if(!hit) return esc(raw);
+  var idx=raw.indexOf(hit);
+  var before=esc(raw.slice(0,idx));
+  var mid=esc(raw.slice(idx,idx+hit.length));
+  var after=esc(raw.slice(idx+hit.length));
+  return before+'<span style="color:'+color+';font-weight:800">'+mid+'</span>'+after;
+}
+
 function renderBunpoStudy(){
   var p = bunpoState.patterns[bunpoState.patternIdx];
   var color = JLPT_COLORS[currentJLPT] || 'var(--red)';
   var prog = document.getElementById('bs-progress');
   if (prog) prog.textContent = (bunpoState.patternIdx+1)+' / '+bunpoState.patterns.length;
   var contohHtml = p.contoh.map(function(c){
+    var jp = highlightPatternInText(c.jp, p.pattern, color);
     return '<div style="background:#f8f8fb;border-radius:10px;padding:12px;margin-bottom:8px">'
-      + '<div style="font-size:17px;font-weight:600;margin-bottom:3px">'+c.jp+'</div>'
+      + '<div style="font-size:17px;font-weight:600;margin-bottom:3px">'+jp+'</div>'
       + '<div style="font-family:\'DM Mono\',monospace;font-size:12px;color:var(--mist);margin-bottom:3px">'+c.rom+'</div>'
       + '<div style="font-size:13px;color:var(--ink)">'+c.id+'</div></div>';
   }).join('');
@@ -5558,7 +5641,7 @@ async function startBunpoQuiz(){
   document.getElementById('bq-loading').style.display = 'block';
   document.getElementById('bq-card').innerHTML = '';
   document.getElementById('bq-actions').innerHTML = '';
-  bunpoState.quizIdx = 0; bunpoState.score = 0; bunpoState.quiz = [];
+  bunpoState.quizIdx = 0; bunpoState.score = 0; bunpoState.quiz = []; bunpoState.answers = [];
 
   var patternList = bunpoState.patterns.map(function(p){
     return p.pattern + ' (' + p.arti + ')';
@@ -5566,16 +5649,21 @@ async function startBunpoQuiz(){
 
   var nSoal = bunpoState.single ? 5 : 6;
   var fokus = bunpoState.single
-    ? ' SEMUA soal HARUS fokus menguji pola ini saja: '+patternList+'. '
-    : ' untuk menguji pemahaman pola tata bahasa berikut: '+patternList+'. ';
+    ? 'SEMUA '+nSoal+' soal HARUS menguji HANYA pola ini: '+patternList+'. '
+    : 'Soal menguji pola tata bahasa berikut (boleh campur): '+patternList+'. ';
 
-  var prompt = 'Buatkan '+nSoal+' soal pilihan ganda bahasa Jepang JLPT '+currentJLPT
+  var lv = currentJLPT;
+  var prompt =
+      'Kamu guru bahasa Jepang ahli pembuat soal JLPT '+lv+'. Buat '+nSoal+' soal pilihan ganda berkualitas tinggi. '
     + fokus
-    + 'Setiap soal berupa kalimat dengan satu bagian rumpang (___), dan 4 pilihan jawaban. '
-    + 'WAJIB: ketiga pilihan yang SALAH harus berupa jebakan yang mirip dan masuk akal '
-    + '(pola/partikel yang gramatikal serupa atau artinya berdekatan dengan jawaban benar), '
-    + 'BUKAN pilihan acak yang jelas salah, supaya benar-benar menguji pemahaman. Hanya satu jawaban benar. '
-    + 'Penjelasan singkat (maksimal 1 kalimat) dalam Bahasa Indonesia. '
+    + 'ATURAN WAJIB (taati ketat, jangan sampai ada soal ngawur/tidak gramatikal):'+String.fromCharCode(10)
+    + '1. Setiap kalimat soal HARUS 100% benar secara tata bahasa Jepang dan masuk akal maknanya. Jangan buat kalimat yang melanggar kaidah (contoh SALAH: meletakkan "です" tepat setelah koma, atau "便利な" diikuti koma tanpa kata benda). Periksa ulang tiap kalimat sebelum output.'+String.fromCharCode(10)
+    + '2. Kalimat soal HARUS benar-benar menguji pola target — konteks kalimat nyambung dengan fungsi/arti pola itu, bukan asal ada rumpang.'+String.fromCharCode(10)
+    + '3. KOSAKATA & KANJI: gunakan hanya kosakata dan kanji yang dipelajari di level '+lv+' (atau level di bawahnya yang lebih mudah). JANGAN memakai kosakata/kanji level di atas '+lv+' di dalam kalimat soal. Untuk kanji yang levelnya '+lv+', tulis dengan kanji (bukan hiragana) bila wajar, supaya pembelajar terbiasa.'+String.fromCharCode(10)
+    + '4. PILIHAN PENGECOH (3 opsi salah): harus mirip & masuk akal (pola/partikel/bentuk yang berdekatan), bukan acak. BOLEH memakai kata/kanji yang mirip dari level lain HANYA sebagai pengecoh di opsi untuk melatih ketelitian. Hanya 1 jawaban benar.'+String.fromCharCode(10)
+    + '5. HIGHLIGHT: pada teks soal, bungkus bagian pola tata bahasa yang diuji dengan tanda **dua bintang** (contoh: わたしは学生**です**), supaya bisa diwarnai. Bagian rumpang tetap pakai ___ (tiga underscore).'+String.fromCharCode(10)
+    + '6. DIALOG: jika soal berbentuk percakapan, format sebagai dialog antar baris memakai "A:" dan "B:" yang dipisah baris baru (\\n), JANGAN disambung jadi satu kalimat lurus.'+String.fromCharCode(10)
+    + '7. Penjelasan: maksimal 1 kalimat, Bahasa Indonesia, jelas dan benar.'+String.fromCharCode(10)
     + 'Balas HANYA JSON valid, tanpa teks lain, tanpa markdown, tanpa ```. Format persis: '
     + '{"soal":[{"q":"...___...","opsi":["a","b","c","d"],"jawab":0,"penjelasan":"..."}]} '
     + 'dengan jawab = indeks (0-3) opsi benar.';
@@ -5590,8 +5678,8 @@ async function startBunpoQuiz(){
           {role:'system', content:'Kamu pembuat soal JLPT. Balas HANYA JSON valid, tanpa teks pembuka/penutup.'},
           {role:'user', content: prompt}
         ],
-        temperature:0.6,
-        max_tokens:2048
+        temperature:0.4,
+        max_tokens:3072
       })
     });
     var d = await res.json();
@@ -5622,32 +5710,75 @@ async function startBunpoQuiz(){
   renderBunpoQuiz();
 }
 
+// Render teks soal/penjelasan: highlight pola (**..**) jadi warna, ___ jadi blank,
+// dan baris dialog (A:/B:/「」) tetap multi-baris.
+function formatBunpoQ(s){
+  if(s==null) return '';
+  var color = JLPT_COLORS[currentJLPT] || 'var(--red)';
+  var out = String(s);
+  // escape minimal supaya aman (kita kontrol sumbernya: AI JSON)
+  out = out.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  // highlight **pola**
+  out = out.replace(/\*\*([^*]+)\*\*/g, '<span style="color:'+color+';font-weight:800">$1</span>');
+  // blank ___ → garis bawah tegas
+  out = out.replace(/_{2,}/g, '<span style="color:'+color+';font-weight:800;letter-spacing:1px">____</span>');
+  // dialog: pecah jadi baris jika ada penanda A:/B:/「
+  var nl = String.fromCharCode(10);
+  out = out.split(nl).map(function(x){return x.trim();}).filter(function(x){return x.length;}).join('<br>');
+  return out;
+}
+
 function renderBunpoQuiz(){
   var q = bunpoState.quiz[bunpoState.quizIdx];
   var color = JLPT_COLORS[currentJLPT] || 'var(--red)';
   document.getElementById('bq-progress').textContent = 'Soal '+(bunpoState.quizIdx+1)+' / '+bunpoState.quiz.length;
+  var saved = bunpoState.answers[bunpoState.quizIdx];   // undefined jika belum dijawab
+  var answered = (typeof saved === 'number');
   var opsiHtml = q.opsi.map(function(o,i){
-    return '<button onclick="answerBunpoQuiz('+i+')" data-i="'+i+'" class="bq-opt" style="display:block;width:100%;text-align:left;padding:12px 14px;margin-bottom:8px;border-radius:10px;border:1px solid var(--border);background:white;color:var(--ink);cursor:pointer;font-size:14px">'+o+'</button>';
+    var style='display:block;width:100%;text-align:left;padding:12px 14px;margin-bottom:8px;border-radius:10px;border:1px solid var(--border);background:white;color:var(--ink);cursor:pointer;font-size:14px';
+    if (answered){
+      if (i === q.jawab){ style='display:block;width:100%;text-align:left;padding:12px 14px;margin-bottom:8px;border-radius:10px;border:1px solid #3cb371;background:#d4f5dd;color:var(--ink);font-size:14px'; }
+      else if (i === saved){ style='display:block;width:100%;text-align:left;padding:12px 14px;margin-bottom:8px;border-radius:10px;border:1px solid var(--red);background:#fde0e0;color:var(--ink);font-size:14px'; }
+      else { style+=';opacity:.6'; }
+    }
+    var oc = answered ? '' : 'onclick="answerBunpoQuiz('+i+')"';
+    return '<button '+oc+' '+(answered?'disabled':'')+' data-i="'+i+'" class="bq-opt" style="'+style+'">'+o+'</button>';
   }).join('');
   document.getElementById('bq-card').innerHTML =
-      '<div style="font-size:16px;font-weight:600;margin-bottom:16px;line-height:1.6">'+q.q+'</div>'+opsiHtml;
-  document.getElementById('bq-actions').innerHTML = '';
+      '<div style="font-size:16px;font-weight:600;margin-bottom:16px;line-height:1.6">'+formatBunpoQ(q.q)+'</div>'+opsiHtml;
+  if (answered) renderBunpoQuizFooter();
+  else {
+    // hanya tombol "sebelumnya" jika ada soal sebelumnya
+    document.getElementById('bq-actions').innerHTML = bunpoPrevBtn();
+  }
+}
+
+// Tombol "← Sebelumnya" (muncul jika bukan soal pertama)
+function bunpoPrevBtn(){
+  if (bunpoState.quizIdx <= 0) return '';
+  return '<button onclick="prevBunpoQuiz()" style="width:100%;padding:11px;border-radius:10px;border:1px solid var(--border);background:white;color:var(--mist);cursor:pointer;font-weight:600;margin-top:10px">← Soal Sebelumnya</button>';
+}
+
+function prevBunpoQuiz(){
+  if (bunpoState.quizIdx > 0){ bunpoState.quizIdx--; renderBunpoQuiz(); }
+}
+
+// Footer setelah menjawab: penjelasan + tombol navigasi (sebelumnya / berikutnya / selesai)
+function renderBunpoQuizFooter(){
+  var q = bunpoState.quiz[bunpoState.quizIdx];
+  var expl = q.penjelasan ? '<div style="background:#f8f8fb;border-radius:10px;padding:12px;margin-top:12px;font-size:13px;line-height:1.6"><b>Penjelasan:</b> '+formatBunpoQ(q.penjelasan)+'</div>' : '';
+  var last = (bunpoState.quizIdx === bunpoState.quiz.length-1);
+  var nextBtn = '<button onclick="'+(last?'finishBunpoQuiz()':'nextBunpoQuiz()')+'" style="width:100%;padding:12px;border-radius:10px;border:none;background:var(--red);color:white;cursor:pointer;font-weight:600;margin-top:12px">'+(last?'Selesai':'Soal Berikutnya →')+'</button>';
+  document.getElementById('bq-actions').innerHTML = expl + nextBtn + bunpoPrevBtn();
 }
 
 function answerBunpoQuiz(choice){
-  var q = bunpoState.quiz[bunpoState.quizIdx];
-  var correct = q.jawab;
-  if (choice === correct) bunpoState.score++;
-  document.querySelectorAll('.bq-opt').forEach(function(btn){
-    var i = parseInt(btn.getAttribute('data-i'));
-    btn.disabled = true;
-    if (i === correct){ btn.style.background='#d4f5dd'; btn.style.borderColor='#3cb371'; }
-    else if (i === choice){ btn.style.background='#fde0e0'; btn.style.borderColor='var(--red)'; }
-  });
-  var expl = q.penjelasan ? '<div style="background:#f8f8fb;border-radius:10px;padding:12px;margin-top:12px;font-size:13px;line-height:1.6"><b>Penjelasan:</b> '+q.penjelasan+'</div>' : '';
-  var last = (bunpoState.quizIdx === bunpoState.quiz.length-1);
-  document.getElementById('bq-actions').innerHTML = expl +
-    '<button onclick="'+(last?'finishBunpoQuiz()':'nextBunpoQuiz()')+'" style="width:100%;padding:12px;border-radius:10px;border:none;background:var(--red);color:white;cursor:pointer;font-weight:600;margin-top:12px">'+(last?'Selesai':'Soal Berikutnya →')+'</button>';
+  // simpan jawaban; skor hanya dihitung saat pertama kali menjawab soal ini
+  if (typeof bunpoState.answers[bunpoState.quizIdx] !== 'number'){
+    bunpoState.answers[bunpoState.quizIdx] = choice;
+    if (choice === bunpoState.quiz[bunpoState.quizIdx].jawab) bunpoState.score++;
+  }
+  renderBunpoQuiz();
 }
 
 function nextBunpoQuiz(){
@@ -5663,6 +5794,9 @@ function finishBunpoQuiz(){
 
   // === MODE LIST (fokus 1 pola): tidak menyentuh progress sesi ===
   if (bunpoState.single){
+    if (passed && bunpoState.singleId){
+      markBunpoLearned(bunpoState.singleId);
+    }
     document.getElementById('bq-progress').textContent = 'Selesai';
     document.getElementById('bq-card').innerHTML =
         '<div style="text-align:center">'
@@ -5678,9 +5812,14 @@ function finishBunpoQuiz(){
 
   // Tandai stage selesai jika lulus & ini stage baru
   if (passed){
+    // Tandai semua pola di stage ini sebagai dipelajari → muncul ✓ di List.
+    var stagePat = (bunpoState.patterns||[]).map(function(p){return p.id;});
+    markBunpoLearned(stagePat);
     var done = bunpoProgress[currentJLPT] || 0;
-    if (bunpoState.stageIdx === done){
-      bunpoProgress[currentJLPT] = done + 1;
+    if (bunpoState.stageIdx >= done){
+      bunpoProgress[currentJLPT] = bunpoState.stageIdx + 1;
+      syncBunpoUnlock();
+      if (typeof save === 'function') save();
       if (typeof saveToFirestore === 'function') saveToFirestore();
     }
   }
@@ -7113,6 +7252,8 @@ function switchJLPT(level){
     if(id==='overview')    updateOverview();
     else if(id==='flashmenu')  updateFlashMenu();
     else if(id==='kanjimenu')  updateKanjiMenu();
+    else if(id==='bunpomenu')  updateBunpoMenu();
+    else if(id==='exam')       { showExamSection('exam-menu'); updateExamLevelBadge(); setExamMode('ai'); bankIndex=null; updateExamHistory(); }
     else if(id==='review')     renderReview('all');
     else if(id==='leaderboard') loadLeaderboard(level);
   }
