@@ -1086,13 +1086,14 @@ header:has(.user-menu.open) { z-index:1000; }
 <!-- ====== OVERVIEW ====== -->
 <div id="screen-overview" class="screen active">
   <div class="section-title" style="margin-bottom:12px">Progress <span id="ov-level-name" style="color:var(--ink)"></span></div>
-  <!-- Hero: total kata -->
-  <div style="background:white;border:1px solid var(--border);border-radius:14px;padding:16px 18px;box-shadow:var(--shadow);margin-bottom:12px">
-    <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:8px">
-      <span style="font-size:12px;color:var(--mist);text-transform:uppercase;letter-spacing:1px">Total Kata Hafal</span>
-      <span class="big" id="ov-total" style="font-family:'DM Mono',monospace;font-size:24px;color:var(--indigo)">0/771</span>
+  <!-- Hero: total kata (gaya kartu Progress Hafalan) -->
+  <div style="background:white;border:1px solid var(--border);border-left:3px solid var(--indigo);border-radius:14px;padding:16px 18px;box-shadow:var(--shadow);margin-bottom:12px">
+    <div style="display:flex;justify-content:space-between;align-items:baseline">
+      <span style="font-size:14px;font-weight:700;color:var(--ink)">📦 Total Kata Hafal</span>
+      <span class="big" id="ov-total-pct" style="font-family:'DM Mono',monospace;font-size:24px;color:var(--indigo);font-weight:700">0%</span>
     </div>
-    <div style="background:rgba(26,26,46,.08);border-radius:4px;height:7px;overflow:hidden"><div class="bar-fill" id="ov-bar" style="height:100%;width:0%;background:var(--indigo);border-radius:4px;transition:width .6s"></div></div>
+    <div style="background:rgba(26,26,46,.08);border-radius:5px;height:10px;overflow:hidden;margin-top:10px"><div class="bar-fill" id="ov-bar" style="height:100%;width:0%;background:var(--indigo);border-radius:5px;transition:width .6s"></div></div>
+    <div style="margin-top:8px"><span id="ov-total" style="font-size:12px;color:var(--mist)">0 / 771 hafal</span></div>
   </div>
   <!-- Mini stats grid -->
   <div class="stats-mini">
@@ -1106,9 +1107,6 @@ header:has(.user-menu.open) { z-index:1000; }
 
   <div class="section-title">Menu Belajar</div>
   <div id="ov-menu-grid" style="display:grid;grid-template-columns:repeat(2,1fr);gap:12px;margin-bottom:24px"></div>
-
-  <div class="section-title">Progress Per Kategori</div>
-  <div id="ov-cat-wrap" style="background:white;border:1px solid var(--border);border-radius:12px;padding:14px 16px;display:flex;flex-direction:column;gap:12px"></div>
 
   <div style="display:flex;justify-content:space-between;align-items:center;margin:24px 0 12px">
     <div class="section-title" style="margin:0">🏆 Ranking <span id="ov-lb-level">N3</span></div>
@@ -5934,10 +5932,10 @@ function updateOverview() {
   var total = getCurrentTotal();
   var done  = getCurrentMastered();
   var pct   = total ? Math.round(done / total * 100) : 0;
-  document.getElementById('ov-total').textContent  = done + '/' + total;
+  document.getElementById('ov-total').textContent  = done + ' / ' + total + ' hafal';
+  var otp=document.getElementById('ov-total-pct'); if(otp){ otp.textContent = pct + '%'; otp.style.color = color; }
   document.getElementById('ov-bar').style.width    = pct + '%';
   document.getElementById('ov-bar').style.background = color;
-  document.getElementById('ov-total').style.color  = color;
   document.getElementById('ov-streak').textContent = streak + '🔥';
   document.getElementById('ov-today').textContent  = todayCount;
 
@@ -5961,7 +5959,6 @@ function updateOverview() {
   var epEl=document.getElementById('ov-exam-pts'); if(epEl) epEl.textContent = examPtsTotal;
 
   renderOverviewMenu();
-  renderOverviewCategories();
   loadDashboardLeaderboard();
 }
 
