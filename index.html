@@ -1086,15 +1086,8 @@ header:has(.user-menu.open) { z-index:1000; }
 <!-- ====== OVERVIEW ====== -->
 <div id="screen-overview" class="screen active">
   <div class="section-title" style="margin-bottom:12px">Progress <span id="ov-level-name" style="color:var(--ink)"></span></div>
-  <!-- Hero: total kata (gaya kartu Progress Hafalan) -->
-  <div style="background:white;border:1px solid var(--border);border-left:3px solid var(--indigo);border-radius:14px;padding:16px 18px;box-shadow:var(--shadow);margin-bottom:12px">
-    <div style="display:flex;justify-content:space-between;align-items:baseline">
-      <span style="font-size:14px;font-weight:700;color:var(--ink)">📦 Total Kata Hafal</span>
-      <span class="big" id="ov-total-pct" style="font-family:'DM Mono',monospace;font-size:24px;color:var(--indigo);font-weight:700">0%</span>
-    </div>
-    <div style="background:rgba(26,26,46,.08);border-radius:5px;height:10px;overflow:hidden;margin-top:10px"><div class="bar-fill" id="ov-bar" style="height:100%;width:0%;background:var(--indigo);border-radius:5px;transition:width .6s"></div></div>
-    <div style="margin-top:8px"><span id="ov-total" style="font-size:12px;color:var(--mist)">0 / 771 hafal</span></div>
-  </div>
+  <!-- Progress Hafalan cards (sama seperti tab Progress) -->
+  <div id="ov-prog-cards" style="margin-bottom:12px"></div>
   <!-- Mini stats grid -->
   <div class="stats-mini">
     <div class="mini-card"><div class="mini-num" id="ov-streak" style="color:var(--gold)">0🔥</div><div class="mini-lbl">Hari Streak</div></div>
@@ -5931,11 +5924,7 @@ function updateOverview() {
   if(lnEl){ lnEl.textContent = currentJLPT==='SSW'?'SSW Pengolahan Makanan':currentJLPT; lnEl.style.color=color; }
   var total = getCurrentTotal();
   var done  = getCurrentMastered();
-  var pct   = total ? Math.round(done / total * 100) : 0;
-  document.getElementById('ov-total').textContent  = done + ' / ' + total + ' hafal';
-  var otp=document.getElementById('ov-total-pct'); if(otp){ otp.textContent = pct + '%'; otp.style.color = color; }
-  document.getElementById('ov-bar').style.width    = pct + '%';
-  document.getElementById('ov-bar').style.background = color;
+  renderOverviewProgCards();
   document.getElementById('ov-streak').textContent = streak + '🔥';
   document.getElementById('ov-today').textContent  = todayCount;
 
@@ -5960,6 +5949,31 @@ function updateOverview() {
 
   renderOverviewMenu();
   loadDashboardLeaderboard();
+}
+
+// Grid kartu Progress Hafalan untuk dashboard (sama seperti tab Progress).
+function renderOverviewProgCards(){
+  var host=document.getElementById('ov-prog-cards');
+  if(!host) return;
+  var isSSW=currentJLPT==='SSW';
+  var ko=_countKotoba();
+  var ka=_countKanji();
+  var totPat=(BUNPO_DATA[currentJLPT]||[]).length;
+  var bunpoDone=Math.min((bunpoProgress[currentJLPT]||0)*(typeof STAGE_SIZE!=='undefined'?STAGE_SIZE:3), totPat);
+  var cards='<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">';
+  cards+=_progCard('📦','Kotoba',ko.done,ko.total,'var(--indigo)','flashmenu','kotoba');
+  cards+=_progCard('漢字','Kanji',ka.done,ka.total,'var(--gold)','kanjimenu','kanji');
+  if(!isSSW) cards+=_progCard('文法','Bunpou',bunpoDone,totPat,'#7a5cc4','bunpomenu','bunpou');
+  var exN=(examHistory||[]).filter(function(e){return e.level===currentJLPT;}).length;
+  cards+='<div onclick="gotoScreen(\'exam\')" style="background:white;border:1px solid var(--border);border-left:3px solid var(--red);border-radius:12px;padding:13px 14px;box-shadow:var(--shadow);cursor:pointer;transition:transform .12s" onmouseover="this.style.transform=\'translateY(-2px)\'" onmouseout="this.style.transform=\'\'">'
+    +'<div style="display:flex;justify-content:space-between;align-items:baseline">'
+    +'<span style="font-size:13px;font-weight:700;color:var(--ink)">📝 Ujian</span>'
+    +'<span style="font-family:\'DM Mono\',monospace;font-size:18px;color:var(--red);font-weight:700">'+exN+'</span>'
+    +'</div>'
+    +'<div style="font-size:11px;color:var(--mist);margin-top:8px">ujian '+currentJLPT+' selesai</div>'
+    +'</div>';
+  cards+='</div>';
+  host.innerHTML=cards;
 }
 
 // Menu cards on the dashboard — clickable shortcuts to every tab, level-aware.
