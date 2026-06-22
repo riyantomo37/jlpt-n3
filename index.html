@@ -5490,7 +5490,15 @@ function markBunpoLearned(ids){
 // yang SEMUA polanya sudah ada di bunpoLearned. Mengikat list → kilat.
 function syncBunpoUnlock(){
   var stages = bunpoStagesFor(currentJLPT);
-  var learned = bunpoLearned[currentJLPT] || {};
+  if(!bunpoLearned[currentJLPT]) bunpoLearned[currentJLPT]={};
+  var learned = bunpoLearned[currentJLPT];
+  // BACKFILL: stage yang sudah selesai (indeks < progress) → semua polanya ditandai learned.
+  // Menutup data lama (kilat selesai sebelum fitur tanda ada) & jamin kilat→list konsisten.
+  var prog = bunpoProgress[currentJLPT] || 0;
+  var filled = false;
+  for (var s=0; s<Math.min(prog, stages.length); s++){
+    stages[s].forEach(function(p){ if(!learned[p.id]){ learned[p.id]=true; filled=true; } });
+  }
   var n = 0;
   for (var i=0;i<stages.length;i++){
     var allDone = stages[i].every(function(p){ return !!learned[p.id]; });
@@ -5499,9 +5507,8 @@ function syncBunpoUnlock(){
   var prev = bunpoProgress[currentJLPT] || 0;
   // Jangan turunkan progress yang sudah dicapai lewat kilat (sekuensial); ambil maksimum.
   var next = Math.max(prev, n);
-  if (next !== prev){ bunpoProgress[currentJLPT] = next; return true; }
   bunpoProgress[currentJLPT] = next;
-  return false;
+  return filled || (next !== prev);
 }
 
 function updateBunpoMenu(){
@@ -5522,7 +5529,7 @@ function updateBunpoMenu(){
   }
   if (empty) empty.style.display = 'none';
   if (picker) picker.style.display = 'flex';
-  try{ syncBunpoUnlock(); }catch(e){}
+  try{ if(syncBunpoUnlock()){ if(typeof save==='function') save(); if(typeof saveToFirestore==='function') saveToFirestore(); } }catch(e){}
   // terapkan mode aktif (default 'list')
   setBunpoMode(bunpoViewMode);
 }
@@ -5659,11 +5666,13 @@ async function startBunpoQuiz(){
     + 'ATURAN WAJIB (taati ketat, jangan sampai ada soal ngawur/tidak gramatikal):'+String.fromCharCode(10)
     + '1. Setiap kalimat soal HARUS 100% benar secara tata bahasa Jepang dan masuk akal maknanya. Jangan buat kalimat yang melanggar kaidah (contoh SALAH: meletakkan "です" tepat setelah koma, atau "便利な" diikuti koma tanpa kata benda). Periksa ulang tiap kalimat sebelum output.'+String.fromCharCode(10)
     + '2. Kalimat soal HARUS benar-benar menguji pola target — konteks kalimat nyambung dengan fungsi/arti pola itu, bukan asal ada rumpang.'+String.fromCharCode(10)
-    + '3. KOSAKATA & KANJI: gunakan hanya kosakata dan kanji yang dipelajari di level '+lv+' (atau level di bawahnya yang lebih mudah). JANGAN memakai kosakata/kanji level di atas '+lv+' di dalam kalimat soal. Untuk kanji yang levelnya '+lv+', tulis dengan kanji (bukan hiragana) bila wajar, supaya pembelajar terbiasa.'+String.fromCharCode(10)
-    + '4. PILIHAN PENGECOH (3 opsi salah): harus mirip & masuk akal (pola/partikel/bentuk yang berdekatan), bukan acak. BOLEH memakai kata/kanji yang mirip dari level lain HANYA sebagai pengecoh di opsi untuk melatih ketelitian. Hanya 1 jawaban benar.'+String.fromCharCode(10)
-    + '5. HIGHLIGHT: pada teks soal, bungkus bagian pola tata bahasa yang diuji dengan tanda **dua bintang** (contoh: わたしは学生**です**), supaya bisa diwarnai. Bagian rumpang tetap pakai ___ (tiga underscore).'+String.fromCharCode(10)
-    + '6. DIALOG: jika soal berbentuk percakapan, format sebagai dialog antar baris memakai "A:" dan "B:" yang dipisah baris baru (\\n), JANGAN disambung jadi satu kalimat lurus.'+String.fromCharCode(10)
-    + '7. Penjelasan: maksimal 1 kalimat, Bahasa Indonesia, jelas dan benar.'+String.fromCharCode(10)
+    + '3. WAJIB TULIS DENGAN KANJI: gunakan penulisan kanji penuh untuk semua kata yang lazim ditulis kanji dan yang kanji-nya dipelajari di level '+lv+' atau di bawahnya (contoh: tulis 食べます bukan たべます, 飲みます bukan のみます, 学校 bukan がっこう, 時間 bukan じかん). Tujuannya membiasakan membaca kalimat ber-kanji penuh. Hanya pakai hiragana untuk partikel, okurigana, dan kata yang memang biasa ditulis hiragana.'+String.fromCharCode(10)
+    + '4. BATAS LEVEL: gunakan hanya kosakata & kanji level '+lv+' atau di bawahnya pada kalimat soal. JANGAN pakai kanji/kosakata level di atas '+lv+' di dalam kalimat. (Kanji level atas hanya boleh muncul sebagai pengecoh di OPSI jawaban.)'+String.fromCharCode(10)
+    + '5. JAWABAN HARUS KONSISTEN: opsi yang ditandai benar (indeks "jawab") HARUS persis menerapkan pola target dan menghasilkan kalimat yang benar. Penjelasan HARUS cocok dengan opsi benar itu. CONTOH KESALAHAN yang DILARANG: pola yang diuji ～てから tetapi opsi benar ditulis 食べたから (itu ～たから, beda pola) — yang benar adalah 食べてから. Pastikan bentuk pada opsi benar sesuai pola, dan "jawab" menunjuk ke opsi itu.'+String.fromCharCode(10)
+    + '6. PENGECOH (3 opsi salah): mirip & masuk akal (pola/partikel/bentuk berdekatan), bukan acak. Hanya 1 jawaban benar.'+String.fromCharCode(10)
+    + '7. HIGHLIGHT: pada teks soal, bungkus bagian pola tata bahasa yang diuji dengan tanda **dua bintang** (contoh: わたしは学生**です**), supaya bisa diwarnai. Bagian rumpang tetap pakai ___ (tiga underscore).'+String.fromCharCode(10)
+    + '8. DIALOG: jika soal berbentuk percakapan, format sebagai dialog antar baris memakai "A:" dan "B:" yang dipisah baris baru (\\n), JANGAN disambung jadi satu kalimat lurus.'+String.fromCharCode(10)
+    + '9. Penjelasan: maksimal 1 kalimat, Bahasa Indonesia, benar, dan menjelaskan kenapa opsi benar itu tepat.'+String.fromCharCode(10)
     + 'Balas HANYA JSON valid, tanpa teks lain, tanpa markdown, tanpa ```. Format persis: '
     + '{"soal":[{"q":"...___...","opsi":["a","b","c","d"],"jawab":0,"penjelasan":"..."}]} '
     + 'dengan jawab = indeks (0-3) opsi benar.';
