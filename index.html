@@ -1077,6 +1077,7 @@ header:has(.user-menu.open) { z-index:1000; }
   <button onclick="gotoScreen('flashmenu')">📚 Flashcard</button>
   <button onclick="gotoScreen('kanjimenu')">漢字 Kanji</button>
   <button onclick="gotoScreen('bunpomenu')">文法 Bunpo</button>
+  <button onclick="gotoScreen('katsuyomenu')">活用 Konjugasi</button>
   <button onclick="gotoScreen('exam')">📝 Ujian</button>
   <button onclick="gotoScreen('review')">📊 Progress</button>
   <button onclick="gotoScreen('leaderboard')">🏆 Ranking</button>
@@ -1365,6 +1366,43 @@ header:has(.user-menu.open) { z-index:1000; }
   <div id="bq-loading" style="text-align:center;padding:40px;color:var(--mist);display:none">⏳ Menyiapkan soal...</div>
   <div id="bq-card" style="background:white;border:1px solid var(--border);border-radius:16px;padding:24px"></div>
   <div id="bq-actions" style="margin-top:16px"></div>
+</div>
+
+<!-- ====== KATSUYO (動詞活用 / Konjugasi) ====== -->
+<div id="screen-katsuyomenu" class="screen">
+  <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px">
+    <span id="km-level-badge" style="background:var(--red);color:white;padding:3px 12px;border-radius:20px;font-family:'DM Mono',monospace;font-size:12px;font-weight:700">N5</span>
+    <div class="section-title" style="margin:0">活用 Konjugasi — Bentuk Kata Kerja</div>
+  </div>
+  <div style="font-size:13px;color:var(--mist);margin-bottom:14px">Pelajari semua bentuk kata kerja (lampau, sopan, bisa, pasif, kausatif, perintah, syarat, dll) dari 18 kata kerja inti.</div>
+  <div style="display:flex;gap:10px;margin-bottom:18px;flex-wrap:wrap">
+    <button id="km-tab-table" onclick="setKatsuyoMode('table')" style="flex:1;min-width:120px;padding:12px;border-radius:12px;border:1px solid var(--border);background:white;color:var(--ink);cursor:pointer;font-weight:700;font-size:14px">📋 Tabel</button>
+    <button id="km-tab-card" onclick="setKatsuyoMode('card')" style="flex:1;min-width:120px;padding:12px;border-radius:12px;border:1px solid var(--border);background:white;color:var(--ink);cursor:pointer;font-weight:700;font-size:14px">🃏 Kartu</button>
+    <button onclick="startKatsuyoQuiz()" style="flex:1;min-width:120px;padding:12px;border-radius:12px;border:1px solid var(--border);background:white;color:var(--ink);cursor:pointer;font-weight:700;font-size:14px">✏️ Kuis</button>
+    <button onclick="startKatsuyoType()" style="flex:1;min-width:120px;padding:12px;border-radius:12px;border:1px solid var(--border);background:white;color:var(--ink);cursor:pointer;font-weight:700;font-size:14px">⌨️ Ketik</button>
+  </div>
+  <div id="km-table-wrap"></div>
+  <div id="km-card-wrap" style="display:none"></div>
+</div>
+
+<!-- ====== KATSUYO QUIZ (pilihan ganda) ====== -->
+<div id="screen-katsuyoquiz" class="screen">
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
+    <button onclick="gotoScreen('katsuyomenu')" style="background:none;border:none;color:var(--mist);cursor:pointer;font-size:13px">← Kembali</button>
+    <span id="kq-progress" style="font-family:'DM Mono',monospace;font-size:12px;color:var(--mist)">Soal 1</span>
+  </div>
+  <div id="kq-card" style="background:white;border:1px solid var(--border);border-radius:16px;padding:22px;box-shadow:var(--shadow)"></div>
+  <div id="kq-actions" style="margin-top:16px"></div>
+</div>
+
+<!-- ====== KATSUYO TYPE (latihan ketik) ====== -->
+<div id="screen-katsuyotype" class="screen">
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
+    <button onclick="gotoScreen('katsuyomenu')" style="background:none;border:none;color:var(--mist);cursor:pointer;font-size:13px">← Kembali</button>
+    <span id="kt-progress" style="font-family:'DM Mono',monospace;font-size:12px;color:var(--mist)">Soal 1</span>
+  </div>
+  <div id="kt-card" style="background:white;border:1px solid var(--border);border-radius:16px;padding:22px;box-shadow:var(--shadow)"></div>
+  <div id="kt-actions" style="margin-top:16px"></div>
 </div>
 
 <!-- ====== LEADERBOARD ====== -->
@@ -5896,6 +5934,7 @@ function gotoScreen(name) {
   if (name === 'kanjimenu') updateKanjiMenu();
   if (name === 'review') { renderReview('all'); } else if (name === '___DUMMY___') renderReview('all');
   if (name === 'bunpomenu') updateBunpoMenu();
+  if (name === 'katsuyomenu') updateKatsuyoMenu();
   if (name === 'exam') { showExamSection('exam-menu'); updateExamLevelBadge(); setExamMode('ai'); bankIndex=null; updateExamHistory(); }
 }
 
@@ -6159,6 +6198,7 @@ function renderOverviewMenu(){
     {scr:'flashmenu', emo:'📚', t:'Flashcard', d:'Hafal kosakata '+currentJLPT, c:color},
     {scr:'kanjimenu', emo:'漢字', t:'Baca Kanji', d:'Latihan baca kanji', c:'var(--gold)'},
     {scr:'bunpomenu', emo:'文法', t:'Bunpo', d:'Belajar tata bahasa', c:'#7a5cc4', hide:isSSW},
+    {scr:'katsuyomenu', emo:'活用', t:'Konjugasi', d:'Bentuk kata kerja', c:'#0a7d6b'},
     {scr:'exam',      emo:'📝', t:'Ujian', d:'Simulasi soal JLPT', c:'var(--red)'},
     {scr:'review',    emo:'📊', t:'Progress Hafalan', d:'Kotoba · Kanji · Bunpou · Ujian', c:'var(--jade)'},
     {scr:'leaderboard',emo:'🏆', t:'Ranking', d:'Peringkat poin', c:'#d08700'},
@@ -7308,6 +7348,549 @@ function init() {
   updateOverview();
   setInterval(updateCountdown, 60000);
 }
+// ===== DATA 動詞活用 (Konjugasi) — 18 verba inti terkurasi, 100% akurat =====
+var KATSUYO_VERBS = [{"jp": "食べる", "rom": "たべる", "id": "makan", "g": "ichidan", "f": {"jisho": "食べる", "masu": "食べます", "nai": "食べない", "masen": "食べません", "ta": "食べた", "mashita": "食べました", "nakatta": "食べなかった", "te": "食べて", "kanou": "食べられる", "ukemi": "食べられる", "shieki": "食べさせる", "ikou": "食べよう", "meirei": "食べろ", "ba": "食べれば", "tara": "食べたら"}}, {"jp": "見る", "rom": "みる", "id": "melihat", "g": "ichidan", "f": {"jisho": "見る", "masu": "見ます", "nai": "見ない", "masen": "見ません", "ta": "見た", "mashita": "見ました", "nakatta": "見なかった", "te": "見て", "kanou": "見られる", "ukemi": "見られる", "shieki": "見させる", "ikou": "見よう", "meirei": "見ろ", "ba": "見れば", "tara": "見たら"}}, {"jp": "起きる", "rom": "おきる", "id": "bangun", "g": "ichidan", "f": {"jisho": "起きる", "masu": "起きます", "nai": "起きない", "masen": "起きません", "ta": "起きた", "mashita": "起きました", "nakatta": "起きなかった", "te": "起きて", "kanou": "起きられる", "ukemi": "起きられる", "shieki": "起きさせる", "ikou": "起きよう", "meirei": "起きろ", "ba": "起きれば", "tara": "起きたら"}}, {"jp": "教える", "rom": "おしえる", "id": "mengajar", "g": "ichidan", "f": {"jisho": "教える", "masu": "教えます", "nai": "教えない", "masen": "教えません", "ta": "教えた", "mashita": "教えました", "nakatta": "教えなかった", "te": "教えて", "kanou": "教えられる", "ukemi": "教えられる", "shieki": "教えさせる", "ikou": "教えよう", "meirei": "教えろ", "ba": "教えれば", "tara": "教えたら"}}, {"jp": "飲む", "rom": "のむ", "id": "minum", "g": "godan", "f": {"jisho": "飲む", "masu": "飲みます", "nai": "飲まない", "masen": "飲みません", "ta": "飲んだ", "mashita": "飲みました", "nakatta": "飲まなかった", "te": "飲んで", "kanou": "飲める", "ukemi": "飲まれる", "shieki": "飲ませる", "ikou": "飲もう", "meirei": "飲め", "ba": "飲めば", "tara": "飲んだら"}}, {"jp": "書く", "rom": "かく", "id": "menulis", "g": "godan", "f": {"jisho": "書く", "masu": "書きます", "nai": "書かない", "masen": "書きません", "ta": "書いた", "mashita": "書きました", "nakatta": "書かなかった", "te": "書いて", "kanou": "書ける", "ukemi": "書かれる", "shieki": "書かせる", "ikou": "書こう", "meirei": "書け", "ba": "書けば", "tara": "書いたら"}}, {"jp": "泳ぐ", "rom": "およぐ", "id": "berenang", "g": "godan", "f": {"jisho": "泳ぐ", "masu": "泳ぎます", "nai": "泳がない", "masen": "泳ぎません", "ta": "泳いだ", "mashita": "泳ぎました", "nakatta": "泳がなかった", "te": "泳いで", "kanou": "泳げる", "ukemi": "泳がれる", "shieki": "泳がせる", "ikou": "泳ごう", "meirei": "泳げ", "ba": "泳げば", "tara": "泳いだら"}}, {"jp": "話す", "rom": "はなす", "id": "berbicara", "g": "godan", "f": {"jisho": "話す", "masu": "話します", "nai": "話さない", "masen": "話しません", "ta": "話した", "mashita": "話しました", "nakatta": "話さなかった", "te": "話して", "kanou": "話せる", "ukemi": "話される", "shieki": "話させる", "ikou": "話そう", "meirei": "話せ", "ba": "話せば", "tara": "話したら"}}, {"jp": "待つ", "rom": "まつ", "id": "menunggu", "g": "godan", "f": {"jisho": "待つ", "masu": "待ちます", "nai": "待たない", "masen": "待ちません", "ta": "待った", "mashita": "待ちました", "nakatta": "待たなかった", "te": "待って", "kanou": "待てる", "ukemi": "待たれる", "shieki": "待たせる", "ikou": "待とう", "meirei": "待て", "ba": "待てば", "tara": "待ったら"}}, {"jp": "買う", "rom": "かう", "id": "membeli", "g": "godan", "f": {"jisho": "買う", "masu": "買います", "nai": "買わない", "masen": "買いません", "ta": "買った", "mashita": "買いました", "nakatta": "買わなかった", "te": "買って", "kanou": "買える", "ukemi": "買われる", "shieki": "買わせる", "ikou": "買おう", "meirei": "買え", "ba": "買えば", "tara": "買ったら"}}, {"jp": "帰る", "rom": "かえる", "id": "pulang", "g": "godan", "f": {"jisho": "帰る", "masu": "帰ります", "nai": "帰らない", "masen": "帰りません", "ta": "帰った", "mashita": "帰りました", "nakatta": "帰らなかった", "te": "帰って", "kanou": "帰れる", "ukemi": "帰られる", "shieki": "帰らせる", "ikou": "帰ろう", "meirei": "帰れ", "ba": "帰れば", "tara": "帰ったら"}}, {"jp": "作る", "rom": "つくる", "id": "membuat", "g": "godan", "f": {"jisho": "作る", "masu": "作ります", "nai": "作らない", "masen": "作りません", "ta": "作った", "mashita": "作りました", "nakatta": "作らなかった", "te": "作って", "kanou": "作れる", "ukemi": "作られる", "shieki": "作らせる", "ikou": "作ろう", "meirei": "作れ", "ba": "作れば", "tara": "作ったら"}}, {"jp": "死ぬ", "rom": "しぬ", "id": "mati", "g": "godan", "f": {"jisho": "死ぬ", "masu": "死にます", "nai": "死なない", "masen": "死にません", "ta": "死んだ", "mashita": "死にました", "nakatta": "死ななかった", "te": "死んで", "kanou": "死ねる", "ukemi": "死なれる", "shieki": "死なせる", "ikou": "死のう", "meirei": "死ね", "ba": "死ねば", "tara": "死んだら"}}, {"jp": "遊ぶ", "rom": "あそぶ", "id": "bermain", "g": "godan", "f": {"jisho": "遊ぶ", "masu": "遊びます", "nai": "遊ばない", "masen": "遊びません", "ta": "遊んだ", "mashita": "遊びました", "nakatta": "遊ばなかった", "te": "遊んで", "kanou": "遊べる", "ukemi": "遊ばれる", "shieki": "遊ばせる", "ikou": "遊ぼう", "meirei": "遊べ", "ba": "遊べば", "tara": "遊んだら"}}, {"jp": "立つ", "rom": "たつ", "id": "berdiri", "g": "godan", "f": {"jisho": "立つ", "masu": "立ちます", "nai": "立たない", "masen": "立ちません", "ta": "立った", "mashita": "立ちました", "nakatta": "立たなかった", "te": "立って", "kanou": "立てる", "ukemi": "立たれる", "shieki": "立たせる", "ikou": "立とう", "meirei": "立て", "ba": "立てば", "tara": "立ったら"}}, {"jp": "急ぐ", "rom": "いそぐ", "id": "bergegas", "g": "godan", "f": {"jisho": "急ぐ", "masu": "急ぎます", "nai": "急がない", "masen": "急ぎません", "ta": "急いだ", "mashita": "急ぎました", "nakatta": "急がなかった", "te": "急いで", "kanou": "急げる", "ukemi": "急がれる", "shieki": "急がせる", "ikou": "急ごう", "meirei": "急げ", "ba": "急げば", "tara": "急いだら"}}, {"jp": "する", "rom": "する", "id": "melakukan", "g": "irregular", "f": {"jisho": "する", "masu": "します", "nai": "しない", "masen": "しません", "ta": "した", "mashita": "しました", "nakatta": "しなかった", "te": "して", "kanou": "できる", "ukemi": "される", "shieki": "させる", "ikou": "しよう", "meirei": "しろ", "ba": "すれば", "tara": "したら"}}, {"jp": "来る", "rom": "くる", "id": "datang", "g": "irregular", "f": {"jisho": "来る", "masu": "来ます", "nai": "来ない", "masen": "来ません", "ta": "来た", "mashita": "来ました", "nakatta": "来なかった", "te": "来て", "kanou": "来られる", "ukemi": "来られる", "shieki": "来させる", "ikou": "来よう", "meirei": "来い", "ba": "来れば", "tara": "来たら"}}];
+var KATSUYO_FORMS = [{"k": "jisho", "jp": "辞書形", "id": "Bentuk Kamus", "fn": "Bentuk dasar/biasa. Dipakai di kamus & kalimat informal."}, {"k": "masu", "jp": "ます形", "id": "Bentuk Sopan", "fn": "Bentuk sopan untuk situasi formal. (sekarang/akan, positif)"}, {"k": "nai", "jp": "ない形", "id": "Negatif Biasa", "fn": "Bentuk negatif informal: 'tidak ~'."}, {"k": "masen", "jp": "ません", "id": "Negatif Sopan", "fn": "Bentuk negatif sopan: 'tidak ~' (formal)."}, {"k": "ta", "jp": "た形", "id": "Lampau Biasa", "fn": "Bentuk lampau informal: 'sudah/telah ~'."}, {"k": "mashita", "jp": "ました", "id": "Lampau Sopan", "fn": "Bentuk lampau sopan: 'sudah ~' (formal)."}, {"k": "nakatta", "jp": "なかった", "id": "Lampau Negatif", "fn": "Lampau negatif biasa: 'tidak ~' (dulu)."}, {"k": "te", "jp": "て形", "id": "Bentuk Sambung", "fn": "Penghubung kalimat; dasar ~ている (sedang), ~てください, dll."}, {"k": "kanou", "jp": "可能形", "id": "Bentuk Bisa", "fn": "Menyatakan kemampuan: 'bisa/dapat ~'."}, {"k": "ukemi", "jp": "受身形", "id": "Bentuk Pasif", "fn": "Subjek dikenai aksi: 'di~'."}, {"k": "shieki", "jp": "使役形", "id": "Bentuk Kausatif", "fn": "Menyuruh/membiarkan: 'membuat/menyuruh ~'."}, {"k": "ikou", "jp": "意向形", "id": "Bentuk Ajakan", "fn": "Niat/ajakan: 'ayo ~' / 'mari ~'."}, {"k": "meirei", "jp": "命令形", "id": "Bentuk Perintah", "fn": "Perintah tegas: '~lah!' (kasar/darurat)."}, {"k": "ba", "jp": "条件形ば", "id": "Syarat (ba)", "fn": "Pengandaian: 'kalau ~'."}, {"k": "tara", "jp": "たら形", "id": "Syarat (tara)", "fn": "Pengandaian/urutan: 'kalau/setelah ~'."}];
+var KATSUYO_GROUP_LABEL = {"ichidan": "一段 (ru-verb)", "godan": "五段 (u-verb)", "irregular": "不規則 (irregular)"};
+var KATSUYO_GROUP_NOTE = {"ichidan": "Buang る lalu tempel akhiran. Pola paling teratur.", "godan": "Ubah bunyi baris-u sesuai bentuk; perhatikan 音便 (onbin) di て/た形.", "irregular": "する & 来る tidak mengikuti pola; hafalkan langsung."};
+
+// ===== ENGINE KONJUGASI (動詞活用エンジン) =====
+// Mendeteksi golongan (ichidan/godan/irregular) lalu menghasilkan semua bentuk.
+// Catatan: deteksi tak pernah 100% tanpa kamus morfologis, jadi ada daftar
+// pengecualian untuk kata yang berakhir る tapi sebetulnya godan.
+
+// Kata berakhiran る yang SEBENARNYA ichidan tapi ditulis kanji (vokal tak terbaca).
+var KATSUYO_ICHIDAN_FORCE = {
+  '見る':1,'着る':1,'似る':1,'煮る':1,'居る':1,'射る':1,'鋳る':1,
+  '寝る':1,'得る':1,'出る':1,'経る':1
+};
+// Kata berakhiran る yang SEBENARNYA godan (sering tertukar jadi ichidan).
+var KATSUYO_GODAN_RU = {
+  '帰る':1,'切る':1,'走る':1,'入る':1,'要る':1,'知る':1,'限る':1,'喋る':1,
+  '減る':1,'蹴る':1,'握る':1,'練る':1,'滑る':1,'参る':1,'交じる':1,'混じる':1,
+  '茂る':1,'照る':1,'散る':1,'湿る':1,'阻る':1,'遮る':1,'覆る':1,'陥る':1,
+  '焦る':1,'捻る':1,'罵る':1,'貪る':1,'掘る':1,'る':0
+};
+// Irregular
+var KATSUYO_IRREGULAR = {
+  'する':'suru','来る':'kuru','くる':'kuru'
+};
+
+// Tentukan apakah string adalah kata kerja yang bisa dikonjugasi, dan golongannya.
+// return: {group:'ichidan'|'godan'|'irregular', kind?:'suru'|'kuru', stem, last} | null
+function detectVerb(jp){
+  if(!jp) return null;
+  jp = String(jp).trim();
+  // suru-compound: ...する (勉強する dll)
+  if(jp.length>=2 && jp.slice(-2)==='する') return {group:'irregular', kind:'suru', base:jp, pre:jp.slice(0,-2)};
+  if(jp==='する') return {group:'irregular', kind:'suru', base:'する', pre:''};
+  if(jp==='来る'||jp==='くる') return {group:'irregular', kind:'kuru', base:jp, kanji:(jp==='来る')};
+  var last = jp.slice(-1);
+  // ichidan: berakhir る dengan vokal e/i sebelum る — tapi banyak pengecualian godan
+  if(last==='る'){
+    if(KATSUYO_ICHIDAN_FORCE[jp]) return {group:'ichidan', base:jp, last:last};
+    if(KATSUYO_GODAN_RU[jp]) return {group:'godan', base:jp, last:last};
+    // baca kana sebelum る untuk tebak vokal: kalau e/i-row → ichidan
+    var prev = jp.slice(-2,-1);
+    if(isEorIrow(prev)) return {group:'ichidan', base:jp, last:last};
+    return {group:'godan', base:jp, last:last};
+  }
+  // godan endings
+  if('うくぐすつぬぶむ'.indexOf(last)>=0) return {group:'godan', base:jp, last:last};
+  return null; // bukan verba yang bisa dikonjugasi otomatis
+}
+
+// Apakah kana ini baris -e atau -i (indikasi ichidan)? Pakai daftar ringkas hiragana umum.
+function isEorIrow(k){
+  // baris i: きしちにひみりぎじぢびぴい
+  // baris e: けせてねへめれげぜでべぺえ
+  return 'きしちにひみりぎじぢびぴいけせてねへめれげぜでべぺえ'.indexOf(k)>=0;
+}
+
+// Peta perubahan baris-u → baris lain untuk godan
+var GODAN_MAP = {
+  // u -> a (nai/ukemi/shieki/nakatta base), i (masu base), e (kanou/ba/meirei), o (ikou)
+  'う':{a:'わ',i:'い',e:'え',o:'お',te:'って',ta:'った'},
+  'く':{a:'か',i:'き',e:'け',o:'こ',te:'いて',ta:'いた'},
+  'ぐ':{a:'が',i:'ぎ',e:'げ',o:'ご',te:'いで',ta:'いだ'},
+  'す':{a:'さ',i:'し',e:'せ',o:'そ',te:'して',ta:'した'},
+  'つ':{a:'た',i:'ち',e:'て',o:'と',te:'って',ta:'った'},
+  'ぬ':{a:'な',i:'に',e:'ね',o:'の',te:'んで',ta:'んだ'},
+  'ぶ':{a:'ば',i:'び',e:'べ',o:'ぼ',te:'んで',ta:'んだ'},
+  'む':{a:'ま',i:'み',e:'め',o:'も',te:'んで',ta:'んだ'},
+  'る':{a:'ら',i:'り',e:'れ',o:'ろ',te:'って',ta:'った'}
+};
+
+// Hasilkan semua bentuk. return objek {jisho, masu, nai, ...} atau null.
+function conjugateAll(jp){
+  var d = detectVerb(jp);
+  if(!d) return null;
+  var f = {};
+  f.jisho = d.base;
+  if(d.group==='irregular' && d.kind==='suru'){
+    var p = d.pre; // bagian sebelum する
+    f.masu=p+'します'; f.nai=p+'しない'; f.masen=p+'しません';
+    f.ta=p+'した'; f.mashita=p+'しました'; f.nakatta=p+'しなかった'; f.te=p+'して';
+    f.kanou=p+'できる'; f.ukemi=p+'される'; f.shieki=p+'させる';
+    f.ikou=p+'しよう'; f.meirei=p+'しろ'; f.ba=p+'すれば'; f.tara=p+'したら';
+    return f;
+  }
+  if(d.group==='irregular' && d.kind==='kuru'){
+    var K = d.kanji; // 来る vs くる — pertahankan gaya tulisan
+    var kc=K?'来':'こ', ki=K?'来':'き', ku=K?'来':'く';
+    f.masu=ki+'ます'; f.nai=kc+'ない'; f.masen=ki+'ません';
+    f.ta=ki+'た'; f.mashita=ki+'ました'; f.nakatta=kc+'なかった'; f.te=ki+'て';
+    f.kanou=kc+'られる'; f.ukemi=kc+'られる'; f.shieki=kc+'させる';
+    f.ikou=kc+'よう'; f.meirei=(K?'来い':'こい'); f.ba=ku+'れば'; f.tara=ki+'たら';
+    return f;
+  }
+  if(d.group==='ichidan'){
+    var s = d.base.slice(0,-1); // buang る
+    f.masu=s+'ます'; f.nai=s+'ない'; f.masen=s+'ません';
+    f.ta=s+'た'; f.mashita=s+'ました'; f.nakatta=s+'なかった'; f.te=s+'て';
+    f.kanou=s+'られる'; f.ukemi=s+'られる'; f.shieki=s+'させる';
+    f.ikou=s+'よう'; f.meirei=s+'ろ'; f.ba=s+'れば'; f.tara=s+'たら';
+    return f;
+  }
+  // godan
+  var m = GODAN_MAP[d.last];
+  if(!m) return null;
+  var st = d.base.slice(0,-1); // buang suku kata akhir
+  // Pengecualian khusus: 行く (iku) memakai 促音便 って/った, bukan いて/いた.
+  var teX = m.te, taX = m.ta;
+  if(d.base==='行く'||d.base==='いく'){ teX='って'; taX='った'; }
+  f.masu=st+m.i+'ます'; f.nai=st+m.a+'ない'; f.masen=st+m.i+'ません';
+  f.ta=st+taX; f.mashita=st+m.i+'ました'; f.nakatta=st+m.a+'なかった'; f.te=st+teX;
+  f.kanou=st+m.e+'る'; f.ukemi=st+m.a+'れる'; f.shieki=st+m.a+'せる';
+  f.ikou=st+m.o+'う'; f.meirei=st+m.e; f.ba=st+m.e+'ば'; f.tara=st+taX+'ら';
+  return f;
+}
+
+
+// ===== TAB 動詞活用 (Konjugasi Kata Kerja) — Tahap 1: Tabel + Kartu =====
+var katsuyoState = { mode:'table', verbIdx:0, cardFormIdx:0, flipped:false };
+
+function updateKatsuyoMenu(){
+  var color = JLPT_COLORS[currentJLPT] || 'var(--red)';
+  var badge = document.getElementById('km-level-badge');
+  if(badge){ badge.textContent = currentJLPT==='SSW'?'SSW 食品':currentJLPT; badge.style.background=color; badge.title=levelName(); }
+  setKatsuyoMode(katsuyoState.mode || 'table');
+}
+
+function setKatsuyoMode(m){
+  katsuyoState.mode = m;
+  var color = JLPT_COLORS[currentJLPT] || 'var(--red)';
+  var tt = document.getElementById('km-tab-table');
+  var tc = document.getElementById('km-tab-card');
+  var on = 'flex:1;padding:12px;border-radius:12px;border:1px solid '+color+';background:'+color+';color:#fff;cursor:pointer;font-weight:700;font-size:14px';
+  var off= 'flex:1;padding:12px;border-radius:12px;border:1px solid var(--border);background:white;color:var(--ink);cursor:pointer;font-weight:700;font-size:14px';
+  if(tt) tt.style.cssText = (m==='table')?on:off;
+  if(tc) tc.style.cssText = (m==='card') ?on:off;
+  document.getElementById('km-table-wrap').style.display = (m==='table')?'':'none';
+  document.getElementById('km-card-wrap').style.display  = (m==='card') ?'':'none';
+  if(m==='table') renderKatsuyoTable();
+  else { katsuyoState.flipped=false; renderKatsuyoCard(); }
+}
+
+// Dropdown pemilih verba (dipakai dua mode)
+function katsuyoVerbOptions(sel){
+  return KATSUYO_VERBS.map(function(v,i){
+    return '<option value="'+i+'"'+(i===sel?' selected':'')+'>'+v.jp+'（'+v.rom+'）— '+v.id+'</option>';
+  }).join('');
+}
+
+// ---------- MODE TABEL ----------
+function renderKatsuyoTable(){
+  var color = JLPT_COLORS[currentJLPT] || 'var(--red)';
+  var v = KATSUYO_VERBS[katsuyoState.verbIdx] || KATSUYO_VERBS[0];
+  var html = '';
+  html += '<select onchange="katsuyoState.verbIdx=parseInt(this.value,10);renderKatsuyoTable()" '
+        + 'style="width:100%;padding:11px 14px;border-radius:10px;border:1px solid var(--border);background:white;color:var(--ink);font-size:14px;margin-bottom:14px;box-sizing:border-box">'
+        + katsuyoVerbOptions(katsuyoState.verbIdx) + '</select>';
+  html += '<div style="background:white;border:1px solid var(--border);border-radius:14px;padding:16px;box-shadow:var(--shadow)">';
+  html += '<div style="display:flex;align-items:baseline;gap:10px;margin-bottom:4px">'
+        + '<span style="font-size:24px;font-weight:800;color:'+color+'">'+v.jp+'</span>'
+        + '<span style="font-size:13px;color:var(--mist)">'+v.rom+'</span></div>';
+  html += '<div style="font-size:13px;color:var(--ink);margin-bottom:4px">'+v.id+'</div>';
+  html += '<div style="display:inline-block;font-size:11px;font-weight:700;color:'+color+';background:rgba(0,0,0,.04);padding:2px 10px;border-radius:20px;margin-bottom:12px">'+(KATSUYO_GROUP_LABEL[v.g]||v.g)+'</div>';
+  html += '<div style="font-size:12px;color:var(--mist);margin-bottom:14px;line-height:1.5">'+(KATSUYO_GROUP_NOTE[v.g]||'')+'</div>';
+  html += '<div style="display:flex;flex-direction:column;gap:0">';
+  KATSUYO_FORMS.forEach(function(fm,idx){
+    var val = v.f[fm.k] || '—';
+    var bg = (idx%2===0)?'transparent':'rgba(0,0,0,.025)';
+    html += '<div style="display:flex;justify-content:space-between;align-items:center;gap:12px;padding:9px 10px;border-radius:8px;background:'+bg+'">'
+          + '<div style="min-width:0"><div style="font-size:13px;font-weight:700;color:var(--ink)">'+fm.jp+'</div>'
+          + '<div style="font-size:11px;color:var(--mist)">'+fm.id+'</div></div>'
+          + '<div style="font-size:17px;font-weight:700;color:'+color+';text-align:right;flex-shrink:0">'+val+'</div>'
+          + '</div>';
+  });
+  html += '</div></div>';
+  document.getElementById('km-table-wrap').innerHTML = html;
+}
+
+// ---------- MODE KARTU (flashcard + panel info) ----------
+function renderKatsuyoCard(){
+  var color = JLPT_COLORS[currentJLPT] || 'var(--red)';
+  var v = KATSUYO_VERBS[katsuyoState.verbIdx] || KATSUYO_VERBS[0];
+  var fm = KATSUYO_FORMS[katsuyoState.cardFormIdx] || KATSUYO_FORMS[0];
+  var val = v.f[fm.k] || '—';
+  var total = KATSUYO_FORMS.length;
+
+  var head = '<select onchange="katsuyoState.verbIdx=parseInt(this.value,10);katsuyoState.flipped=false;renderKatsuyoCard()" '
+        + 'style="width:100%;padding:11px 14px;border-radius:10px;border:1px solid var(--border);background:white;color:var(--ink);font-size:14px;margin-bottom:10px;box-sizing:border-box">'
+        + katsuyoVerbOptions(katsuyoState.verbIdx) + '</select>';
+  head += '<div style="text-align:center;font-family:\'DM Mono\',monospace;font-size:12px;color:var(--mist);margin-bottom:10px">Bentuk '+(katsuyoState.cardFormIdx+1)+' / '+total+'</div>';
+
+  // Kartu: depan = verba + bentuk yang diminta; klik flip → jawaban + panel info
+  var face;
+  if(!katsuyoState.flipped){
+    face = '<div style="text-align:center">'
+         + '<div style="font-size:30px;font-weight:800;color:'+color+';margin-bottom:8px">'+v.jp+'</div>'
+         + '<div style="font-size:13px;color:var(--mist);margin-bottom:22px">'+v.rom+' · '+v.id+'</div>'
+         + '<div style="font-size:12px;color:var(--mist);text-transform:uppercase;letter-spacing:1px;margin-bottom:6px">Ubah ke</div>'
+         + '<div style="font-size:20px;font-weight:800;color:var(--ink)">'+fm.jp+'</div>'
+         + '<div style="font-size:13px;color:var(--mist);margin-top:4px">'+fm.id+'</div>'
+         + '<div style="font-size:12px;color:var(--mist);margin-top:26px">👆 Ketuk untuk lihat jawaban</div>'
+         + '</div>';
+  } else {
+    face = '<div style="text-align:center">'
+         + '<div style="font-size:13px;color:var(--mist);margin-bottom:4px">'+v.jp+' → '+fm.jp+'</div>'
+         + '<div style="font-size:34px;font-weight:800;color:'+color+';margin:10px 0">'+val+'</div>'
+         + '<div style="border-top:1px solid var(--border);margin:16px 0 12px"></div>'
+         + '<div style="text-align:left;background:rgba(0,0,0,.025);border-radius:10px;padding:12px 14px">'
+         +   '<div style="font-size:12px;font-weight:700;color:var(--ink);margin-bottom:4px">'+fm.jp+' · '+fm.id+'</div>'
+         +   '<div style="font-size:12px;color:var(--mist);line-height:1.6;margin-bottom:8px">'+fm.fn+'</div>'
+         +   '<div style="font-size:12px;color:var(--ink)"><b>Golongan:</b> '+(KATSUYO_GROUP_LABEL[v.g]||v.g)+'</div>'
+         +   '<div style="font-size:12px;color:var(--mist);line-height:1.6;margin-top:4px">'+(KATSUYO_GROUP_NOTE[v.g]||'')+'</div>'
+         + '</div>'
+         + '<div style="font-size:12px;color:var(--mist);margin-top:14px">👆 Ketuk untuk balik</div>'
+         + '</div>';
+  }
+  var card = '<div onclick="katsuyoState.flipped=!katsuyoState.flipped;renderKatsuyoCard()" '
+           + 'style="background:white;border:1px solid var(--border);border-radius:16px;padding:26px 22px;box-shadow:var(--shadow);cursor:pointer;min-height:200px;display:flex;align-items:center;justify-content:center">'
+           + face + '</div>';
+
+  var nav = '<div style="display:flex;gap:10px;margin-top:16px">'
+          + '<button onclick="katsuyoCardStep(-1)" style="flex:1;padding:12px;border-radius:10px;border:1px solid var(--border);background:white;color:var(--ink);cursor:pointer;font-weight:600">← Sebelumnya</button>'
+          + '<button onclick="katsuyoCardStep(1)" style="flex:2;padding:12px;border-radius:10px;border:none;background:'+color+';color:#fff;cursor:pointer;font-weight:600">Bentuk berikutnya →</button>'
+          + '</div>';
+
+  document.getElementById('km-card-wrap').innerHTML = head + card + nav;
+}
+
+function katsuyoCardStep(d){
+  var total = KATSUYO_FORMS.length;
+  katsuyoState.cardFormIdx = (katsuyoState.cardFormIdx + d + total) % total;
+  katsuyoState.flipped = false;
+  renderKatsuyoCard();
+}
+
+// ===== TAB 活用 Tahap 2: Kuis Pilihan Ganda + Latihan Ketik =====
+// Bentuk yang diujikan per level (bertingkat). Key cocok dengan KATSUYO_FORMS.
+var KATSUYO_LEVEL_FORMS = {
+  N5: ['masu','nai','masen','ta','mashita','te'],
+  N4: ['masu','nai','ta','te','kanou','ikou','ba','tara','nakatta'],
+  N3: ['te','kanou','ukemi','shieki','ikou','ba','tara','meirei','nakatta'],
+  N2: ['ukemi','shieki','meirei','ba','tara','ikou','kanou'],
+  N1: ['ukemi','shieki','meirei','ba','tara','ikou','kanou'],
+  SSW:['masu','nai','ta','te','kanou','ikou']
+};
+function katsuyoFormsForLevel(){
+  return KATSUYO_LEVEL_FORMS[currentJLPT] || KATSUYO_LEVEL_FORMS.N5;
+}
+function katsuyoFormMeta(k){
+  for(var i=0;i<KATSUYO_FORMS.length;i++){ if(KATSUYO_FORMS[i].k===k) return KATSUYO_FORMS[i]; }
+  return {k:k,jp:k,id:k,fn:''};
+}
+
+// Kumpulkan verba: gabung 18 inti + verba terdeteksi dari vocab level aktif.
+function katsuyoCollectVerbs(){
+  var out = [];
+  var seen = {};
+  // dari data vocab level aktif
+  var data = (typeof JLPT_DATA!=='undefined' && JLPT_DATA[currentJLPT]) ? JLPT_DATA[currentJLPT] : [];
+  data.forEach(function(w){
+    if(!w || !w.jp) return;
+    var jp = String(w.jp).trim();
+    if(seen[jp]) return;
+    if(conjugateAll(jp)){ seen[jp]=1; out.push({jp:jp, rom:(w.rom||''), id:(w.id_||w.id||'')}); }
+  });
+  // selalu sertakan 18 inti sebagai cadangan agar kuis tak pernah kosong
+  KATSUYO_VERBS.forEach(function(v){ if(!seen[v.jp]){ seen[v.jp]=1; out.push({jp:v.jp,rom:v.rom,id:v.id}); } });
+  return out;
+}
+
+// ---------- KUIS PILIHAN GANDA ----------
+var katsuyoQuiz = { items:[], idx:0, correct:0, answered:false };
+
+function startKatsuyoQuiz(){
+  var verbs = katsuyoCollectVerbs();
+  var forms = katsuyoFormsForLevel();
+  shuffle(verbs);
+  var n = Math.min(10, verbs.length);
+  var items = [];
+  for(var i=0;i<n;i++){
+    var v = verbs[i];
+    var all = conjugateAll(v.jp); if(!all) continue;
+    var fk = forms[Math.floor(Math.random()*forms.length)];
+    var correct = all[fk];
+    // pengecoh: bentuk lain dari verba yang sama + bentuk salah-golongan
+    var pool = {};
+    forms.forEach(function(k){ if(all[k] && all[k]!==correct) pool[all[k]]=1; });
+    // tambah distractor "salah-onbin/golongan" bila kurang
+    var bait = katsuyoBaitForms(v.jp, fk, all);
+    bait.forEach(function(b){ if(b && b!==correct) pool[b]=1; });
+    var distract = Object.keys(pool);
+    shuffle(distract);
+    var opts = [correct].concat(distract.slice(0,3));
+    while(opts.length<4) opts.push(correct+'＝'); // jaga-jaga (jarang)
+    opts = opts.slice(0,4);
+    shuffle(opts);
+    items.push({ verb:v, formKey:fk, answer:correct, options:opts, ansIdx:opts.indexOf(correct) });
+  }
+  katsuyoQuiz = { items:items, idx:0, correct:0, answered:false };
+  gotoScreen('katsuyoquiz');
+  renderKatsuyoQuiz();
+}
+
+// Buat bentuk-salah yang mirip (untuk pengecoh lebih sulit).
+function katsuyoBaitForms(jp, fk, all){
+  var b = [];
+  var d = detectVerb(jp); if(!d) return b;
+  // versi "seakan golongan lain" — sering jadi kesalahan pemula
+  if(d.group==='ichidan'){
+    var s=jp.slice(0,-1);
+    if(fk==='ta') b.push(s+'った');
+    if(fk==='te') b.push(s+'って');
+    if(fk==='nai') b.push(s+'らない');
+    if(fk==='kanou') b.push(s+'れる');
+  } else if(d.group==='godan'){
+    var st=jp.slice(0,-1);
+    if(fk==='ta') b.push(st+'た');
+    if(fk==='te') b.push(st+'て');
+    if(fk==='nai') b.push(st+'ない');
+  }
+  return b;
+}
+
+function renderKatsuyoQuiz(){
+  var color = JLPT_COLORS[currentJLPT] || 'var(--red)';
+  var q = katsuyoQuiz.items[katsuyoQuiz.idx];
+  var host = document.getElementById('kq-card');
+  var prog = document.getElementById('kq-progress');
+  if(prog) prog.textContent = 'Soal '+(katsuyoQuiz.idx+1)+' / '+katsuyoQuiz.items.length;
+  if(!q){ host.innerHTML='<div style="text-align:center;color:var(--mist);padding:30px">Tidak ada soal.</div>'; return; }
+  var fm = katsuyoFormMeta(q.formKey);
+  var html = '<div style="text-align:center;margin-bottom:18px">'
+    + '<div style="font-size:26px;font-weight:800;color:'+color+'">'+q.verb.jp+'</div>'
+    + '<div style="font-size:12px;color:var(--mist);margin-top:2px">'+(q.verb.rom||'')+(q.verb.id?(' · '+q.verb.id):'')+'</div>'
+    + '<div style="margin-top:14px;font-size:12px;color:var(--mist);text-transform:uppercase;letter-spacing:1px">Ubah ke</div>'
+    + '<div style="font-size:18px;font-weight:800;color:var(--ink)">'+fm.jp+' <span style="font-size:13px;color:var(--mist);font-weight:600">('+fm.id+')</span></div>'
+    + '</div>';
+  html += '<div id="kq-opts" style="display:flex;flex-direction:column;gap:10px">';
+  q.options.forEach(function(opt,i){
+    html += '<button onclick="answerKatsuyoQuiz('+i+')" data-i="'+i+'" '
+      + 'style="padding:14px;border-radius:12px;border:1px solid var(--border);background:white;color:var(--ink);cursor:pointer;font-size:18px;font-weight:700;text-align:center">'
+      + opt + '</button>';
+  });
+  html += '</div>';
+  html += '<div id="kq-exp" style="display:none;margin-top:14px;background:rgba(0,0,0,.03);border-radius:10px;padding:12px 14px;font-size:13px;color:var(--ink);line-height:1.6"></div>';
+  host.innerHTML = html;
+  document.getElementById('kq-actions').innerHTML = '';
+  katsuyoQuiz.answered = false;
+}
+
+function answerKatsuyoQuiz(i){
+  if(katsuyoQuiz.answered) return;
+  katsuyoQuiz.answered = true;
+  var color = JLPT_COLORS[currentJLPT] || 'var(--red)';
+  var q = katsuyoQuiz.items[katsuyoQuiz.idx];
+  var fm = katsuyoFormMeta(q.formKey);
+  var btns = document.querySelectorAll('#kq-opts button');
+  btns.forEach(function(b){
+    var bi = parseInt(b.getAttribute('data-i'),10);
+    b.style.cursor='default';
+    if(bi===q.ansIdx){ b.style.background='var(--jade)'; b.style.color='#fff'; b.style.borderColor='var(--jade)'; }
+    else if(bi===i){ b.style.background='var(--red)'; b.style.color='#fff'; b.style.borderColor='var(--red)'; }
+    b.onclick=null;
+  });
+  if(i===q.ansIdx) katsuyoQuiz.correct++;
+  var exp = document.getElementById('kq-exp');
+  var d = detectVerb(q.verb.jp);
+  var grp = d ? (KATSUYO_GROUP_LABEL[d.group]||d.group) : '';
+  exp.style.display='';
+  exp.innerHTML = '<b>'+q.verb.jp+' → '+q.answer+'</b><br>'+fm.jp+' ('+fm.id+'): '+fm.fn+'<br><span style="color:var(--mist)">Golongan: '+grp+'</span>';
+  var actHost = document.getElementById('kq-actions');
+  var last = katsuyoQuiz.idx >= katsuyoQuiz.items.length-1;
+  actHost.innerHTML = '<button onclick="nextKatsuyoQuiz()" style="width:100%;padding:14px;border-radius:12px;border:none;background:'+color+';color:#fff;cursor:pointer;font-weight:700;font-size:15px">'
+    + (last?'Lihat Hasil →':'Soal berikutnya →') + '</button>';
+}
+
+function nextKatsuyoQuiz(){
+  if(katsuyoQuiz.idx >= katsuyoQuiz.items.length-1){ finishKatsuyoQuiz(); return; }
+  katsuyoQuiz.idx++;
+  renderKatsuyoQuiz();
+}
+
+function finishKatsuyoQuiz(){
+  var total = katsuyoQuiz.items.length;
+  var correct = katsuyoQuiz.correct;
+  var pct = total>0?Math.round(correct/total*100):0;
+  var pts = katsuyoCalcPoints(correct,total);
+  recordKatsuyoResult('Konjugasi Kuis', correct, total, pct, pts);
+  var color = JLPT_COLORS[currentJLPT] || 'var(--red)';
+  var host = document.getElementById('kq-card');
+  host.innerHTML = '<div style="text-align:center;padding:14px">'
+    + '<div style="font-size:46px;margin-bottom:8px">'+(pct>=80?'🎉':pct>=50?'👍':'💪')+'</div>'
+    + '<div style="font-size:22px;font-weight:800;color:'+color+'">'+correct+' / '+total+'</div>'
+    + '<div style="font-size:13px;color:var(--mist);margin-top:4px">'+pct+'% benar · +'+pts+' poin</div>'
+    + '</div>';
+  document.getElementById('kq-actions').innerHTML =
+    '<div style="display:flex;gap:10px">'
+    + '<button onclick="gotoScreen(\'katsuyomenu\')" style="flex:1;padding:13px;border-radius:12px;border:1px solid var(--border);background:white;color:var(--ink);cursor:pointer;font-weight:600">Selesai</button>'
+    + '<button onclick="startKatsuyoQuiz()" style="flex:1;padding:13px;border-radius:12px;border:none;background:'+color+';color:#fff;cursor:pointer;font-weight:700">Ulang</button>'
+    + '</div>';
+  document.getElementById('kq-progress').textContent = 'Selesai';
+}
+
+// ---------- LATIHAN KETIK ----------
+var katsuyoType = { items:[], idx:0, correct:0, answered:false, streak:0 };
+
+function startKatsuyoType(){
+  var verbs = katsuyoCollectVerbs();
+  var forms = katsuyoFormsForLevel();
+  shuffle(verbs);
+  var n = Math.min(10, verbs.length);
+  var items = [];
+  for(var i=0;i<n;i++){
+    var v=verbs[i]; var all=conjugateAll(v.jp); if(!all) continue;
+    var fk=forms[Math.floor(Math.random()*forms.length)];
+    items.push({verb:v, formKey:fk, answer:all[fk]});
+  }
+  katsuyoType={items:items, idx:0, correct:0, answered:false, streak:0};
+  gotoScreen('katsuyotype');
+  renderKatsuyoType();
+}
+
+function renderKatsuyoType(){
+  var color = JLPT_COLORS[currentJLPT] || 'var(--red)';
+  var q = katsuyoType.items[katsuyoType.idx];
+  var prog = document.getElementById('kt-progress');
+  if(prog) prog.textContent = 'Soal '+(katsuyoType.idx+1)+' / '+katsuyoType.items.length+' · 🔥 '+katsuyoType.streak;
+  var host = document.getElementById('kt-card');
+  if(!q){ host.innerHTML='<div style="text-align:center;color:var(--mist);padding:30px">Tidak ada soal.</div>'; return; }
+  var fm = katsuyoFormMeta(q.formKey);
+  host.innerHTML = '<div style="text-align:center;margin-bottom:16px">'
+    + '<div style="font-size:26px;font-weight:800;color:'+color+'">'+q.verb.jp+'</div>'
+    + '<div style="font-size:12px;color:var(--mist);margin-top:2px">'+(q.verb.rom||'')+(q.verb.id?(' · '+q.verb.id):'')+'</div>'
+    + '<div style="margin-top:14px;font-size:12px;color:var(--mist);text-transform:uppercase;letter-spacing:1px">Ketik bentuk</div>'
+    + '<div style="font-size:18px;font-weight:800;color:var(--ink)">'+fm.jp+' <span style="font-size:13px;color:var(--mist);font-weight:600">('+fm.id+')</span></div>'
+    + '</div>'
+    + '<input id="kt-input" type="text" autocomplete="off" autocapitalize="off" placeholder="tulis jawaban..." '
+    + 'onkeydown="if(event.key===\'Enter\')checkKatsuyoType()" '
+    + 'style="width:100%;padding:14px;border-radius:12px;border:1px solid var(--border);background:white;color:var(--ink);font-size:20px;text-align:center;box-sizing:border-box">'
+    + '<div id="kt-fb" style="display:none;margin-top:14px;border-radius:10px;padding:12px 14px;font-size:14px;line-height:1.6"></div>';
+  document.getElementById('kt-actions').innerHTML =
+    '<button id="kt-submit" onclick="checkKatsuyoType()" style="width:100%;padding:14px;border-radius:12px;border:none;background:'+color+';color:#fff;cursor:pointer;font-weight:700;font-size:15px">Periksa</button>';
+  katsuyoType.answered=false;
+  var inp=document.getElementById('kt-input'); if(inp) inp.focus();
+}
+
+// normalisasi: buang spasi & samakan, terima jika user ketik tanpa kanji? -> hanya samakan persis + trim
+function katsuyoNorm(s){ return String(s||'').replace(/\s+/g,'').trim(); }
+
+function checkKatsuyoType(){
+  if(katsuyoType.answered) return;
+  var q = katsuyoType.items[katsuyoType.idx];
+  var inp = document.getElementById('kt-input');
+  var val = katsuyoNorm(inp?inp.value:'');
+  if(!val) return;
+  katsuyoType.answered=true;
+  var color = JLPT_COLORS[currentJLPT] || 'var(--red)';
+  var ok = (val===katsuyoNorm(q.answer));
+  if(ok){ katsuyoType.correct++; katsuyoType.streak++; }
+  else { katsuyoType.streak=0; }
+  if(inp) inp.disabled=true;
+  var fm = katsuyoFormMeta(q.formKey);
+  var fb = document.getElementById('kt-fb');
+  fb.style.display='';
+  if(ok){
+    fb.style.background='rgba(16,150,110,.12)';
+    fb.innerHTML='<b style="color:var(--jade)">✓ Benar!</b> '+q.answer;
+  } else {
+    fb.style.background='rgba(200,50,50,.10)';
+    fb.innerHTML='<b style="color:var(--red)">✗ Kurang tepat.</b> Jawaban: <b>'+q.answer+'</b><br>'
+      +'<span style="font-size:12px;color:var(--mist)">'+fm.jp+' ('+fm.id+'): '+fm.fn+'</span>';
+  }
+  var last = katsuyoType.idx >= katsuyoType.items.length-1;
+  document.getElementById('kt-actions').innerHTML =
+    '<button onclick="nextKatsuyoType()" style="width:100%;padding:14px;border-radius:12px;border:none;background:'+color+';color:#fff;cursor:pointer;font-weight:700;font-size:15px">'
+    + (last?'Lihat Hasil →':'Lanjut →') + '</button>';
+}
+
+function nextKatsuyoType(){
+  if(katsuyoType.idx >= katsuyoType.items.length-1){ finishKatsuyoType(); return; }
+  katsuyoType.idx++;
+  renderKatsuyoType();
+}
+
+function finishKatsuyoType(){
+  var total=katsuyoType.items.length, correct=katsuyoType.correct;
+  var pct=total>0?Math.round(correct/total*100):0;
+  var pts=katsuyoCalcPoints(correct,total);
+  recordKatsuyoResult('Konjugasi Ketik', correct, total, pct, pts);
+  var color = JLPT_COLORS[currentJLPT] || 'var(--red)';
+  var host=document.getElementById('kt-card');
+  host.innerHTML='<div style="text-align:center;padding:14px">'
+    + '<div style="font-size:46px;margin-bottom:8px">'+(pct>=80?'🎉':pct>=50?'👍':'💪')+'</div>'
+    + '<div style="font-size:22px;font-weight:800;color:'+color+'">'+correct+' / '+total+'</div>'
+    + '<div style="font-size:13px;color:var(--mist);margin-top:4px">'+pct+'% benar · +'+pts+' poin</div>'
+    + '</div>';
+  document.getElementById('kt-actions').innerHTML=
+    '<div style="display:flex;gap:10px">'
+    + '<button onclick="gotoScreen(\'katsuyomenu\')" style="flex:1;padding:13px;border-radius:12px;border:1px solid var(--border);background:white;color:var(--ink);cursor:pointer;font-weight:600">Selesai</button>'
+    + '<button onclick="startKatsuyoType()" style="flex:1;padding:13px;border-radius:12px;border:none;background:'+color+';color:#fff;cursor:pointer;font-weight:700">Ulang</button>'
+    + '</div>';
+  document.getElementById('kt-progress').textContent='Selesai';
+}
+
+// ---------- POIN & RIWAYAT (masuk leaderboard via examHistory + examPoints) ----------
+function katsuyoCalcPoints(correct,total){
+  // skala mirip exam: 10 poin/benar, bonus 20 bila sempurna
+  var p = correct*10;
+  if(total>0 && correct===total) p += 20;
+  return p;
+}
+
+function recordKatsuyoResult(typeLabel, correct, total, pct, pts){
+  var grade = pct>=90?'A':pct>=80?'B':pct>=65?'C':pct>=50?'D':'E';
+  var entry = {id:'kt_'+Date.now(), type:typeLabel, section:'katsuyo', level:currentJLPT,
+    score:correct, total:total, pct:pct, grade:grade, points:pts,
+    ts:new Date().toISOString(),
+    date:new Date().toLocaleDateString('id-ID',{day:'numeric',month:'short'})};
+  if(typeof examHistory==='undefined' || !examHistory) examHistory=[];
+  examHistory.push(entry);
+  if(examHistory.length>50) examHistory=examHistory.slice(-50);
+  try{ localStorage.setItem('examHistory',JSON.stringify(examHistory)); }catch(e){ examHistory=examHistory.slice(-20); try{localStorage.setItem('examHistory',JSON.stringify(examHistory));}catch(e2){} }
+  if(typeof db!=='undefined' && db && typeof currentUser!=='undefined' && currentUser){
+    db.collection('exam_results').add(Object.assign({
+      uid:currentUser.uid, displayName:currentUser.displayName||'Pelajar',
+      timestamp:new Date().toISOString(), examPoints:pts
+    },entry)).catch(function(){});
+    db.collection('users').doc(currentUser.uid).update({
+      examPoints: firebase.firestore.FieldValue.increment(pts),
+      lastExam: entry,
+      examCount: firebase.firestore.FieldValue.increment(1)
+    }).catch(function(){
+      db.collection('users').doc(currentUser.uid).set({examPoints:pts,lastExam:entry,examCount:1},{merge:true}).catch(function(){});
+    });
+  }
+  if(typeof save==='function') save();
+}
+
+
+
+
 // Jangan panggil init() di sini — dipanggil oleh onAuthStateChanged setelah login
 </script>
 </body>
