@@ -7468,12 +7468,13 @@ function conjugateAll(jp){
 
 
 // ===== TAB 動詞活用 (Konjugasi Kata Kerja) — Tahap 1: Tabel + Kartu =====
-var katsuyoState = { mode:'table', verbIdx:0, cardFormIdx:0, flipped:false };
+var katsuyoState = { mode:'table', cardFormIdx:0, flipped:false, view:'list', sel:null, search:'' };
 
 function updateKatsuyoMenu(){
   var color = JLPT_COLORS[currentJLPT] || 'var(--red)';
   var badge = document.getElementById('km-level-badge');
   if(badge){ badge.textContent = currentJLPT==='SSW'?'SSW 食品':currentJLPT; badge.style.background=color; badge.title=levelName(); }
+  katsuyoState.view='list'; katsuyoState.sel=null; katsuyoState.search='';
   setKatsuyoMode(katsuyoState.mode || 'table');
 }
 
@@ -7482,31 +7483,102 @@ function setKatsuyoMode(m){
   var color = JLPT_COLORS[currentJLPT] || 'var(--red)';
   var tt = document.getElementById('km-tab-table');
   var tc = document.getElementById('km-tab-card');
-  var on = 'flex:1;padding:12px;border-radius:12px;border:1px solid '+color+';background:'+color+';color:#fff;cursor:pointer;font-weight:700;font-size:14px';
-  var off= 'flex:1;padding:12px;border-radius:12px;border:1px solid var(--border);background:white;color:var(--ink);cursor:pointer;font-weight:700;font-size:14px';
+  var on = 'flex:1;min-width:120px;padding:12px;border-radius:12px;border:1px solid '+color+';background:'+color+';color:#fff;cursor:pointer;font-weight:700;font-size:14px';
+  var off= 'flex:1;min-width:120px;padding:12px;border-radius:12px;border:1px solid var(--border);background:white;color:var(--ink);cursor:pointer;font-weight:700;font-size:14px';
   if(tt) tt.style.cssText = (m==='table')?on:off;
   if(tc) tc.style.cssText = (m==='card') ?on:off;
   document.getElementById('km-table-wrap').style.display = (m==='table')?'':'none';
   document.getElementById('km-card-wrap').style.display  = (m==='card') ?'':'none';
+  // selalu kembali ke tampilan list saat berpindah mode
+  katsuyoState.view='list'; katsuyoState.sel=null;
   if(m==='table') renderKatsuyoTable();
   else { katsuyoState.flipped=false; renderKatsuyoCard(); }
 }
 
-// Dropdown pemilih verba (dipakai dua mode)
-function katsuyoVerbOptions(sel){
-  return KATSUYO_VERBS.map(function(v,i){
-    return '<option value="'+i+'"'+(i===sel?' selected':'')+'>'+v.jp+'（'+v.rom+'）— '+v.id+'</option>';
-  }).join('');
+// Pastikan objek verba punya .f (semua bentuk) & .g (golongan). Verba dari vocab
+// dikonjugasikan via engine; verba 18 inti sudah punya .f bawaan.
+function katsuyoResolveVerb(v){
+  if(!v) return null;
+  if(v.f && v.g) return v;
+  var f = conjugateAll(v.jp);
+  var d = detectVerb(v.jp);
+  if(!f || !d) return null;
+  return { jp:v.jp, rom:v.rom||'', id:v.id||v.id_||'', f:f, g:d.group };
+}
+
+// Daftar verba terurut untuk level aktif (vocab + 18 inti), terfilter search.
+function katsuyoListVerbs(){
+  var list = katsuyoCollectVerbs();
+  var q = (katsuyoState.search||'').trim().toLowerCase();
+  if(q){
+    list = list.filter(function(v){
+      return (v.jp||'').toLowerCase().indexOf(q)>=0
+          || (v.rom||'').toLowerCase().indexOf(q)>=0
+          || (v.id||'').toLowerCase().indexOf(q)>=0;
+    });
+  }
+  return list;
+}
+
+// Render daftar verba yang bisa diketuk (dipakai mode tabel & kartu).
+function renderKatsuyoList(host){
+  var color = JLPT_COLORS[currentJLPT] || 'var(--red)';
+  var list = katsuyoListVerbs();
+  var html = '<input id="km-search" type="text" value="'+(katsuyoState.search||'').replace(/"/g,'&quot;')+'" '
+    + 'oninput="katsuyoState.search=this.value;katsuyoRenderActive()" placeholder="🔍 Cari kata kerja..." '
+    + 'style="width:100%;padding:11px 14px;border-radius:10px;border:1px solid var(--border);background:white;color:var(--ink);font-size:14px;margin-bottom:6px;box-sizing:border-box">';
+  html += '<div style="font-size:12px;color:var(--mist);margin-bottom:10px">'+list.length+' kata kerja · '+currentJLPT+'</div>';
+  if(!list.length){
+    html += '<div style="text-align:center;color:var(--mist);padding:30px">Tidak ada kata kerja cocok.</div>';
+    host.innerHTML = html; var s=document.getElementById('km-search'); if(s){s.focus();s.setSelectionRange(s.value.length,s.value.length);} return;
+  }
+  html += '<div style="display:flex;flex-direction:column;gap:8px">';
+  list.forEach(function(v,i){
+    var d = detectVerb(v.jp);
+    var grp = d ? (KATSUYO_GROUP_LABEL[d.group]||d.group) : '';
+    html += '<div onclick="katsuyoOpenVerb('+i+')" '
+      + 'style="display:flex;justify-content:space-between;align-items:center;gap:10px;background:white;border:1px solid var(--border);border-radius:12px;padding:12px 14px;cursor:pointer;box-shadow:var(--shadow)">'
+      + '<div style="min-width:0"><div style="font-size:17px;font-weight:800;color:var(--ink)">'+v.jp+'</div>'
+      + '<div style="font-size:11px;color:var(--mist)">'+(v.rom||'')+(v.id?(' · '+v.id):'')+'</div></div>'
+      + '<div style="font-size:10px;font-weight:700;color:'+color+';background:rgba(0,0,0,.04);padding:3px 9px;border-radius:20px;flex-shrink:0">'+grp+'</div>'
+      + '</div>';
+  });
+  html += '</div>';
+  host.innerHTML = html;
+  var s=document.getElementById('km-search'); if(s){ s.focus(); s.setSelectionRange(s.value.length,s.value.length); }
+}
+
+// Render ulang panel mode aktif (dipakai oleh search & navigasi).
+function katsuyoRenderActive(){
+  if(katsuyoState.mode==='table') renderKatsuyoTable();
+  else renderKatsuyoCard();
+}
+
+// Buka satu verba dari list (index pada list terfilter saat itu).
+function katsuyoOpenVerb(i){
+  var list = katsuyoListVerbs();
+  var v = katsuyoResolveVerb(list[i]);
+  if(!v) return;
+  katsuyoState.sel = v;
+  katsuyoState.view = 'detail';
+  katsuyoState.cardFormIdx = 0;
+  katsuyoState.flipped = false;
+  katsuyoRenderActive();
+}
+
+function katsuyoBackToList(){
+  katsuyoState.view='list';
+  katsuyoState.sel=null;
+  katsuyoRenderActive();
 }
 
 // ---------- MODE TABEL ----------
 function renderKatsuyoTable(){
+  var host = document.getElementById('km-table-wrap');
+  if(katsuyoState.view!=='detail' || !katsuyoState.sel){ renderKatsuyoList(host); return; }
   var color = JLPT_COLORS[currentJLPT] || 'var(--red)';
-  var v = KATSUYO_VERBS[katsuyoState.verbIdx] || KATSUYO_VERBS[0];
-  var html = '';
-  html += '<select onchange="katsuyoState.verbIdx=parseInt(this.value,10);renderKatsuyoTable()" '
-        + 'style="width:100%;padding:11px 14px;border-radius:10px;border:1px solid var(--border);background:white;color:var(--ink);font-size:14px;margin-bottom:14px;box-sizing:border-box">'
-        + katsuyoVerbOptions(katsuyoState.verbIdx) + '</select>';
+  var v = katsuyoState.sel;
+  var html = '<button onclick="katsuyoBackToList()" style="background:none;border:none;color:var(--mist);cursor:pointer;font-size:13px;margin-bottom:10px;padding:0">← Daftar kata kerja</button>';
   html += '<div style="background:white;border:1px solid var(--border);border-radius:14px;padding:16px;box-shadow:var(--shadow)">';
   html += '<div style="display:flex;align-items:baseline;gap:10px;margin-bottom:4px">'
         + '<span style="font-size:24px;font-weight:800;color:'+color+'">'+v.jp+'</span>'
@@ -7525,20 +7597,20 @@ function renderKatsuyoTable(){
           + '</div>';
   });
   html += '</div></div>';
-  document.getElementById('km-table-wrap').innerHTML = html;
+  host.innerHTML = html;
 }
 
 // ---------- MODE KARTU (flashcard + panel info) ----------
 function renderKatsuyoCard(){
+  var host = document.getElementById('km-card-wrap');
+  if(katsuyoState.view!=='detail' || !katsuyoState.sel){ renderKatsuyoList(host); return; }
   var color = JLPT_COLORS[currentJLPT] || 'var(--red)';
-  var v = KATSUYO_VERBS[katsuyoState.verbIdx] || KATSUYO_VERBS[0];
+  var v = katsuyoState.sel;
   var fm = KATSUYO_FORMS[katsuyoState.cardFormIdx] || KATSUYO_FORMS[0];
   var val = v.f[fm.k] || '—';
   var total = KATSUYO_FORMS.length;
 
-  var head = '<select onchange="katsuyoState.verbIdx=parseInt(this.value,10);katsuyoState.flipped=false;renderKatsuyoCard()" '
-        + 'style="width:100%;padding:11px 14px;border-radius:10px;border:1px solid var(--border);background:white;color:var(--ink);font-size:14px;margin-bottom:10px;box-sizing:border-box">'
-        + katsuyoVerbOptions(katsuyoState.verbIdx) + '</select>';
+  var head = '<button onclick="katsuyoBackToList()" style="background:none;border:none;color:var(--mist);cursor:pointer;font-size:13px;margin-bottom:10px;padding:0">← Daftar kata kerja</button>';
   head += '<div style="text-align:center;font-family:\'DM Mono\',monospace;font-size:12px;color:var(--mist);margin-bottom:10px">Bentuk '+(katsuyoState.cardFormIdx+1)+' / '+total+'</div>';
 
   // Kartu: depan = verba + bentuk yang diminta; klik flip → jawaban + panel info
