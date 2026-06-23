@@ -5670,7 +5670,8 @@ async function startBunpoQuiz(){
     + '4. BATAS LEVEL: gunakan hanya kosakata & kanji level '+lv+' atau di bawahnya pada kalimat soal. JANGAN pakai kanji/kosakata level di atas '+lv+' di dalam kalimat. (Kanji level atas hanya boleh muncul sebagai pengecoh di OPSI jawaban.)'+String.fromCharCode(10)
     + '5. JAWABAN HARUS KONSISTEN: opsi yang ditandai benar (indeks "jawab") HARUS persis menerapkan pola target dan menghasilkan kalimat yang benar. Penjelasan HARUS cocok dengan opsi benar itu. CONTOH KESALAHAN yang DILARANG: pola yang diuji ～てから tetapi opsi benar ditulis 食べたから (itu ～たから, beda pola) — yang benar adalah 食べてから. Pastikan bentuk pada opsi benar sesuai pola, dan "jawab" menunjuk ke opsi itu.'+String.fromCharCode(10)
     + '6. PENGECOH (3 opsi salah): mirip & masuk akal (pola/partikel/bentuk berdekatan), bukan acak. Hanya 1 jawaban benar.'+String.fromCharCode(10)
-    + '7. HIGHLIGHT: pada teks soal, bungkus bagian pola tata bahasa yang diuji dengan tanda **dua bintang** (contoh: わたしは学生**です**), supaya bisa diwarnai. Bagian rumpang tetap pakai ___ (tiga underscore).'+String.fromCharCode(10)
+    + '7. RUMPANG WAJIB: setiap "q" HARUS mengandung tepat satu rumpang ditulis ___ (tiga underscore) di posisi pola/partikel yang diuji. Bagian yang menjadi JAWABAN BENAR WAJIB DIHAPUS dari kalimat dan DIGANTI dengan ___ — jangan pernah menampilkan jawaban benar di dalam teks soal. CONTOH BENAR: "コーヒー___紅茶___、何でも好きです。" (opsi: でも/だけ/しか/から, jawab=0). CONTOH SALAH (DILARANG, karena jawaban "でも" masih tampil): "コーヒーでも紅茶でも、何でも好きです。". Jika pola yang diuji berpasangan (mis. ～でも～でも), boleh ada dua ___. Sebelum output, cek tiap "q": pastikan string ___ ADA, dan teks opsi[jawab] TIDAK muncul utuh di dalam "q".'+String.fromCharCode(10)
+    + '7b. HIGHLIGHT (opsional): boleh bungkus kata KONTEKS pendukung (BUKAN jawaban) dengan **dua bintang** untuk diwarnai. JANGAN pernah membungkus atau menuliskan jawaban benar.'+String.fromCharCode(10)
     + '8. DIALOG: jika soal berbentuk percakapan, format sebagai dialog antar baris memakai "A:" dan "B:" yang dipisah baris baru (\\n), JANGAN disambung jadi satu kalimat lurus.'+String.fromCharCode(10)
     + '9. Penjelasan: maksimal 1 kalimat, Bahasa Indonesia, benar, dan menjelaskan kenapa opsi benar itu tepat.'+String.fromCharCode(10)
     + 'Balas HANYA JSON valid, tanpa teks lain, tanpa markdown, tanpa ```. Format persis: '
@@ -5700,9 +5701,33 @@ async function startBunpoQuiz(){
     var first = txt.indexOf('{'), last = txt.lastIndexOf('}');
     if (first >= 0 && last > first){ txt = txt.slice(first, last+1); }
     var parsed = JSON.parse(txt);
-    bunpoState.quiz = (parsed.soal||[]).filter(function(q){
-      return q.opsi && q.opsi.length>=2 && typeof q.jawab==='number';
-    });
+    bunpoState.quiz = (parsed.soal||[]).map(function(q){
+      if (!q || !q.opsi || q.opsi.length<2 || typeof q.jawab!=='number') return null;
+      var qt = String(q.q||'');
+      var ans = String(q.opsi[q.jawab]||'').trim();
+      // strip penanda highlight ** untuk pengecekan
+      var bare = qt.replace(/\*\*/g,'');
+      var hasBlank = /_{2,}/.test(bare);
+      // Jika jawaban benar masih muncul utuh di teks soal, coba ganti kemunculan
+      // pertama jawaban itu menjadi ___ (perbaikan otomatis bila AI lupa merumpangkan).
+      if (ans && bare.indexOf(ans) >= 0){
+        if (!hasBlank){
+          var idx = qt.indexOf(ans);
+          if (idx >= 0){
+            qt = qt.slice(0, idx) + '___' + qt.slice(idx + ans.length);
+            q.q = qt;
+            bare = qt.replace(/\*\*/g,'');
+            hasBlank = true;
+          }
+        } else {
+          // Sudah ada blank tapi jawaban juga tampil → bocor, buang soal.
+          return null;
+        }
+      }
+      // Buang soal yang tetap tak punya rumpang.
+      if (!hasBlank) return null;
+      return q;
+    }).filter(function(q){ return !!q; });
     if (!bunpoState.quiz.length && !errMsg) errMsg = 'Format soal dari AI tidak sesuai.';
   } catch(e){
     bunpoState.quiz = [];
