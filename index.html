@@ -1144,6 +1144,14 @@ header:has(.user-menu.open) { z-index:1000; }
   <div id="fm-flat-section" style="display:none">
     <div id="fm-flat-info" style="background:white;border:1px solid var(--border);border-radius:16px;padding:36px 24px;text-align:center"></div>
   </div>
+  <div id="fm-pos-section" style="margin-top:18px;display:none">
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">
+      <span style="font-size:14px;font-weight:800;color:var(--ink)">品詞 — Per Jenis Kata</span>
+      <span style="flex:1;height:1px;background:var(--border)"></span>
+    </div>
+    <div style="font-size:12px;color:var(--mist);margin-bottom:12px">Pelajari kosakata dipisah per jenis kata (otomatis).</div>
+    <div id="fm-pos-grid" style="display:grid;grid-template-columns:repeat(2,1fr);gap:10px"></div>
+  </div>
 </div>
 
 <!-- ====== FLASHCARD SCREEN ====== -->
@@ -6041,6 +6049,43 @@ function updateFlashMenu() {
       +'<div style="height:100%;width:'+pct2+'%;background:'+color+';border-radius:4px;transition:width .6s"></div></div>'
       +'<button class="start-study-btn" style="background:'+color+';display:inline-block;width:auto;padding:12px 32px" onclick="startStudy(&apos;vocab&apos;)">▶ Mulai Flashcard '+currentJLPT+'</button>';
   }
+  renderPosCards();
+}
+
+// Render kartu pemilahan per jenis kata (di bawah bagian utama flashmenu).
+function renderPosCards(){
+  var sec=document.getElementById('fm-pos-section');
+  var grid=document.getElementById('fm-pos-grid');
+  if(!sec||!grid) return;
+  // SSW tak relevan (punya topik sendiri); level kosong juga dilewati.
+  var words=posLevelWords();
+  if(currentJLPT==='SSW' || !words.length){ sec.style.display='none'; return; }
+  var color=JLPT_COLORS[currentJLPT]||'var(--red)';
+  var defs=[
+    ['meishi','名','名詞','Kata Benda','var(--indigo)'],
+    ['doushi','動','動詞','Kata Kerja','#c0532e'],
+    ['keiyoushi','形','形容詞','Kata Sifat','#0a7d6b'],
+    ['fukushi','副','副詞','Keterangan','#d98c00'],
+    ['setsuzoku','接','接続詞','Kata Sambung','#2e7dc0'],
+    ['pola','表','表現','Pola/Ungkapan','#7a5cc4']
+  ];
+  var counts={};
+  words.forEach(function(w){var p=posOf(w);counts[p]=(counts[p]||0)+1;});
+  var html='';
+  defs.forEach(function(d){
+    var n=counts[d[0]]||0;
+    if(!n) return;
+    html+='<div onclick="startStudyPos(\''+d[0]+'\')" '
+      +'style="background:white;border:1px solid var(--border);border-top:3px solid '+d[4]+';border-radius:12px;padding:14px;cursor:pointer">'
+      +'<div style="display:flex;align-items:center;gap:8px;margin-bottom:4px">'
+      +'<span style="display:inline-flex;align-items:center;justify-content:center;width:26px;height:26px;border-radius:7px;background:'+d[4]+';color:#fff;font-size:14px;font-weight:800">'+d[1]+'</span>'
+      +'<span style="font-size:15px;font-weight:800;color:var(--ink)">'+d[2]+'</span></div>'
+      +'<div style="font-size:11px;color:var(--mist);margin-bottom:6px">'+d[3]+'</div>'
+      +'<div style="font-size:12px;font-weight:700;color:'+d[4]+'">'+n+' kata</div>'
+      +'</div>';
+  });
+  grid.innerHTML=html;
+  sec.style.display='';
 }
 
 // ============================================================
@@ -6282,6 +6327,64 @@ function renderOverviewCategories(){
 // ============================================================
 // FLASHCARD STUDY
 // ============================================================
+// ===== Klasifikasi jenis kata (品詞 / part of speech) — dihitung otomatis =====
+// Tidak mengubah field cat (track hafalan). Hanya untuk pemilahan tampilan.
+var POS_FUKUSHI={'とても':1,'もう':1,'ずっと':1,'だんだん':1,'たぶん':1,'ちょっと':1,'よく':1,'すぐに':1,'少し':1,'もっと':1,'いつも':1,'まだ':1,'また':1,'時々':1,'丁度':1,'多分':1,'本当に':1,'いくら':1,'なぜ':1,'どうして':1,'まっすぐ':1,'ゆっくりと':1,'初めて':1,'たくさん':1,'沢山':1,'段々':1,'どうぞ':1,'どうも':1,'いかが':1,'必ず':1,'はっきり':1,'しっかり':1,'すっかり':1,'やっと':1,'きっと':1,'ぜひ':1,'是非':1,'なかなか':1,'中々':1,'随分':1,'まず':1,'特に':1,'大体':1,'もうすぐ':1,'しばらく':1,'だいぶ':1,'大分':1,'もちろん':1,'例えば':1,'そろそろ':1,'なるべく':1,'なるほど':1,'ほとんど':1,'ちっとも':1,'決して':1,'最も':1,'とうとう':1,'やはり':1,'やっぱり':1,'どんどん':1,'さっき':1};
+var POS_SETSUZOKU={'しかし':1,'でも':1,'だから':1,'それで':1,'それから':1,'そして':1,'そうして':1,'それでは':1,'では':1,'じゃ':1,'または':1,'けれど':1,'けれども':1,'すると':1,'それに':1,'それなのに':1};
+
+function posOf(w){
+  var jp=String((w&&w.jp)||'').trim();
+  if(!jp) return 'meishi';
+  var head=jp.split(/[;；,，\s]/)[0];
+  if(POS_SETSUZOKU[jp]||POS_SETSUZOKU[head]) return 'setsuzoku';
+  if(POS_FUKUSHI[jp]||POS_FUKUSHI[head]) return 'fukushi';
+  if(/[～〜]/.test(jp)) return 'pola';
+  if(typeof conjugateAll==='function' && conjugateAll(head)) return 'doushi';
+  if(/[いイ]$/.test(head) && head.length>=2) return 'keiyoushi';
+  return 'meishi';
+}
+
+// Kata untuk level aktif (N3 dari ALL_WORDS, lainnya dari JLPT_DATA).
+function posLevelWords(){
+  if(currentJLPT==='N3'){
+    var out=[];
+    if(typeof ALL_WORDS!=='undefined'&&ALL_WORDS){
+      ['kanji','vocab','grammar'].forEach(function(c){(ALL_WORDS[c]||[]).forEach(function(w){out.push(Object.assign({},w,{cat:c}));});});
+    }
+    return out;
+  }
+  return (JLPT_DATA[currentJLPT]||[]).map(function(w){return Object.assign({},w);});
+}
+
+// Mulai sesi belajar terfilter berdasarkan jenis kata (reuse mesin sesi yang ada).
+function startStudyPos(pos){
+  sessionCat='pos_'+pos; sessionReviewed=0; sessionMastered=0; revealed=false; sessionHistory=[];
+  var all=posLevelWords();
+  var words=all.filter(function(w){return posOf(w)===pos;});
+  var lvlMast = (currentJLPT==='N3') ? null : (mastered[currentJLPT]||{});
+  function isMast(w){
+    if(currentJLPT==='N3'){ var c=w.cat||'vocab'; return !!((mastered[c]||{})[w.id]); }
+    return !!lvlMast[w.id];
+  }
+  var unmastered=words.filter(function(w){return !isMast(w);});
+  var done=words.filter(function(w){return isMast(w);});
+  shuffle(unmastered); shuffle(done);
+  sessionQueue=unmastered.concat(done).slice(0,SESSION_SIZE);
+  sessionIdx=0;
+  var titles={meishi:'名詞 Kata Benda',doushi:'動詞 Kata Kerja',keiyoushi:'形容詞 Kata Sifat',fukushi:'副詞 Keterangan',setsuzoku:'接続詞 Kata Sambung',pola:'表現 Pola/Ungkapan'};
+  document.getElementById('flash-category-title').textContent=(currentJLPT!=='N3'?currentJLPT+' — ':'')+(titles[pos]||pos);
+  document.getElementById('flash-subtitle').textContent=unmastered.length+' belum hafal · '+done.length+' sudah hafal';
+  document.querySelectorAll('.screen').forEach(function(s){s.classList.remove('active');});
+  document.getElementById('screen-flash').classList.add('active');
+  document.querySelectorAll('nav button').forEach(function(b){b.classList.remove('active');});
+  document.getElementById('session-done-panel').style.display='none';
+  document.getElementById('flash-active').style.display='block';
+  if(!sessionQueue.length){
+    document.getElementById('flash-subtitle').textContent='Tidak ada kata jenis ini di '+currentJLPT;
+  }
+  showCard();
+}
+
 function startStudy(cat) {
   sessionCat=cat; sessionReviewed=0; sessionMastered=0; revealed=false; sessionHistory=[];
   var words, unmastered, done;
