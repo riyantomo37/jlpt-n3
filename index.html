@@ -1254,6 +1254,14 @@ header:has(.user-menu.open) { z-index:1000; }
   <div id="km-flat-section" style="display:none">
     <div id="km-flat-content" style="background:white;border:1px solid var(--border);border-radius:16px;padding:36px 24px;text-align:center"></div>
   </div>
+  <div id="km-pos-section" style="margin-top:18px;display:none">
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">
+      <span style="font-size:14px;font-weight:800;color:var(--ink)">品詞 — Baca Kanji per Jenis Kata</span>
+      <span style="flex:1;height:1px;background:var(--border)"></span>
+    </div>
+    <div style="font-size:12px;color:var(--mist);margin-bottom:12px">Latih cara baca kanji, dipisah per jenis kata (hanya kata ber-kanji).</div>
+    <div id="km-pos-grid" style="display:grid;grid-template-columns:repeat(2,1fr);gap:10px"></div>
+  </div>
 </div>
 
 <!-- ====== KANJI FLASHCARD SCREEN ====== -->
@@ -6634,6 +6642,7 @@ function updateKanjiMenu() {
       +'<div style="background:rgba(26,26,46,.1);border-radius:4px;height:8px;margin:0 auto 20px;max-width:300px;overflow:hidden">'
       +'<div style="height:100%;width:'+pctF+'%;background:'+color+';border-radius:4px;transition:width .6s"></div></div>'
       +'<button class="start-study-btn" style="background:'+color+';display:inline-block;width:auto;padding:12px 32px" onclick="startKanjiFlash(&apos;vocab&apos;)">▶ Mulai Kanji '+currentJLPT+'</button>';
+    renderKanjiPosCards();
     return;
   }
 
@@ -6663,6 +6672,74 @@ function updateKanjiMenu() {
   setEl('km-cat-count-kanji',   kt+' kata kerja');
   setEl('km-cat-count-vocab',   vt+' kata benda');
   setEl('km-cat-count-grammar', gt+' kata sifat');
+  renderKanjiPosCards();
+}
+
+// ── Kanji per JENIS KATA (品詞) — hafal BACA, hanya kata ber-kanji ──
+function kanjiPosWords(pos){
+  var all=(typeof posLevelWords==='function')?posLevelWords():[];
+  return all.filter(function(w){
+    return /[一-鿿]/.test(w.jp||'') && posOf(w)===pos;
+  });
+}
+function _kfReadDonePos(w){
+  if(currentJLPT==='N3') return !!kanjiReadMastered['kf_'+(w.cat||'vocab')+'_'+w.id];
+  return !!(mastered['kf_'+currentJLPT]||{})[w.id];
+}
+
+function startKanjiFlashPos(pos){
+  kfCat='pos_'+pos; kfReviewed=0; kfMastered=0; kfRevealed=false; kfHistory=[];
+  var words=kanjiPosWords(pos);
+  var unmastered=words.filter(function(w){return !_kfReadDonePos(w);});
+  var done=words.filter(function(w){return _kfReadDonePos(w);});
+  shuffle(unmastered); shuffle(done);
+  kfQueue=unmastered.concat(done).slice(0,SESSION_SIZE);
+  kfIdx=0;
+  var titles={meishi:'名詞 Kata Benda',doushi:'動詞 Kata Kerja',keiyoushi:'形容詞 Kata Sifat',fukushi:'副詞 Keterangan',setsuzoku:'接続詞 Kata Sambung',pola:'表現 Pola'};
+  document.getElementById('kf-title').textContent=(currentJLPT!=='N3'?currentJLPT+' — ':'')+(titles[pos]||pos);
+  document.getElementById('kf-subtitle').textContent=unmastered.length+' belum · '+done.length+' sudah';
+  document.querySelectorAll('.screen').forEach(function(s){s.classList.remove('active');});
+  document.getElementById('screen-kanjiflash').classList.add('active');
+  document.querySelectorAll('nav button').forEach(function(b){b.classList.remove('active');});
+  document.getElementById('kf-done-panel').style.display='none';
+  document.getElementById('kf-active').style.display='block';
+  if(!kfQueue.length) document.getElementById('kf-subtitle').textContent='Tidak ada kanji jenis ini di '+currentJLPT;
+  showKanjiCard();
+}
+
+// Render kartu jenis kata (baca kanji) di kanjimenu.
+function renderKanjiPosCards(){
+  var sec=document.getElementById('km-pos-section');
+  var grid=document.getElementById('km-pos-grid');
+  if(!sec||!grid) return;
+  if(currentJLPT==='SSW' || (typeof posLevelWords!=='function')){ sec.style.display='none'; return; }
+  var defs=[
+    ['meishi','名','名詞','Kata Benda','var(--indigo)'],
+    ['doushi','動','動詞','Kata Kerja','#c0532e'],
+    ['keiyoushi','形','形容詞','Kata Sifat','#0a7d6b'],
+    ['fukushi','副','副詞','Keterangan','#d98c00'],
+    ['setsuzoku','接','接続詞','Kata Sambung','#2e7dc0'],
+    ['pola','表','表現','Pola','#7a5cc4']
+  ];
+  var html='';
+  defs.forEach(function(d){
+    var words=kanjiPosWords(d[0]);
+    var n=words.length; if(!n) return;
+    var dn=words.filter(_kfReadDonePos).length;
+    var pct=n>0?Math.round(dn/n*100):0;
+    html+='<div onclick="startKanjiFlashPos(\''+d[0]+'\')" '
+      +'style="background:white;border:1px solid var(--border);border-top:3px solid '+d[4]+';border-radius:12px;padding:14px;cursor:pointer">'
+      +'<div style="display:flex;align-items:center;gap:8px;margin-bottom:4px">'
+      +'<span style="display:inline-flex;align-items:center;justify-content:center;width:26px;height:26px;border-radius:7px;background:'+d[4]+';color:#fff;font-size:14px;font-weight:800">'+d[1]+'</span>'
+      +'<span style="font-size:15px;font-weight:800;color:var(--ink)">'+d[2]+'</span>'
+      +'<span style="margin-left:auto;font-family:\'DM Mono\',monospace;font-size:12px;font-weight:700;color:'+d[4]+'">'+pct+'%</span></div>'
+      +'<div style="font-size:11px;color:var(--mist);margin-bottom:8px">'+d[3]+'</div>'
+      +'<div style="background:rgba(26,26,46,.08);border-radius:3px;height:5px;overflow:hidden"><div style="height:100%;width:'+pct+'%;background:'+d[4]+'"></div></div>'
+      +'<div style="font-size:11px;color:var(--mist);margin-top:6px">'+dn+' / '+n+' hafal</div>'
+      +'</div>';
+  });
+  grid.innerHTML=html;
+  sec.style.display=html?'':'none';
 }
 
 function startKanjiFlash(cat) {
