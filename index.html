@@ -1078,6 +1078,7 @@ header:has(.user-menu.open) { z-index:1000; }
   <button onclick="gotoScreen('kanjimenu')">漢字 Kanji</button>
   <button onclick="gotoScreen('bunpomenu')">文法 Bunpo</button>
   <button onclick="gotoScreen('katsuyomenu')">活用 Konjugasi</button>
+  <button onclick="gotoScreen('dialectmenu')">方言 Dialek</button>
   <button onclick="gotoScreen('exam')">📝 Ujian</button>
   <button onclick="gotoScreen('review')">📊 Progress</button>
   <button onclick="gotoScreen('leaderboard')">🏆 Ranking</button>
@@ -1403,6 +1404,17 @@ header:has(.user-menu.open) { z-index:1000; }
   </div>
   <div id="kt-card" style="background:white;border:1px solid var(--border);border-radius:16px;padding:22px;box-shadow:var(--shadow)"></div>
   <div id="kt-actions" style="margin-top:16px"></div>
+</div>
+
+<!-- ====== DIALEK (方言) ====== -->
+<div id="screen-dialectmenu" class="screen">
+  <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px">
+    <span style="font-size:22px">🗾</span>
+    <div class="section-title" style="margin:0">方言 Dialek — Ragam Bahasa Daerah</div>
+  </div>
+  <div style="font-size:13px;color:var(--mist);margin-bottom:14px">Jelajahi ragam bahasa daerah Jepang dan bandingkan dengan bahasa standar.</div>
+  <div id="dia-tabs" style="display:flex;gap:8px;overflow-x:auto;padding-bottom:6px;margin-bottom:14px"></div>
+  <div id="dia-body"></div>
 </div>
 
 <!-- ====== LEADERBOARD ====== -->
@@ -5935,6 +5947,7 @@ function gotoScreen(name) {
   if (name === 'review') { renderReview('all'); } else if (name === '___DUMMY___') renderReview('all');
   if (name === 'bunpomenu') updateBunpoMenu();
   if (name === 'katsuyomenu') updateKatsuyoMenu();
+  if (name === 'dialectmenu') updateDialectMenu();
   if (name === 'exam') { showExamSection('exam-menu'); updateExamLevelBadge(); setExamMode('ai'); bankIndex=null; updateExamHistory(); }
 }
 
@@ -6199,6 +6212,7 @@ function renderOverviewMenu(){
     {scr:'kanjimenu', emo:'漢字', t:'Baca Kanji', d:'Latihan baca kanji', c:'var(--gold)'},
     {scr:'bunpomenu', emo:'文法', t:'Bunpo', d:'Belajar tata bahasa', c:'#7a5cc4', hide:isSSW},
     {scr:'katsuyomenu', emo:'活用', t:'Konjugasi', d:'Bentuk kata kerja', c:'#0a7d6b'},
+    {scr:'dialectmenu', emo:'方言', t:'Dialek', d:'Ragam bahasa daerah', c:'#d98c00'},
     {scr:'exam',      emo:'📝', t:'Ujian', d:'Simulasi soal JLPT', c:'var(--red)'},
     {scr:'review',    emo:'📊', t:'Progress Hafalan', d:'Kotoba · Kanji · Bunpou · Ujian', c:'var(--jade)'},
     {scr:'leaderboard',emo:'🏆', t:'Ranking', d:'Peringkat poin', c:'#d08700'},
@@ -7330,6 +7344,7 @@ function switchJLPT(level){
     else if(id==='katsuyomenu') updateKatsuyoMenu();
     else if(id==='katsuyoquiz') { gotoScreen('katsuyomenu'); }
     else if(id==='katsuyotype') { gotoScreen('katsuyomenu'); }
+    else if(id==='dialectmenu') updateDialectMenu();
     else if(id==='exam')       { showExamSection('exam-menu'); updateExamLevelBadge(); setExamMode('ai'); bankIndex=null; updateExamHistory(); }
     else if(id==='review')     renderReview('all');
     else if(id==='leaderboard') loadLeaderboard(level);
@@ -7352,7 +7367,7 @@ function init() {
   setInterval(updateCountdown, 60000);
 }
 // ===== DATA 動詞活用 (Konjugasi) — 18 verba inti terkurasi, 100% akurat =====
-var KATSUYO_VERBS = [{"jp": "食べる", "rom": "たべる", "id": "makan", "g": "ichidan", "f": {"jisho": "食べる", "masu": "食べます", "nai": "食べない", "masen": "食べません", "ta": "食べた", "mashita": "食べました", "nakatta": "食べなかった", "te": "食べて", "kanou": "食べられる", "ukemi": "食べられる", "shieki": "食べさせる", "ikou": "食べよう", "meirei": "食べろ", "ba": "食べれば", "tara": "食べたら"}}, {"jp": "見る", "rom": "みる", "id": "melihat", "g": "ichidan", "f": {"jisho": "見る", "masu": "見ます", "nai": "見ない", "masen": "見ません", "ta": "見た", "mashita": "見ました", "nakatta": "見なかった", "te": "見て", "kanou": "見られる", "ukemi": "見られる", "shieki": "見させる", "ikou": "見よう", "meirei": "見ろ", "ba": "見れば", "tara": "見たら"}}, {"jp": "起きる", "rom": "おきる", "id": "bangun", "g": "ichidan", "f": {"jisho": "起きる", "masu": "起きます", "nai": "起きない", "masen": "起きません", "ta": "起きた", "mashita": "起きました", "nakatta": "起きなかった", "te": "起きて", "kanou": "起きられる", "ukemi": "起きられる", "shieki": "起きさせる", "ikou": "起きよう", "meirei": "起きろ", "ba": "起きれば", "tara": "起きたら"}}, {"jp": "教える", "rom": "おしえる", "id": "mengajar", "g": "ichidan", "f": {"jisho": "教える", "masu": "教えます", "nai": "教えない", "masen": "教えません", "ta": "教えた", "mashita": "教えました", "nakatta": "教えなかった", "te": "教えて", "kanou": "教えられる", "ukemi": "教えられる", "shieki": "教えさせる", "ikou": "教えよう", "meirei": "教えろ", "ba": "教えれば", "tara": "教えたら"}}, {"jp": "飲む", "rom": "のむ", "id": "minum", "g": "godan", "f": {"jisho": "飲む", "masu": "飲みます", "nai": "飲まない", "masen": "飲みません", "ta": "飲んだ", "mashita": "飲みました", "nakatta": "飲まなかった", "te": "飲んで", "kanou": "飲める", "ukemi": "飲まれる", "shieki": "飲ませる", "ikou": "飲もう", "meirei": "飲め", "ba": "飲めば", "tara": "飲んだら"}}, {"jp": "書く", "rom": "かく", "id": "menulis", "g": "godan", "f": {"jisho": "書く", "masu": "書きます", "nai": "書かない", "masen": "書きません", "ta": "書いた", "mashita": "書きました", "nakatta": "書かなかった", "te": "書いて", "kanou": "書ける", "ukemi": "書かれる", "shieki": "書かせる", "ikou": "書こう", "meirei": "書け", "ba": "書けば", "tara": "書いたら"}}, {"jp": "泳ぐ", "rom": "およぐ", "id": "berenang", "g": "godan", "f": {"jisho": "泳ぐ", "masu": "泳ぎます", "nai": "泳がない", "masen": "泳ぎません", "ta": "泳いだ", "mashita": "泳ぎました", "nakatta": "泳がなかった", "te": "泳いで", "kanou": "泳げる", "ukemi": "泳がれる", "shieki": "泳がせる", "ikou": "泳ごう", "meirei": "泳げ", "ba": "泳げば", "tara": "泳いだら"}}, {"jp": "話す", "rom": "はなす", "id": "berbicara", "g": "godan", "f": {"jisho": "話す", "masu": "話します", "nai": "話さない", "masen": "話しません", "ta": "話した", "mashita": "話しました", "nakatta": "話さなかった", "te": "話して", "kanou": "話せる", "ukemi": "話される", "shieki": "話させる", "ikou": "話そう", "meirei": "話せ", "ba": "話せば", "tara": "話したら"}}, {"jp": "待つ", "rom": "まつ", "id": "menunggu", "g": "godan", "f": {"jisho": "待つ", "masu": "待ちます", "nai": "待たない", "masen": "待ちません", "ta": "待った", "mashita": "待ちました", "nakatta": "待たなかった", "te": "待って", "kanou": "待てる", "ukemi": "待たれる", "shieki": "待たせる", "ikou": "待とう", "meirei": "待て", "ba": "待てば", "tara": "待ったら"}}, {"jp": "買う", "rom": "かう", "id": "membeli", "g": "godan", "f": {"jisho": "買う", "masu": "買います", "nai": "買わない", "masen": "買いません", "ta": "買った", "mashita": "買いました", "nakatta": "買わなかった", "te": "買って", "kanou": "買える", "ukemi": "買われる", "shieki": "買わせる", "ikou": "買おう", "meirei": "買え", "ba": "買えば", "tara": "買ったら"}}, {"jp": "帰る", "rom": "かえる", "id": "pulang", "g": "godan", "f": {"jisho": "帰る", "masu": "帰ります", "nai": "帰らない", "masen": "帰りません", "ta": "帰った", "mashita": "帰りました", "nakatta": "帰らなかった", "te": "帰って", "kanou": "帰れる", "ukemi": "帰られる", "shieki": "帰らせる", "ikou": "帰ろう", "meirei": "帰れ", "ba": "帰れば", "tara": "帰ったら"}}, {"jp": "作る", "rom": "つくる", "id": "membuat", "g": "godan", "f": {"jisho": "作る", "masu": "作ります", "nai": "作らない", "masen": "作りません", "ta": "作った", "mashita": "作りました", "nakatta": "作らなかった", "te": "作って", "kanou": "作れる", "ukemi": "作られる", "shieki": "作らせる", "ikou": "作ろう", "meirei": "作れ", "ba": "作れば", "tara": "作ったら"}}, {"jp": "死ぬ", "rom": "しぬ", "id": "mati", "g": "godan", "f": {"jisho": "死ぬ", "masu": "死にます", "nai": "死なない", "masen": "死にません", "ta": "死んだ", "mashita": "死にました", "nakatta": "死ななかった", "te": "死んで", "kanou": "死ねる", "ukemi": "死なれる", "shieki": "死なせる", "ikou": "死のう", "meirei": "死ね", "ba": "死ねば", "tara": "死んだら"}}, {"jp": "遊ぶ", "rom": "あそぶ", "id": "bermain", "g": "godan", "f": {"jisho": "遊ぶ", "masu": "遊びます", "nai": "遊ばない", "masen": "遊びません", "ta": "遊んだ", "mashita": "遊びました", "nakatta": "遊ばなかった", "te": "遊んで", "kanou": "遊べる", "ukemi": "遊ばれる", "shieki": "遊ばせる", "ikou": "遊ぼう", "meirei": "遊べ", "ba": "遊べば", "tara": "遊んだら"}}, {"jp": "立つ", "rom": "たつ", "id": "berdiri", "g": "godan", "f": {"jisho": "立つ", "masu": "立ちます", "nai": "立たない", "masen": "立ちません", "ta": "立った", "mashita": "立ちました", "nakatta": "立たなかった", "te": "立って", "kanou": "立てる", "ukemi": "立たれる", "shieki": "立たせる", "ikou": "立とう", "meirei": "立て", "ba": "立てば", "tara": "立ったら"}}, {"jp": "急ぐ", "rom": "いそぐ", "id": "bergegas", "g": "godan", "f": {"jisho": "急ぐ", "masu": "急ぎます", "nai": "急がない", "masen": "急ぎません", "ta": "急いだ", "mashita": "急ぎました", "nakatta": "急がなかった", "te": "急いで", "kanou": "急げる", "ukemi": "急がれる", "shieki": "急がせる", "ikou": "急ごう", "meirei": "急げ", "ba": "急げば", "tara": "急いだら"}}, {"jp": "する", "rom": "する", "id": "melakukan", "g": "irregular", "f": {"jisho": "する", "masu": "します", "nai": "しない", "masen": "しません", "ta": "した", "mashita": "しました", "nakatta": "しなかった", "te": "して", "kanou": "できる", "ukemi": "される", "shieki": "させる", "ikou": "しよう", "meirei": "しろ", "ba": "すれば", "tara": "したら"}}, {"jp": "来る", "rom": "くる", "id": "datang", "g": "irregular", "f": {"jisho": "来る", "masu": "来ます", "nai": "来ない", "masen": "来ません", "ta": "来た", "mashita": "来ました", "nakatta": "来なかった", "te": "来て", "kanou": "来られる", "ukemi": "来られる", "shieki": "来させる", "ikou": "来よう", "meirei": "来い", "ba": "来れば", "tara": "来たら"}}];
+var KATSUYO_VERBS = [{"jp": "食べる", "rom": "たべる", "id": "makan", "g": "ichidan", "f": {"jisho": "食べる", "masu": "食べます", "nai": "食べない", "masen": "食べません", "ta": "食べた", "mashita": "食べました", "nakatta": "食べなかった", "te": "食べて", "kanou": "食べられる", "ukemi": "食べられる", "shieki": "食べさせる", "ikou": "食べよう", "meirei": "食べろ", "ba": "食べれば", "tara": "食べたら"}}, {"jp": "見る", "rom": "みる", "id": "melihat", "g": "ichidan", "f": {"jisho": "見る", "masu": "見ます", "nai": "見ない", "masen": "見ません", "ta": "見た", "mashita": "見ました", "nakatta": "見なかった", "te": "見て", "kanou": "見られる", "ukemi": "見られる", "shieki": "見させる", "ikou": "見よう", "meirei": "見ろ", "ba": "見れば", "tara": "見たら"}}, {"jp": "起きる", "rom": "おきる", "id": "bangun", "g": "ichidan", "f": {"jisho": "起きる", "masu": "起きます", "nai": "起きない", "masen": "起きません", "ta": "起きた", "mashita": "起きました", "nakatta": "起きなかった", "te": "起きて", "kanou": "起きられる", "ukemi": "起きられる", "shieki": "起きさせる", "ikou": "起きよう", "meirei": "起きろ", "ba": "起きれば", "tara": "起きたら"}}, {"jp": "教える", "rom": "おしえる", "id": "mengajar", "g": "ichidan", "f": {"jisho": "教える", "masu": "教えます", "nai": "教えない", "masen": "教えません", "ta": "教えた", "mashita": "教えました", "nakatta": "教えなかった", "te": "教えて", "kanou": "教えられる", "ukemi": "教えられる", "shieki": "教えさせる", "ikou": "教えよう", "meirei": "教えろ", "ba": "教えれば", "tara": "教えたら"}}, {"jp": "飲む", "rom": "のむ", "id": "minum", "g": "godan", "f": {"jisho": "飲む", "masu": "飲みます", "nai": "飲まない", "masen": "飲みません", "ta": "飲んだ", "mashita": "飲みました", "nakatta": "飲まなかった", "te": "飲んで", "kanou": "飲める", "ukemi": "飲まれる", "shieki": "飲ませる", "ikou": "飲もう", "meirei": "飲め", "ba": "飲めば", "tara": "飲んだら"}}, {"jp": "書く", "rom": "かく", "id": "menulis", "g": "godan", "f": {"jisho": "書く", "masu": "書きます", "nai": "書かない", "masen": "書きません", "ta": "書いた", "mashita": "書きました", "nakatta": "書かなかった", "te": "書いて", "kanou": "書ける", "ukemi": "書かれる", "shieki": "書かせる", "ikou": "書こう", "meirei": "書け", "ba": "書けば", "tara": "書いたら"}}, {"jp": "泳ぐ", "rom": "およぐ", "id": "berenang", "g": "godan", "f": {"jisho": "泳ぐ", "masu": "泳ぎます", "nai": "泳がない", "masen": "泳ぎません", "ta": "泳いだ", "mashita": "泳ぎました", "nakatta": "泳がなかった", "te": "泳いで", "kanou": "泳げる", "ukemi": "泳がれる", "shieki": "泳がせる", "ikou": "泳ごう", "meirei": "泳げ", "ba": "泳げば", "tara": "泳いだら"}}, {"jp": "話す", "rom": "はなす", "id": "berbicara", "g": "godan", "f": {"jisho": "話す", "masu": "話します", "nai": "話さない", "masen": "話しません", "ta": "話した", "mashita": "話しました", "nakatta": "話さなかった", "te": "話して", "kanou": "話せる", "ukemi": "話される", "shieki": "話させる", "ikou": "話そう", "meirei": "話せ", "ba": "話せば", "tara": "話したら"}}, {"jp": "待つ", "rom": "まつ", "id": "menunggu", "g": "godan", "f": {"jisho": "待つ", "masu": "待ちます", "nai": "待たない", "masen": "待ちません", "ta": "待った", "mashita": "待ちました", "nakatta": "待たなかった", "te": "待って", "kanou": "待てる", "ukemi": "待たれる", "shieki": "待たせる", "ikou": "待とう", "meirei": "待て", "ba": "待てば", "tara": "待ったら"}}, {"jp": "買う", "rom": "かう", "id": "membeli", "g": "godan", "f": {"jisho": "買う", "masu": "買います", "nai": "買わない", "masen": "買いません", "ta": "買った", "mashita": "買いました", "nakatta": "買わなかった", "te": "買って", "kanou": "買える", "ukemi": "買われる", "shieki": "買わせる", "ikou": "買おう", "meirei": "買え", "ba": "買えば", "tara": "買ったら"}}, {"jp": "帰る", "rom": "かえる", "id": "pulang", "g": "godan", "f": {"jisho": "帰る", "masu": "帰ります", "nai": "帰らない", "masen": "帰りません", "ta": "帰った", "mashita": "帰りました", "nakatta": "帰らなかった", "te": "帰って", "kanou": "帰れる", "ukemi": "帰られる", "shieki": "帰らせる", "ikou": "帰ろう", "meirei": "帰れ", "ba": "帰れば", "tara": "帰ったら"}}, {"jp": "作る", "rom": "つくる", "id": "membuat", "g": "godan", "f": {"jisho": "作る", "masu": "作ります", "nai": "作らない", "masen": "作りません", "ta": "作った", "mashita": "作りました", "nakatta": "作らなかった", "te": "作って", "kanou": "作れる", "ukemi": "作られる", "shieki": "作らせる", "ikou": "作ろう", "meirei": "作れ", "ba": "作れば", "tara": "作ったら"}}, {"jp": "死ぬ", "rom": "しぬ", "id": "mati", "g": "godan", "f": {"jisho": "死ぬ", "masu": "死にます", "nai": "死なない", "masen": "死にません", "ta": "死んだ", "mashita": "死にました", "nakatta": "死ななかった", "te": "死んで", "kanou": "死ねる", "ukemi": "死なれる", "shieki": "死なせる", "ikou": "死のう", "meirei": "死ね", "ba": "死ねば", "tara": "死んだら"}}, {"jp": "遊ぶ", "rom": "あそぶ", "id": "bermain", "g": "godan", "f": {"jisho": "遊ぶ", "masu": "遊びます", "nai": "遊ばない", "masen": "遊びません", "ta": "遊んだ", "mashita": "遊びました", "nakatta": "遊ばなかった", "te": "遊んで", "kanou": "遊べる", "ukemi": "遊ばれる", "shieki": "遊ばせる", "ikou": "遊ぼう", "meirei": "遊べ", "ba": "遊べば", "tara": "遊んだら"}}, {"jp": "立つ", "rom": "たつ", "id": "berdiri", "g": "godan", "f": {"jisho": "立つ", "masu": "立ちます", "nai": "立たない", "masen": "立ちません", "ta": "立った", "mashita": "立ちました", "nakatta": "立たなかった", "te": "立って", "kanou": "立てる", "ukemi": "立たれる", "shieki": "立たせる", "ikou": "立とう", "meirei": "立て", "ba": "立てば", "tara": "立ったら"}}, {"jp": "急ぐ", "rom": "いそぐ", "id": "bergegas", "g": "godan", "f": {"jisho": "急ぐ", "masu": "急ぎます", "nai": "急がない", "masen": "急ぎません", "ta": "急いだ", "mashita": "急ぎました", "nakatta": "急がなかった", "te": "急いで", "kanou": "急げる", "ukemi": "急がれる", "shieki": "急がせる", "ikou": "急ごう", "meirei": "急げ", "ba": "急げば", "tara": "急いだら"}}, {"jp": "する", "rom": "する", "id": "melakukan", "g": "irregular", "f": {"jisho": "する", "masu": "します", "nai": "しない", "masen": "しません", "ta": "した", "mashita": "しました", "nakatta": "しなかった", "te": "して", "kanou": "できる", "ukemi": "される", "shieki": "させる", "ikou": "しよう", "meirei": "しろ", "ba": "すれば", "tara": "したら"}}, {"jp": "来る", "rom": "くる", "id": "datang", "g": "irregular", "f": {"jisho": "来る", "masu": "来ます", "nai": "来ない", "masen": "来ません", "ta": "来た", "mashita": "来ました", "nakatta": "来なかった", "te": "来て", "kanou": "来られる", "ukemi": "来られる", "shieki": "来させる", "ikou": "来よう", "meirei": "来い", "ba": "来れば", "tara": "来たら"}}, {"jp": "行く", "rom": "いく", "id": "pergi", "g": "godan", "f": {"jisho": "行く", "masu": "行きます", "nai": "行かない", "masen": "行きません", "ta": "行った", "mashita": "行きました", "nakatta": "行かなかった", "te": "行って", "kanou": "行ける", "ukemi": "行かれる", "shieki": "行かせる", "ikou": "行こう", "meirei": "行け", "ba": "行けば", "tara": "行ったら"}}, {"jp": "読む", "rom": "よむ", "id": "membaca", "g": "godan", "f": {"jisho": "読む", "masu": "読みます", "nai": "読まない", "masen": "読みません", "ta": "読んだ", "mashita": "読みました", "nakatta": "読まなかった", "te": "読んで", "kanou": "読める", "ukemi": "読まれる", "shieki": "読ませる", "ikou": "読もう", "meirei": "読め", "ba": "読めば", "tara": "読んだら"}}, {"jp": "聞く", "rom": "きく", "id": "mendengar", "g": "godan", "f": {"jisho": "聞く", "masu": "聞きます", "nai": "聞かない", "masen": "聞きません", "ta": "聞いた", "mashita": "聞きました", "nakatta": "聞かなかった", "te": "聞いて", "kanou": "聞ける", "ukemi": "聞かれる", "shieki": "聞かせる", "ikou": "聞こう", "meirei": "聞け", "ba": "聞けば", "tara": "聞いたら"}}, {"jp": "会う", "rom": "あう", "id": "bertemu", "g": "godan", "f": {"jisho": "会う", "masu": "会います", "nai": "会わない", "masen": "会いません", "ta": "会った", "mashita": "会いました", "nakatta": "会わなかった", "te": "会って", "kanou": "会える", "ukemi": "会われる", "shieki": "会わせる", "ikou": "会おう", "meirei": "会え", "ba": "会えば", "tara": "会ったら"}}, {"jp": "持つ", "rom": "もつ", "id": "memegang", "g": "godan", "f": {"jisho": "持つ", "masu": "持ちます", "nai": "持たない", "masen": "持ちません", "ta": "持った", "mashita": "持ちました", "nakatta": "持たなかった", "te": "持って", "kanou": "持てる", "ukemi": "持たれる", "shieki": "持たせる", "ikou": "持とう", "meirei": "持て", "ba": "持てば", "tara": "持ったら"}}, {"jp": "働く", "rom": "はたらく", "id": "bekerja", "g": "godan", "f": {"jisho": "働く", "masu": "働きます", "nai": "働かない", "masen": "働きません", "ta": "働いた", "mashita": "働きました", "nakatta": "働かなかった", "te": "働いて", "kanou": "働ける", "ukemi": "働かれる", "shieki": "働かせる", "ikou": "働こう", "meirei": "働け", "ba": "働けば", "tara": "働いたら"}}, {"jp": "休む", "rom": "やすむ", "id": "beristirahat", "g": "godan", "f": {"jisho": "休む", "masu": "休みます", "nai": "休まない", "masen": "休みません", "ta": "休んだ", "mashita": "休みました", "nakatta": "休まなかった", "te": "休んで", "kanou": "休める", "ukemi": "休まれる", "shieki": "休ませる", "ikou": "休もう", "meirei": "休め", "ba": "休めば", "tara": "休んだら"}}, {"jp": "歌う", "rom": "うたう", "id": "bernyanyi", "g": "godan", "f": {"jisho": "歌う", "masu": "歌います", "nai": "歌わない", "masen": "歌いません", "ta": "歌った", "mashita": "歌いました", "nakatta": "歌わなかった", "te": "歌って", "kanou": "歌える", "ukemi": "歌われる", "shieki": "歌わせる", "ikou": "歌おう", "meirei": "歌え", "ba": "歌えば", "tara": "歌ったら"}}, {"jp": "寝る", "rom": "ねる", "id": "tidur", "g": "ichidan", "f": {"jisho": "寝る", "masu": "寝ます", "nai": "寝ない", "masen": "寝ません", "ta": "寝た", "mashita": "寝ました", "nakatta": "寝なかった", "te": "寝て", "kanou": "寝られる", "ukemi": "寝られる", "shieki": "寝させる", "ikou": "寝よう", "meirei": "寝ろ", "ba": "寝れば", "tara": "寝たら"}}, {"jp": "出る", "rom": "でる", "id": "keluar", "g": "ichidan", "f": {"jisho": "出る", "masu": "出ます", "nai": "出ない", "masen": "出ません", "ta": "出た", "mashita": "出ました", "nakatta": "出なかった", "te": "出て", "kanou": "出られる", "ukemi": "出られる", "shieki": "出させる", "ikou": "出よう", "meirei": "出ろ", "ba": "出れば", "tara": "出たら"}}, {"jp": "開ける", "rom": "あける", "id": "membuka", "g": "ichidan", "f": {"jisho": "開ける", "masu": "開けます", "nai": "開けない", "masen": "開けません", "ta": "開けた", "mashita": "開けました", "nakatta": "開けなかった", "te": "開けて", "kanou": "開けられる", "ukemi": "開けられる", "shieki": "開けさせる", "ikou": "開けよう", "meirei": "開けろ", "ba": "開ければ", "tara": "開けたら"}}, {"jp": "見せる", "rom": "みせる", "id": "memperlihatkan", "g": "ichidan", "f": {"jisho": "見せる", "masu": "見せます", "nai": "見せない", "masen": "見せません", "ta": "見せた", "mashita": "見せました", "nakatta": "見せなかった", "te": "見せて", "kanou": "見せられる", "ukemi": "見せられる", "shieki": "見せさせる", "ikou": "見せよう", "meirei": "見せろ", "ba": "見せれば", "tara": "見せたら"}}, {"jp": "勉強する", "rom": "べんきょうする", "id": "belajar", "g": "irregular", "f": {"jisho": "勉強する", "masu": "勉強します", "nai": "勉強しない", "masen": "勉強しません", "ta": "勉強した", "mashita": "勉強しました", "nakatta": "勉強しなかった", "te": "勉強して", "kanou": "勉強できる", "ukemi": "勉強される", "shieki": "勉強させる", "ikou": "勉強しよう", "meirei": "勉強しろ", "ba": "勉強すれば", "tara": "勉強したら"}}, {"jp": "運動する", "rom": "うんどうする", "id": "berolahraga", "g": "irregular", "f": {"jisho": "運動する", "masu": "運動します", "nai": "運動しない", "masen": "運動しません", "ta": "運動した", "mashita": "運動しました", "nakatta": "運動しなかった", "te": "運動して", "kanou": "運動できる", "ukemi": "運動される", "shieki": "運動させる", "ikou": "運動しよう", "meirei": "運動しろ", "ba": "運動すれば", "tara": "運動したら"}}, {"jp": "使う", "rom": "つかう", "id": "memakai", "g": "godan", "f": {"jisho": "使う", "masu": "使います", "nai": "使わない", "masen": "使いません", "ta": "使った", "mashita": "使いました", "nakatta": "使わなかった", "te": "使って", "kanou": "使える", "ukemi": "使われる", "shieki": "使わせる", "ikou": "使おう", "meirei": "使え", "ba": "使えば", "tara": "使ったら"}}, {"jp": "取る", "rom": "とる", "id": "mengambil", "g": "godan", "f": {"jisho": "取る", "masu": "取ります", "nai": "取らない", "masen": "取りません", "ta": "取った", "mashita": "取りました", "nakatta": "取らなかった", "te": "取って", "kanou": "取れる", "ukemi": "取られる", "shieki": "取らせる", "ikou": "取ろう", "meirei": "取れ", "ba": "取れば", "tara": "取ったら"}}, {"jp": "入る", "rom": "はいる", "id": "masuk", "g": "godan", "f": {"jisho": "入る", "masu": "入ります", "nai": "入らない", "masen": "入りません", "ta": "入った", "mashita": "入りました", "nakatta": "入らなかった", "te": "入って", "kanou": "入れる", "ukemi": "入られる", "shieki": "入らせる", "ikou": "入ろう", "meirei": "入れ", "ba": "入れば", "tara": "入ったら"}}, {"jp": "送る", "rom": "おくる", "id": "mengirim", "g": "godan", "f": {"jisho": "送る", "masu": "送ります", "nai": "送らない", "masen": "送りません", "ta": "送った", "mashita": "送りました", "nakatta": "送らなかった", "te": "送って", "kanou": "送れる", "ukemi": "送られる", "shieki": "送らせる", "ikou": "送ろう", "meirei": "送れ", "ba": "送れば", "tara": "送ったら"}}, {"jp": "走る", "rom": "はしる", "id": "berlari", "g": "godan", "f": {"jisho": "走る", "masu": "走ります", "nai": "走らない", "masen": "走りません", "ta": "走った", "mashita": "走りました", "nakatta": "走らなかった", "te": "走って", "kanou": "走れる", "ukemi": "走られる", "shieki": "走らせる", "ikou": "走ろう", "meirei": "走れ", "ba": "走れば", "tara": "走ったら"}}, {"jp": "知る", "rom": "しる", "id": "tahu", "g": "godan", "f": {"jisho": "知る", "masu": "知ります", "nai": "知らない", "masen": "知りません", "ta": "知った", "mashita": "知りました", "nakatta": "知らなかった", "te": "知って", "kanou": "知れる", "ukemi": "知られる", "shieki": "知らせる", "ikou": "知ろう", "meirei": "知れ", "ba": "知れば", "tara": "知ったら"}}, {"jp": "呼ぶ", "rom": "よぶ", "id": "memanggil", "g": "godan", "f": {"jisho": "呼ぶ", "masu": "呼びます", "nai": "呼ばない", "masen": "呼びません", "ta": "呼んだ", "mashita": "呼びました", "nakatta": "呼ばなかった", "te": "呼んで", "kanou": "呼べる", "ukemi": "呼ばれる", "shieki": "呼ばせる", "ikou": "呼ぼう", "meirei": "呼べ", "ba": "呼べば", "tara": "呼んだら"}}, {"jp": "運ぶ", "rom": "はこぶ", "id": "membawa", "g": "godan", "f": {"jisho": "運ぶ", "masu": "運びます", "nai": "運ばない", "masen": "運びません", "ta": "運んだ", "mashita": "運びました", "nakatta": "運ばなかった", "te": "運んで", "kanou": "運べる", "ukemi": "運ばれる", "shieki": "運ばせる", "ikou": "運ぼう", "meirei": "運べ", "ba": "運べば", "tara": "運んだら"}}, {"jp": "住む", "rom": "すむ", "id": "tinggal", "g": "godan", "f": {"jisho": "住む", "masu": "住みます", "nai": "住まない", "masen": "住みません", "ta": "住んだ", "mashita": "住みました", "nakatta": "住まなかった", "te": "住んで", "kanou": "住める", "ukemi": "住まれる", "shieki": "住ませる", "ikou": "住もう", "meirei": "住め", "ba": "住めば", "tara": "住んだら"}}, {"jp": "洗う", "rom": "あらう", "id": "mencuci", "g": "godan", "f": {"jisho": "洗う", "masu": "洗います", "nai": "洗わない", "masen": "洗いません", "ta": "洗った", "mashita": "洗いました", "nakatta": "洗わなかった", "te": "洗って", "kanou": "洗える", "ukemi": "洗われる", "shieki": "洗わせる", "ikou": "洗おう", "meirei": "洗え", "ba": "洗えば", "tara": "洗ったら"}}, {"jp": "歩く", "rom": "あるく", "id": "berjalan", "g": "godan", "f": {"jisho": "歩く", "masu": "歩きます", "nai": "歩かない", "masen": "歩きません", "ta": "歩いた", "mashita": "歩きました", "nakatta": "歩かなかった", "te": "歩いて", "kanou": "歩ける", "ukemi": "歩かれる", "shieki": "歩かせる", "ikou": "歩こう", "meirei": "歩け", "ba": "歩けば", "tara": "歩いたら"}}, {"jp": "探す", "rom": "さがす", "id": "mencari", "g": "godan", "f": {"jisho": "探す", "masu": "探します", "nai": "探さない", "masen": "探しません", "ta": "探した", "mashita": "探しました", "nakatta": "探さなかった", "te": "探して", "kanou": "探せる", "ukemi": "探される", "shieki": "探させる", "ikou": "探そう", "meirei": "探せ", "ba": "探せば", "tara": "探したら"}}, {"jp": "考える", "rom": "かんがえる", "id": "berpikir", "g": "ichidan", "f": {"jisho": "考える", "masu": "考えます", "nai": "考えない", "masen": "考えません", "ta": "考えた", "mashita": "考えました", "nakatta": "考えなかった", "te": "考えて", "kanou": "考えられる", "ukemi": "考えられる", "shieki": "考えさせる", "ikou": "考えよう", "meirei": "考えろ", "ba": "考えれば", "tara": "考えたら"}}, {"jp": "答える", "rom": "こたえる", "id": "menjawab", "g": "ichidan", "f": {"jisho": "答える", "masu": "答えます", "nai": "答えない", "masen": "答えません", "ta": "答えた", "mashita": "答えました", "nakatta": "答えなかった", "te": "答えて", "kanou": "答えられる", "ukemi": "答えられる", "shieki": "答えさせる", "ikou": "答えよう", "meirei": "答えろ", "ba": "答えれば", "tara": "答えたら"}}, {"jp": "始める", "rom": "はじめる", "id": "memulai", "g": "ichidan", "f": {"jisho": "始める", "masu": "始めます", "nai": "始めない", "masen": "始めません", "ta": "始めた", "mashita": "始めました", "nakatta": "始めなかった", "te": "始めて", "kanou": "始められる", "ukemi": "始められる", "shieki": "始めさせる", "ikou": "始めよう", "meirei": "始めろ", "ba": "始めれば", "tara": "始めたら"}}, {"jp": "続ける", "rom": "つづける", "id": "melanjutkan", "g": "ichidan", "f": {"jisho": "続ける", "masu": "続けます", "nai": "続けない", "masen": "続けません", "ta": "続けた", "mashita": "続けました", "nakatta": "続けなかった", "te": "続けて", "kanou": "続けられる", "ukemi": "続けられる", "shieki": "続けさせる", "ikou": "続けよう", "meirei": "続けろ", "ba": "続ければ", "tara": "続けたら"}}, {"jp": "調べる", "rom": "しらべる", "id": "memeriksa", "g": "ichidan", "f": {"jisho": "調べる", "masu": "調べます", "nai": "調べない", "masen": "調べません", "ta": "調べた", "mashita": "調べました", "nakatta": "調べなかった", "te": "調べて", "kanou": "調べられる", "ukemi": "調べられる", "shieki": "調べさせる", "ikou": "調べよう", "meirei": "調べろ", "ba": "調べれば", "tara": "調べたら"}}, {"jp": "覚える", "rom": "おぼえる", "id": "menghafal", "g": "ichidan", "f": {"jisho": "覚える", "masu": "覚えます", "nai": "覚えない", "masen": "覚えません", "ta": "覚えた", "mashita": "覚えました", "nakatta": "覚えなかった", "te": "覚えて", "kanou": "覚えられる", "ukemi": "覚えられる", "shieki": "覚えさせる", "ikou": "覚えよう", "meirei": "覚えろ", "ba": "覚えれば", "tara": "覚えたら"}}, {"jp": "電話する", "rom": "でんわする", "id": "menelepon", "g": "irregular", "f": {"jisho": "電話する", "masu": "電話します", "nai": "電話しない", "masen": "電話しません", "ta": "電話した", "mashita": "電話しました", "nakatta": "電話しなかった", "te": "電話して", "kanou": "電話できる", "ukemi": "電話される", "shieki": "電話させる", "ikou": "電話しよう", "meirei": "電話しろ", "ba": "電話すれば", "tara": "電話したら"}}, {"jp": "掃除する", "rom": "そうじする", "id": "membersihkan", "g": "irregular", "f": {"jisho": "掃除する", "masu": "掃除します", "nai": "掃除しない", "masen": "掃除しません", "ta": "掃除した", "mashita": "掃除しました", "nakatta": "掃除しなかった", "te": "掃除して", "kanou": "掃除できる", "ukemi": "掃除される", "shieki": "掃除させる", "ikou": "掃除しよう", "meirei": "掃除しろ", "ba": "掃除すれば", "tara": "掃除したら"}}, {"jp": "結婚する", "rom": "けっこんする", "id": "menikah", "g": "irregular", "f": {"jisho": "結婚する", "masu": "結婚します", "nai": "結婚しない", "masen": "結婚しません", "ta": "結婚した", "mashita": "結婚しました", "nakatta": "結婚しなかった", "te": "結婚して", "kanou": "結婚できる", "ukemi": "結婚される", "shieki": "結婚させる", "ikou": "結婚しよう", "meirei": "結婚しろ", "ba": "結婚すれば", "tara": "結婚したら"}}];
 var KATSUYO_FORMS = [{"k": "jisho", "jp": "辞書形", "id": "Bentuk Kamus", "fn": "Bentuk dasar/biasa. Dipakai di kamus & kalimat informal."}, {"k": "masu", "jp": "ます形", "id": "Bentuk Sopan", "fn": "Bentuk sopan untuk situasi formal. (sekarang/akan, positif)"}, {"k": "nai", "jp": "ない形", "id": "Negatif Biasa", "fn": "Bentuk negatif informal: 'tidak ~'."}, {"k": "masen", "jp": "ません", "id": "Negatif Sopan", "fn": "Bentuk negatif sopan: 'tidak ~' (formal)."}, {"k": "ta", "jp": "た形", "id": "Lampau Biasa", "fn": "Bentuk lampau informal: 'sudah/telah ~'."}, {"k": "mashita", "jp": "ました", "id": "Lampau Sopan", "fn": "Bentuk lampau sopan: 'sudah ~' (formal)."}, {"k": "nakatta", "jp": "なかった", "id": "Lampau Negatif", "fn": "Lampau negatif biasa: 'tidak ~' (dulu)."}, {"k": "te", "jp": "て形", "id": "Bentuk Sambung", "fn": "Penghubung kalimat; dasar ~ている (sedang), ~てください, dll."}, {"k": "kanou", "jp": "可能形", "id": "Bentuk Bisa", "fn": "Menyatakan kemampuan: 'bisa/dapat ~'."}, {"k": "ukemi", "jp": "受身形", "id": "Bentuk Pasif", "fn": "Subjek dikenai aksi: 'di~'."}, {"k": "shieki", "jp": "使役形", "id": "Bentuk Kausatif", "fn": "Menyuruh/membiarkan: 'membuat/menyuruh ~'."}, {"k": "ikou", "jp": "意向形", "id": "Bentuk Ajakan", "fn": "Niat/ajakan: 'ayo ~' / 'mari ~'."}, {"k": "meirei", "jp": "命令形", "id": "Bentuk Perintah", "fn": "Perintah tegas: '~lah!' (kasar/darurat)."}, {"k": "ba", "jp": "条件形ば", "id": "Syarat (ba)", "fn": "Pengandaian: 'kalau ~'."}, {"k": "tara", "jp": "たら形", "id": "Syarat (tara)", "fn": "Pengandaian/urutan: 'kalau/setelah ~'."}];
 var KATSUYO_GROUP_LABEL = {"ichidan": "一段 (ru-verb)", "godan": "五段 (u-verb)", "irregular": "不規則 (irregular)"};
 var KATSUYO_GROUP_NOTE = {"ichidan": "Buang る lalu tempel akhiran. Pola paling teratur.", "godan": "Ubah bunyi baris-u sesuai bentuk; perhatikan 音便 (onbin) di て/た形.", "irregular": "する & 来る tidak mengikuti pola; hafalkan langsung."};
@@ -7523,30 +7538,50 @@ function katsuyoListVerbs(){
   return list;
 }
 
-// Render daftar verba yang bisa diketuk (dipakai mode tabel & kartu).
+// Render daftar verba yang bisa diketuk, DIKELOMPOKKAN jadi Kelompok 1/2/3.
 function renderKatsuyoList(host){
   var color = JLPT_COLORS[currentJLPT] || 'var(--red)';
   var list = katsuyoListVerbs();
   var html = '<input id="km-search" type="text" value="'+(katsuyoState.search||'').replace(/"/g,'&quot;')+'" '
     + 'oninput="katsuyoState.search=this.value;katsuyoRenderActive()" placeholder="🔍 Cari kata kerja..." '
     + 'style="width:100%;padding:11px 14px;border-radius:10px;border:1px solid var(--border);background:white;color:var(--ink);font-size:14px;margin-bottom:6px;box-sizing:border-box">';
-  html += '<div style="font-size:12px;color:var(--mist);margin-bottom:10px">'+list.length+' kata kerja · '+currentJLPT+'</div>';
+  html += '<div style="font-size:12px;color:var(--mist);margin-bottom:12px">'+list.length+' kata kerja · '+currentJLPT+'</div>';
   if(!list.length){
     html += '<div style="text-align:center;color:var(--mist);padding:30px">Tidak ada kata kerja cocok.</div>';
-    host.innerHTML = html; var s=document.getElementById('km-search'); if(s){s.focus();s.setSelectionRange(s.value.length,s.value.length);} return;
+    host.innerHTML = html; var s0=document.getElementById('km-search'); if(s0){s0.focus();s0.setSelectionRange(s0.value.length,s0.value.length);} return;
   }
-  html += '<div style="display:flex;flex-direction:column;gap:8px">';
+  // Kelompokkan berdasarkan golongan, simpan index global agar onclick tetap benar.
+  var groups = { godan:[], ichidan:[], irregular:[] };
   list.forEach(function(v,i){
     var d = detectVerb(v.jp);
-    var grp = d ? (KATSUYO_GROUP_LABEL[d.group]||d.group) : '';
-    html += '<div onclick="katsuyoOpenVerb('+i+')" '
-      + 'style="display:flex;justify-content:space-between;align-items:center;gap:10px;background:white;border:1px solid var(--border);border-radius:12px;padding:12px 14px;cursor:pointer;box-shadow:var(--shadow)">'
-      + '<div style="min-width:0"><div style="font-size:17px;font-weight:800;color:var(--ink)">'+v.jp+'</div>'
-      + '<div style="font-size:11px;color:var(--mist)">'+(v.rom||'')+(v.id?(' · '+v.id):'')+'</div></div>'
-      + '<div style="font-size:10px;font-weight:700;color:'+color+';background:rgba(0,0,0,.04);padding:3px 9px;border-radius:20px;flex-shrink:0">'+grp+'</div>'
-      + '</div>';
+    var g = d ? d.group : 'godan';
+    (groups[g]||groups.godan).push({v:v, i:i});
   });
-  html += '</div>';
+  var order = [
+    ['godan',     'Kelompok 1', '五段 (u-verb)',     '#c0532e'],
+    ['ichidan',   'Kelompok 2', '一段 (ru-verb)',    '#2e7dc0'],
+    ['irregular', 'Kelompok 3', '不規則 (irregular)', '#7a5cc4']
+  ];
+  order.forEach(function(o){
+    var key=o[0], arr=groups[key];
+    if(!arr.length) return;
+    html += '<div style="display:flex;align-items:center;gap:8px;margin:16px 0 8px">'
+      + '<span style="font-size:13px;font-weight:800;color:'+o[3]+'">'+o[1]+'</span>'
+      + '<span style="font-size:11px;color:var(--mist)">'+o[2]+'</span>'
+      + '<span style="flex:1;height:1px;background:var(--border)"></span>'
+      + '<span style="font-size:11px;color:var(--mist)">'+arr.length+'</span></div>';
+    html += '<div style="display:flex;flex-direction:column;gap:6px">';
+    arr.forEach(function(it){
+      var v=it.v;
+      html += '<div onclick="katsuyoOpenVerb('+it.i+')" '
+        + 'style="display:flex;align-items:center;gap:12px;background:white;border:1px solid var(--border);border-radius:10px;padding:10px 14px;cursor:pointer">'
+        + '<span style="font-size:17px;font-weight:800;color:var(--ink);flex-shrink:0">'+v.jp+'</span>'
+        + '<span style="font-size:12px;color:var(--mist);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+(v.id||v.rom||'')+'</span>'
+        + '<span style="margin-left:auto;color:var(--mist);flex-shrink:0">›</span>'
+        + '</div>';
+    });
+    html += '</div>';
+  });
   host.innerHTML = html;
   var s=document.getElementById('km-search'); if(s){ s.focus(); s.setSelectionRange(s.value.length,s.value.length); }
 }
@@ -7979,6 +8014,116 @@ function recordKatsuyoResult(typeLabel, correct, total, pct, pts){
 }
 
 
+
+
+// ===== TAB 方言 (DIALEK) — kerangka, isi awal sedikit dulu =====
+// Tiap dialek punya daftar entri: {hyo: bentuk standar, dia: bentuk dialek, rom, id: arti}
+var DIALECT_DATA = {
+  kanto: {
+    name:'標準語', label:'Kanto / Standar', emo:'🗼', color:'#c0392b',
+    desc:'Bahasa Jepang standar (hyoujungo) yang dipakai di Tokyo & sekitarnya, jadi acuan utama JLPT.',
+    items:[
+      {hyo:'とても', dia:'とても', rom:'totemo', id:'sangat'},
+      {hyo:'本当に', dia:'本当に', rom:'hontou ni', id:'benar-benar'},
+      {hyo:'だめ', dia:'だめ', rom:'dame', id:'tidak boleh'},
+      {hyo:'ありがとう', dia:'ありがとう', rom:'arigatou', id:'terima kasih'},
+      {hyo:'そうだね', dia:'そうだね', rom:'sou da ne', id:'iya ya / benar juga'}
+    ]
+  },
+  kansai: {
+    name:'関西弁', label:'Kansai (Osaka/Kyoto)', emo:'🏯', color:'#0a7d6b',
+    desc:'Dialek wilayah Kansai (Osaka, Kyoto, Kobe). Terkenal ekspresif dan sering muncul di komedi (manzai).',
+    items:[
+      {hyo:'とても', dia:'めっちゃ', rom:'meccha', id:'sangat (banget)'},
+      {hyo:'だめ', dia:'あかん', rom:'akan', id:'tidak boleh / gawat'},
+      {hyo:'ありがとう', dia:'おおきに', rom:'ookini', id:'terima kasih'},
+      {hyo:'違う', dia:'ちゃう', rom:'chau', id:'bukan / salah'},
+      {hyo:'本当', dia:'ほんま', rom:'honma', id:'sungguh / beneran'},
+      {hyo:'いくら？', dia:'なんぼ？', rom:'nanbo?', id:'berapa (harga)?'},
+      {hyo:'良い', dia:'ええ', rom:'ee', id:'bagus / boleh'},
+      {hyo:'捨てる', dia:'ほかす', rom:'hokasu', id:'membuang'}
+    ]
+  },
+  hakata: {
+    name:'博多弁', label:'Hakata (Fukuoka)', emo:'🍜', color:'#7a5cc4',
+    desc:'Dialek Fukuoka/Kyushu. Ciri khas akhiran ～と, ～ばい, ～たい.',
+    items:[
+      {hyo:'～だよ', dia:'～ばい', rom:'~bai', id:'penekanan (lho/kok)'},
+      {hyo:'～なの？', dia:'～と？', rom:'~to?', id:'partikel tanya'},
+      {hyo:'とても', dia:'ばり', rom:'bari', id:'sangat (banget)'},
+      {hyo:'良い', dia:'よか', rom:'yoka', id:'bagus / boleh'},
+      {hyo:'本当', dia:'ほんなこつ', rom:'honnakotsu', id:'sungguh'}
+    ]
+  },
+  okinawa: {
+    name:'沖縄方言', label:'Okinawa (Uchinaaguchi)', emo:'🌺', color:'#d98c00',
+    desc:'Bahasa Okinawa (Uchinaaguchi). Secara linguistik cukup berbeda dari bahasa Jepang utama.',
+    items:[
+      {hyo:'こんにちは', dia:'はいさい', rom:'haisai', id:'halo (pria)'},
+      {hyo:'ありがとう', dia:'にふぇーでーびる', rom:'nifee deebiru', id:'terima kasih'},
+      {hyo:'おいしい', dia:'まーさん', rom:'maasan', id:'enak'},
+      {hyo:'うちなんちゅ', dia:'うちなーんちゅ', rom:'uchinaanchu', id:'orang Okinawa'},
+      {hyo:'頑張れ', dia:'ちばりよー', rom:'chibariyoo', id:'semangat!'}
+    ]
+  }
+};
+var DIALECT_ORDER = ['kanto','kansai','hakata','okinawa'];
+var dialectState = { cur:'kansai' };
+
+function updateDialectMenu(){
+  if(!DIALECT_DATA[dialectState.cur]) dialectState.cur='kansai';
+  renderDialectTabs();
+  renderDialectBody();
+}
+
+function setDialect(k){
+  dialectState.cur = k;
+  renderDialectTabs();
+  renderDialectBody();
+}
+
+function renderDialectTabs(){
+  var host = document.getElementById('dia-tabs');
+  if(!host) return;
+  var html = '';
+  DIALECT_ORDER.forEach(function(k){
+    var d = DIALECT_DATA[k]; if(!d) return;
+    var on = (k===dialectState.cur);
+    html += '<button onclick="setDialect(\''+k+'\')" '
+      + 'style="flex:0 0 auto;padding:9px 14px;border-radius:20px;border:1px solid '+(on?d.color:'var(--border)')+';'
+      + 'background:'+(on?d.color:'white')+';color:'+(on?'#fff':'var(--ink)')+';cursor:pointer;font-weight:700;font-size:13px;white-space:nowrap">'
+      + d.emo+' '+d.name+'</button>';
+  });
+  host.innerHTML = html;
+}
+
+function renderDialectBody(){
+  var host = document.getElementById('dia-body');
+  if(!host) return;
+  var d = DIALECT_DATA[dialectState.cur];
+  if(!d){ host.innerHTML=''; return; }
+  var html = '<div style="background:white;border:1px solid var(--border);border-radius:14px;padding:16px;box-shadow:var(--shadow);margin-bottom:14px">'
+    + '<div style="display:flex;align-items:center;gap:10px;margin-bottom:6px">'
+    + '<span style="font-size:22px">'+d.emo+'</span>'
+    + '<div><div style="font-size:18px;font-weight:800;color:'+d.color+'">'+d.name+'</div>'
+    + '<div style="font-size:11px;color:var(--mist)">'+d.label+'</div></div></div>'
+    + '<div style="font-size:13px;color:var(--ink);line-height:1.6">'+d.desc+'</div></div>';
+
+  html += '<div style="font-size:12px;color:var(--mist);margin-bottom:8px">'+d.items.length+' kata/frasa · dialek vs standar</div>';
+  html += '<div style="display:flex;flex-direction:column;gap:8px">';
+  d.items.forEach(function(it){
+    html += '<div style="background:white;border:1px solid var(--border);border-radius:12px;padding:12px 14px">'
+      + '<div style="display:flex;align-items:baseline;gap:10px;flex-wrap:wrap">'
+      + '<span style="font-size:18px;font-weight:800;color:'+d.color+'">'+it.dia+'</span>'
+      + '<span style="font-size:11px;color:var(--mist)">'+(it.rom||'')+'</span></div>'
+      + '<div style="font-size:13px;color:var(--ink);margin-top:3px">'+it.id+'</div>'
+      + (it.hyo && it.hyo!==it.dia ? '<div style="font-size:11px;color:var(--mist);margin-top:4px">標準語: '+it.hyo+'</div>' : '')
+      + '</div>';
+  });
+  html += '</div>';
+  html += '<div style="font-size:11px;color:var(--mist);text-align:center;margin-top:16px;line-height:1.6">Masih tahap awal — daftar dialek & kosakata akan ditambah bertahap.</div>';
+  host.innerHTML = html;
+}
 
 
 // Jangan panggil init() di sini — dipanggil oleh onAuthStateChanged setelah login
