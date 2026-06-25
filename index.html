@@ -7327,6 +7327,9 @@ function switchJLPT(level){
     else if(id==='flashmenu')  updateFlashMenu();
     else if(id==='kanjimenu')  updateKanjiMenu();
     else if(id==='bunpomenu')  updateBunpoMenu();
+    else if(id==='katsuyomenu') updateKatsuyoMenu();
+    else if(id==='katsuyoquiz') { gotoScreen('katsuyomenu'); }
+    else if(id==='katsuyotype') { gotoScreen('katsuyomenu'); }
     else if(id==='exam')       { showExamSection('exam-menu'); updateExamLevelBadge(); setExamMode('ai'); bankIndex=null; updateExamHistory(); }
     else if(id==='review')     renderReview('all');
     else if(id==='leaderboard') loadLeaderboard(level);
@@ -7679,15 +7682,30 @@ function katsuyoFormMeta(k){
 function katsuyoCollectVerbs(){
   var out = [];
   var seen = {};
-  // dari data vocab level aktif
-  var data = (typeof JLPT_DATA!=='undefined' && JLPT_DATA[currentJLPT]) ? JLPT_DATA[currentJLPT] : [];
+  // Ambil kata dari sumber yang benar sesuai level:
+  // N3 disimpan di ALL_WORDS (kanji/vocab/grammar); level lain di JLPT_DATA[level].
+  var data = [];
+  if(currentJLPT==='N3'){
+    if(typeof ALL_WORDS!=='undefined' && ALL_WORDS){
+      ['kanji','vocab','grammar'].forEach(function(c){
+        (ALL_WORDS[c]||[]).forEach(function(w){ data.push(w); });
+      });
+    }
+  } else {
+    data = (typeof JLPT_DATA!=='undefined' && JLPT_DATA[currentJLPT]) ? JLPT_DATA[currentJLPT] : [];
+  }
   data.forEach(function(w){
     if(!w || !w.jp) return;
     var jp = String(w.jp).trim();
     if(seen[jp]) return;
-    if(conjugateAll(jp)){ seen[jp]=1; out.push({jp:jp, rom:(w.rom||''), id:(w.id_||w.id||'')}); }
+    if(conjugateAll(jp)){
+      seen[jp]=1;
+      // arti: HANYA dari id_ (w.id adalah ID unik kata, bukan arti)
+      var arti = w.id_ || w.arti || w.mean || '';
+      out.push({jp:jp, rom:(w.rom||''), id:arti});
+    }
   });
-  // selalu sertakan 18 inti sebagai cadangan agar kuis tak pernah kosong
+  // selalu sertakan 18 inti sebagai cadangan agar daftar/kuis tak pernah kosong
   KATSUYO_VERBS.forEach(function(v){ if(!seen[v.jp]){ seen[v.jp]=1; out.push({jp:v.jp,rom:v.rom,id:v.id}); } });
   return out;
 }
