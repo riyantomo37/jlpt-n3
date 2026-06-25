@@ -6070,18 +6070,27 @@ function renderPosCards(){
     ['pola','表','表現','Pola/Ungkapan','#7a5cc4']
   ];
   var counts={};
-  words.forEach(function(w){var p=posOf(w);counts[p]=(counts[p]||0)+1;});
+  var dones={};
+  function isMastPos(w){
+    if(currentJLPT==='N3'){ var c=w.cat||'vocab'; return !!((mastered[c]||{})[w.id]); }
+    return !!((mastered[currentJLPT]||{})[w.id]);
+  }
+  words.forEach(function(w){var p=posOf(w);counts[p]=(counts[p]||0)+1; if(isMastPos(w)) dones[p]=(dones[p]||0)+1;});
   var html='';
   defs.forEach(function(d){
     var n=counts[d[0]]||0;
     if(!n) return;
+    var dn=dones[d[0]]||0;
+    var pct=n>0?Math.round(dn/n*100):0;
     html+='<div onclick="startStudyPos(\''+d[0]+'\')" '
       +'style="background:white;border:1px solid var(--border);border-top:3px solid '+d[4]+';border-radius:12px;padding:14px;cursor:pointer">'
       +'<div style="display:flex;align-items:center;gap:8px;margin-bottom:4px">'
       +'<span style="display:inline-flex;align-items:center;justify-content:center;width:26px;height:26px;border-radius:7px;background:'+d[4]+';color:#fff;font-size:14px;font-weight:800">'+d[1]+'</span>'
-      +'<span style="font-size:15px;font-weight:800;color:var(--ink)">'+d[2]+'</span></div>'
-      +'<div style="font-size:11px;color:var(--mist);margin-bottom:6px">'+d[3]+'</div>'
-      +'<div style="font-size:12px;font-weight:700;color:'+d[4]+'">'+n+' kata</div>'
+      +'<span style="font-size:15px;font-weight:800;color:var(--ink)">'+d[2]+'</span>'
+      +'<span style="margin-left:auto;font-family:\'DM Mono\',monospace;font-size:12px;font-weight:700;color:'+d[4]+'">'+pct+'%</span></div>'
+      +'<div style="font-size:11px;color:var(--mist);margin-bottom:8px">'+d[3]+'</div>'
+      +'<div style="background:rgba(26,26,46,.08);border-radius:3px;height:5px;overflow:hidden"><div style="height:100%;width:'+pct+'%;background:'+d[4]+'"></div></div>'
+      +'<div style="font-size:11px;color:var(--mist);margin-top:6px">'+dn+' / '+n+' hafal</div>'
       +'</div>';
   });
   grid.innerHTML=html;
@@ -6920,12 +6929,32 @@ function _countKanji(){
 }
 
 var _examDropOpen=false;
+var _posDropOpen=false;
+function togglePosProg(){
+  _posDropOpen=!_posDropOpen;
+  var body=document.getElementById('pos-prog-body');
+  var arr=document.getElementById('pos-prog-arrow');
+  if(body) body.style.display=_posDropOpen?'block':'none';
+  if(arr) arr.textContent=_posDropOpen?'▲':'▼';
+}
 function toggleExamHistory(){
   _examDropOpen=!_examDropOpen;
   var body=document.getElementById('exam-hist-body');
   var arr=document.getElementById('exam-hist-arrow');
   if(body) body.style.display=_examDropOpen?'block':'none';
   if(arr) arr.textContent=_examDropOpen?'▲':'▼';
+}
+
+// Hitung progress per jenis kata (品詞) untuk level aktif.
+function _posCounts(){
+  var words=(typeof posLevelWords==='function')?posLevelWords():[];
+  var c={},d={};
+  function isMast(w){
+    if(currentJLPT==='N3'){ var cat=w.cat||'vocab'; return !!((mastered[cat]||{})[w.id]); }
+    return !!((mastered[currentJLPT]||{})[w.id]);
+  }
+  words.forEach(function(w){ var p=posOf(w); c[p]=(c[p]||0)+1; if(isMast(w)) d[p]=(d[p]||0)+1; });
+  return {count:c, done:d};
 }
 
 function renderProgressDashboard(){
@@ -6974,8 +7003,44 @@ function renderProgressDashboard(){
     }).join('');
   }
 
+  // ── Progress per JENIS KATA (品詞) — collapsible, hanya non-SSW ──
+  var posBlock='';
+  if(!isSSW && typeof posLevelWords==='function' && posLevelWords().length){
+    var pc=_posCounts();
+    var posDefs=[
+      ['meishi','名','名詞 Kata Benda','var(--indigo)'],
+      ['doushi','動','動詞 Kata Kerja','#c0532e'],
+      ['keiyoushi','形','形容詞 Kata Sifat','#0a7d6b'],
+      ['fukushi','副','副詞 Keterangan','#d98c00'],
+      ['setsuzoku','接','接続詞 Kata Sambung','#2e7dc0'],
+      ['pola','表','表現 Pola/Ungkapan','#7a5cc4']
+    ];
+    var rows='';
+    posDefs.forEach(function(d){
+      var n=pc.count[d[0]]||0; if(!n) return;
+      var dn=pc.done[d[0]]||0; var pct=n>0?Math.round(dn/n*100):0;
+      rows+='<div onclick="gotoScreen(\'flashmenu\')" style="display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid var(--border);cursor:pointer">'
+        +'<span style="display:inline-flex;align-items:center;justify-content:center;width:24px;height:24px;border-radius:7px;background:'+d[3]+';color:#fff;font-size:13px;font-weight:800;flex-shrink:0">'+d[1]+'</span>'
+        +'<div style="flex:1;min-width:0">'
+        +'<div style="font-size:13px;font-weight:600;color:var(--ink)">'+d[2]+'</div>'
+        +'<div style="background:rgba(26,26,46,.08);border-radius:3px;height:4px;overflow:hidden;margin-top:4px"><div style="height:100%;width:'+pct+'%;background:'+d[3]+'"></div></div>'
+        +'</div>'
+        +'<div style="text-align:right;flex-shrink:0"><div style="font-family:\'DM Mono\',monospace;font-size:13px;font-weight:700;color:'+d[3]+'">'+pct+'%</div>'
+        +'<div style="font-size:10px;color:var(--mist)">'+dn+'/'+n+'</div></div>'
+        +'</div>';
+    });
+    posBlock='<div style="background:white;border:1px solid var(--border);border-radius:12px;box-shadow:var(--shadow);overflow:hidden;margin-bottom:14px">'
+      +'<div onclick="togglePosProg()" style="display:flex;justify-content:space-between;align-items:center;padding:13px 14px;cursor:pointer">'
+      +'<span style="font-size:13px;font-weight:700">📑 Progress per Jenis Kata</span>'
+      +'<span id="pos-prog-arrow" style="font-size:11px;color:var(--mist)">'+(_posDropOpen?'▲':'▼')+'</span>'
+      +'</div>'
+      +'<div id="pos-prog-body" style="display:'+(_posDropOpen?'block':'none')+';padding:0 14px 8px">'+rows+'</div>'
+      +'</div>';
+  }
+
   host.innerHTML =
     cards
+    + posBlock
     +'<div style="background:white;border:1px solid var(--border);border-radius:12px;box-shadow:var(--shadow);overflow:hidden">'
     +'<div onclick="toggleExamHistory()" style="display:flex;justify-content:space-between;align-items:center;padding:13px 14px;cursor:pointer">'
     +'<span style="font-size:13px;font-weight:700">🗂️ Riwayat Ujian</span>'
