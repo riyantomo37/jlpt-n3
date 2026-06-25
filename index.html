@@ -7486,7 +7486,7 @@ function conjugateAll(jp){
 
 
 // ===== TAB 動詞活用 (Konjugasi Kata Kerja) — Tahap 1: Tabel + Kartu =====
-var katsuyoState = { mode:'table', cardFormIdx:0, flipped:false, view:'list', sel:null, search:'' };
+var katsuyoState = { mode:'table', cardFormIdx:0, flipped:false, view:'list', sel:null, search:'', grp:'all' };
 
 function updateKatsuyoMenu(){
   var color = JLPT_COLORS[currentJLPT] || 'var(--red)';
@@ -7545,7 +7545,24 @@ function renderKatsuyoList(host){
   var html = '<input id="km-search" type="text" value="'+(katsuyoState.search||'').replace(/"/g,'&quot;')+'" '
     + 'oninput="katsuyoState.search=this.value;katsuyoRenderActive()" placeholder="🔍 Cari kata kerja..." '
     + 'style="width:100%;padding:11px 14px;border-radius:10px;border:1px solid var(--border);background:white;color:var(--ink);font-size:14px;margin-bottom:6px;box-sizing:border-box">';
-  html += '<div style="font-size:12px;color:var(--mist);margin-bottom:12px">'+list.length+' kata kerja · '+currentJLPT+'</div>';
+  html += '<div style="font-size:12px;color:var(--mist);margin-bottom:10px">'+list.length+' kata kerja · '+currentJLPT+'</div>';
+  // Tombol filter golongan
+  var gf = katsuyoState.grp || 'all';
+  var filters = [
+    ['all','Semua','var(--ink)'],
+    ['godan','K1 五段','#c0532e'],
+    ['ichidan','K2 一段','#2e7dc0'],
+    ['irregular','K3 不規則','#7a5cc4']
+  ];
+  html += '<div style="display:flex;gap:6px;overflow-x:auto;padding-bottom:4px;margin-bottom:12px">';
+  filters.forEach(function(f){
+    var on=(gf===f[0]);
+    html += '<button onclick="katsuyoSetGroup(\''+f[0]+'\')" '
+      + 'style="flex:0 0 auto;padding:7px 13px;border-radius:18px;border:1px solid '+(on?f[2]:'var(--border)')+';'
+      + 'background:'+(on?f[2]:'white')+';color:'+(on?'#fff':'var(--ink)')+';cursor:pointer;font-weight:700;font-size:12px;white-space:nowrap">'
+      + f[1]+'</button>';
+  });
+  html += '</div>';
   if(!list.length){
     html += '<div style="text-align:center;color:var(--mist);padding:30px">Tidak ada kata kerja cocok.</div>';
     host.innerHTML = html; var s0=document.getElementById('km-search'); if(s0){s0.focus();s0.setSelectionRange(s0.value.length,s0.value.length);} return;
@@ -7562,9 +7579,12 @@ function renderKatsuyoList(host){
     ['ichidan',   'Kelompok 2', '一段 (ru-verb)',    '#2e7dc0'],
     ['irregular', 'Kelompok 3', '不規則 (irregular)', '#7a5cc4']
   ];
+  var shown = 0;
   order.forEach(function(o){
     var key=o[0], arr=groups[key];
     if(!arr.length) return;
+    if(gf!=='all' && gf!==key) return; // filter aktif: lewati grup lain
+    shown += arr.length;
     html += '<div style="display:flex;align-items:center;gap:8px;margin:16px 0 8px">'
       + '<span style="font-size:13px;font-weight:800;color:'+o[3]+'">'+o[1]+'</span>'
       + '<span style="font-size:11px;color:var(--mist)">'+o[2]+'</span>'
@@ -7582,8 +7602,17 @@ function renderKatsuyoList(host){
     });
     html += '</div>';
   });
+  if(gf!=='all' && shown===0){
+    html += '<div style="text-align:center;color:var(--mist);padding:24px">Tidak ada kata kerja di kelompok ini untuk '+currentJLPT+'.</div>';
+  }
   host.innerHTML = html;
   var s=document.getElementById('km-search'); if(s){ s.focus(); s.setSelectionRange(s.value.length,s.value.length); }
+}
+
+// Ganti filter golongan lalu render ulang.
+function katsuyoSetGroup(g){
+  katsuyoState.grp = g;
+  katsuyoRenderActive();
 }
 
 // Render ulang panel mode aktif (dipakai oleh search & navigasi).
