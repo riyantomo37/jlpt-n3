@@ -8674,53 +8674,57 @@ var KAZU_TITLE = {"kazu": "数字 Angka Dasar", "hizuke": "日付 Tanggal", "you
 var KAZU_EMOJI = {"kazu": "🔢", "hizuke": "📅", "youbi": "🗓️", "tsuki": "🌙", "ji": "🕐", "fun": "⏱️", "nin": "🧑", "tsu": "🍎", "kai": "🔁", "josuushi": "📄"};
 
 // ===== TAB 数 (Angka & Penghitung) =====
-var kazuState = { cur:'kazu' };
+var kazuState = { open:{} };
 
 function updateKazuMenu(){
-  if(!KAZU_DATA[kazuState.cur]) kazuState.cur=KAZU_ORDER[0];
-  renderKazuTabs();
-  renderKazuBody();
+  renderKazuAccordion();
 }
-function setKazu(k){ kazuState.cur=k; renderKazuTabs(); renderKazuBody(); }
+function toggleKazu(k){
+  if(!kazuState.open) kazuState.open={};
+  kazuState.open[k]=!kazuState.open[k];
+  renderKazuAccordion();
+}
 
-function renderKazuTabs(){
-  var host=document.getElementById('kazu-tabs'); if(!host) return;
+function renderKazuAccordion(){
+  var host=document.getElementById('kazu-body'); if(!host) return;
+  var tabsHost=document.getElementById('kazu-tabs'); if(tabsHost) tabsHost.innerHTML='';
   var color=JLPT_COLORS[currentJLPT]||'var(--red)';
+  if(!kazuState.open) kazuState.open={};
   var html='';
   KAZU_ORDER.forEach(function(k){
-    var on=(k===kazuState.cur);
-    html+='<button onclick="setKazu(\''+k+'\')" '
-      +'style="flex:0 0 auto;padding:8px 13px;border-radius:18px;border:1px solid '+(on?color:'var(--border)')+';'
-      +'background:'+(on?color:'white')+';color:'+(on?'#fff':'var(--ink)')+';cursor:pointer;font-weight:700;font-size:12px;white-space:nowrap">'
-      +(KAZU_EMOJI[k]||'')+' '+(KAZU_TITLE[k]||k)+'</button>';
-  });
-  host.innerHTML=html;
-}
-
-function renderKazuBody(){
-  var host=document.getElementById('kazu-body'); if(!host) return;
-  var k=kazuState.cur;
-  var items=KAZU_DATA[k]||[];
-  var color=JLPT_COLORS[currentJLPT]||'var(--red)';
-  var mast=mastered['kazu_'+k]||{};
-  var done=items.filter(function(it,i){return mast[_kazuId(k,i)];}).length;
-  var pct=items.length?Math.round(done/items.length*100):0;
-  var html='<div style="display:flex;align-items:center;gap:10px;margin-bottom:12px">'
-    +'<span style="font-size:22px">'+(KAZU_EMOJI[k]||'')+'</span>'
-    +'<div style="flex:1"><div style="font-size:17px;font-weight:800;color:'+color+'">'+(KAZU_TITLE[k]||k)+'</div>'
-    +'<div style="font-size:11px;color:var(--mist)">'+done+' / '+items.length+' hafal · '+pct+'%</div></div>'
-    +'<button onclick="startKazuFlash(\''+k+'\')" style="padding:9px 16px;border-radius:10px;border:none;background:'+color+';color:#fff;cursor:pointer;font-weight:700;font-size:13px">▶ Hafalkan</button>'
-    +'</div>';
-  html+='<div style="background:rgba(26,26,46,.08);border-radius:3px;height:5px;overflow:hidden;margin-bottom:14px"><div style="height:100%;width:'+pct+'%;background:'+color+'"></div></div>';
-  html+='<div style="display:flex;flex-direction:column;gap:8px">';
-  items.forEach(function(it){
-    html+='<div style="display:flex;align-items:center;gap:12px;background:white;border:1px solid var(--border);border-radius:12px;padding:11px 14px">'
-      +'<span style="font-size:19px;font-weight:800;color:var(--ink);flex-shrink:0;min-width:64px">'+it.jp+'</span>'
-      +'<span style="font-size:13px;color:'+color+';flex:1">'+it.rom+'</span>'
-      +'<span style="font-size:12px;color:var(--mist);flex-shrink:0">'+it.id+'</span>'
+    var items=KAZU_DATA[k]||[];
+    var mast=mastered['kazu_'+k]||{};
+    var done=items.filter(function(it,i){return mast[_kazuId(k,i)];}).length;
+    var pct=items.length?Math.round(done/items.length*100):0;
+    var open=!!kazuState.open[k];
+    html+='<div style="background:white;border:1px solid var(--border);border-radius:12px;overflow:hidden;margin-bottom:10px;box-shadow:var(--shadow)">';
+    // Header (klik buka/tutup)
+    html+='<div onclick="toggleKazu(\''+k+'\')" style="display:flex;align-items:center;gap:11px;padding:13px 14px;cursor:pointer">'
+      +'<span style="font-size:20px;flex-shrink:0">'+(KAZU_EMOJI[k]||'')+'</span>'
+      +'<div style="flex:1;min-width:0">'
+      +'<div style="font-size:15px;font-weight:800;color:var(--ink)">'+(KAZU_TITLE[k]||k)+'</div>'
+      +'<div style="background:rgba(26,26,46,.08);border-radius:3px;height:4px;overflow:hidden;margin-top:5px"><div style="height:100%;width:'+pct+'%;background:'+color+'"></div></div>'
+      +'</div>'
+      +'<div style="text-align:right;flex-shrink:0"><div style="font-family:\'DM Mono\',monospace;font-size:12px;font-weight:700;color:'+color+'">'+pct+'%</div>'
+      +'<div style="font-size:10px;color:var(--mist)">'+done+'/'+items.length+'</div></div>'
+      +'<span style="font-size:12px;color:var(--mist);flex-shrink:0;width:14px;text-align:center">'+(open?'▲':'▼')+'</span>'
       +'</div>';
+    // Body (list, hanya kalau terbuka)
+    if(open){
+      html+='<div style="padding:0 14px 12px">';
+      html+='<button onclick="event.stopPropagation();startKazuFlash(\''+k+'\')" style="width:100%;padding:10px;border-radius:10px;border:none;background:'+color+';color:#fff;cursor:pointer;font-weight:700;font-size:13px;margin-bottom:10px">▶ Hafalkan kategori ini</button>';
+      html+='<div style="display:flex;flex-direction:column;gap:6px">';
+      items.forEach(function(it){
+        html+='<div style="display:flex;align-items:center;gap:12px;background:rgba(0,0,0,.02);border-radius:10px;padding:9px 12px">'
+          +'<span style="font-size:18px;font-weight:800;color:var(--ink);flex-shrink:0;min-width:60px">'+it.jp+'</span>'
+          +'<span style="font-size:13px;color:'+color+';flex:1;min-width:0">'+it.rom+'</span>'
+          +'<span style="font-size:12px;color:var(--mist);flex-shrink:0">'+it.id+'</span>'
+          +'</div>';
+      });
+      html+='</div></div>';
+    }
+    html+='</div>';
   });
-  html+='</div>';
   host.innerHTML=html;
 }
 
