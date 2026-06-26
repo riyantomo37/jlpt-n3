@@ -6101,12 +6101,27 @@ function renderPosCards(){
       +'<div style="font-size:11px;color:var(--mist);margin-top:6px">'+dn+' / '+n+' hafal</div>'
       +'</div>';
   });
+  // Kartu khusus: 文法 Pola (semua bunpou level ini sebagai flashcard)
+  var bun=BUNPO_DATA[currentJLPT]||[];
+  if(bun.length){
+    var bk=mastered['bunpo_'+currentJLPT]||{};
+    var bdone=bun.filter(function(b){return bk[b.id];}).length;
+    var bpct=bun.length>0?Math.round(bdone/bun.length*100):0;
+    var bc='#7a5cc4';
+    html+='<div onclick="startStudyBunpo()" '
+      +'style="background:white;border:1px solid var(--border);border-top:3px solid '+bc+';border-radius:12px;padding:14px;cursor:pointer">'
+      +'<div style="display:flex;align-items:center;gap:8px;margin-bottom:4px">'
+      +'<span style="display:inline-flex;align-items:center;justify-content:center;width:26px;height:26px;border-radius:7px;background:'+bc+';color:#fff;font-size:13px;font-weight:800">文</span>'
+      +'<span style="font-size:15px;font-weight:800;color:var(--ink)">文法</span>'
+      +'<span style="margin-left:auto;font-family:\'DM Mono\',monospace;font-size:12px;font-weight:700;color:'+bc+'">'+bpct+'%</span></div>'
+      +'<div style="font-size:11px;color:var(--mist);margin-bottom:8px">Pola Tata Bahasa</div>'
+      +'<div style="background:rgba(26,26,46,.08);border-radius:3px;height:5px;overflow:hidden"><div style="height:100%;width:'+bpct+'%;background:'+bc+'"></div></div>'
+      +'<div style="font-size:11px;color:var(--mist);margin-top:6px">'+bdone+' / '+bun.length+' hafal</div>'
+      +'</div>';
+  }
   grid.innerHTML=html;
   sec.style.display='';
 }
-
-// ============================================================
-// OVERVIEW
 // ============================================================
 function countMastered(cat) {
   return Object.values(mastered[cat] || {}).filter(Boolean).length;
@@ -6374,6 +6389,44 @@ function posLevelWords(){
 }
 
 // Mulai sesi belajar terfilter berdasarkan jenis kata (reuse mesin sesi yang ada).
+// ── Bunpou sebagai flashcard (hafal pola 〜 + arti) ──
+// Tidak mengubah tab 文法; hanya menyajikan pola sebagai kartu hafalan.
+function bunpoAsCards(){
+  var arr=BUNPO_DATA[currentJLPT]||[];
+  return arr.map(function(b){
+    var ex=(b.contoh&&b.contoh[0])?b.contoh[0]:null;
+    return {
+      id:b.id, jp:b.pattern, rom:(b.rumus||''),
+      id_:b.arti+(b.penjelasan?'\n\n'+b.penjelasan:'')+(ex?('\n\n例: '+ex.jp+'\n'+ex.id):''),
+      _isBunpo:true, _pattern:b.pattern
+    };
+  });
+}
+function bunpoMastKey(){ return 'bunpo_'+currentJLPT; }
+
+function startStudyBunpo(){
+  sessionCat='bunpo'; sessionReviewed=0; sessionMastered=0; revealed=false; sessionHistory=[];
+  var words=bunpoAsCards();
+  var key=bunpoMastKey();
+  var mast=mastered[key]||{};
+  var unmastered=words.filter(function(w){return !mast[w.id];});
+  var done=words.filter(function(w){return mast[w.id];});
+  shuffle(unmastered); shuffle(done);
+  sessionQueue=unmastered.concat(done).slice(0,SESSION_SIZE);
+  sessionIdx=0;
+  document.getElementById('flash-category-title').textContent=(currentJLPT!=='N3'?currentJLPT+' — ':'')+'文法 Pola Tata Bahasa';
+  document.getElementById('flash-subtitle').textContent=unmastered.length+' belum hafal · '+done.length+' sudah hafal';
+  document.querySelectorAll('.screen').forEach(function(s){s.classList.remove('active');});
+  document.getElementById('screen-flash').classList.add('active');
+  document.querySelectorAll('nav button').forEach(function(b){b.classList.remove('active');});
+  document.getElementById('session-done-panel').style.display='none';
+  document.getElementById('flash-active').style.display='block';
+  if(!sessionQueue.length){
+    document.getElementById('flash-subtitle').textContent='Belum ada pola bunpou di '+currentJLPT;
+  }
+  showCard();
+}
+
 function startStudyPos(pos){
   sessionCat='pos_'+pos; sessionReviewed=0; sessionMastered=0; revealed=false; sessionHistory=[];
   var all=posLevelWords();
@@ -6498,6 +6551,21 @@ function revealCard() {
 
 function markCard(isHafal) {
   var w = sessionQueue[sessionIdx];
+  // Sesi bunpou: progress disimpan terpisah di mastered['bunpo_'+level].
+  if (sessionCat==='bunpo' || w._isBunpo) {
+    var bk = 'bunpo_'+currentJLPT;
+    if (!mastered[bk]) mastered[bk] = {};
+    var wasB = !!mastered[bk][w.id];
+    if (!sessionHistory) sessionHistory = [];
+    sessionHistory.push({idx:sessionIdx, wordId:w.id, cat:bk, wasMastered:wasB, bunpo:true});
+    if (sessionHistory.length > 20) sessionHistory.shift();
+    if (isHafal) { mastered[bk][w.id] = true; if (!wasB) { sessionMastered++; todayCount++; } }
+    else delete mastered[bk][w.id];
+    var tdy = new Date().toDateString();
+    if (lastStudyDate !== tdy) { var y=new Date(Date.now()-86400000).toDateString(); streak=(lastStudyDate===y)?streak+1:1; lastStudyDate=tdy; }
+    save(); sessionReviewed++; sessionIdx++; updateUndoBtn(); showCard();
+    return;
+  }
   // N3: simpan ke mastered[cat] berdasar kategori ASLI kata (w.cat), bukan sessionCat,
   // karena sesi per-jenis-kata mencampur kata dari kanji/vocab/grammar.
   var wCat = w.cat || 'vocab';
@@ -6537,6 +6605,15 @@ function markCard(isHafal) {
 function undoCard() {
   if (!sessionHistory || !sessionHistory.length) return;
   var last = sessionHistory.pop();
+  if (last.bunpo) {
+    if (!mastered[last.cat]) mastered[last.cat] = {};
+    if (last.wasMastered) mastered[last.cat][last.wordId] = true;
+    else delete mastered[last.cat][last.wordId];
+    sessionIdx = last.idx;
+    if (sessionReviewed > 0) sessionReviewed--;
+    save(); updateUndoBtn(); showCard();
+    return;
+  }
   // Restore mastered state
   if (currentJLPT==='N3') {
     if (last.wasMastered) mastered[last.cat][last.wordId] = true;
@@ -6567,7 +6644,8 @@ function endSession() {
 }
 
 function continueStudy() {
-  if (typeof sessionCat==='string' && sessionCat.indexOf('pos_')===0) startStudyPos(sessionCat.slice(4));
+  if (sessionCat==='bunpo') startStudyBunpo();
+  else if (typeof sessionCat==='string' && sessionCat.indexOf('pos_')===0) startStudyPos(sessionCat.slice(4));
   else startStudy(sessionCat);
 }
 
@@ -6590,6 +6668,7 @@ let kfRevealed = false;
 // Progress tersendiri untuk kanji flashcard (per word id)
 // Disimpan di dalam mastered yang sama tapi key berbeda: 'kf_' + id
 function kfIsMastered(id, cat) {
+  if (kfCat==='bunpo') return !!kanjiReadMastered['kfbunpo_'+currentJLPT+'_'+id];
   if (currentJLPT === 'N3') {
     var c = cat || kfCat;
     // mode per-jenis-kata (kfCat='pos_...') tak boleh dipakai sebagai key; butuh cat asli.
@@ -6601,6 +6680,11 @@ function kfIsMastered(id, cat) {
   return !!(mastered[key] && mastered[key][id]);
 }
 function kfSetMastered(id, val, cat) {
+  if (kfCat==='bunpo') {
+    if (val) kanjiReadMastered['kfbunpo_'+currentJLPT+'_'+id]=true;
+    else delete kanjiReadMastered['kfbunpo_'+currentJLPT+'_'+id];
+    return;
+  }
   if (currentJLPT === 'N3') {
     var c = cat || kfCat;
     if (c.indexOf('pos_')===0) c = 'vocab';
@@ -6697,6 +6781,36 @@ function _kfReadDonePos(w){
   return !!(mastered['kf_'+currentJLPT]||{})[w.id];
 }
 
+// Bunpou ber-kanji sebagai kartu baca di tab kanji.
+function bunpoKanjiCards(){
+  var arr=BUNPO_DATA[currentJLPT]||[];
+  return arr.filter(function(b){return /[一-鿿]/.test(b.pattern||'');}).map(function(b){
+    var ex=(b.contoh&&b.contoh[0])?b.contoh[0]:null;
+    return { id:b.id, jp:b.pattern, rom:(b.rumus||''),
+      id_:b.arti+(ex?('\n\n例: '+ex.jp):''), _isBunpo:true };
+  });
+}
+function _kfBunpoDone(w){ return !!kanjiReadMastered['kfbunpo_'+currentJLPT+'_'+w.id]; }
+
+function startKanjiFlashBunpo(){
+  kfCat='bunpo'; kfReviewed=0; kfMastered=0; kfRevealed=false; kfHistory=[];
+  var words=bunpoKanjiCards();
+  var unmastered=words.filter(function(w){return !_kfBunpoDone(w);});
+  var done=words.filter(function(w){return _kfBunpoDone(w);});
+  shuffle(unmastered); shuffle(done);
+  kfQueue=unmastered.concat(done).slice(0,SESSION_SIZE);
+  kfIdx=0;
+  document.getElementById('kf-title').textContent=(currentJLPT!=='N3'?currentJLPT+' — ':'')+'文法 Pola (ber-kanji)';
+  document.getElementById('kf-subtitle').textContent=unmastered.length+' belum · '+done.length+' sudah';
+  document.querySelectorAll('.screen').forEach(function(s){s.classList.remove('active');});
+  document.getElementById('screen-kanjiflash').classList.add('active');
+  document.querySelectorAll('nav button').forEach(function(b){b.classList.remove('active');});
+  document.getElementById('kf-done-panel').style.display='none';
+  document.getElementById('kf-active').style.display='block';
+  if(!kfQueue.length) document.getElementById('kf-subtitle').textContent='Tidak ada pola ber-kanji di '+currentJLPT;
+  showKanjiCard();
+}
+
 function startKanjiFlashPos(pos){
   kfCat='pos_'+pos; kfReviewed=0; kfMastered=0; kfRevealed=false; kfHistory=[];
   var words=kanjiPosWords(pos);
@@ -6748,6 +6862,23 @@ function renderKanjiPosCards(){
       +'<div style="font-size:11px;color:var(--mist);margin-top:6px">'+dn+' / '+n+' hafal</div>'
       +'</div>';
   });
+  // Kartu 文法 ber-kanji (baca pola yang mengandung kanji)
+  var bk=bunpoKanjiCards();
+  if(bk.length){
+    var bdone=bk.filter(_kfBunpoDone).length;
+    var bpct=bk.length>0?Math.round(bdone/bk.length*100):0;
+    var bc='#7a5cc4';
+    html+='<div onclick="startKanjiFlashBunpo()" '
+      +'style="background:white;border:1px solid var(--border);border-top:3px solid '+bc+';border-radius:12px;padding:14px;cursor:pointer">'
+      +'<div style="display:flex;align-items:center;gap:8px;margin-bottom:4px">'
+      +'<span style="display:inline-flex;align-items:center;justify-content:center;width:26px;height:26px;border-radius:7px;background:'+bc+';color:#fff;font-size:13px;font-weight:800">文</span>'
+      +'<span style="font-size:15px;font-weight:800;color:var(--ink)">文法</span>'
+      +'<span style="margin-left:auto;font-family:\'DM Mono\',monospace;font-size:12px;font-weight:700;color:'+bc+'">'+bpct+'%</span></div>'
+      +'<div style="font-size:11px;color:var(--mist);margin-bottom:8px">Pola ber-kanji</div>'
+      +'<div style="background:rgba(26,26,46,.08);border-radius:3px;height:5px;overflow:hidden"><div style="height:100%;width:'+bpct+'%;background:'+bc+'"></div></div>'
+      +'<div style="font-size:11px;color:var(--mist);margin-top:6px">'+bdone+' / '+bk.length+' hafal</div>'
+      +'</div>';
+  }
   grid.innerHTML=html;
   sec.style.display=html?'':'none';
 }
@@ -6866,7 +6997,8 @@ function endKanjiFlash() {
 }
 
 function continueKanjiFlash() {
-  if (typeof kfCat==='string' && kfCat.indexOf('pos_')===0) startKanjiFlashPos(kfCat.slice(4));
+  if (kfCat==='bunpo') startKanjiFlashBunpo();
+  else if (typeof kfCat==='string' && kfCat.indexOf('pos_')===0) startKanjiFlashPos(kfCat.slice(4));
   else startKanjiFlash(kfCat);
 }
 
