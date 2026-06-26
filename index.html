@@ -6395,10 +6395,13 @@ function bunpoAsCards(){
   var arr=BUNPO_DATA[currentJLPT]||[];
   return arr.map(function(b){
     var ex=(b.contoh&&b.contoh[0])?b.contoh[0]:null;
+    // Ringkas untuk hafalan cepat: arti + 1 contoh pendek. Penjelasan panjang
+    // tetap ada di tab 文法 asli, tidak ditampilkan di kartu.
+    var back=b.arti;
+    if(ex) back+='\n\n例: '+ex.jp+(ex.id?('\n'+ex.id):'');
     return {
       id:b.id, jp:b.pattern, rom:(b.rumus||''),
-      id_:b.arti+(b.penjelasan?'\n\n'+b.penjelasan:'')+(ex?('\n\n例: '+ex.jp+'\n'+ex.id):''),
-      _isBunpo:true, _pattern:b.pattern
+      id_:back, _isBunpo:true, _pattern:b.pattern
     };
   });
 }
@@ -6526,7 +6529,13 @@ function showCard() {
   var fcLatin = needRomaji() ? toRomaji(w.rom) : '';
   document.getElementById('fc-latin').textContent = fcLatin;
   document.getElementById('fc-latin-back').textContent = fcLatin;
-  document.getElementById('fc-meaning').textContent = w.id_;
+  var meaningEl = document.getElementById('fc-meaning');
+  if (w._isBunpo && /\n/.test(w.id_||'')) {
+    var esc=String(w.id_).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+    meaningEl.innerHTML = esc.split(String.fromCharCode(10)).join('<br>');
+  } else {
+    meaningEl.textContent = w.id_;
+  }
 
   const fc = document.getElementById('flashcard');
   fc.classList.remove('revealed');
