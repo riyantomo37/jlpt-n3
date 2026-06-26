@@ -6498,23 +6498,27 @@ function revealCard() {
 
 function markCard(isHafal) {
   var w = sessionQueue[sessionIdx];
+  // N3: simpan ke mastered[cat] berdasar kategori ASLI kata (w.cat), bukan sessionCat,
+  // karena sesi per-jenis-kata mencampur kata dari kanji/vocab/grammar.
+  var wCat = w.cat || 'vocab';
+  if (currentJLPT==='N3' && !mastered[wCat]) mastered[wCat] = {};
   // Push to undo history
-  var isMastCurrent = currentJLPT==='N3' ? !!mastered[sessionCat][w.id] : !!(mastered[currentJLPT]||{})[w.id];
+  var isMastCurrent = currentJLPT==='N3' ? !!mastered[wCat][w.id] : !!(mastered[currentJLPT]||{})[w.id];
   if (!sessionHistory) sessionHistory = [];
-  sessionHistory.push({idx:sessionIdx, wordId:w.id, cat:sessionCat, wasMastered:isMastCurrent});
+  sessionHistory.push({idx:sessionIdx, wordId:w.id, cat:wCat, wasMastered:isMastCurrent});
   if (sessionHistory.length > 20) sessionHistory.shift();
   var isMast;
   if (currentJLPT === 'N3') {
-    isMast = !!mastered[sessionCat][w.id];
+    isMast = !!mastered[wCat][w.id];
   } else {
     isMast = !!(mastered[currentJLPT] || {})[w.id];
   }
   if (isHafal) {
-    if (currentJLPT === 'N3') mastered[sessionCat][w.id] = true;
+    if (currentJLPT === 'N3') mastered[wCat][w.id] = true;
     else { if (!mastered[currentJLPT]) mastered[currentJLPT] = {}; mastered[currentJLPT][w.id] = true; }
     if (!isMast) { sessionMastered++; todayCount++; }
   } else {
-    if (currentJLPT === 'N3') delete mastered[sessionCat][w.id];
+    if (currentJLPT === 'N3') delete mastered[wCat][w.id];
     else if (mastered[currentJLPT]) delete mastered[currentJLPT][w.id];
   }
   var today = new Date().toDateString();
@@ -6563,7 +6567,8 @@ function endSession() {
 }
 
 function continueStudy() {
-  startStudy(sessionCat);
+  if (typeof sessionCat==='string' && sessionCat.indexOf('pos_')===0) startStudyPos(sessionCat.slice(4));
+  else startStudy(sessionCat);
 }
 
 function exitStudy() {
@@ -6584,18 +6589,23 @@ let kfRevealed = false;
 
 // Progress tersendiri untuk kanji flashcard (per word id)
 // Disimpan di dalam mastered yang sama tapi key berbeda: 'kf_' + id
-function kfIsMastered(id) {
+function kfIsMastered(id, cat) {
   if (currentJLPT === 'N3') {
-    return !!kanjiReadMastered['kf_' + kfCat + '_' + id];
+    var c = cat || kfCat;
+    // mode per-jenis-kata (kfCat='pos_...') tak boleh dipakai sebagai key; butuh cat asli.
+    if (c.indexOf('pos_')===0) c = 'vocab';
+    return !!kanjiReadMastered['kf_' + c + '_' + id];
   }
   // N4/N5 — use mastered object with level key
   var key = 'kf_' + currentJLPT;
   return !!(mastered[key] && mastered[key][id]);
 }
-function kfSetMastered(id, val) {
+function kfSetMastered(id, val, cat) {
   if (currentJLPT === 'N3') {
-    if (val) kanjiReadMastered['kf_' + kfCat + '_' + id] = true;
-    else delete kanjiReadMastered['kf_' + kfCat + '_' + id];
+    var c = cat || kfCat;
+    if (c.indexOf('pos_')===0) c = 'vocab';
+    if (val) kanjiReadMastered['kf_' + c + '_' + id] = true;
+    else delete kanjiReadMastered['kf_' + c + '_' + id];
   } else {
     var key = 'kf_' + currentJLPT;
     if (!mastered[key]) mastered[key] = {};
@@ -6810,12 +6820,13 @@ function revealKanjiCard() {
 
 function markKanjiFlash(hafal) {
   var w = kfQueue[kfIdx];
-  var wasMastered = kfIsMastered(w.id);
+  var wCat = w.cat || 'vocab';
+  var wasMastered = kfIsMastered(w.id, wCat);
   // Push undo history
-  kfHistory.push({idx:kfIdx, wordId:w.id, wasMastered:wasMastered});
+  kfHistory.push({idx:kfIdx, wordId:w.id, wasMastered:wasMastered, cat:wCat});
   if (kfHistory.length>20) kfHistory.shift();
 
-  kfSetMastered(w.id, hafal);
+  kfSetMastered(w.id, hafal, wCat);
   if (hafal && !wasMastered) { kfMastered++; todayCount++; }
 
   var today=new Date().toDateString();
@@ -6834,7 +6845,7 @@ function markKanjiFlash(hafal) {
 function undoKanjiCard() {
   if (!kfHistory.length) return;
   var last = kfHistory.pop();
-  kfSetMastered(last.wordId, last.wasMastered);
+  kfSetMastered(last.wordId, last.wasMastered, last.cat);
   kfIdx = last.idx;
   if (kfReviewed>0) kfReviewed--;
   save();
@@ -6854,7 +6865,10 @@ function endKanjiFlash() {
   document.getElementById('kf-done-mastered').textContent = kfMastered;
 }
 
-function continueKanjiFlash() { startKanjiFlash(kfCat); }
+function continueKanjiFlash() {
+  if (typeof kfCat==='string' && kfCat.indexOf('pos_')===0) startKanjiFlashPos(kfCat.slice(4));
+  else startKanjiFlash(kfCat);
+}
 
 function exitKanjiFlash() { gotoScreen('kanjimenu'); }
 
