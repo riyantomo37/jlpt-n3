@@ -1079,6 +1079,7 @@ header:has(.user-menu.open) { z-index:1000; }
   <button onclick="gotoScreen('bunpomenu')">文法 Bunpo</button>
   <button onclick="gotoScreen('katsuyomenu')">活用 Konjugasi</button>
   <button onclick="gotoScreen('dialectmenu')">方言 Dialek</button>
+  <button onclick="gotoScreen('kazumenu')">数 Angka</button>
   <button onclick="gotoScreen('exam')">📝 Ujian</button>
   <button onclick="gotoScreen('review')">📊 Progress</button>
   <button onclick="gotoScreen('leaderboard')">🏆 Ranking</button>
@@ -1431,6 +1432,17 @@ header:has(.user-menu.open) { z-index:1000; }
   <div style="font-size:13px;color:var(--mist);margin-bottom:14px">Jelajahi ragam bahasa daerah Jepang dan bandingkan dengan bahasa standar.</div>
   <div id="dia-tabs" style="display:flex;gap:8px;overflow-x:auto;padding-bottom:6px;margin-bottom:14px"></div>
   <div id="dia-body"></div>
+</div>
+
+<!-- ====== 数 ANGKA & PENGHITUNG ====== -->
+<div id="screen-kazumenu" class="screen">
+  <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px">
+    <span style="font-size:22px">🔢</span>
+    <div class="section-title" style="margin:0">数 Angka & Penghitung</div>
+  </div>
+  <div style="font-size:13px;color:var(--mist);margin-bottom:14px">Hafalkan penyebutan angka: tanggal, hari, bulan, jam, menit, dan penghitung (counter) yang sering tak beraturan.</div>
+  <div id="kazu-tabs" style="display:flex;gap:8px;overflow-x:auto;padding-bottom:6px;margin-bottom:14px"></div>
+  <div id="kazu-body"></div>
 </div>
 
 <!-- ====== LEADERBOARD ====== -->
@@ -5964,6 +5976,7 @@ function gotoScreen(name) {
   if (name === 'bunpomenu') updateBunpoMenu();
   if (name === 'katsuyomenu') updateKatsuyoMenu();
   if (name === 'dialectmenu') updateDialectMenu();
+  if (name === 'kazumenu') updateKazuMenu();
   if (name === 'exam') { showExamSection('exam-menu'); updateExamLevelBadge(); setExamMode('ai'); bankIndex=null; updateExamHistory(); }
 }
 
@@ -6290,6 +6303,7 @@ function renderOverviewMenu(){
     {scr:'bunpomenu', emo:'文法', t:'Bunpo', d:'Belajar tata bahasa', c:'#7a5cc4', hide:isSSW},
     {scr:'katsuyomenu', emo:'活用', t:'Konjugasi', d:'Bentuk kata kerja', c:'#0a7d6b'},
     {scr:'dialectmenu', emo:'方言', t:'Dialek', d:'Ragam bahasa daerah', c:'#d98c00'},
+    {scr:'kazumenu', emo:'数', t:'Angka', d:'Tanggal · jam · counter', c:'#2e7dc0'},
     {scr:'exam',      emo:'📝', t:'Ujian', d:'Simulasi soal JLPT', c:'var(--red)'},
     {scr:'review',    emo:'📊', t:'Progress Hafalan', d:'Kotoba · Kanji · Bunpou · Ujian', c:'var(--jade)'},
     {scr:'leaderboard',emo:'🏆', t:'Ranking', d:'Peringkat poin', c:'#d08700'},
@@ -6560,6 +6574,21 @@ function revealCard() {
 
 function markCard(isHafal) {
   var w = sessionQueue[sessionIdx];
+  // Sesi angka (kazu): progress di mastered['kazu_'+kategori].
+  if ((sessionCat && sessionCat.indexOf('kazu_')===0) || w._isKazu) {
+    var kk = w._isKazu ? ('kazu_'+w._kazuKey) : sessionCat;
+    if (!mastered[kk]) mastered[kk] = {};
+    var wasK = !!mastered[kk][w.id];
+    if (!sessionHistory) sessionHistory = [];
+    sessionHistory.push({idx:sessionIdx, wordId:w.id, cat:kk, wasMastered:wasK, kazu:true});
+    if (sessionHistory.length > 20) sessionHistory.shift();
+    if (isHafal) { mastered[kk][w.id]=true; if(!wasK){ sessionMastered++; todayCount++; } }
+    else delete mastered[kk][w.id];
+    var td=new Date().toDateString();
+    if(lastStudyDate!==td){var y=new Date(Date.now()-86400000).toDateString();streak=(lastStudyDate===y)?streak+1:1;lastStudyDate=td;}
+    save(); sessionReviewed++; sessionIdx++; updateUndoBtn(); showCard();
+    return;
+  }
   // Sesi bunpou: progress disimpan terpisah di mastered['bunpo_'+level].
   if (sessionCat==='bunpo' || w._isBunpo) {
     var bk = 'bunpo_'+currentJLPT;
@@ -6614,7 +6643,7 @@ function markCard(isHafal) {
 function undoCard() {
   if (!sessionHistory || !sessionHistory.length) return;
   var last = sessionHistory.pop();
-  if (last.bunpo) {
+  if (last.bunpo || last.kazu) {
     if (!mastered[last.cat]) mastered[last.cat] = {};
     if (last.wasMastered) mastered[last.cat][last.wordId] = true;
     else delete mastered[last.cat][last.wordId];
@@ -6653,7 +6682,8 @@ function endSession() {
 }
 
 function continueStudy() {
-  if (sessionCat==='bunpo') startStudyBunpo();
+  if (sessionCat && sessionCat.indexOf('kazu_')===0) startKazuFlash(sessionCat.slice(5));
+  else if (sessionCat==='bunpo') startStudyBunpo();
   else if (typeof sessionCat==='string' && sessionCat.indexOf('pos_')===0) startStudyPos(sessionCat.slice(4));
   else startStudy(sessionCat);
 }
@@ -7745,6 +7775,7 @@ function switchJLPT(level){
     else if(id==='katsuyoquiz') { gotoScreen('katsuyomenu'); }
     else if(id==='katsuyotype') { gotoScreen('katsuyomenu'); }
     else if(id==='dialectmenu') updateDialectMenu();
+    else if(id==='kazumenu') updateKazuMenu();
     else if(id==='exam')       { showExamSection('exam-menu'); updateExamLevelBadge(); setExamMode('ai'); bankIndex=null; updateExamHistory(); }
     else if(id==='review')     renderReview('all');
     else if(id==='leaderboard') loadLeaderboard(level);
@@ -8560,9 +8591,24 @@ var DIALECT_DATA = {
       {hyo:'良い', dia:'ええ', rom:'ee', id:'bagus'},
       {hyo:'～でしょう', dia:'～じゃろう', rom:'~jarou', id:'kan? / mungkin'}
     ]
+  },
+  kyoto: {
+    name:'京都弁', label:'Kyoto (Kansai halus)', emo:'🍵', color:'#a8437a',
+    desc:'Dialek Kyoto — bagian dari Kansai tapi terkenal lebih halus, lembut, dan tak langsung (hannari).',
+    items:[
+      {hyo:'～です', dia:'～どす', rom:'~dosu', id:'bentuk sopan khas Kyoto'},
+      {hyo:'ありがとう', dia:'おおきに', rom:'ookini', id:'terima kasih'},
+      {hyo:'良い', dia:'よろしおす', rom:'yoroshiosu', id:'bagus (halus)'},
+      {hyo:'～ください', dia:'～おくれやす', rom:'~okureyasu', id:'tolong ~ (halus)'},
+      {hyo:'いらっしゃい', dia:'おいでやす', rom:'oideyasu', id:'selamat datang'},
+      {hyo:'だめ', dia:'あかん', rom:'akan', id:'tidak boleh'},
+      {hyo:'本当に', dia:'ほんまに', rom:'honma ni', id:'sungguh'},
+      {hyo:'おいしい', dia:'おいしおす', rom:'oishiosu', id:'enak (halus)'},
+      {hyo:'そうですね', dia:'そうどすなぁ', rom:'sou dosu naa', id:'iya ya (halus)'}
+    ]
   }
 };
-var DIALECT_ORDER = ['kanto','kansai','hakata','okinawa','tohoku','nagoya','hiroshima'];
+var DIALECT_ORDER = ['kanto','kansai','hakata','okinawa','tohoku','nagoya','hiroshima','kyoto'];
 var dialectState = { cur:'kansai' };
 
 function updateDialectMenu(){
@@ -8618,6 +8664,88 @@ function renderDialectBody(){
   html += '</div>';
   html += '<div style="font-size:11px;color:var(--mist);text-align:center;margin-top:16px;line-height:1.6">Masih tahap awal — daftar dialek & kosakata akan ditambah bertahap.</div>';
   host.innerHTML = html;
+}
+
+
+// ===== DATA 数 (Angka & Penghitung) — terkurasi =====
+var KAZU_DATA = {"kazu": [{"jp": "一", "rom": "いち", "id": "1"}, {"jp": "二", "rom": "に", "id": "2"}, {"jp": "三", "rom": "さん", "id": "3"}, {"jp": "四", "rom": "よん／し", "id": "4"}, {"jp": "五", "rom": "ご", "id": "5"}, {"jp": "六", "rom": "ろく", "id": "6"}, {"jp": "七", "rom": "なな／しち", "id": "7"}, {"jp": "八", "rom": "はち", "id": "8"}, {"jp": "九", "rom": "きゅう／く", "id": "9"}, {"jp": "十", "rom": "じゅう", "id": "10"}, {"jp": "百", "rom": "ひゃく", "id": "100"}, {"jp": "千", "rom": "せん", "id": "1.000"}, {"jp": "万", "rom": "まん", "id": "10.000"}, {"jp": "零／ゼロ", "rom": "れい／ゼロ", "id": "0"}], "hizuke": [{"jp": "一日", "rom": "ついたち", "id": "tanggal 1"}, {"jp": "二日", "rom": "ふつか", "id": "tanggal 2"}, {"jp": "三日", "rom": "みっか", "id": "tanggal 3"}, {"jp": "四日", "rom": "よっか", "id": "tanggal 4"}, {"jp": "五日", "rom": "いつか", "id": "tanggal 5"}, {"jp": "六日", "rom": "むいか", "id": "tanggal 6"}, {"jp": "七日", "rom": "なのか", "id": "tanggal 7"}, {"jp": "八日", "rom": "ようか", "id": "tanggal 8"}, {"jp": "九日", "rom": "ここのか", "id": "tanggal 9"}, {"jp": "十日", "rom": "とおか", "id": "tanggal 10"}, {"jp": "十一日", "rom": "じゅういちにち", "id": "tanggal 11"}, {"jp": "十二日", "rom": "じゅうににち", "id": "tanggal 12"}, {"jp": "十三日", "rom": "じゅうさんにち", "id": "tanggal 13"}, {"jp": "十四日", "rom": "じゅうよっか", "id": "tanggal 14"}, {"jp": "十五日", "rom": "じゅうごにち", "id": "tanggal 15"}, {"jp": "十六日", "rom": "じゅうろくにち", "id": "tanggal 16"}, {"jp": "十七日", "rom": "じゅうしちにち", "id": "tanggal 17"}, {"jp": "十八日", "rom": "じゅうはちにち", "id": "tanggal 18"}, {"jp": "十九日", "rom": "じゅうくにち", "id": "tanggal 19"}, {"jp": "二十日", "rom": "はつか", "id": "tanggal 20"}, {"jp": "二十一日", "rom": "にじゅういちにち", "id": "tanggal 21"}, {"jp": "二十四日", "rom": "にじゅうよっか", "id": "tanggal 24"}, {"jp": "三十日", "rom": "さんじゅうにち", "id": "tanggal 30"}, {"jp": "三十一日", "rom": "さんじゅういちにち", "id": "tanggal 31"}], "youbi": [{"jp": "月曜日", "rom": "げつようび", "id": "Senin"}, {"jp": "火曜日", "rom": "かようび", "id": "Selasa"}, {"jp": "水曜日", "rom": "すいようび", "id": "Rabu"}, {"jp": "木曜日", "rom": "もくようび", "id": "Kamis"}, {"jp": "金曜日", "rom": "きんようび", "id": "Jumat"}, {"jp": "土曜日", "rom": "どようび", "id": "Sabtu"}, {"jp": "日曜日", "rom": "にちようび", "id": "Minggu"}, {"jp": "何曜日", "rom": "なんようび", "id": "hari apa?"}], "tsuki": [{"jp": "一月", "rom": "いちがつ", "id": "Januari"}, {"jp": "二月", "rom": "にがつ", "id": "Februari"}, {"jp": "三月", "rom": "さんがつ", "id": "Maret"}, {"jp": "四月", "rom": "しがつ", "id": "April"}, {"jp": "五月", "rom": "ごがつ", "id": "Mei"}, {"jp": "六月", "rom": "ろくがつ", "id": "Juni"}, {"jp": "七月", "rom": "しちがつ", "id": "Juli"}, {"jp": "八月", "rom": "はちがつ", "id": "Agustus"}, {"jp": "九月", "rom": "くがつ", "id": "September"}, {"jp": "十月", "rom": "じゅうがつ", "id": "Oktober"}, {"jp": "十一月", "rom": "じゅういちがつ", "id": "November"}, {"jp": "十二月", "rom": "じゅうにがつ", "id": "Desember"}, {"jp": "何月", "rom": "なんがつ", "id": "bulan apa?"}], "ji": [{"jp": "一時", "rom": "いちじ", "id": "jam 1"}, {"jp": "二時", "rom": "にじ", "id": "jam 2"}, {"jp": "三時", "rom": "さんじ", "id": "jam 3"}, {"jp": "四時", "rom": "よじ", "id": "jam 4"}, {"jp": "五時", "rom": "ごじ", "id": "jam 5"}, {"jp": "六時", "rom": "ろくじ", "id": "jam 6"}, {"jp": "七時", "rom": "しちじ", "id": "jam 7"}, {"jp": "八時", "rom": "はちじ", "id": "jam 8"}, {"jp": "九時", "rom": "くじ", "id": "jam 9"}, {"jp": "十時", "rom": "じゅうじ", "id": "jam 10"}, {"jp": "十一時", "rom": "じゅういちじ", "id": "jam 11"}, {"jp": "十二時", "rom": "じゅうにじ", "id": "jam 12"}, {"jp": "何時", "rom": "なんじ", "id": "jam berapa?"}], "fun": [{"jp": "一分", "rom": "いっぷん", "id": "1 menit"}, {"jp": "二分", "rom": "にふん", "id": "2 menit"}, {"jp": "三分", "rom": "さんぷん", "id": "3 menit"}, {"jp": "四分", "rom": "よんぷん", "id": "4 menit"}, {"jp": "五分", "rom": "ごふん", "id": "5 menit"}, {"jp": "六分", "rom": "ろっぷん", "id": "6 menit"}, {"jp": "七分", "rom": "ななふん", "id": "7 menit"}, {"jp": "八分", "rom": "はっぷん", "id": "8 menit"}, {"jp": "九分", "rom": "きゅうふん", "id": "9 menit"}, {"jp": "十分", "rom": "じゅっぷん", "id": "10 menit"}, {"jp": "何分", "rom": "なんぷん", "id": "berapa menit?"}], "nin": [{"jp": "一人", "rom": "ひとり", "id": "1 orang"}, {"jp": "二人", "rom": "ふたり", "id": "2 orang"}, {"jp": "三人", "rom": "さんにん", "id": "3 orang"}, {"jp": "四人", "rom": "よにん", "id": "4 orang"}, {"jp": "五人", "rom": "ごにん", "id": "5 orang"}, {"jp": "六人", "rom": "ろくにん", "id": "6 orang"}, {"jp": "七人", "rom": "しちにん／ななにん", "id": "7 orang"}, {"jp": "八人", "rom": "はちにん", "id": "8 orang"}, {"jp": "九人", "rom": "きゅうにん", "id": "9 orang"}, {"jp": "十人", "rom": "じゅうにん", "id": "10 orang"}, {"jp": "何人", "rom": "なんにん", "id": "berapa orang?"}], "tsu": [{"jp": "一つ", "rom": "ひとつ", "id": "1 buah"}, {"jp": "二つ", "rom": "ふたつ", "id": "2 buah"}, {"jp": "三つ", "rom": "みっつ", "id": "3 buah"}, {"jp": "四つ", "rom": "よっつ", "id": "4 buah"}, {"jp": "五つ", "rom": "いつつ", "id": "5 buah"}, {"jp": "六つ", "rom": "むっつ", "id": "6 buah"}, {"jp": "七つ", "rom": "ななつ", "id": "7 buah"}, {"jp": "八つ", "rom": "やっつ", "id": "8 buah"}, {"jp": "九つ", "rom": "ここのつ", "id": "9 buah"}, {"jp": "十", "rom": "とお", "id": "10 buah"}, {"jp": "いくつ", "rom": "いくつ", "id": "berapa buah?"}], "kai": [{"jp": "一回", "rom": "いっかい", "id": "1 kali"}, {"jp": "二回", "rom": "にかい", "id": "2 kali"}, {"jp": "三回", "rom": "さんかい", "id": "3 kali"}, {"jp": "四回", "rom": "よんかい", "id": "4 kali"}, {"jp": "五回", "rom": "ごかい", "id": "5 kali"}, {"jp": "六回", "rom": "ろっかい", "id": "6 kali"}, {"jp": "何回", "rom": "なんかい", "id": "berapa kali?"}], "josuushi": [{"jp": "一枚", "rom": "いちまい", "id": "1 lembar"}, {"jp": "二枚", "rom": "にまい", "id": "2 lembar"}, {"jp": "三枚", "rom": "さんまい", "id": "3 lembar"}, {"jp": "何枚", "rom": "なんまい", "id": "berapa lembar?"}, {"jp": "一本", "rom": "いっぽん", "id": "1 batang"}, {"jp": "二本", "rom": "にほん", "id": "2 batang"}, {"jp": "三本", "rom": "さんぼん", "id": "3 batang"}, {"jp": "六本", "rom": "ろっぽん", "id": "6 batang"}, {"jp": "何本", "rom": "なんぼん", "id": "berapa batang?"}]};
+var KAZU_ORDER = ["kazu", "hizuke", "youbi", "tsuki", "ji", "fun", "nin", "tsu", "kai", "josuushi"];
+var KAZU_TITLE = {"kazu": "数字 Angka Dasar", "hizuke": "日付 Tanggal", "youbi": "曜日 Hari", "tsuki": "月 Bulan", "ji": "時 Jam", "fun": "分 Menit", "nin": "人 Counter Orang", "tsu": "つ Counter Benda", "kai": "回 Counter Kali", "josuushi": "枚・本 Counter Lain"};
+var KAZU_EMOJI = {"kazu": "🔢", "hizuke": "📅", "youbi": "🗓️", "tsuki": "🌙", "ji": "🕐", "fun": "⏱️", "nin": "🧑", "tsu": "🍎", "kai": "🔁", "josuushi": "📄"};
+
+// ===== TAB 数 (Angka & Penghitung) =====
+var kazuState = { cur:'kazu' };
+
+function updateKazuMenu(){
+  if(!KAZU_DATA[kazuState.cur]) kazuState.cur=KAZU_ORDER[0];
+  renderKazuTabs();
+  renderKazuBody();
+}
+function setKazu(k){ kazuState.cur=k; renderKazuTabs(); renderKazuBody(); }
+
+function renderKazuTabs(){
+  var host=document.getElementById('kazu-tabs'); if(!host) return;
+  var color=JLPT_COLORS[currentJLPT]||'var(--red)';
+  var html='';
+  KAZU_ORDER.forEach(function(k){
+    var on=(k===kazuState.cur);
+    html+='<button onclick="setKazu(\''+k+'\')" '
+      +'style="flex:0 0 auto;padding:8px 13px;border-radius:18px;border:1px solid '+(on?color:'var(--border)')+';'
+      +'background:'+(on?color:'white')+';color:'+(on?'#fff':'var(--ink)')+';cursor:pointer;font-weight:700;font-size:12px;white-space:nowrap">'
+      +(KAZU_EMOJI[k]||'')+' '+(KAZU_TITLE[k]||k)+'</button>';
+  });
+  host.innerHTML=html;
+}
+
+function renderKazuBody(){
+  var host=document.getElementById('kazu-body'); if(!host) return;
+  var k=kazuState.cur;
+  var items=KAZU_DATA[k]||[];
+  var color=JLPT_COLORS[currentJLPT]||'var(--red)';
+  var mast=mastered['kazu_'+k]||{};
+  var done=items.filter(function(it,i){return mast[_kazuId(k,i)];}).length;
+  var pct=items.length?Math.round(done/items.length*100):0;
+  var html='<div style="display:flex;align-items:center;gap:10px;margin-bottom:12px">'
+    +'<span style="font-size:22px">'+(KAZU_EMOJI[k]||'')+'</span>'
+    +'<div style="flex:1"><div style="font-size:17px;font-weight:800;color:'+color+'">'+(KAZU_TITLE[k]||k)+'</div>'
+    +'<div style="font-size:11px;color:var(--mist)">'+done+' / '+items.length+' hafal · '+pct+'%</div></div>'
+    +'<button onclick="startKazuFlash(\''+k+'\')" style="padding:9px 16px;border-radius:10px;border:none;background:'+color+';color:#fff;cursor:pointer;font-weight:700;font-size:13px">▶ Hafalkan</button>'
+    +'</div>';
+  html+='<div style="background:rgba(26,26,46,.08);border-radius:3px;height:5px;overflow:hidden;margin-bottom:14px"><div style="height:100%;width:'+pct+'%;background:'+color+'"></div></div>';
+  html+='<div style="display:flex;flex-direction:column;gap:8px">';
+  items.forEach(function(it){
+    html+='<div style="display:flex;align-items:center;gap:12px;background:white;border:1px solid var(--border);border-radius:12px;padding:11px 14px">'
+      +'<span style="font-size:19px;font-weight:800;color:var(--ink);flex-shrink:0;min-width:64px">'+it.jp+'</span>'
+      +'<span style="font-size:13px;color:'+color+';flex:1">'+it.rom+'</span>'
+      +'<span style="font-size:12px;color:var(--mist);flex-shrink:0">'+it.id+'</span>'
+      +'</div>';
+  });
+  html+='</div>';
+  host.innerHTML=html;
+}
+
+function _kazuId(k,i){ return 'kz_'+k+'_'+i; }
+
+// Flashcard hafalan untuk satu kategori angka (reuse mesin sesi flashcard).
+function startKazuFlash(k){
+  var items=KAZU_DATA[k]||[];
+  sessionCat='kazu_'+k; sessionReviewed=0; sessionMastered=0; revealed=false; sessionHistory=[];
+  var cards=items.map(function(it,i){ return {id:_kazuId(k,i), jp:it.jp, rom:it.rom, id_:it.id, _isKazu:true, _kazuKey:k}; });
+  var mast=mastered['kazu_'+k]||{};
+  var unmastered=cards.filter(function(w){return !mast[w.id];});
+  var done=cards.filter(function(w){return mast[w.id];});
+  shuffle(unmastered); shuffle(done);
+  sessionQueue=unmastered.concat(done).slice(0,SESSION_SIZE);
+  sessionIdx=0;
+  document.getElementById('flash-category-title').textContent=(KAZU_EMOJI[k]||'')+' '+(KAZU_TITLE[k]||k);
+  document.getElementById('flash-subtitle').textContent=unmastered.length+' belum hafal · '+done.length+' sudah hafal';
+  document.querySelectorAll('.screen').forEach(function(s){s.classList.remove('active');});
+  document.getElementById('screen-flash').classList.add('active');
+  document.querySelectorAll('nav button').forEach(function(b){b.classList.remove('active');});
+  document.getElementById('session-done-panel').style.display='none';
+  document.getElementById('flash-active').style.display='block';
+  if(!sessionQueue.length) document.getElementById('flash-subtitle').textContent='Kosong';
+  showCard();
 }
 
 
