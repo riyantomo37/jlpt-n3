@@ -1559,17 +1559,56 @@ header:has(.user-menu.open) { z-index:1000; }
     <p style="font-size:12px;color:var(--mist);margin-bottom:14px">Soal dibuat otomatis oleh AI · bisa dinilai &amp; direview</p>
     <div style="display:flex;flex-direction:column;gap:10px;margin-bottom:24px">
 
+      <!-- Mock Test Full (paling atas) -->
+      <button class="exam-menu-btn" onclick="startExamSection('full')"
+        style="background:linear-gradient(135deg,var(--ink),var(--indigo));color:white;border:none;border-radius:14px;padding:18px;flex-direction:column;align-items:flex-start;gap:3px">
+        <span style="font-size:16px;font-weight:800">⚡ Full Mock Test</span>
+        <span style="font-size:11px;opacity:.85">4 sesi · 120 soal · 180 poin · lulus ≥85 (seperti JLPT asli)</span>
+      </button>
+
+      <div style="font-size:12px;color:var(--mist);margin:6px 2px 0">Atau latihan per jenis (30 soal masing-masing):</div>
+
       <!-- 文字・語彙 -->
       <div style="background:white;border:1px solid var(--border);border-radius:14px;overflow:hidden">
         <div style="background:linear-gradient(90deg,#c0392b,#e74c3c);padding:12px 16px;color:white">
           <div style="font-weight:700;font-size:14px">文字・語彙</div>
           <div style="font-size:11px;opacity:.8">Huruf &amp; Kosakata</div>
         </div>
-        <div style="padding:12px 16px;display:flex;flex-direction:column;gap:8px">
+        <div style="padding:12px 16px">
           <button class="exam-menu-btn" onclick="startExamSection('moji_vocab')"
             style="background:rgba(192,57,43,.06);border:1px solid rgba(192,57,43,.2);color:var(--red)">
-            <span>📖 問題1〜5 · 文字語彙</span>
-            <span style="font-size:11px;opacity:.7">35 soal · ~25 menit</span>
+            <span>📖 文字語彙</span>
+            <span style="font-size:11px;opacity:.7">30 soal · 45 poin</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- 文法 -->
+      <div style="background:white;border:1px solid var(--border);border-radius:14px;overflow:hidden">
+        <div style="background:linear-gradient(90deg,#2c3e7a,#3498db);padding:12px 16px;color:white">
+          <div style="font-weight:700;font-size:14px">文法</div>
+          <div style="font-size:11px;opacity:.8">Tata Bahasa</div>
+        </div>
+        <div style="padding:12px 16px">
+          <button class="exam-menu-btn" onclick="startExamSection('grammar')"
+            style="background:rgba(44,62,122,.06);border:1px solid rgba(44,62,122,.2);color:var(--indigo)">
+            <span>✏️ 文法 · Grammar</span>
+            <span style="font-size:11px;opacity:.7">30 soal · 45 poin</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- 読解 -->
+      <div style="background:white;border:1px solid var(--border);border-radius:14px;overflow:hidden">
+        <div style="background:linear-gradient(90deg,#1f8a4c,#2ecc71);padding:12px 16px;color:white">
+          <div style="font-weight:700;font-size:14px">読解</div>
+          <div style="font-size:11px;opacity:.8">Membaca</div>
+        </div>
+        <div style="padding:12px 16px">
+          <button class="exam-menu-btn" onclick="startExamSection('reading')"
+            style="background:rgba(44,160,80,.06);border:1px solid rgba(44,160,80,.2);color:var(--jade)">
+            <span>📄 読解 · Membaca</span>
+            <span style="font-size:11px;opacity:.7">30 soal · 45 poin</span>
           </button>
         </div>
       </div>
@@ -1578,53 +1617,17 @@ header:has(.user-menu.open) { z-index:1000; }
       <div style="background:white;border:1px solid var(--border);border-radius:14px;overflow:hidden">
         <div style="background:linear-gradient(90deg,#8e44ad,#9b59b6);padding:12px 16px;color:white">
           <div style="font-weight:700;font-size:14px">聴解</div>
-          <div style="font-size:11px;opacity:.8">Mendengarkan</div>
+          <div style="font-size:11px;opacity:.8">Mendengarkan (audio TTS)</div>
         </div>
         <div style="padding:12px 16px">
           <button class="exam-menu-btn" onclick="startExamSection('listening')"
             style="background:rgba(142,68,173,.06);border:1px solid rgba(142,68,173,.2);color:#8e44ad">
-            <span>🎧 問題1〜5 · 聴解</span>
-            <span style="font-size:11px;opacity:.7">5 soal · Audio TTS</span>
+            <span>🎧 聴解 · Listening</span>
+            <span style="font-size:11px;opacity:.7">30 soal · 45 poin · Audio tanpa teks</span>
           </button>
         </div>
       </div>
 
-      <!-- 文法・読解 -->
-      <div style="background:white;border:1px solid var(--border);border-radius:14px;overflow:hidden">
-        <div style="background:linear-gradient(90deg,#2c3e7a,#3498db);padding:12px 16px;color:white">
-          <div style="font-weight:700;font-size:14px">文法・読解</div>
-          <div style="font-size:11px;opacity:.8">Grammar &amp; Membaca</div>
-        </div>
-        <div style="padding:12px 16px;display:flex;flex-direction:column;gap:8px">
-          <button class="exam-menu-btn" onclick="startExamSection('grammar')"
-            style="background:rgba(44,62,122,.06);border:1px solid rgba(44,62,122,.2);color:var(--indigo)">
-            <span>✏️ 文法 · Grammar</span>
-            <span style="font-size:11px;opacity:.7">13 soal · ~10 menit</span>
-          </button>
-          <button class="exam-menu-btn" onclick="startExamSection('dokkai')"
-            style="background:rgba(44,160,80,.06);border:1px solid rgba(44,160,80,.2);color:var(--jade)">
-            <span>📰 読解 · Teks Bacaan (dari bank soal)</span>
-            <span style="font-size:11px;opacity:.7">~5 soal · Official format</span>
-          </button>
-          <button class="exam-menu-btn" onclick="startExamSection('monogatari')"
-            style="background:rgba(230,126,34,.06);border:1px solid rgba(230,126,34,.2);color:#e67e22">
-            <span>📖 読解 中文 · Cerita (dokkai)</span>
-            <span style="font-size:11px;opacity:.7">4 soal · Teks cerita panjang</span>
-          </button>
-          <button class="exam-menu-btn" onclick="startExamSection('reading')"
-            style="background:rgba(44,160,80,.06);border:1px solid rgba(44,160,80,.2);color:var(--jade)">
-            <span>📄 読解 · Membaca</span>
-            <span style="font-size:11px;opacity:.7">10 soal · ~15 menit</span>
-          </button>
-        </div>
-      </div>
-
-      <!-- Mock Test Full -->
-      <button class="exam-menu-btn" onclick="startExamSection('full')"
-        style="background:linear-gradient(135deg,var(--ink),var(--indigo));color:white;border:none;border-radius:14px;padding:16px">
-        <span style="font-size:15px">⚡ Full Mock Test</span>
-        <span style="font-size:11px;opacity:.8">Semua bagian · ~60 menit</span>
-      </button>
     </div>
     </div><!-- end #exam-ai-mode -->
 
