@@ -2838,7 +2838,7 @@ async function startExamSection(sectionType) {
 
   try {
     if (sectionType === 'moji_vocab' || sectionType === 'full') {
-      var mondai = buildMojiVocabSections(words);
+      var mondai = await buildMojiVocabSections(words);
       examSections = examSections.concat(mondai);
     }
     bar.style.width = '55%';
@@ -3014,7 +3014,48 @@ function buildDynamicBank(words, level) {
   });
   return bank;
 }
-function buildMojiVocabSections(words) {
+// Generate soal 文脈/文法 dari pola bunpou level aktif (AI, random, level-lock).
+// Dipakai untuk 問題3 agar tidak lagi memakai template tempel yang sering tak nyambung.
+async function buildBunpoContextQuestions(n){
+  var pats = (BUNPO_DATA[currentJLPT]||[]).slice();
+  if(!pats.length) return [];
+  shuffle(pats);
+  var pick = pats.slice(0, Math.min(12, pats.length));
+  var patternList = pick.map(function(p){ return p.pattern+' ('+p.arti+')'; }).join(', ');
+  var prompt =
+      'Kamu guru bahasa Jepang ahli pembuat soal JLPT '+currentJLPT+'. Buat '+n+' soal pilihan ganda 文脈規定/文法 berkualitas tinggi. '
+    + levelLockText()
+    + 'Soal menguji pola/kosakata berikut (boleh campur, pilih yang natural): '+patternList+'. '
+    + 'ATURAN WAJIB:'+String.fromCharCode(10)
+    + '1. Tiap kalimat 100% benar tata bahasa & maknanya natural, nyambung dengan konteks. JANGAN tempel kata ke frame yang tak cocok.'+String.fromCharCode(10)
+    + '2. Tiap "q" mengandung tepat satu rumpang ditulis （　）. Jawaban benar adalah pola/kata yang paling tepat untuk konteks itu.'+String.fromCharCode(10)
+    + '3. Tiga pengecoh mirip & masuk akal (pola/kata berdekatan), bukan acak. Hanya 1 jawaban benar.'+String.fromCharCode(10)
+    + '4. Tulis dengan kanji sesuai level (jangan melebihi level '+currentJLPT+').'+String.fromCharCode(10)
+    + '5. Penjelasan (e) singkat 1 kalimat Bahasa Jepang.'+String.fromCharCode(10)
+    + 'Balas HANYA JSON array valid: [{"q":"…（　）…","c":["…","…","…","…"],"a":0,"e":"…"}]';
+  try{
+    var res = await fetch('/api/groq',{method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({temperature:0.7,max_tokens:2500,
+        messages:[
+          {role:'system',content:'あなたはプロのJLPT問題作成者です。全て日本語で自然な文を作り、出力は有効なJSON配列のみ。'},
+          {role:'user',content:prompt}
+        ]})});
+    var d = await res.json();
+    var raw=(d.choices?.[0]?.message?.content||'[]').replace(/```json|```/g,'').trim();
+    var st=raw.indexOf('['), en=raw.lastIndexOf(']');
+    if(st>=0&&en>st) raw=raw.slice(st,en+1);
+    var qs=JSON.parse(raw);
+    if(Array.isArray(qs)&&qs.length){
+      return qs.slice(0,n).map(function(q,i){
+        var qt=(q.q||'').split('\n').join('<br>').replace('（　）','<span class="blank">（　）</span>');
+        return {id:'m3ai_'+i, question:qt, choices:(q.c||[]).map(function(c,ci){return String.fromCharCode(0xFF11+ci)+'. '+c;}), answer:q.a||0, exp:q.e||''};
+      });
+    }
+  }catch(e){}
+  return [];
+}
+
+async function buildMojiVocabSections(words) {
   var sections = [];
   var NL = String.fromCharCode(10);
   var levelBank = getLevelBank(); var useBankN3 = levelBank && Object.keys(levelBank).length > 0;
@@ -3062,14 +3103,9 @@ function buildMojiVocabSections(words) {
   }
   if (m2qs.length) sections.push({id:'mondai2',title:'問題２',num:2,instruction:'のことばを漢字で書くとき、最もよいものを１・２・３・４から一つえらんでください。',questions:m2qs});
 
-  // 問題3 — 文脈規定
-  var m3qs;
-  if (useBankN3 && levelBank.mondai3 && levelBank.mondai3.length) {
-    var shuffled3 = levelBank.mondai3.slice(); shuffle(shuffled3);
-    m3qs = shuffled3.slice(0,11).map(function(q,i){
-      return {id:'m3_'+i, question:q.q.split('\n').join('<br>'), choices:q.c.map(function(c,ci){return String.fromCharCode(0xFF11+ci)+'. '+c;}), answer:q.a, exp:q.e};
-    });
-  } else {
+  // 問題3 — 文脈規定 (generate dari pola bunpou level aktif via AI; fallback bila gagal)
+  var m3qs = await buildBunpoContextQuestions(11);
+  if (!m3qs || !m3qs.length) {
     shuffle(words);
     m3qs = words.slice(0,11).map(function(w,i){
       var wrong = words.filter(function(x){return x.jp!==w.jp;}); shuffle(wrong); wrong=wrong.slice(0,3);
