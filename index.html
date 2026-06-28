@@ -3019,39 +3019,44 @@ function buildMojiVocabSections(words) {
   var NL = String.fromCharCode(10);
   var levelBank = getLevelBank(); var useBankN3 = levelBank && Object.keys(levelBank).length > 0;
 
-  // 問題1 — 漢字読み
+  // 問題1 — 漢字読み (selalu generate dari pool penuh agar variatif & menantang)
   var m1qs;
-  if (useBankN3 && levelBank.mondai1 && levelBank.mondai1.length) {
-    var shuffled = levelBank.mondai1.slice(); shuffle(shuffled);
-    m1qs = shuffled.slice(0,8).map(function(q,i){
-      return {id:'m1_'+i, question:q.q.split('\n').join('<br>'), choices:q.c.map(function(c,ci){return String.fromCharCode(0xFF11+ci)+'. '+c;}), answer:q.a, exp:q.e};
-    });
-  } else {
-    var kanjiWords = words.filter(function(w){ return /[一-鿿]/.test(w.jp) && w.rom!==w.jp && w.rom.length<12; });
+  {
+    var kanjiWords = words.filter(function(w){ return /[一-鿿]/.test(w.jp) && w.rom!==w.jp && (w.rom||'').length<14; });
     shuffle(kanjiWords);
-    m1qs = kanjiWords.slice(0,8).map(function(w,i){
-      var wrong = kanjiWords.filter(function(x){return x.rom!==w.rom;}); shuffle(wrong); wrong=wrong.slice(0,3);
-      if(wrong.length<3) return null;
-      var ch=[w.rom,wrong[0].rom,wrong[1].rom,wrong[2].rom]; shuffle(ch);
+    m1qs = kanjiWords.slice(0,10).map(function(w,i){
+      // distraktor: utamakan bacaan dgn panjang mirip & huruf awal sama (lebih sulit)
+      var pool = kanjiWords.filter(function(x){return x.rom!==w.rom;});
+      var near = pool.filter(function(x){ return Math.abs((x.rom||'').length-(w.rom||'').length)<=1 && (x.rom||'')[0]===(w.rom||'')[0]; });
+      var rest = pool.filter(function(x){ return near.indexOf(x)<0; });
+      shuffle(near); shuffle(rest);
+      var picks = near.concat(rest).slice(0,3);
+      if(picks.length<3) return null;
+      var ch=[w.rom,picks[0].rom,picks[1].rom,picks[2].rom]; shuffle(ch);
       return {id:'m1_'+i, question:'「<span class="underline">'+w.jp+'</span>」の読み方はどれですか。', choices:ch.map(function(c,ci){return String.fromCharCode(0xFF11+ci)+'. '+c;}), answer:ch.indexOf(w.rom), exp:'「'+w.jp+'」は「'+w.rom+'」と読みます。意味：'+w.id_};
     }).filter(Boolean);
   }
   if (m1qs.length) sections.push({id:'mondai1',title:'問題１',num:1,instruction:'＿＿の言葉の読み方として最もよいものを、１・２・３・４から一つえらんでください。',questions:m1qs});
 
-  // 問題2 — 表記
+  // 問題2 — 表記 (selalu generate dari pool penuh)
   var m2qs;
-  if (useBankN3 && levelBank.mondai2 && levelBank.mondai2.length) {
-    var shuffled2 = levelBank.mondai2.slice(); shuffle(shuffled2);
-    m2qs = shuffled2.slice(0,6).map(function(q,i){
-      return {id:'m2_'+i, question:q.q.split('\n').join('<br>'), choices:q.c.map(function(c,ci){return String.fromCharCode(0xFF11+ci)+'. '+c;}), answer:q.a, exp:q.e};
-    });
-  } else {
+  {
     var kanjiW = words.filter(function(w){ return /[一-鿿]/.test(w.jp) && w.rom!==w.jp; });
     shuffle(kanjiW);
-    m2qs = kanjiW.slice(0,6).map(function(w,i){
-      var wrong = kanjiW.filter(function(x){return x.jp!==w.jp;}); shuffle(wrong); wrong=wrong.slice(0,3);
-      if(wrong.length<3) return null;
-      var ch=[w.jp,wrong[0].jp,wrong[1].jp,wrong[2].jp]; shuffle(ch);
+    m2qs = kanjiW.slice(0,8).map(function(w,i){
+      // distraktor: kanji dgn panjang sama & berbagi minimal 1 karakter (lebih sulit)
+      var pool = kanjiW.filter(function(x){return x.jp!==w.jp;});
+      var near = pool.filter(function(x){
+        if((x.jp||'').length!==(w.jp||'').length) return false;
+        for(var k=0;k<w.jp.length;k++){ if(x.jp.indexOf(w.jp[k])>=0) return true; }
+        return false;
+      });
+      var rest = pool.filter(function(x){ return near.indexOf(x)<0 && (x.jp||'').length===(w.jp||'').length; });
+      var any  = pool.filter(function(x){ return near.indexOf(x)<0 && rest.indexOf(x)<0; });
+      shuffle(near); shuffle(rest); shuffle(any);
+      var picks = near.concat(rest).concat(any).slice(0,3);
+      if(picks.length<3) return null;
+      var ch=[w.jp,picks[0].jp,picks[1].jp,picks[2].jp]; shuffle(ch);
       return {id:'m2_'+i, question:'「'+w.rom+'」を漢字で書くとどれですか。', choices:ch.map(function(c,ci){return String.fromCharCode(0xFF11+ci)+'. '+c;}), answer:ch.indexOf(w.jp), exp:'「'+w.rom+'」は「'+w.jp+'」と書きます。'};
     }).filter(Boolean);
   }
