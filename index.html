@@ -3267,6 +3267,23 @@ function buildDokkaiSections(type) {
 }
 
 
+// Instruksi penguncian level (level-lock) yang TEGAS untuk semua prompt AI,
+// agar soal yang di-generate tidak memakai kanji/kosakata di luar level.
+function levelLockText(){
+  var lv=currentJLPT;
+  var desc={
+    N5:'Level paling dasar. HANYA kanji & kosakata N5 (sekitar 100 kanji paling dasar: 日月火水木金土人大小山川中学校先生年時間…). Kalimat sangat sederhana, pendek. Tata bahasa dasar (は・が・を・に・で, です/ます, ～たい, ～てください).',
+    N4:'Level dasar. Kanji & kosakata N5–N4 saja (sekitar 300 kanji). Kalimat sederhana sehari-hari. Tata bahasa N4 (～ても, ～たら, ～ながら, 可能形, 受身, bentuk biasa).',
+    N3:'Level menengah. Kanji & kosakata N5–N3 saja (sekitar 650 kanji). JANGAN pakai kanji/kosakata khas N2/N1 (mis. 概念, 把握, 顕著, матур). Tema sehari-hari & sosial ringan. Tata bahasa N3 (～わけ, ～ばかり, ～ように, ～はず, 敬語 dasar).',
+    N2:'Level menengah-atas. Kanji & kosakata sampai N2 (sekitar 1000 kanji). Boleh topik abstrak/koran ringan. Hindari kanji/istilah paling langka khas N1.',
+    N1:'Level mahir. Boleh kanji & kosakata lanjutan N1, topik abstrak, akademis, koran/esai. Tata bahasa kompleks.',
+    SSW:'Level kerja keterampilan spesifik (industri makanan). Kosakata praktis kerja, kanji setara N4–N3.'
+  };
+  return 'PENTING — KUNCI LEVEL '+lv+': '+(desc[lv]||desc.N3)+' '
+    +'Semua kanji, kosakata, dan tata bahasa WAJIB sesuai level '+lv+' dan TIDAK BOLEH melebihi level itu. '
+    +'Jika sebuah kanji terlalu sulit untuk '+lv+', tulis dengan hiragana. Konsistensi level lebih penting daripada variasi. ';
+}
+
 async function buildGrammarSections(words) {
   var sections = [];
   var levelBank = getLevelBank(); var useBankN3 = levelBank && levelBank.mondai6 && levelBank.mondai6.length>0;
@@ -3296,11 +3313,12 @@ async function buildGrammarSections(words) {
     shuffle(words);
     var sample = words.slice(0,12).map(function(w){ return w.jp+'='+w.id_; }).join('; ');
     var prompt = 'Buatkan 10 soal JLPT '+currentJLPT+' bagian 文法 (tata bahasa). '
+      +levelLockText()
       +'SEMUA isi soal (kalimat soal, 4 pilihan, dan penjelasan) HARUS dalam BAHASA JEPANG, bukan bahasa Indonesia. '
       +'Setiap soal berupa kalimat dengan satu bagian kosong （　）, dan pelajar memilih pola/partikel yang paling tepat. '
       +'WAJIB: ketiga pilihan yang SALAH harus berupa jebakan yang mirip dan masuk akal (partikel/pola yang gramatikal serupa, misal なら／ので／から／ため, atau pola yang artinya berdekatan), '
       +'BUKAN pilihan acak yang jelas salah. Hanya satu jawaban benar. Penjelasan (e) singkat dalam bahasa Jepang mengapa jawaban itu benar. '
-      +'Gunakan kosakata level '+currentJLPT+' ini bila cocok: '+sample+'. '
+      +'Utamakan kosakata level '+currentJLPT+' berikut: '+sample+'. '
       +'Format HANYA JSON array valid: [{"q":"…（　）…","c":["…","…","…","…"],"a":0,"e":"…"}]';
     try {
       var res = await fetch('/api/groq',{
@@ -3343,6 +3361,7 @@ async function buildReadingSections(words) {
   shuffle(words);
   var sample = words.slice(0,8).map(function(w){ return w.jp; }).join('、');
   var prompt = 'Buatkan 1 teks pendek berbahasa Jepang (4-6 kalimat, level '+currentJLPT+') lalu 3 soal pilihan ganda tentang isi teks itu. '
+    +levelLockText()
     +'SEMUA isi (teks, pertanyaan, 4 pilihan, dan penjelasan) HARUS dalam BAHASA JEPANG, bukan bahasa Indonesia. '
     +'WAJIB: tiga pilihan yang salah harus berupa jebakan yang masuk akal dan berkaitan dengan teks (bukan acak), sehingga pelajar harus benar-benar memahami teks. Hanya satu jawaban benar. '
     +'Gunakan kata-kata ini bila memungkinkan: '+sample+'. '
@@ -5740,6 +5759,7 @@ async function startBunpoQuiz(){
   var lv = currentJLPT;
   var prompt =
       'Kamu guru bahasa Jepang ahli pembuat soal JLPT '+lv+'. Buat '+nSoal+' soal pilihan ganda berkualitas tinggi. '
+    + levelLockText()
     + fokus
     + 'ATURAN WAJIB (taati ketat, jangan sampai ada soal ngawur/tidak gramatikal):'+String.fromCharCode(10)
     + '1. Setiap kalimat soal HARUS 100% benar secara tata bahasa Jepang dan masuk akal maknanya. Jangan buat kalimat yang melanggar kaidah (contoh SALAH: meletakkan "です" tepat setelah koma, atau "便利な" diikuti koma tanpa kata benda). Periksa ulang tiap kalimat sebelum output.'+String.fromCharCode(10)
