@@ -2918,7 +2918,7 @@ function buildDynamicBank(words, level) {
     return {q:qFn(w),c:ch,a:ch.indexOf(valFn(w)),e:expFn(w)};
   }
 
-  var bank = {mondai1:[],mondai2:[],mondai3:[],mondai4:[],mondai5:[]};
+  var bank = {mondai1:[],mondai2:[],mondai3:[]};
 
   // 問題1 読み
   kanjiW.slice(0,50).forEach(function(w){
@@ -2946,57 +2946,6 @@ function buildDynamicBank(words, level) {
     var ch=rnd([w.jp,wrong[0].jp,wrong[1].jp,wrong[2].jp]);
     var tmpl=tmpls[i%tmpls.length].replace('（　）','<span class="blank">（　）</span>');
     bank.mondai3.push({q:tmpl,c:ch,a:ch.indexOf(w.jp),e:'「'+w.jp+'」('+w.rom+') = '+w.id_});
-  });
-
-  // 問題4 意味
-  idOk.slice(0,50).forEach(function(w){
-    var q=makeQ(idOk,w,'jp',function(x){return x.jp;},
-      function(w){return '「'+w.id_+'」に最も近い言葉はどれですか。'},
-      function(w){return '「'+w.id_+'」は「'+w.jp+'」('+w.rom+')です。'});
-    if(q) bank.mondai4.push(q);
-  });
-
-  // 問題5 用法 — target word disisipkan ke 4 kalimat berbeda; hanya satu yang
-  // memakai kata itu secara wajar. Trap = kalimat yang benar untuk JENIS kata lain
-  // (meniru gaya bank: 「丁寧に説明する」○ vs 「丁寧が降っています」×).
-  function posOf(w){
-    var m=(w.id_||'').toLowerCase();
-    var jp=w.jp||'';
-    if(w.cat==='grammar' && /i$|い$/.test(jp)) return 'iadj';           // i-adjektiva
-    if(/^(ber|me[nm]|meng|men|mem|menyuc)/.test(m) || /(る|う|く|ぐ|す|つ|ぬ|ぶ|む)$/.test(jp) && w.cat==='kanji') return 'verb';
-    if(w.cat==='grammar') return 'naadj';                                // sifat-na
-    return 'noun';
-  }
-  // bank kalimat per POS: [kalimat benar untuk POS itu]
-  var usageFrames = {
-    noun:  function(x){ return x+'はとても役に立ちます。'; },
-    verb:  function(x){ return '毎日かならず'+x+'。'; },
-    iadj:  function(x){ return '今日はとても'+x+'です。'; },
-    naadj: function(x){ return 'この部屋はとても'+x+'です。'; }
-  };
-  // trap frames (akan salah dipakai untuk POS lain)
-  var trapByPos = {
-    noun:  ['毎日かならず','今日はとても','この部屋はとても'],   // verb/iadj/naadj frame -> noun salah
-    verb:  ['はとても役に立ちます。','は赤い色です。','が机の上にあります。'],
-    iadj:  ['を毎日食べます。','に乗って行きます。','を買いました。'],
-    naadj: ['を飲みました。','が降っています。','を読みました。']
-  };
-  idOk.slice(0,40).forEach(function(w){
-    var pos=posOf(w);
-    var correct=usageFrames[pos](w.jp);
-    var traps;
-    if(pos==='verb'){
-      traps=[w.jp+'はとても役に立ちます。', w.jp+'は赤い色です。', w.jp+'が机の上にあります。'];
-    } else if(pos==='iadj'){
-      traps=[w.jp+'を毎日食べます。', w.jp+'に乗って行きます。', w.jp+'を買いました。'];
-    } else if(pos==='naadj'){
-      traps=[w.jp+'を飲みました。', w.jp+'が降っています。', w.jp+'を読みました。'];
-    } else { // noun -> trap pakai frame verb/adj
-      traps=['毎日かならず'+w.jp+'。', '今日はとても'+w.jp+'です。', 'この部屋はとても'+w.jp+'です。'];
-    }
-    var ch=rnd([correct,traps[0],traps[1],traps[2]]);
-    bank.mondai5.push({q:'「'+w.jp+'」（'+w.id_+'）の使い方として最もよいものはどれですか。',
-      c:ch,a:ch.indexOf(correct),e:'「'+w.jp+'」は'+w.id_+'という意味で、正しい使い方は他の選択肢のような不自然な文ではありません。'});
   });
 
   // Add unique ids to all questions
@@ -3033,7 +2982,7 @@ async function buildBunpoContextQuestions(n){
     + '1. Tiap kalimat 100% benar tata bahasa & maknanya natural, nyambung dengan konteks. JANGAN tempel kata ke frame yang tak cocok.'+String.fromCharCode(10)
     + '2. Tiap "q" mengandung tepat satu rumpang ditulis （　）. Jawaban benar adalah pola/kata yang paling tepat untuk konteks itu.'+String.fromCharCode(10)
     + '3. Tiga pengecoh mirip & masuk akal (pola/kata berdekatan), bukan acak. Hanya 1 jawaban benar.'+String.fromCharCode(10)
-    + '4. Tulis dengan kanji sesuai level (jangan melebihi level '+currentJLPT+').'+String.fromCharCode(10)
+    + '4. WAJIB: kalimat soal "q" DAN keempat pilihan "c" ditulis penuh dengan kanji yang sesuai level '+currentJLPT+' (JANGAN melebihi level). Untuk kata yang lazim berkanji (動詞・名詞・形容詞) WAJIB pakai kanji, BUKAN hiragana polos. Partikel & okurigana tetap hiragana sebagaimana mestinya.'+String.fromCharCode(10)
     + '5. Penjelasan (e) singkat 1 kalimat Bahasa Jepang.'+String.fromCharCode(10)
     + 'Balas HANYA JSON array valid: [{"q":"…（　）…","c":["…","…","…","…"],"a":0,"e":"…"}]';
   try{
@@ -3058,10 +3007,67 @@ async function buildBunpoContextQuestions(n){
   return [];
 }
 
+// Helper umum: panggil AI untuk soal 文字語彙 berbasis JSON array.
+async function aiVocabQuestions(prompt, n, idPrefix){
+  try{
+    var res = await fetch('/api/groq',{method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({temperature:0.6,max_tokens:2500,
+        messages:[
+          {role:'system',content:'あなたはプロのJLPT問題作成者です。全て日本語で自然な文を作り、漢字を適切に使い、出力は有効なJSON配列のみ。'},
+          {role:'user',content:prompt}
+        ]})});
+    var d = await res.json();
+    var raw=(d.choices?.[0]?.message?.content||'[]').replace(/```json|```/g,'').trim();
+    var st=raw.indexOf('['), en=raw.lastIndexOf(']');
+    if(st>=0&&en>st) raw=raw.slice(st,en+1);
+    var qs=JSON.parse(raw);
+    if(Array.isArray(qs)&&qs.length){
+      return qs.slice(0,n).map(function(q,i){
+        var qt=String(q.q||'').split(String.fromCharCode(10)).join('<br>');
+        return {id:idPrefix+i, question:qt, choices:(q.c||[]).map(function(c,ci){return String.fromCharCode(0xFF11+ci)+'. '+c;}), answer:q.a||0, exp:q.e||''};
+      });
+    }
+  }catch(e){}
+  return [];
+}
+
+// 問題4 — 言い換え類義 (AI, level-lock, full kanji)
+async function buildIikaeQuestions(n){
+  var sample = (JLPT_DATA[currentJLPT]||[]).slice();
+  shuffle(sample); sample = sample.slice(0,15).map(function(w){return w.jp;}).join('、');
+  var prompt =
+      'Kamu guru JLPT '+currentJLPT+' ahli. Buat '+n+' soal pilihan ganda tipe 言い換え類義 (sinonim/parafrase). '
+    + levelLockText()
+    + (sample?('Utamakan kosakata level '+currentJLPT+' berikut: '+sample+'. '):'')
+    + 'ATURAN WAJIB:'+String.fromCharCode(10)
+    + '1. Format soal: sebuah kalimat dengan satu kata/frasa digarisbawahi memakai <u>…</u>. Tugasnya memilih kata yang maknanya PALING DEKAT.'+String.fromCharCode(10)
+    + '2. Soal "q" dan keempat pilihan "c" ditulis penuh kanji sesuai level '+currentJLPT+' (jangan melebihi level, jangan hiragana polos untuk kata yang lazim berkanji).'+String.fromCharCode(10)
+    + '3. Tiga pengecoh masuk akal & mirip makna/bentuk, hanya 1 jawaban benar.'+String.fromCharCode(10)
+    + '4. Penjelasan "e" singkat 1 kalimat Bahasa Jepang.'+String.fromCharCode(10)
+    + 'Balas HANYA JSON array valid: [{"q":"…<u>…</u>…","c":["…","…","…","…"],"a":0,"e":"…"}]';
+  return aiVocabQuestions(prompt, n, 'm4ai_');
+}
+
+// 問題5 — 用法 (AI, level-lock, full kanji)
+async function buildYouhouQuestions(n){
+  var sample = (JLPT_DATA[currentJLPT]||[]).slice();
+  shuffle(sample); sample = sample.slice(0,15).map(function(w){return w.jp;}).join('、');
+  var prompt =
+      'Kamu guru JLPT '+currentJLPT+' ahli. Buat '+n+' soal pilihan ganda tipe 用法 (penggunaan kata yang benar). '
+    + levelLockText()
+    + (sample?('Gunakan kata-kata level '+currentJLPT+' berikut sebagai kata target: '+sample+'. '):'')
+    + 'ATURAN WAJIB:'+String.fromCharCode(10)
+    + '1. Tiap soal menargetkan SATU kata. Tampilkan kata target di awal "q", lalu 4 kalimat pilihan. Hanya 1 kalimat yang memakai kata itu secara benar & natural; 3 lainnya salah penggunaan namun tetap gramatikal.'+String.fromCharCode(10)
+    + '2. Soal "q" dan keempat pilihan "c" ditulis penuh kanji sesuai level '+currentJLPT+' (jangan melebihi level, jangan hiragana polos untuk kata yang lazim berkanji).'+String.fromCharCode(10)
+    + '3. Pengecoh dibuat realistis (kata dipakai di konteks yang salah jenis kata/maknanya), hanya 1 jawaban benar.'+String.fromCharCode(10)
+    + '4. Penjelasan "e" singkat 1 kalimat Bahasa Jepang menjelaskan penggunaan yang benar.'+String.fromCharCode(10)
+    + 'Balas HANYA JSON array valid: [{"q":"次の言葉の使い方として最もよいものはどれですか。「○○」","c":["…","…","…","…"],"a":0,"e":"…"}]';
+  return aiVocabQuestions(prompt, n, 'm5ai_');
+}
+
 async function buildMojiVocabSections(words) {
   var sections = [];
   var NL = String.fromCharCode(10);
-  var levelBank = getLevelBank(); var useBankN3 = levelBank && Object.keys(levelBank).length > 0;
 
   // 問題1 — 漢字読み (selalu generate dari pool penuh agar variatif & menantang)
   var m1qs;
@@ -3120,37 +3126,26 @@ async function buildMojiVocabSections(words) {
   }
   if (m3qs.length) sections.push({id:'mondai3',title:'問題３',num:3,instruction:'（　）に入れるのに最もよいものを、１・２・３・４から一つえらんでください。',questions:m3qs});
 
-  // 問題4 — 言い換え
-  var m4qs;
-  if (useBankN3 && levelBank.mondai4 && levelBank.mondai4.length) {
-    var shuffled4 = levelBank.mondai4.slice(); shuffle(shuffled4);
-    m4qs = shuffled4.slice(0,5).map(function(q,i){
-      return {id:'m4_'+i, question:q.q.split('\n').join('<br>'), choices:q.c.map(function(c,ci){return String.fromCharCode(0xFF11+ci)+'. '+c;}), answer:q.a, exp:q.e};
-    });
-  } else {
+  // 問題4 — 言い換え類義 (AI, full kanji; fallback ringan bila gagal)
+  var m4qs = await buildIikaeQuestions(5);
+  if (!m4qs || !m4qs.length) {
     shuffle(words);
     m4qs = words.slice(0,5).map(function(w,i){
       var wrong = words.filter(function(x){return x.jp!==w.jp;}); shuffle(wrong); wrong=wrong.slice(0,3);
       if(wrong.length<3) return null;
       var ch=[w.jp,wrong[0].jp,wrong[1].jp,wrong[2].jp]; shuffle(ch);
-      return {id:'m4_'+i, question:'「'+w.id_+'」に最も近い言葉はどれですか。', choices:ch.map(function(c,ci){return String.fromCharCode(0xFF11+ci)+'. '+c;}), answer:ch.indexOf(w.jp), exp:'「'+w.id_+'」は「'+w.jp+'」です。'};
+      return {id:'m4_'+i, question:'「'+w.id_+'」に意味が最も近い言葉はどれですか。', choices:ch.map(function(c,ci){return String.fromCharCode(0xFF11+ci)+'. '+c;}), answer:ch.indexOf(w.jp), exp:'「'+w.id_+'」は「'+w.jp+'」です。'};
     }).filter(Boolean);
   }
   if (m4qs.length) sections.push({id:'mondai4',title:'問題４',num:4,instruction:'に意味が最も近いものを、１・２・３・４から一つえらんでください。',questions:m4qs});
 
-  // 問題5 — 用法
-  var m5qs;
-  if (useBankN3 && levelBank.mondai5 && levelBank.mondai5.length) {
-    var shuffled5 = levelBank.mondai5.slice(); shuffle(shuffled5);
-    m5qs = shuffled5.slice(0,5).map(function(q,i){
-      return {id:'m5_'+i, question:q.q.split('\n').join('<br>'), choices:q.c.map(function(c,ci){return String.fromCharCode(0xFF11+ci)+'. '+c;}), answer:q.a, exp:q.e};
-    });
-  } else {
+  // 問題5 — 用法 (AI, full kanji; fallback ringan bila gagal)
+  var m5qs = await buildYouhouQuestions(5);
+  if (!m5qs || !m5qs.length) {
     shuffle(words);
     m5qs = words.slice(0,5).map(function(w,i){
       var ch=[w.jp+'を使います。',w.jp+'が降っています。',w.jp+'を食べました。',w.jp+'に乗ります。'];
-      var ai = 0;
-      return {id:'m5_'+i, question:'「<span class="underline">'+w.jp+'</span>」の正しい使い方はどれですか。', choices:ch.map(function(c,ci){return String.fromCharCode(0xFF11+ci)+'. '+c;}), answer:ai, exp:'「'+w.jp+'」('+w.id_+')の正しい使い方です。'};
+      return {id:'m5_'+i, question:'「<span class="underline">'+w.jp+'</span>」の正しい使い方はどれですか。', choices:ch.map(function(c,ci){return String.fromCharCode(0xFF11+ci)+'. '+c;}), answer:0, exp:'「'+w.jp+'」('+w.id_+')の正しい使い方です。'};
     });
   }
   if (m5qs.length) sections.push({id:'mondai5',title:'問題５',num:5,instruction:'次の言葉の使い方として最もよいものを、１・２・３・４から一つえらんでください。',questions:m5qs});
@@ -3368,7 +3363,7 @@ async function buildGrammarSections(words) {
       var res = await fetch('/api/groq',{
         method:'POST',
         headers:{'Content-Type':'application/json'},
-        body:JSON.stringify({model:'llama-3.3-70b-versatile',max_tokens:2000,temperature:0.5,
+        body:JSON.stringify({max_tokens:2000,temperature:0.5,
           messages:[
             {role:'system',content:'あなたはプロのJLPT問題作成者です。文法問題はすべて日本語で作り、不正解の選択肢は紛らわしい引っかけにしてください。出力は有効なJSON配列のみ。'},
             {role:'user',content:prompt}
@@ -3415,7 +3410,7 @@ async function buildReadingSections(words) {
     var res = await fetch('/api/groq',{
       method:'POST',
       headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({model:'llama-3.3-70b-versatile',max_tokens:2000,temperature:0.6,
+      body:JSON.stringify({max_tokens:2000,temperature:0.6,
         messages:[
           {role:'system',content:'あなたはプロのJLPT読解問題作成者です。本文・質問・選択肢・説明はすべて日本語で作り、不正解の選択肢は紛らわしい引っかけにしてください。出力は有効なJSONのみ。'},
           {role:'user',content:prompt}
@@ -7542,7 +7537,6 @@ async function sendMsg() {
         'Content-Type': 'application/json'
       },
       body: JSON.stringify({
-        model: 'llama-3.3-70b-versatile',
         max_tokens: 1000,
         messages: [
           {role:'system', content:'Kamu adalah sensei bahasa Jepang untuk JLPT. Jawab dalam Bahasa Indonesia. Sertakan contoh kalimat Jepang + terjemahan.'},
@@ -7557,7 +7551,7 @@ async function sendMsg() {
     if (!res.ok) {
       var code = d.error ? d.error.code : res.status;
       if (code === 'invalid_api_key' || res.status === 401) {
-        addMsg('ai', '🔑 API key tidak valid / expired. Silakan update _GROQ_KEY di GitHub dengan key baru dari console.groq.com');
+        addMsg('ai', '🔑 API key tidak valid / expired. Update secret GEMINI_API_KEY di Cloudflare Worker dengan key baru dari Google AI Studio.');
       } else {
         addMsg('ai', '⚠️ Error ' + res.status + ': ' + (d.error ? d.error.message : 'Unknown error'));
       }
