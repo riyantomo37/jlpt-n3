@@ -3111,6 +3111,8 @@ async function buildBunpoContextQuestions(n){
     + '1. Tiap kalimat 100% benar tata bahasa & maknanya natural, nyambung dengan konteks. JANGAN tempel kata ke frame yang tak cocok.'+String.fromCharCode(10)
     + '2. Tiap "q" mengandung tepat satu rumpang ditulis （　）. Jawaban benar adalah pola/kata yang paling tepat untuk konteks itu.'+String.fromCharCode(10)
     + '3. Tiga pengecoh mirip & masuk akal (pola/kata berdekatan), bukan acak. Hanya 1 jawaban benar.'+String.fromCharCode(10)
+    + 'WAJIB MUTLAK: keempat pilihan harus BERBEDA (dilarang duplikat); jawaban yang ditandai harus benar-benar tepat secara makna.'+String.fromCharCode(10)
+
     + '4. WAJIB: kalimat soal "q" DAN keempat pilihan "c" ditulis penuh dengan kanji yang sesuai level '+currentJLPT+' (JANGAN melebihi level). Untuk kata yang lazim berkanji (動詞・名詞・形容詞) WAJIB pakai kanji, BUKAN hiragana polos. Partikel & okurigana tetap hiragana sebagaimana mestinya.'+String.fromCharCode(10)
     + '5. Penjelasan (e) singkat 1 kalimat Bahasa Jepang.'+String.fromCharCode(10)
     + 'Balas HANYA JSON array valid: [{"q":"…（　）…","c":["…","…","…","…"],"a":0,"e":"…"}]';
@@ -3151,6 +3153,8 @@ async function aiVocabQuestions(prompt, n, idPrefix){
     if(st>=0&&en>st) raw=raw.slice(st,en+1);
     var qs=JSON.parse(raw);
     if(Array.isArray(qs)&&qs.length){
+      // Buang soal cacat (pilihan duplikat, bukan 4 pilihan, jawaban di luar range).
+      qs = qs.filter(function(q){ return isCleanQuestion({choices:q.c, answer:q.a}); });
       return qs.slice(0,n).map(function(q,i){
         var qt=String(q.q||'').split(String.fromCharCode(10)).join('<br>');
         return {id:idPrefix+i, question:qt, choices:(q.c||[]).map(function(c,ci){return String.fromCharCode(0xFF11+ci)+'. '+c;}), answer:q.a||0, exp:q.e||''};
@@ -3172,6 +3176,8 @@ async function buildIikaeQuestions(n){
     + '1. Format soal: sebuah kalimat dengan satu kata/frasa digarisbawahi memakai <u>…</u>. Tugasnya memilih kata yang maknanya PALING DEKAT.'+String.fromCharCode(10)
     + '2. Soal "q" dan keempat pilihan "c" ditulis penuh kanji sesuai level '+currentJLPT+' (jangan melebihi level, jangan hiragana polos untuk kata yang lazim berkanji).'+String.fromCharCode(10)
     + '3. Tiga pengecoh masuk akal & mirip makna/bentuk, hanya 1 jawaban benar.'+String.fromCharCode(10)
+    + 'WAJIB MUTLAK: keempat pilihan harus BERBEDA (dilarang duplikat); jawaban yang ditandai harus benar-benar tepat secara makna.'+String.fromCharCode(10)
+
     + '4. Penjelasan "e" singkat 1 kalimat Bahasa Jepang.'+String.fromCharCode(10)
     + 'Balas HANYA JSON array valid: [{"q":"…<u>…</u>…","c":["…","…","…","…"],"a":0,"e":"…"}]';
   return aiVocabQuestions(prompt, n, 'm4ai_');
@@ -3189,6 +3195,8 @@ async function buildYouhouQuestions(n){
     + '1. Tiap soal menargetkan SATU kata. Tampilkan kata target di awal "q", lalu 4 kalimat pilihan. Hanya 1 kalimat yang memakai kata itu secara benar & natural; 3 lainnya salah penggunaan namun tetap gramatikal.'+String.fromCharCode(10)
     + '2. Soal "q" dan keempat pilihan "c" ditulis penuh kanji sesuai level '+currentJLPT+' (jangan melebihi level, jangan hiragana polos untuk kata yang lazim berkanji).'+String.fromCharCode(10)
     + '3. Pengecoh dibuat realistis (kata dipakai di konteks yang salah jenis kata/maknanya), hanya 1 jawaban benar.'+String.fromCharCode(10)
+    + 'WAJIB MUTLAK: keempat pilihan harus BERBEDA (dilarang duplikat); jawaban yang ditandai harus benar-benar tepat secara makna.'+String.fromCharCode(10)
+
     + '4. Penjelasan "e" singkat 1 kalimat Bahasa Jepang menjelaskan penggunaan yang benar.'+String.fromCharCode(10)
     + 'Balas HANYA JSON array valid: [{"q":"次の言葉の使い方として最もよいものはどれですか。「○○」","c":["…","…","…","…"],"a":0,"e":"…"}]';
   return aiVocabQuestions(prompt, n, 'm5ai_');
@@ -3444,6 +3452,31 @@ function levelLockText(){
     +'Jika sebuah kanji terlalu sulit untuk '+lv+', tulis dengan hiragana. Konsistensi level lebih penting daripada variasi. ';
 }
 
+// ── Sanitizer soal: buang soal cacat (pilihan duplikat, jawaban di luar range,
+//    bukan 4 pilihan, choice kosong). Dipakai untuk bank maupun output AI.
+// Menerima objek soal {choices:[...], answer:int}. Mengembalikan true bila valid.
+function isCleanQuestion(q) {
+  if (!q || !q.choices || q.choices.length !== 4) return false;
+  if (typeof q.answer !== 'number' || q.answer < 0 || q.answer > 3) return false;
+  // Normalisasi teks pilihan: buang prefix "１." dsb & spasi agar perbandingan adil.
+  var norm = q.choices.map(function(c){
+    return String(c||'').replace(/^[\uff11-\uff14１-４0-9]+[\.\．、।]?\s*/,'').replace(/\s+/g,'').trim();
+  });
+  if (norm.some(function(c){ return c === ''; })) return false;       // ada pilihan kosong
+  var uniq = {};
+  for (var i=0;i<norm.length;i++){
+    if (uniq[norm[i]]) return false;                                  // pilihan duplikat
+    uniq[norm[i]] = 1;
+  }
+  return true;
+}
+
+// Saring array soal, sisakan yang lolos isCleanQuestion.
+function filterCleanQuestions(arr) {
+  if (!Array.isArray(arr)) return [];
+  return arr.filter(isCleanQuestion);
+}
+
 async function buildGrammarSections(words) {
   var sections = [];
   var levelBank = getLevelBank(); var useBankN3 = levelBank && levelBank.mondai6 && levelBank.mondai6.length>0;
@@ -3457,6 +3490,7 @@ async function buildGrammarSections(words) {
       +'SEMUA isi soal (kalimat soal, 4 pilihan, penjelasan) HARUS dalam BAHASA JEPANG. '
       +'Setiap soal: kalimat dengan satu （　）, pelajar memilih pola/partikel paling tepat. '
       +'WAJIB: tiga pilihan salah berupa jebakan mirip & masuk akal (pola/partikel berdekatan), bukan acak. Hanya 1 benar. '
+      +'ATURAN MUTLAK: keempat pilihan HARUS berbeda satu sama lain (DILARANG ada dua pilihan yang sama/identik). Jawaban "a" WAJIB pilihan yang benar-benar tepat secara tata bahasa & makna untuk kalimat itu; pastikan pilihan lain memang salah. '
       +'Tulis penuh kanji sesuai level '+currentJLPT+'. Penjelasan (e) singkat 1 kalimat Bahasa Jepang. '
       +'Variasikan pola agar tidak mengulang batch sebelumnya. Utamakan kosakata: '+sample+'. '
       +'Balas HANYA JSON array valid: [{"q":"…（　）…","c":["…","…","…","…"],"a":0,"e":"…"}]';
@@ -3467,21 +3501,25 @@ async function buildGrammarSections(words) {
   async function genM7(n, bi){
     shuffle(words);
     var sample = words.slice(0,12).map(function(w){ return w.jp; }).join('、');
-    var prompt = 'Buatkan '+n+' soal JLPT '+currentJLPT+' tipe 文の組み立て (menyusun kalimat). '
+    var prompt = 'Buatkan '+n+' soal JLPT '+currentJLPT+' tipe 文の組み立て (menyusun kalimat) format resmi 問題7. '
       +levelLockText()
       +'SEMUA dalam BAHASA JEPANG, penuh kanji sesuai level. '
-      +'Tiap soal: sebuah kalimat dengan satu posisi bertanda ★ di antara 4 potongan acak. '
-      +'Tulis "q" sebagai kalimat lengkap yang memuat ★ pada posisi yang ditanya, dan 4 pilihan "c" adalah potongan kata/frasa; jawaban "a" = indeks potongan yang benar untuk posisi ★. '
-      +'Pengecoh masuk akal, hanya 1 benar. Penjelasan (e) singkat Bahasa Jepang. '
+      +'FORMAT WAJIB tiap soal: sebuah kalimat yang memiliki EMPAT slot kosong berurutan, ditampilkan persis sebagai "＿＿ ＿＿ ★ ＿＿" (tiga garis bawah dan satu ★ menandai slot ketiga). '
+      +'Keempat pilihan "c" adalah POTONGAN PENDEK (kata/frasa singkat, BUKAN kalimat utuh, BUKAN seluruh susunan). Pelajar menyusun keempat potongan ke dalam slot; jawaban "a" = indeks (0-3) potongan yang TEPAT menempati posisi ★. '
+      +'ATURAN MUTLAK: keempat potongan HARUS berbeda (DILARANG duplikat). Susunan yang benar harus membentuk kalimat alami, dan potongan pada posisi ★ harus benar. '
+      +'Penjelasan (e): tunjukkan urutan lengkap yang benar dan tegaskan potongan mana yang ada di ★. '
       +'Gunakan kosakata: '+sample+'. '
-      +'Balas HANYA JSON array valid: [{"q":"…★…","c":["…","…","…","…"],"a":0,"e":"…"}]';
+      +'Balas HANYA JSON array valid: [{"q":"先週＿＿ ＿＿ ★ ＿＿ から、行ってみませんか。","c":["ばかりの","レストランが","オープンした","ある"],"a":2,"e":"正しい順序：先週オープンしたばかりのレストランがある→★=オープンした"}]';
     return aiVocabQuestions(prompt, n, 'm7ai_b'+bi+'_');
   }
 
   // ── 問題6 → target 20 (bank dulu, lalu AI batch top-up) ──
   var m6qs = [];
   if (useBankN3 && levelBank.mondai6 && levelBank.mondai6.length) {
-    var shuffled6 = levelBank.mondai6.slice(); shuffle(shuffled6);
+    var shuffled6 = levelBank.mondai6.slice().filter(function(q){
+      return isCleanQuestion({choices:q.c, answer:q.a});
+    });
+    shuffle(shuffled6);
     m6qs = shuffled6.slice(0,20).map(function(q,i){
       return {id:'m6_'+i, question:q.q.split('\n').join('<br>'), choices:q.c.map(function(c,ci){return String.fromCharCode(0xFF11+ci)+'. '+c;}), answer:q.a, exp:q.e};
     });
@@ -3495,7 +3533,10 @@ async function buildGrammarSections(words) {
   // ── 問題7 → target 10 (bank dulu, lalu AI batch top-up) ──
   var m7qs = [];
   if (useBankN3 && levelBank.mondai7 && levelBank.mondai7.length) {
-    var shuffled7 = levelBank.mondai7.slice(); shuffle(shuffled7);
+    var shuffled7 = levelBank.mondai7.slice().filter(function(q){
+      return isCleanQuestion({choices:q.c, answer:q.a});
+    });
+    shuffle(shuffled7);
     m7qs = shuffled7.slice(0,10).map(function(q,i){
       return {id:'m7_'+i, question:q.q.split('\n').join('<br>'), choices:q.c.map(function(c,ci){return String.fromCharCode(0xFF11+ci)+'. '+c;}), answer:q.a, exp:q.e};
     });
