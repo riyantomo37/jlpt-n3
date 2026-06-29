@@ -2857,7 +2857,7 @@ async function startExamSection(sectionType) {
       examSections = examSections.concat(readingMondai);
     }
     if (sectionType === 'listening' || sectionType === 'full') {
-      var listenMondai = buildListeningSections(words);
+      var listenMondai = await buildListeningSections(words);
       examSections = examSections.concat(listenMondai);
     }
     if (sectionType === 'dokkai') {
@@ -3065,6 +3065,26 @@ async function buildYouhouQuestions(n){
   return aiVocabQuestions(prompt, n, 'm5ai_');
 }
 
+// Helper batching: panggil generator (async fn yg mengembalikan array) berulang
+// dengan ukuran batch kecil sampai mencapai `target`, agar JSON AI tidak terpotong.
+// genFn(batchSize, batchIndex) -> Promise<array>. Hasil digabung & diberi id unik.
+async function aiBatchArray(target, batchSize, genFn, idPrefix){
+  var out = [];
+  var maxBatches = Math.ceil(target / batchSize) + 1; // +1 toleransi batch gagal
+  for (var b = 0; b < maxBatches && out.length < target; b++){
+    var need = Math.min(batchSize, target - out.length);
+    var part = [];
+    try { part = await genFn(need, b) || []; } catch(e){ part = []; }
+    for (var k = 0; k < part.length && out.length < target; k++){
+      var q = part[k];
+      q.id = idPrefix + out.length;
+      out.push(q);
+    }
+    if (!part.length) break; // generator gagal total -> stop, pakai apa yang ada
+  }
+  return out;
+}
+
 async function buildMojiVocabSections(words) {
   var sections = [];
   var NL = String.fromCharCode(10);
@@ -3074,7 +3094,7 @@ async function buildMojiVocabSections(words) {
   {
     var kanjiWords = words.filter(function(w){ return /[一-鿿]/.test(w.jp) && w.rom!==w.jp && (w.rom||'').length<14; });
     shuffle(kanjiWords);
-    m1qs = kanjiWords.slice(0,10).map(function(w,i){
+    m1qs = kanjiWords.slice(0,8).map(function(w,i){
       // distraktor: utamakan bacaan dgn panjang mirip & huruf awal sama (lebih sulit)
       var pool = kanjiWords.filter(function(x){return x.rom!==w.rom;});
       var near = pool.filter(function(x){ return Math.abs((x.rom||'').length-(w.rom||'').length)<=1 && (x.rom||'')[0]===(w.rom||'')[0]; });
@@ -3093,7 +3113,7 @@ async function buildMojiVocabSections(words) {
   {
     var kanjiW = words.filter(function(w){ return /[一-鿿]/.test(w.jp) && w.rom!==w.jp; });
     shuffle(kanjiW);
-    m2qs = kanjiW.slice(0,8).map(function(w,i){
+    m2qs = kanjiW.slice(0,6).map(function(w,i){
       // distraktor: kanji dgn panjang sama & berbagi minimal 1 karakter (lebih sulit)
       var pool = kanjiW.filter(function(x){return x.jp!==w.jp;});
       var near = pool.filter(function(x){
@@ -3113,10 +3133,10 @@ async function buildMojiVocabSections(words) {
   if (m2qs.length) sections.push({id:'mondai2',title:'問題２',num:2,instruction:'のことばを漢字で書くとき、最もよいものを１・２・３・４から一つえらんでください。',questions:m2qs});
 
   // 問題3 — 文脈規定 (generate dari pola bunpou level aktif via AI; fallback bila gagal)
-  var m3qs = await buildBunpoContextQuestions(11);
+  var m3qs = await buildBunpoContextQuestions(8);
   if (!m3qs || !m3qs.length) {
     shuffle(words);
-    m3qs = words.slice(0,11).map(function(w,i){
+    m3qs = words.slice(0,8).map(function(w,i){
       var wrong = words.filter(function(x){return x.jp!==w.jp;}); shuffle(wrong); wrong=wrong.slice(0,3);
       if(wrong.length<3) return null;
       var templates=['（　）を毎日使います。','（　）がとても好きです。','（　）に行きました。'];
@@ -3127,10 +3147,10 @@ async function buildMojiVocabSections(words) {
   if (m3qs.length) sections.push({id:'mondai3',title:'問題３',num:3,instruction:'（　）に入れるのに最もよいものを、１・２・３・４から一つえらんでください。',questions:m3qs});
 
   // 問題4 — 言い換え類義 (AI, full kanji; fallback ringan bila gagal)
-  var m4qs = await buildIikaeQuestions(5);
+  var m4qs = await buildIikaeQuestions(4);
   if (!m4qs || !m4qs.length) {
     shuffle(words);
-    m4qs = words.slice(0,5).map(function(w,i){
+    m4qs = words.slice(0,4).map(function(w,i){
       var wrong = words.filter(function(x){return x.jp!==w.jp;}); shuffle(wrong); wrong=wrong.slice(0,3);
       if(wrong.length<3) return null;
       var ch=[w.jp,wrong[0].jp,wrong[1].jp,wrong[2].jp]; shuffle(ch);
@@ -3140,10 +3160,10 @@ async function buildMojiVocabSections(words) {
   if (m4qs.length) sections.push({id:'mondai4',title:'問題４',num:4,instruction:'に意味が最も近いものを、１・２・３・４から一つえらんでください。',questions:m4qs});
 
   // 問題5 — 用法 (AI, full kanji; fallback ringan bila gagal)
-  var m5qs = await buildYouhouQuestions(5);
+  var m5qs = await buildYouhouQuestions(4);
   if (!m5qs || !m5qs.length) {
     shuffle(words);
-    m5qs = words.slice(0,5).map(function(w,i){
+    m5qs = words.slice(0,4).map(function(w,i){
       var ch=[w.jp+'を使います。',w.jp+'が降っています。',w.jp+'を食べました。',w.jp+'に乗ります。'];
       return {id:'m5_'+i, question:'「<span class="underline">'+w.jp+'</span>」の正しい使い方はどれですか。', choices:ch.map(function(c,ci){return String.fromCharCode(0xFF11+ci)+'. '+c;}), answer:0, exp:'「'+w.jp+'」('+w.id_+')の正しい使い方です。'};
     });
@@ -3167,98 +3187,70 @@ function buildMondai(title, num, instruction, questions) {
 // ── Build 文法 sections (AI) ──────────────────────
 
 // ── Listening (聴解) ────────────────────────────────────────
-function buildListeningSections(words) {
-  var pool = [];
+async function buildListeningSections(words) {
+  var TARGET = 30;
+  var seeds = [];
 
-  // Use N3_LISTENING bank for N3
+  // Seed kualitas: bank N3 atau script alami N4/N5 (sudah natural).
   if (currentJLPT==='N3' && typeof N3_LISTENING!=='undefined' && N3_LISTENING.length) {
-    var p = N3_LISTENING.slice(); shuffle(p);
-    pool = p.slice(0,5).map(function(item,i){
-      return {
-        id:'lst_'+i,
-        script: item.s,
-        question: item.q,
-        choices: (item.c||[]).map(function(c,ci){return String.fromCharCode(0xFF11+ci)+'. '+c;}),
-        answer: item.a,
-        exp: item.e,
-        listening: true
-      };
-    });
+    seeds = N3_LISTENING.slice();
   } else {
-    // N4/N5 — pakai script alami yang sudah jadi (TIDAK menyuntik kosakata acak,
-    // karena itu menyebabkan kalimat tak masuk akal seperti
-    // 「この近くにお兄さんはありますか」).
-    var scripts = [
-      {
-        s: '女：すみません、この近くにコンビニはありますか。\n男：ええ、駅の前にありますよ。\n女：ありがとうございます。',
-        q: '女の人は何を探していますか。',
-        c: ['コンビニ', '駅', '学校', '銀行'],
-        a: 0,
-        e: '女の人は「この近くにコンビニはありますか」と聞いています。'
-      },
-      {
-        s: '先生：明日のテストの範囲は第三課からです。よく復習してください。\n学生：はい、わかりました。',
-        q: 'テストについて正しいのはどれですか。',
-        c: ['明日テストがある','今日テストがある','テストはない','テストは来週だ'],
-        a: 0,
-        e: '「明日のテスト」と言っています。'
-      },
-      {
-        s: '男：昨日、映画を見に行ったんですが、とてもおもしろかったです。\n女：そうですか。私も見たいです。',
-        q: '男の人は映画についてどう言いましたか。',
-        c: ['おもしろかった','つまらなかった','怖かった','長かった'],
-        a: 0,
-        e: '「とてもおもしろかったです」と言っています。'
-      },
-      {
-        s: 'アナウンス：お客様にお知らせします。ただいまエレベーターは点検中のため使用できません。ご不便をおかけして申し訳ありません。',
-        q: 'このアナウンスは何について話していますか。',
-        c: ['エレベーターが使えないこと','店が閉まること','電車が遅れること','駐車場が満車なこと'],
-        a: 0,
-        e: '「エレベーターは点検中のため使用できません」と言っています。'
-      },
-      {
-        s: '女：田中さん、顔色が悪いですね。\n男：実は昨日から頭が痛くて、少し熱もあります。\n女：それは大変ですね。早く帰って休んでください。',
-        q: '男の人の状態はどうですか。',
-        c: ['頭が痛くて熱もある','おなかが痛い','足が痛い','元気だ'],
-        a: 0,
-        e: '「頭が痛くて、少し熱もあります」と言っています。'
-      },
-      {
-        s: '男：すみません、この電車は東京駅に止まりますか。\n駅員：いいえ、この電車は急行ですから、止まりません。次の各駅停車に乗ってください。\n男：わかりました。ありがとうございます。',
-        q: '男の人はどうすればいいですか。',
-        c: ['次の各駅停車に乗る','この電車に乗ったままでいる','タクシーに乗る','バスに乗る'],
-        a: 0,
-        e: '駅員は「次の各駅停車に乗ってください」と言っています。'
-      },
-      {
-        s: '女：もしもし、田中さんですか。今日の約束ですが、少し遅れそうです。\n男：大丈夫ですよ。何時ごろになりますか。\n女：３０分ほど遅れます。すみません。',
-        q: '女の人は何を伝えていますか。',
-        c: ['約束に３０分遅れること','約束をやめること','場所を変えること','早く着くこと'],
-        a: 0,
-        e: '「３０分ほど遅れます」と言っています。'
-      },
-      {
-        s: '店員：いらっしゃいませ。何かお探しですか。\n女：はい、青いセーターを探しているんですが。\n店員：こちらはいかがですか。今、安くなっていますよ。\n女：いいですね。これをください。',
-        q: '女の人は何を買いますか。',
-        c: ['青いセーター','赤いセーター','白いシャツ','黒いコート'],
-        a: 0,
-        e: '女の人は「青いセーターを探している」と言い、「これをください」と言っています。'
-      }
+    seeds = [
+      {s:'女：すみません、この近くにコンビニはありますか。\n男：ええ、駅の前にありますよ。\n女：ありがとうございます。',q:'女の人は何を探していますか。',c:['コンビニ','駅','学校','銀行'],a:0,e:'女の人は「この近くにコンビニはありますか」と聞いています。'},
+      {s:'先生：明日のテストの範囲は第三課からです。よく復習してください。\n学生：はい、わかりました。',q:'テストについて正しいのはどれですか。',c:['明日テストがある','今日テストがある','テストはない','テストは来週だ'],a:0,e:'「明日のテスト」と言っています。'},
+      {s:'男：昨日、映画を見に行ったんですが、とてもおもしろかったです。\n女：そうですか。私も見たいです。',q:'男の人は映画についてどう言いましたか。',c:['おもしろかった','つまらなかった','怖かった','長かった'],a:0,e:'「とてもおもしろかったです」と言っています。'},
+      {s:'アナウンス：お客様にお知らせします。ただいまエレベーターは点検中のため使用できません。ご不便をおかけして申し訳ありません。',q:'このアナウンスは何について話していますか。',c:['エレベーターが使えないこと','店が閉まること','電車が遅れること','駐車場が満車なこと'],a:0,e:'「エレベーターは点検中のため使用できません」と言っています。'},
+      {s:'女：田中さん、顔色が悪いですね。\n男：実は昨日から頭が痛くて、少し熱もあります。\n女：それは大変ですね。早く帰って休んでください。',q:'男の人の状態はどうですか。',c:['頭が痛くて熱もある','おなかが痛い','足が痛い','元気だ'],a:0,e:'「頭が痛くて、少し熱もあります」と言っています。'},
+      {s:'男：すみません、この電車は東京駅に止まりますか。\n駅員：いいえ、この電車は急行ですから、止まりません。次の各駅停車に乗ってください。\n男：わかりました。ありがとうございます。',q:'男の人はどうすればいいですか。',c:['次の各駅停車に乗る','この電車に乗ったままでいる','タクシーに乗る','バスに乗る'],a:0,e:'駅員は「次の各駅停車に乗ってください」と言っています。'},
+      {s:'女：もしもし、田中さんですか。今日の約束ですが、少し遅れそうです。\n男：大丈夫ですよ。何時ごろになりますか。\n女：３０分ほど遅れます。すみません。',q:'女の人は何を伝えていますか。',c:['約束に３０分遅れること','約束をやめること','場所を変えること','早く着くこと'],a:0,e:'「３０分ほど遅れます」と言っています。'},
+      {s:'店員：いらっしゃいませ。何かお探しですか。\n女：はい、青いセーターを探しているんですが。\n店員：こちらはいかがですか。今、安くなっていますよ。\n女：いいですね。これをください。',q:'女の人は何を買いますか。',c:['青いセーター','赤いセーター','白いシャツ','黒いコート'],a:0,e:'女の人は「青いセーターを探している」と言い、「これをください」と言っています。'}
     ];
-    shuffle(scripts);
-    pool = scripts.slice(0,5).map(function(item,i){
-      return {
-        id:'lst_'+i,
-        script: item.s,
-        question: item.q,
-        choices: item.c.map(function(c,ci){return String.fromCharCode(0xFF11+ci)+'. '+c;}),
-        answer: item.a,
-        exp: item.e,
-        listening: true
-      };
-    });
   }
+  shuffle(seeds);
+
+  async function genListen(n, bi){
+    var prompt = 'Buatkan '+n+' soal 聴解 (listening) JLPT '+currentJLPT+' berupa percakapan/pengumuman pendek yang ALAMI dan natural. '
+      +levelLockText()
+      +'SEMUA dalam BAHASA JEPANG. Tiap item: '
+      +'"s" = skrip percakapan natural (gunakan penanda pembicara seperti 男:/女:/店員:/先生: dan baris baru antar giliran bicara; 2-4 giliran), '
+      +'"q" = satu pertanyaan tentang isi, "c" = 4 pilihan, "a" = indeks jawaban benar (0-3), "e" = penjelasan singkat Bahasa Jepang. '
+      +'PENTING natural: percakapan harus terdengar seperti orang Jepang asli dalam situasi nyata (toko, stasiun, kantor, sekolah, telepon, dll), JANGAN menyisipkan kosakata secara paksa, JANGAN kalimat janggal. '
+      +'Variasikan situasi & pembicara agar tidak mengulang batch sebelumnya. Tulis kanji sesuai level. '
+      +'Balas HANYA JSON array valid: [{"s":"...","q":"...","c":["...","...","...","..."],"a":0,"e":"..."}]';
+    try {
+      var res = await fetch('/api/groq',{method:'POST',headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({max_tokens:2400,temperature:0.7,
+          messages:[
+            {role:'system',content:'あなたはプロのJLPT聴解問題作成者です。会話は自然で実際の日本語話者のように作り、不自然な語彙の押し込みは禁止。出力は有効なJSON配列のみ。'},
+            {role:'user',content:prompt}
+          ]})});
+      var d = await res.json();
+      var raw=(d.choices?.[0]?.message?.content||'[]').replace(/```json|```/g,'').trim();
+      var st=raw.indexOf('['),en=raw.lastIndexOf(']');
+      if(st>=0&&en>st) raw=raw.slice(st,en+1);
+      var arr=JSON.parse(raw);
+      if(Array.isArray(arr)) return arr.filter(function(it){return it&&it.s&&it.q&&it.c&&it.c.length===4;});
+    } catch(e){}
+    return [];
+  }
+
+  var items = seeds.slice(0, TARGET);
+  if (items.length < TARGET) {
+    var add = await aiBatchArray(TARGET - items.length, 5, genListen, 'lstadd_');
+    items = items.concat(add);
+  }
+
+  var pool = items.slice(0, TARGET).map(function(item,i){
+    return {
+      id:'lst_'+i,
+      script: item.s,
+      question: item.q,
+      choices: (item.c||[]).map(function(c,ci){return String.fromCharCode(0xFF11+ci)+'. '+c;}),
+      answer: item.a,
+      exp: item.e,
+      listening: true
+    };
+  });
 
   if (!pool.length) return [];
 
@@ -3266,7 +3258,7 @@ function buildListeningSections(words) {
     id: 'mondai_listen',
     title: '問題１（聴解）',
     num: 99,
-    instruction: '音声を聞いて、質問に答えてください。\nTekan ▶ untuk memutar audio. Pilih jawaban yang benar.',
+    instruction: '音声を聞いて、質問に答えてください。\nTekan untuk memutar audio. Pilih jawaban yang benar.',
     questions: pool,
     isListening: true
   }];
@@ -3327,125 +3319,134 @@ async function buildGrammarSections(words) {
   var sections = [];
   var levelBank = getLevelBank(); var useBankN3 = levelBank && levelBank.mondai6 && levelBank.mondai6.length>0;
 
-  // 問題6 — from bank or AI
-  var m6qs;
-  if (useBankN3 && levelBank.mondai6 && levelBank.mondai6.length) {
-    var shuffled6 = levelBank.mondai6.slice(); shuffle(shuffled6);
-    m6qs = shuffled6.slice(0,10).map(function(q,i){
-      return {id:'m6_'+i, question:q.q.split('\n').join('<br>'), choices:q.c.map(function(c,ci){return String.fromCharCode(0xFF11+ci)+'. '+c;}), answer:q.a, exp:q.e};
-    });
-    sections.push({id:'mondai6',title:'問題６',num:6,instruction:'（　）に入れるのに最もよいものを、１・２・３・４から一つえらんでください。',questions:m6qs});
-  }
-
-  // 問題7 — sentence ordering from bank or AI
-  var m7qs;
-  if (useBankN3 && levelBank.mondai7 && levelBank.mondai7.length) {
-    var shuffled7 = levelBank.mondai7.slice(); shuffle(shuffled7);
-    m7qs = shuffled7.slice(0,3).map(function(q,i){
-      return {id:'m7_'+i, question:q.q.split('\n').join('<br>'), choices:q.c.map(function(c,ci){return String.fromCharCode(0xFF11+ci)+'. '+c;}), answer:q.a, exp:q.e};
-    });
-    sections.push({id:'mondai7',title:'問題７',num:7,instruction:'次の文の★に入る最もよいものはどれですか。',questions:m7qs});
-  }
-
-  // If no bank data (N4/N5), use AI
-  if (!sections.length) {
+  // ── Generator AI batch untuk 問題6 (文法形式; （　）） ──
+  async function genM6(n, bi){
     shuffle(words);
     var sample = words.slice(0,12).map(function(w){ return w.jp+'='+w.id_; }).join('; ');
-    var prompt = 'Buatkan 10 soal JLPT '+currentJLPT+' bagian 文法 (tata bahasa). '
+    var prompt = 'Buatkan '+n+' soal JLPT '+currentJLPT+' bagian 文法 (tata bahasa). '
       +levelLockText()
-      +'SEMUA isi soal (kalimat soal, 4 pilihan, dan penjelasan) HARUS dalam BAHASA JEPANG, bukan bahasa Indonesia. '
-      +'Setiap soal berupa kalimat dengan satu bagian kosong （　）, dan pelajar memilih pola/partikel yang paling tepat. '
-      +'WAJIB: ketiga pilihan yang SALAH harus berupa jebakan yang mirip dan masuk akal (partikel/pola yang gramatikal serupa, misal なら／ので／から／ため, atau pola yang artinya berdekatan), '
-      +'BUKAN pilihan acak yang jelas salah. Hanya satu jawaban benar. Penjelasan (e) singkat dalam bahasa Jepang mengapa jawaban itu benar. '
-      +'Utamakan kosakata level '+currentJLPT+' berikut: '+sample+'. '
-      +'Format HANYA JSON array valid: [{"q":"…（　）…","c":["…","…","…","…"],"a":0,"e":"…"}]';
-    try {
-      var res = await fetch('/api/groq',{
-        method:'POST',
-        headers:{'Content-Type':'application/json'},
-        body:JSON.stringify({max_tokens:2000,temperature:0.5,
-          messages:[
-            {role:'system',content:'あなたはプロのJLPT問題作成者です。文法問題はすべて日本語で作り、不正解の選択肢は紛らわしい引っかけにしてください。出力は有効なJSON配列のみ。'},
-            {role:'user',content:prompt}
-          ]
-        })
-      });
-      var d = await res.json();
-      var raw=(d.choices?.[0]?.message?.content||'[]').replace(/```json|```/g,'').trim();
-      var st=raw.indexOf('['), en=raw.lastIndexOf(']');
-      if(st>=0&&en>st) raw=raw.slice(st,en+1);
-      var aiQs = JSON.parse(raw);
-      if (Array.isArray(aiQs) && aiQs.length) {
-        m6qs = aiQs.slice(0,10).map(function(q,i){
-          return {id:'m6ai_'+i, question:(q.q||''), choices:(q.c||[]).map(function(c,ci){return String.fromCharCode(0xFF11+ci)+'. '+c;}), answer:q.a||0, exp:q.e||''};
-        });
-        sections.push({id:'mondai6',title:'問題６',num:6,instruction:'（　）に入れるのに最もよいものを選んでください。',questions:m6qs});
-      }
-    } catch(err) {
-      // fallback: more vocab
-      var fbWords = words.slice(0,10);
-      m6qs = fbWords.map(function(w,i){
-        var wrong = words.filter(function(x){return x.jp!==w.jp;}); shuffle(wrong); wrong=wrong.slice(0,3);
-        var ch=[w.jp,wrong[0].jp,wrong[1].jp,wrong[2].jp]; shuffle(ch);
-        return {id:'m6fb_'+i, question:'（　）に入る言葉はどれですか。「毎日（　）します。」', choices:ch.map(function(c,ci){return String.fromCharCode(0xFF11+ci)+'. '+c;}), answer:ch.indexOf(w.jp), exp:w.jp+'('+w.id_+')'};
-      }).filter(function(q){ return q !== null; });
-      sections.push({id:'mondai6',title:'問題６',num:6,instruction:'（　）に入る言葉を選んでください。',questions:m6qs});
-    }
+      +'SEMUA isi soal (kalimat soal, 4 pilihan, penjelasan) HARUS dalam BAHASA JEPANG. '
+      +'Setiap soal: kalimat dengan satu （　）, pelajar memilih pola/partikel paling tepat. '
+      +'WAJIB: tiga pilihan salah berupa jebakan mirip & masuk akal (pola/partikel berdekatan), bukan acak. Hanya 1 benar. '
+      +'Tulis penuh kanji sesuai level '+currentJLPT+'. Penjelasan (e) singkat 1 kalimat Bahasa Jepang. '
+      +'Variasikan pola agar tidak mengulang batch sebelumnya. Utamakan kosakata: '+sample+'. '
+      +'Balas HANYA JSON array valid: [{"q":"…（　）…","c":["…","…","…","…"],"a":0,"e":"…"}]';
+    return aiVocabQuestions(prompt, n, 'm6ai_b'+bi+'_');
+  }
+
+  // ── Generator AI batch untuk 問題7 (文の組み立て; ★） ──
+  async function genM7(n, bi){
+    shuffle(words);
+    var sample = words.slice(0,12).map(function(w){ return w.jp; }).join('、');
+    var prompt = 'Buatkan '+n+' soal JLPT '+currentJLPT+' tipe 文の組み立て (menyusun kalimat). '
+      +levelLockText()
+      +'SEMUA dalam BAHASA JEPANG, penuh kanji sesuai level. '
+      +'Tiap soal: sebuah kalimat dengan satu posisi bertanda ★ di antara 4 potongan acak. '
+      +'Tulis "q" sebagai kalimat lengkap yang memuat ★ pada posisi yang ditanya, dan 4 pilihan "c" adalah potongan kata/frasa; jawaban "a" = indeks potongan yang benar untuk posisi ★. '
+      +'Pengecoh masuk akal, hanya 1 benar. Penjelasan (e) singkat Bahasa Jepang. '
+      +'Gunakan kosakata: '+sample+'. '
+      +'Balas HANYA JSON array valid: [{"q":"…★…","c":["…","…","…","…"],"a":0,"e":"…"}]';
+    return aiVocabQuestions(prompt, n, 'm7ai_b'+bi+'_');
+  }
+
+  // ── 問題6 → target 20 (bank dulu, lalu AI batch top-up) ──
+  var m6qs = [];
+  if (useBankN3 && levelBank.mondai6 && levelBank.mondai6.length) {
+    var shuffled6 = levelBank.mondai6.slice(); shuffle(shuffled6);
+    m6qs = shuffled6.slice(0,20).map(function(q,i){
+      return {id:'m6_'+i, question:q.q.split('\n').join('<br>'), choices:q.c.map(function(c,ci){return String.fromCharCode(0xFF11+ci)+'. '+c;}), answer:q.a, exp:q.e};
+    });
+  }
+  if (m6qs.length < 20) {
+    var add6 = await aiBatchArray(20 - m6qs.length, 10, genM6, 'm6add_');
+    m6qs = m6qs.concat(add6);
+  }
+  if (m6qs.length) sections.push({id:'mondai6',title:'問題６',num:6,instruction:'（　）に入れるのに最もよいものを、１・２・３・４から一つえらんでください。',questions:m6qs});
+
+  // ── 問題7 → target 10 (bank dulu, lalu AI batch top-up) ──
+  var m7qs = [];
+  if (useBankN3 && levelBank.mondai7 && levelBank.mondai7.length) {
+    var shuffled7 = levelBank.mondai7.slice(); shuffle(shuffled7);
+    m7qs = shuffled7.slice(0,10).map(function(q,i){
+      return {id:'m7_'+i, question:q.q.split('\n').join('<br>'), choices:q.c.map(function(c,ci){return String.fromCharCode(0xFF11+ci)+'. '+c;}), answer:q.a, exp:q.e};
+    });
+  }
+  if (m7qs.length < 10) {
+    var add7 = await aiBatchArray(10 - m7qs.length, 5, genM7, 'm7add_');
+    m7qs = m7qs.concat(add7);
+  }
+  if (m7qs.length) sections.push({id:'mondai7',title:'問題７',num:7,instruction:'次の文の★に入る最もよいものはどれですか。',questions:m7qs});
+
+  // Fallback total bila semua gagal (tidak ada bank & AI gagal)
+  if (!sections.length) {
+    shuffle(words);
+    var fb = words.slice(0,10).map(function(w,i){
+      var wrong = words.filter(function(x){return x.jp!==w.jp;}); shuffle(wrong); wrong=wrong.slice(0,3);
+      if(wrong.length<3) return null;
+      var ch=[w.jp,wrong[0].jp,wrong[1].jp,wrong[2].jp]; shuffle(ch);
+      return {id:'m6fb_'+i, question:'（　）に入る言葉はどれですか。「毎日（　）します。」', choices:ch.map(function(c,ci){return String.fromCharCode(0xFF11+ci)+'. '+c;}), answer:ch.indexOf(w.jp), exp:w.jp+'('+w.id_+')'};
+    }).filter(Boolean);
+    if (fb.length) sections.push({id:'mondai6',title:'問題６',num:6,instruction:'（　）に入る言葉を選んでください。',questions:fb});
   }
   return sections;
 }
 
 // ── Build 読解 sections (AI) ──────────────────────
 async function buildReadingSections(words) {
-  shuffle(words);
-  var sample = words.slice(0,8).map(function(w){ return w.jp; }).join('、');
-  var prompt = 'Buatkan 1 teks pendek berbahasa Jepang (4-6 kalimat, level '+currentJLPT+') lalu 3 soal pilihan ganda tentang isi teks itu. '
-    +levelLockText()
-    +'SEMUA isi (teks, pertanyaan, 4 pilihan, dan penjelasan) HARUS dalam BAHASA JEPANG, bukan bahasa Indonesia. '
-    +'WAJIB: tiga pilihan yang salah harus berupa jebakan yang masuk akal dan berkaitan dengan teks (bukan acak), sehingga pelajar harus benar-benar memahami teks. Hanya satu jawaban benar. '
-    +'Gunakan kata-kata ini bila memungkinkan: '+sample+'. '
-    +'Format HANYA JSON valid: {"passage":"日本語の本文","questions":[{"q":"日本語の質問","choices":["…","…","…","…"],"answer":0,"exp":"日本語の説明"}]}';
+  // Target ~30 soal 読解 via batching: beberapa passage, tiap passage 1 panggilan AI.
+  var sections = [];
+  var TARGET = 30;
+  var totalQ = 0;
+  var maxPassages = 8;           // batas aman jumlah panggilan
+  var qPerPassage = 4;           // tiap passage ~4 soal
+  var passNum = 0;
 
-  try {
-    var res = await fetch('/api/groq',{
-      method:'POST',
-      headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({max_tokens:2000,temperature:0.6,
-        messages:[
-          {role:'system',content:'あなたはプロのJLPT読解問題作成者です。本文・質問・選択肢・説明はすべて日本語で作り、不正解の選択肢は紛らわしい引っかけにしてください。出力は有効なJSONのみ。'},
-          {role:'user',content:prompt}
-        ]
-      })
-    });
-    var d = await res.json();
-    var raw=(d.choices?.[0]?.message?.content||'{}').replace(/```json|```/g,'').trim();
-    var st=raw.indexOf('{'),en=raw.lastIndexOf('}');
-    if(st>=0&&en>st) raw=raw.slice(st,en+1);
-    var data = JSON.parse(raw);
-
-    if(!data.passage||!data.questions) throw new Error('invalid');
-
-    var qs = data.questions.slice(0,3).map(function(q,i){
-      return {
-        id:'m8_'+i,
-        question: q.q,
-        choices: (q.choices||[]).slice(0,4),
-        answer: q.answer||0,
-        exp: q.exp||''
-      };
-    });
-
-    return [{
-      id:'mondai8',
-      title:'問題８',
-      num:8,
-      passage: data.passage,
-      instruction:'次の文章を読んで、後の問いに答えなさい。答えは１・２・３・４から最もよいものを一つえらんでください。',
-      questions: qs
-    }];
-  } catch(err) {
-    return [];
+  async function genPassage(pi){
+    shuffle(words);
+    var sample = words.slice(0,8).map(function(w){ return w.jp; }).join('、');
+    var prompt = 'Buatkan 1 teks pendek berbahasa Jepang (4-7 kalimat, level '+currentJLPT+') lalu '+qPerPassage+' soal pilihan ganda tentang isi teks itu. '
+      +levelLockText()
+      +'SEMUA isi (teks, pertanyaan, 4 pilihan, penjelasan) HARUS dalam BAHASA JEPANG. '
+      +'Tema teks bervariasi (kehidupan sehari-hari, surat, pengumuman, email, dll) dan JANGAN mengulang tema batch sebelumnya. '
+      +'WAJIB: tiga pilihan salah berupa jebakan masuk akal terkait teks (bukan acak); hanya 1 benar. '
+      +'Tulis penuh kanji sesuai level. Gunakan kata bila bisa: '+sample+'. '
+      +'Balas HANYA JSON valid: {"passage":"日本語の本文","questions":[{"q":"…","choices":["…","…","…","…"],"answer":0,"exp":"…"}]}';
+    try {
+      var res = await fetch('/api/groq',{method:'POST',headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({max_tokens:2200,temperature:0.6,
+          messages:[
+            {role:'system',content:'あなたはプロのJLPT読解問題作成者です。本文・質問・選択肢・説明はすべて日本語で作り、不正解の選択肢は紛らわしい引っかけにしてください。出力は有効なJSONのみ。'},
+            {role:'user',content:prompt}
+          ]})});
+      var d = await res.json();
+      var raw=(d.choices?.[0]?.message?.content||'{}').replace(/```json|```/g,'').trim();
+      var st=raw.indexOf('{'),en=raw.lastIndexOf('}');
+      if(st>=0&&en>st) raw=raw.slice(st,en+1);
+      var data = JSON.parse(raw);
+      if(!data.passage||!data.questions||!data.questions.length) return null;
+      return data;
+    } catch(e){ return null; }
   }
+
+  for (var pi=0; pi<maxPassages && totalQ<TARGET; pi++){
+    var data = await genPassage(pi);
+    if (!data) { if (sections.length) continue; else break; }
+    var qs = data.questions.slice(0, qPerPassage).map(function(q,i){
+      return {id:'m8_p'+pi+'_'+i, question:q.q, choices:(q.choices||[]).slice(0,4), answer:q.answer||0, exp:q.exp||''};
+    });
+    if (!qs.length) continue;
+    passNum++;
+    sections.push({
+      id:'mondai8_'+pi,
+      title:'問題８ – '+passNum,
+      num:8,
+      passage:data.passage,
+      instruction:'次の文章を読んで、後の問いに答えなさい。答えは１・２・３・４から最もよいものを一つえらんでください。',
+      questions:qs
+    });
+    totalQ += qs.length;
+  }
+  return sections;
 }
 
 // ── Render all questions ──────────────────────────
@@ -3649,7 +3650,7 @@ function submitSection() {
       id = String(id||'');
       if (/^mondai_listen|^lst/.test(id)) return 'chokai';
       if (/^mondai[67]$|^m[67]/.test(id)) return 'bunpou';
-      if (/^mondai8$|^m8|^dok|^mono/.test(id)) return 'dokkai';
+      if (/^mondai8|^m8|^dok|^mono/.test(id)) return 'dokkai';
       if (/^mondai[1-5]$|^m[1-5]/.test(id)) return 'moji';
       return 'moji';
     }
