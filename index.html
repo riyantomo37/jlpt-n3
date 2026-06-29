@@ -3638,17 +3638,51 @@ function submitSection() {
   });
 
   var pct = total>0 ? Math.round(correct/total*100) : 0;
+
+  // ── Sistem poin 180/85 (Full Mock saja) ──
+  // 4 section besar (文字語彙/文法/読解/聴解) tiap-tiap di-skala ke 45 poin.
+  // Total maks 180, lulus ≥85.
+  var isFullMock = (lastSection === 'full');
+  var mockScore180 = null, mockPassed = null, mockBig = null;
+  if (isFullMock) {
+    function bigSectionOf(id){
+      id = String(id||'');
+      if (/^mondai_listen|^lst/.test(id)) return 'chokai';
+      if (/^mondai[67]$|^m[67]/.test(id)) return 'bunpou';
+      if (/^mondai8$|^m8|^dok|^mono/.test(id)) return 'dokkai';
+      if (/^mondai[1-5]$|^m[1-5]/.test(id)) return 'moji';
+      return 'moji';
+    }
+    var bigAgg = { moji:{c:0,t:0}, bunpou:{c:0,t:0}, dokkai:{c:0,t:0}, chokai:{c:0,t:0} };
+    examSections.forEach(function(sec){
+      var key = bigSectionOf(sec.id);
+      sec.questions.forEach(function(q){
+        bigAgg[key].t++;
+        if (examAnswers[q.id] === q.answer) bigAgg[key].c++;
+      });
+    });
+    var sum = 0;
+    Object.keys(bigAgg).forEach(function(k){
+      var a = bigAgg[k];
+      if (a.t > 0) sum += (a.c / a.t) * 45;
+    });
+    mockScore180 = Math.min(180, Math.round(sum));
+    mockPassed = (mockScore180 >= 85);
+    mockBig = bigAgg;
+  }
+
   showExamSection('exam-result');
-  renderResult(correct, total, pct, mondaiScores, reviewHtml);
+  renderResult(correct, total, pct, mondaiScores, reviewHtml, isFullMock ? {score:mockScore180, passed:mockPassed} : null);
 
   // Calculate exam points
-  var examPts = calcExamPoints(correct, total, currentJLPT);
+  var examPts = isFullMock ? mockScore180 : calcExamPoints(correct, total, currentJLPT);
 
   // Save history (with full replay data so it can be reviewed again later)
   var cfg = SECTION_CONFIG[lastSection]||{label:lastSection};
   var grade = pct>=90?'A':pct>=80?'B':pct>=65?'C':pct>=50?'D':'E';
   var entry = {id:'ex_'+Date.now(), type:cfg.label, section:lastSection, level:currentJLPT,
     score:correct, total:total, pct:pct, grade:grade, points:examPts,
+    mockScore:isFullMock?mockScore180:null, mockPassed:isFullMock?mockPassed:null,
     breakdown:mondaiScores, reviewHtml:reviewHtml,
     ts:new Date().toISOString(),
     date:new Date().toLocaleDateString('id-ID',{day:'numeric',month:'short'})};
@@ -3680,11 +3714,16 @@ function submitSection() {
   if(typeof save==='function') save();
 
   // Show earned points in result
-  document.getElementById('result-exam-pts').textContent = '+'+examPts+' poin dari ujian';
+  if (isFullMock) {
+    document.getElementById('result-exam-pts').textContent =
+      mockScore180 + '/180 点 · ' + (mockPassed ? '合格 ✅ (lulus ≥85)' : '不合格 ❌ (perlu ≥85)');
+  } else {
+    document.getElementById('result-exam-pts').textContent = '+'+examPts+' poin dari ujian';
+  }
   document.getElementById('result-exam-pts').style.display = 'block';
 }
 
-function renderResult(correct, total, pct, mondaiScores, reviewHtml) {
+function renderResult(correct, total, pct, mondaiScores, reviewHtml, mock) {
   var grade = pct>=90?'A':pct>=80?'B':pct>=65?'C':pct>=50?'D':'E';
   var gc = {A:'var(--gold)',B:'#2da050',C:'var(--indigo)',D:'#e67e22',E:'var(--red)'};
   var msgs = {
@@ -3698,11 +3737,24 @@ function renderResult(correct, total, pct, mondaiScores, reviewHtml) {
 
   document.getElementById('result-section-name').textContent =
     (SECTION_CONFIG[lastSection]||{label:lastSection}).label + ' · ' + currentJLPT;
-  document.getElementById('result-score').textContent = correct+'/'+total;
-  document.getElementById('result-score').style.color = gc[grade];
-  var gb=document.getElementById('result-grade-badge');
-  gb.textContent='Grade '+grade; gb.style.background=gc[grade]; gb.style.color='white';
-  document.getElementById('result-message').textContent=msgs[grade];
+
+  if (mock) {
+    // Full Mock: tampilkan skor 180 & status lulus, bukan grade A-E
+    document.getElementById('result-score').textContent = mock.score + '/180';
+    document.getElementById('result-score').style.color = mock.passed ? '#2da050' : 'var(--red)';
+    var gbm=document.getElementById('result-grade-badge');
+    gbm.textContent = mock.passed ? '合格 (lulus)' : '不合格';
+    gbm.style.background = mock.passed ? '#2da050' : 'var(--red)';
+    gbm.style.color='white';
+    document.getElementById('result-message').textContent =
+      mock.passed ? 'おめでとう！Lulus standar JLPT (≥85/180)! 🎌' : 'Belum lulus — perlu minimal 85/180. 頑張って！';
+  } else {
+    document.getElementById('result-score').textContent = correct+'/'+total;
+    document.getElementById('result-score').style.color = gc[grade];
+    var gb=document.getElementById('result-grade-badge');
+    gb.textContent='Grade '+grade; gb.style.background=gc[grade]; gb.style.color='white';
+    document.getElementById('result-message').textContent=msgs[grade];
+  }
 
   // Per-mondai breakdown
   var breakdown='';
@@ -3737,6 +3789,12 @@ function updateExamHistory() {
   var color = JLPT_COLORS[currentJLPT]||'var(--red)';
   el.innerHTML = filtered.map(function(h){
     var c = h.pct>=80?'var(--jade)':h.pct>=60?'var(--gold)':'var(--red)';
+    var isMock = (h.section==='full' && typeof h.mockScore==='number');
+    var scoreRight = isMock
+      ? '<span style="font-size:12px;color:var(--mist)">'+(h.mockPassed?'合格':'不合格')+'</span>'
+        +'<span style="font-family:DM Mono,monospace;font-weight:700;color:'+(h.mockPassed?'#2da050':'var(--red)')+'">'+h.mockScore+'/180</span>'
+      : '<span style="font-size:12px;color:var(--mist)">'+h.score+'/'+h.total+'</span>'
+        +'<span style="font-family:DM Mono,monospace;font-weight:700;color:'+c+'">'+h.pct+'%</span>';
     var replayable = !!h.reviewHtml;
     var rid = h.id || '';
     return '<div '+(replayable?'onclick="reviewPastExam(&apos;'+rid+'&apos;)" ':'')
@@ -3746,8 +3804,7 @@ function updateExamHistory() {
       +' <span style="font-size:11px;color:var(--mist)">'+h.date+'</span>'
       +(replayable?' <span style="font-size:10px;color:'+color+'">› tinjau</span>':'')+'</div>'
       +'<div style="display:flex;align-items:center;gap:8px">'
-      +'<span style="font-size:12px;color:var(--mist)">'+h.score+'/'+h.total+'</span>'
-      +'<span style="font-family:DM Mono,monospace;font-weight:700;color:'+c+'">'+h.pct+'%</span>'
+      +scoreRight
       +'</div></div>';
   }).join('');
 }
@@ -3762,13 +3819,23 @@ function reviewPastExam(id){
   var gc = {A:'var(--gold)',B:'#2da050',C:'var(--indigo)',D:'#e67e22',E:'var(--red)'};
   var grade = h.grade || (h.pct>=90?'A':h.pct>=80?'B':h.pct>=65?'C':h.pct>=50?'D':'E');
   document.getElementById('result-section-name').textContent = h.type + ' · ' + h.level + ' · ' + h.date;
-  document.getElementById('result-score').textContent = h.score+'/'+h.total;
-  document.getElementById('result-score').style.color = gc[grade];
+  var isMockH = (h.section==='full' && typeof h.mockScore==='number');
   var gb=document.getElementById('result-grade-badge');
-  gb.textContent='Grade '+grade; gb.style.background=gc[grade]; gb.style.color='white';
-  document.getElementById('result-message').textContent='Tinjauan ujian tersimpan · '+h.pct+'%';
+  if (isMockH) {
+    document.getElementById('result-score').textContent = h.mockScore+'/180';
+    document.getElementById('result-score').style.color = h.mockPassed ? '#2da050' : 'var(--red)';
+    gb.textContent = h.mockPassed ? '合格 (lulus)' : '不合格';
+    gb.style.background = h.mockPassed ? '#2da050' : 'var(--red)'; gb.style.color='white';
+    document.getElementById('result-message').textContent='Tinjauan Full Mock tersimpan · '+h.mockScore+'/180';
+  } else {
+    document.getElementById('result-score').textContent = h.score+'/'+h.total;
+    document.getElementById('result-score').style.color = gc[grade];
+    gb.textContent='Grade '+grade; gb.style.background=gc[grade]; gb.style.color='white';
+    document.getElementById('result-message').textContent='Tinjauan ujian tersimpan · '+h.pct+'%';
+  }
   var ep=document.getElementById('result-exam-pts');
-  if(ep){ ep.style.display=''; ep.textContent='+'+(h.points||0)+' poin'; }
+  if(ep){ ep.style.display='';
+    ep.textContent = isMockH ? (h.mockScore+'/180 点 · '+(h.mockPassed?'合格 ✅':'不合格 ❌')) : ('+'+(h.points||0)+' poin'); }
   // breakdown
   var breakdown='';
   Object.entries(h.breakdown||{}).forEach(function(kv){
