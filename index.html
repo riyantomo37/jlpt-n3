@@ -2535,6 +2535,18 @@ var examTimerInt  = null;
 var examStartTime = 0;
 var examTimeLimitSec = 0;
 
+// ── Full Mock bertahap (staged) ──
+// Tahap JLPT N3-N5: 0=言語知識(文字・語彙), 1=言語知識(文法)・読解, 2=聴解
+var mockStaged    = false;   // true bila sedang menjalankan full mock bertahap
+var mockStage     = 0;       // indeks tahap aktif
+var mockWords     = [];      // word pool yang dipakai sepanjang mock
+var MOCK_STAGES   = [
+  { key:'moji',   label:'言語知識（文字・語彙）' },
+  { key:'bunpodoku', label:'言語知識（文法）・読解' },
+  { key:'chokai', label:'聴解' }
+];
+var MOCK_TOTAL_SEC = 120*60; // satu timer total ~120 menit
+
 // Section config
 var SECTION_CONFIG = {
   moji_vocab: { label:'文字・語彙', time:25*60, color:'#c0392b' },
@@ -2815,9 +2827,124 @@ function stopTimer() {
 }
 
 // ── Start exam section ────────────────────────────
+// ══════════════════════════════════════════════════
+// FULL MOCK BERTAHAP (staged) — JLPT N3-N5 style
+//   Tahap 0: 言語知識（文字・語彙）
+//   Tahap 1: 言語知識（文法）・読解  (satu layar, boleh bolak-balik)
+//   Tahap 2: 聴解  (terpisah, searah)
+//   Timer total ~120 menit jalan terus; skor 180 (4 section × 45) di akhir.
+// ══════════════════════════════════════════════════
+function mockBuildWordPool() {
+  var words = [];
+  if (currentJLPT==='N3') {
+    ['kanji','vocab','grammar'].forEach(function(c){
+      ALL_WORDS[c].forEach(function(w){ words.push(Object.assign({},w,{cat:c})); });
+    });
+  } else {
+    words = (JLPT_DATA[currentJLPT]||[]).map(function(w){ return Object.assign({},w); });
+  }
+  return words;
+}
+
+async function startStagedMock() {
+  reviewingPastId = null;
+  lastSection = 'full';
+  mockStaged = true;
+  mockStage = 0;
+  examAnswers = {};
+  examSections = [];
+  mockWords = mockBuildWordPool();
+  await buildMockStage(0);
+}
+
+// Bangun soal untuk tahap tertentu, lalu render. Section tahap sebelumnya tetap
+// tersimpan di examSections (jawabannya sudah terkunci di examAnswers).
+async function buildMockStage(stage) {
+  showExamSection('exam-loading');
+  var st = MOCK_STAGES[stage];
+  document.getElementById('exam-loading-type').textContent = st.label;
+  var bar = document.getElementById('exam-loading-bar');
+  bar.style.width = '15%';
+
+  var newSecs = [];
+  try {
+    if (st.key === 'moji') {
+      bar.style.width = '40%';
+      newSecs = await buildMojiVocabSections(mockWords);
+    } else if (st.key === 'bunpodoku') {
+      bar.style.width = '35%';
+      var g = await buildGrammarSections(mockWords);
+      bar.style.width = '70%';
+      var r = await buildReadingSections(mockWords);
+      newSecs = g.concat(r);
+    } else if (st.key === 'chokai') {
+      bar.style.width = '50%';
+      newSecs = await buildListeningSections(mockWords);
+    }
+    bar.style.width = '100%';
+
+    if (!newSecs.length) throw new Error('Section kosong');
+
+    // Tandai section milik tahap ini agar bisa dirender terpisah.
+    newSecs.forEach(function(sec){ sec.mockStage = stage; });
+    examSections = examSections.concat(newSecs);
+
+    setTimeout(function(){
+      showExamSection('exam-session');
+      var lbl = document.getElementById('exam-session-label');
+      if (lbl) lbl.textContent = st.label + ' · ' + currentJLPT + '  ('+(stage+1)+'/'+MOCK_STAGES.length+')';
+      renderMockStage(stage);
+      // Timer total: mulai sekali di tahap 0, lanjut terus.
+      if (stage === 0) startTimer(MOCK_TOTAL_SEC);
+    }, 250);
+  } catch(err) {
+    console.error('Mock stage build error:', err);
+    showExamSection('exam-menu');
+    mockStaged = false;
+    alert('Gagal membuat soal tahap '+(stage+1)+': '+err.message+'. Coba lagi!');
+  }
+}
+
+// Render hanya section milik tahap aktif (reuse markup renderAllQuestions).
+function renderMockStage(stage) {
+  renderAllQuestions(function(sec){ return sec.mockStage === stage; });
+  // Ubah tombol bawah: "Selanjutnya" untuk tahap < terakhir, "Selesai" di akhir.
+  var btn = document.getElementById('exam-submit-btn');
+  if (btn) {
+    if (stage < MOCK_STAGES.length - 1) {
+      btn.textContent = 'Selanjutnya →';
+      btn.setAttribute('onclick','advanceMockStage()');
+    } else {
+      btn.textContent = 'Selesai & Lihat Skor';
+      btn.setAttribute('onclick','submitSection()');
+    }
+  }
+}
+
+// Kunci jawaban tahap ini (sudah otomatis di examAnswers via pilihan), lalu
+// generate tahap berikutnya. Tidak bisa mundur.
+async function advanceMockStage() {
+  // Validasi ringan: peringatkan bila masih banyak kosong (tapi tetap boleh lanjut).
+  var stageSecs = examSections.filter(function(sec){ return sec.mockStage === mockStage; });
+  var totalQ = 0, answered = 0;
+  stageSecs.forEach(function(sec){ sec.questions.forEach(function(q){
+    totalQ++; if (examAnswers[q.id] !== undefined) answered++;
+  }); });
+  if (answered < totalQ) {
+    if (!confirm('Masih ada '+(totalQ-answered)+' soal belum dijawab di bagian ini. Setelah lanjut TIDAK bisa kembali. Tetap lanjut?')) return;
+  }
+  mockStage++;
+  await buildMockStage(mockStage);
+}
+
 async function startExamSection(sectionType) {
   reviewingPastId = null;
   lastSection = sectionType;
+  mockStaged = false;
+
+  // Full Mock kini bertahap (staged) — alihkan ke alur khusus.
+  if (sectionType === 'full') { return startStagedMock(); }
+
   showExamSection('exam-loading');
   var cfg = SECTION_CONFIG[sectionType] || SECTION_CONFIG.moji_vocab;
   document.getElementById('exam-loading-type').textContent = cfg.label;
@@ -2840,23 +2967,23 @@ async function startExamSection(sectionType) {
   bar.style.width = '30%';
 
   try {
-    if (sectionType === 'moji_vocab' || sectionType === 'full') {
+    if (sectionType === 'moji_vocab') {
       var mondai = await buildMojiVocabSections(words);
       examSections = examSections.concat(mondai);
     }
     bar.style.width = '55%';
 
-    if (sectionType === 'grammar' || sectionType === 'full') {
+    if (sectionType === 'grammar') {
       var grammarMondai = await buildGrammarSections(words);
       examSections = examSections.concat(grammarMondai);
     }
     bar.style.width = '80%';
 
-    if (sectionType === 'reading' || sectionType === 'full') {
+    if (sectionType === 'reading') {
       var readingMondai = await buildReadingSections(words);
       examSections = examSections.concat(readingMondai);
     }
-    if (sectionType === 'listening' || sectionType === 'full') {
+    if (sectionType === 'listening') {
       var listenMondai = await buildListeningSections(words);
       examSections = examSections.concat(listenMondai);
     }
@@ -2884,6 +3011,8 @@ async function startExamSection(sectionType) {
       showExamSection('exam-session');
       var lbl = document.getElementById('exam-session-label');
       if(lbl) lbl.textContent = cfg.label + ' · ' + currentJLPT;
+      var sbtn = document.getElementById('exam-submit-btn');
+      if (sbtn) { sbtn.textContent = 'Selesai & Lihat Skor'; sbtn.setAttribute('onclick','submitSection()'); }
       renderAllQuestions();
       startTimer(cfg.time);
     }, 300);
@@ -3450,14 +3579,15 @@ async function buildReadingSections(words) {
 }
 
 // ── Render all questions ──────────────────────────
-function renderAllQuestions() {
+function renderAllQuestions(secFilter) {
   var content = document.getElementById('exam-content');
   if (!content) return;
-  var totalQ = examSections.reduce(function(n,sec){ return n+sec.questions.length; }, 0);
+  var secs = secFilter ? examSections.filter(secFilter) : examSections;
+  var totalQ = secs.reduce(function(n,sec){ return n+sec.questions.length; }, 0);
   var html = '';
   var qNum = 1;
 
-  examSections.forEach(function(sec) {
+  secs.forEach(function(sec) {
     var secColor = '#c0392b';
     html += '<div style="background:linear-gradient(135deg,'+secColor+',#e74c3c);color:white;padding:14px 16px;border-radius:12px 12px 0 0;margin-top:16px">'
       + '<div style="font-weight:700;font-size:15px">'+sec.title+'</div>'
@@ -3553,8 +3683,12 @@ function selectAnswer(qId, choiceIdx) {
 }
 
 function updateAnsweredCount() {
-  var total = examSections.reduce(function(n,s){ return n+s.questions.length; }, 0);
-  var answered = Object.keys(examAnswers).length;
+  var secs = examSections;
+  if (mockStaged) secs = examSections.filter(function(s){ return s.mockStage === mockStage; });
+  var total = secs.reduce(function(n,s){ return n+s.questions.length; }, 0);
+  var ids = {};
+  secs.forEach(function(s){ s.questions.forEach(function(q){ ids[q.id]=1; }); });
+  var answered = Object.keys(examAnswers).filter(function(k){ return ids[k]; }).length;
   var el = document.getElementById('exam-answered-count');
   if (el) el.textContent = answered + '/' + total + ' dijawab';
   var btn = document.getElementById('exam-submit-btn');
@@ -3566,6 +3700,7 @@ function confirmExitExam() {
     if (!confirm('Ujian akan dibatalkan. Yakin keluar?')) return;
   }
   stopTimer();
+  mockStaged = false;
   showExamSection('exam-menu');
   updateExamHistory();
 }
@@ -3573,6 +3708,7 @@ function confirmExitExam() {
 // ── Submit & Score ────────────────────────────────
 function submitSection() {
   stopTimer();
+  mockStaged = false;
   var total=0, correct=0;
   var mondaiScores = {};
   var reviewHtml = '';
