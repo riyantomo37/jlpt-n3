@@ -3222,6 +3222,62 @@ async function aiBatchArray(target, batchSize, genFn, idPrefix){
   return out;
 }
 
+// ── Konversi romaji → hiragana (data hanya menyimpan field rom).
+// Deterministik untuk romaji gaya Hepburn yang dipakai data ini.
+function romajiToHira(rom){
+  if(!rom) return '';
+  var s = String(rom).toLowerCase();
+  // tabel digraf & vokal panjang ditangani lewat urutan kunci dari yang terpanjang.
+  var map = {
+    'kya':'きゃ','kyu':'きゅ','kyo':'きょ','sha':'しゃ','shu':'しゅ','sho':'しょ',
+    'cha':'ちゃ','chu':'ちゅ','cho':'ちょ','nya':'にゃ','nyu':'にゅ','nyo':'にょ',
+    'hya':'ひゃ','hyu':'ひゅ','hyo':'ひょ','mya':'みゃ','myu':'みゅ','myo':'みょ',
+    'rya':'りゃ','ryu':'りゅ','ryo':'りょ','gya':'ぎゃ','gyu':'ぎゅ','gyo':'ぎょ',
+    'ja':'じゃ','ju':'じゅ','jo':'じょ','jya':'じゃ','jyu':'じゅ','jyo':'じょ',
+    'bya':'びゃ','byu':'びゅ','byo':'びょ','pya':'ぴゃ','pyu':'ぴゅ','pyo':'ぴょ',
+    'shi':'し','chi':'ち','tsu':'つ','dzu':'づ','dji':'ぢ',
+    'ka':'か','ki':'き','ku':'く','ke':'け','ko':'こ',
+    'sa':'さ','su':'す','se':'せ','so':'そ','si':'し',
+    'ta':'た','te':'て','to':'と','ti':'ち','tu':'つ',
+    'na':'な','ni':'に','nu':'ぬ','ne':'ね','no':'の',
+    'ha':'は','hi':'ひ','fu':'ふ','he':'へ','ho':'ほ','hu':'ふ',
+    'ma':'ま','mi':'み','mu':'む','me':'め','mo':'も',
+    'ya':'や','yu':'ゆ','yo':'よ',
+    'ra':'ら','ri':'り','ru':'る','re':'れ','ro':'ろ',
+    'wa':'わ','wo':'を','wi':'うぃ','we':'うぇ',
+    'ga':'が','gi':'ぎ','gu':'ぐ','ge':'げ','go':'ご',
+    'za':'ざ','ji':'じ','zu':'ず','ze':'ぜ','zo':'ぞ','zi':'じ',
+    'da':'だ','di':'ぢ','du':'づ','de':'で','do':'ど',
+    'ba':'ば','bi':'び','bu':'ぶ','be':'べ','bo':'ぼ',
+    'pa':'ぱ','pi':'ぴ','pu':'ぷ','pe':'ぺ','po':'ぽ',
+    'fa':'ふぁ','fi':'ふぃ','fe':'ふぇ','fo':'ふぉ',
+    'a':'あ','i':'い','u':'う','e':'え','o':'お','n':'ん','-':'ー'
+  };
+  var out = '';
+  var i = 0;
+  while(i < s.length){
+    var ch = s[i];
+    if(ch === ' '){ out += '　'; i++; continue; }   // spasi → spasi lebar JP
+    // sokuon: konsonan ganda (kk, tt, pp, ss, …) kecuali "nn"
+    if(i+1 < s.length && ch === s[i+1] && 'kstpgdbjzcfhmr'.indexOf(ch) >= 0){
+      out += 'っ'; i++; continue;
+    }
+    // 'n' diikuti konsonan / akhir → ん (tapi 'na/ni/nu/ne/no/nya...' ditangani map)
+    if(ch === 'n' && (i+1 >= s.length || 'aiueoy'.indexOf(s[i+1]) < 0)){
+      out += 'ん'; i++; continue;
+    }
+    var matched = false;
+    for(var len = 3; len >= 1; len--){
+      if(i+len <= s.length){
+        var seg = s.substr(i, len);
+        if(map[seg]){ out += map[seg]; i += len; matched = true; break; }
+      }
+    }
+    if(!matched){ out += ch; i++; }   // biarkan karakter tak dikenal apa adanya
+  }
+  return out;
+}
+
 async function buildMojiVocabSections(words) {
   var sections = [];
   var NL = String.fromCharCode(10);
@@ -3240,7 +3296,9 @@ async function buildMojiVocabSections(words) {
       var picks = near.concat(rest).slice(0,3);
       if(picks.length<3) return null;
       var ch=[w.rom,picks[0].rom,picks[1].rom,picks[2].rom]; shuffle(ch);
-      return {id:'m1_'+i, question:'「<span class="underline">'+w.jp+'</span>」の読み方はどれですか。', choices:ch.map(function(c,ci){return String.fromCharCode(0xFF11+ci)+'. '+c;}), answer:ch.indexOf(w.rom), exp:'「'+w.jp+'」は「'+w.rom+'」と読みます。意味：'+w.id_};
+      var hira = ch.map(function(r){ return romajiToHira(r).split('　').join(''); });
+      var ansIdx = ch.indexOf(w.rom);
+      return {id:'m1_'+i, question:'「<span class="underline">'+w.jp+'</span>」の読み方はどれですか。', choices:hira.map(function(c,ci){return String.fromCharCode(0xFF11+ci)+'. '+c;}), answer:ansIdx, exp:'「'+w.jp+'」は「'+romajiToHira(w.rom).split('　').join('')+'」と読みます。意味：'+w.id_};
     }).filter(Boolean);
   }
   if (m1qs.length) sections.push({id:'mondai1',title:'問題１',num:1,instruction:'＿＿の言葉の読み方として最もよいものを、１・２・３・４から一つえらんでください。',questions:m1qs});
@@ -3264,7 +3322,8 @@ async function buildMojiVocabSections(words) {
       var picks = near.concat(rest).concat(any).slice(0,3);
       if(picks.length<3) return null;
       var ch=[w.jp,picks[0].jp,picks[1].jp,picks[2].jp]; shuffle(ch);
-      return {id:'m2_'+i, question:'「'+w.rom+'」を漢字で書くとどれですか。', choices:ch.map(function(c,ci){return String.fromCharCode(0xFF11+ci)+'. '+c;}), answer:ch.indexOf(w.jp), exp:'「'+w.rom+'」は「'+w.jp+'」と書きます。'};
+      var hiraW = romajiToHira(w.rom).split('　').join('');
+      return {id:'m2_'+i, question:'「'+hiraW+'」を漢字で書くとどれですか。', choices:ch.map(function(c,ci){return String.fromCharCode(0xFF11+ci)+'. '+c;}), answer:ch.indexOf(w.jp), exp:'「'+hiraW+'」は「'+w.jp+'」と書きます。'};
     }).filter(Boolean);
   }
   if (m2qs.length) sections.push({id:'mondai2',title:'問題２',num:2,instruction:'のことばを漢字で書くとき、最もよいものを１・２・３・４から一つえらんでください。',questions:m2qs});
