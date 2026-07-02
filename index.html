@@ -4468,7 +4468,7 @@ async function loadFromFirestore() {
       if (Array.isArray(data.examHistory)) {
         // Merge cloud + local, dedupe by id, keep most recent 50
         var byId = {};
-        (examHistory||[]).concat(data.examHistory).forEach(function(e){ if(e&&e.id) byId[e.id]=e; else if(e){ byId['legacy_'+(e.ts||Math.random())]=e; } });
+        (data.examHistory||[]).concat(examHistory||[]).forEach(function(e){ if(e&&e.id) byId[e.id]=e; else if(e){ byId['legacy_'+(e.ts||Math.random())]=e; } });
         examHistory = Object.keys(byId).map(function(k){return byId[k];})
           .sort(function(a,b){ return (a.ts||'')<(b.ts||'')?-1:1; }).slice(-50);
         try{ localStorage.setItem('examHistory',JSON.stringify(examHistory)); }catch(e){}
@@ -4518,7 +4518,10 @@ async function saveToFirestore() {
       totalMastered: n3Total,
       totalMasteredAll: tma,
       kfMasteredAll: kfa,
-      examHistory: examHistory,
+      examHistory: (examHistory||[]).slice(-50).map(function(en){
+        var c={}; for(var k in en){ if(k!=='reviewHtml') c[k]=en[k]; }
+        return c;
+      }),
       bunpoProgress: bunpoProgress,
       bunpoLearned: bunpoLearned,
       lastSeen: firebase.firestore.FieldValue.serverTimestamp(),
@@ -4530,6 +4533,8 @@ async function saveToFirestore() {
     saveToLocal();
     try{ localStorage.setItem('n3_dirty','1'); }catch(e2){}
     setSyncBadge('offline');
+    // tampilkan kode error asli supaya kelihatan penyebabnya (bukan cuma "offline")
+    try{ var _b=document.getElementById('sync-badge'); if(_b&&e&&e.code) _b.textContent='○ '+e.code; }catch(e3){}
     // retry otomatis 8 detik lagi (sinyal jelek / sementara offline)
     if (syncTimeout) clearTimeout(syncTimeout);
     syncTimeout = setTimeout(saveToFirestore, 8000);
