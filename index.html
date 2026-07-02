@@ -4474,6 +4474,14 @@ async function loadFromFirestore() {
         try{ localStorage.setItem('examHistory',JSON.stringify(examHistory)); }catch(e){}
       }
     }
+    // Jika sesi sebelumnya ada perubahan yang BELUM sempat tersimpan ke cloud
+    // (app ditutup sebelum debounce jalan / save gagal), data lokal lebih baru
+    // dari cloud -> pakai lokal & langsung push, supaya progres tidak mundur.
+    var dirty=false; try{ dirty = localStorage.getItem('n3_dirty')==='1'; }catch(e){}
+    if (dirty) {
+      loadFromLocal();
+      setTimeout(saveToFirestore, 800);
+    }
     setSyncBadge('synced');
   } catch(e) {
     console.error('Load error:', e);
@@ -4515,20 +4523,40 @@ async function saveToFirestore() {
       bunpoLearned: bunpoLearned,
       lastSeen: firebase.firestore.FieldValue.serverTimestamp(),
     }, { merge: true });
+    try{ localStorage.removeItem('n3_dirty'); }catch(e){}
     setSyncBadge('synced');
   } catch(e) {
     console.error('Save error:', e);
     saveToLocal();
+    try{ localStorage.setItem('n3_dirty','1'); }catch(e2){}
     setSyncBadge('offline');
+    // retry otomatis 8 detik lagi (sinyal jelek / sementara offline)
+    if (syncTimeout) clearTimeout(syncTimeout);
+    syncTimeout = setTimeout(saveToFirestore, 8000);
   }
 }
 
 // Debounced save — tidak spam Firestore setiap centang
 function save() {
   saveToLocal(); // selalu simpan lokal dulu (instant)
+  try{ localStorage.setItem('n3_dirty','1'); }catch(e){} // tandai ada perubahan belum ke cloud
   if (syncTimeout) clearTimeout(syncTimeout);
   syncTimeout = setTimeout(saveToFirestore, 1500); // sync ke cloud 1.5 detik kemudian
 }
+
+// Flush segera saat app di-background / tab ditutup (timer debounce bisa dibunuh OS di HP)
+function flushSaveNow(){
+  if (syncTimeout) { clearTimeout(syncTimeout); syncTimeout = null; saveToFirestore(); }
+}
+document.addEventListener('visibilitychange', function(){
+  if (document.visibilityState === 'hidden') flushSaveNow();
+});
+window.addEventListener('pagehide', flushSaveNow);
+// Saat koneksi kembali, langsung sync perubahan yang tertunda
+window.addEventListener('online', function(){
+  var dirty=false; try{ dirty = localStorage.getItem('n3_dirty')==='1'; }catch(e){}
+  if (dirty) saveToFirestore();
+});
 
 async function syncNow() {
   document.getElementById('user-menu').classList.remove('open');
