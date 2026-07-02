@@ -4487,11 +4487,15 @@ async function loadFromFirestore() {
     console.error('Load error:', e);
     loadFromLocal();
     setSyncBadge('offline');
+    if (!window._syncErrShown) {
+      window._syncErrShown = true;
+      try{ alert('SYNC GAGAL (load)\n\ncode: '+(e&&e.code||'-')+'\n\n'+((e&&e.message)||String(e)).slice(0,400)); }catch(e4){}
+    }
   }
 }
 
 async function saveToFirestore() {
-  if (!currentUser) { saveToLocal(); return; }
+  if (!currentUser) { saveToLocal(); setSyncBadge('guest'); return; }
   setSyncBadge('syncing');
   try {
     var n3Total = masteredAll();
@@ -4535,6 +4539,11 @@ async function saveToFirestore() {
     setSyncBadge('offline');
     // tampilkan kode error asli supaya kelihatan penyebabnya (bukan cuma "offline")
     try{ var _b=document.getElementById('sync-badge'); if(_b&&e&&e.code) _b.textContent='○ '+e.code; }catch(e3){}
+    // DIAGNOSTIK: tampilkan pesan error lengkap sekali per sesi
+    if (!window._syncErrShown) {
+      window._syncErrShown = true;
+      try{ alert('SYNC GAGAL (save)\n\ncode: '+(e&&e.code||'-')+'\n\n'+((e&&e.message)||String(e)).slice(0,400)); }catch(e4){}
+    }
     // retry otomatis 8 detik lagi (sinyal jelek / sementara offline)
     if (syncTimeout) clearTimeout(syncTimeout);
     syncTimeout = setTimeout(saveToFirestore, 8000);
@@ -4609,6 +4618,7 @@ function setSyncBadge(state) {
   if (state === 'synced')  { b.textContent = '● sync';    b.className = 'sync-badge'; }
   if (state === 'syncing') { b.textContent = '↑ syncing'; b.className = 'sync-badge syncing'; }
   if (state === 'offline') { b.textContent = '○ offline'; b.className = 'sync-badge syncing'; }
+  if (state === 'guest')   { b.textContent = '○ lokal (guest)'; b.className = 'sync-badge syncing'; }
 }
 
 // ============================================================
