@@ -4403,7 +4403,15 @@ function loginAsGuest(){
 }
 showLoginScreen();
 initFirebase();
-if(typeof loadKotoba==='function' && !kotobaLoaded(currentJLPT)){ loadKotoba(currentJLPT).then(function(){ refreshActiveScreen(); }); }
+// Preload kosakata level aktif — ditunda hingga seluruh script selesai evaluasi
+// (currentJLPT dideklarasi `let` jauh di bawah; akses langsung di sini = TDZ crash)
+setTimeout(function(){
+  try{
+    if(!kotobaLoaded(currentJLPT)){
+      loadKotoba(currentJLPT).then(function(){ refreshActiveScreen(); });
+    }
+  }catch(e){ console.error('preload kotoba:', e); }
+}, 0);
 
 function showLoginScreen() {
   document.getElementById('login-screen').style.display = 'flex';
