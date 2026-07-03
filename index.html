@@ -2584,7 +2584,7 @@ async function loadKotoba(level){
       if(c){ JLPT_DATA[level]=JSON.parse(c); return true; }
     }catch(e){}
     try{
-      var res=await fetch('bank/kotoba/'+level.toLowerCase()+'.json');
+      var res=await fetch('bank/Kotoba/'+level.toLowerCase()+'.json'); // folder di repo pakai K besar
       if(!res.ok) throw new Error('HTTP '+res.status);
       var data=await res.json();
       if(!Array.isArray(data)||!data.length) throw new Error('data kosong');
