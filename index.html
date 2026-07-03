@@ -1145,12 +1145,12 @@ header:has(.user-menu.open) { z-index:1000; }
   <div id="fm-flat-section" style="display:none">
     <div id="fm-flat-info" style="background:white;border:1px solid var(--border);border-radius:16px;padding:36px 24px;text-align:center"></div>
   </div>
-  <div id="fm-pos-section" style="margin-top:18px;display:none">
+  <div id="fm-pos-section" style="margin-top:4px;display:none">
     <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">
-      <span style="font-size:14px;font-weight:800;color:var(--ink)">品詞 — Per Jenis Kata</span>
+      <span style="font-size:14px;font-weight:800;color:var(--ink)">品詞 — Pilih Jenis Kata</span>
       <span style="flex:1;height:1px;background:var(--border)"></span>
     </div>
-    <div style="font-size:12px;color:var(--mist);margin-bottom:12px">Pelajari kosakata dipisah per jenis kata (otomatis).</div>
+    <div style="font-size:12px;color:var(--mist);margin-bottom:12px">Kata dipisah per jenis (名詞・動詞・形容詞…). Progress tiap jenis tersimpan sendiri & sinkron dengan Dashboard.</div>
     <div id="fm-pos-grid" style="display:grid;grid-template-columns:repeat(2,1fr);gap:10px"></div>
   </div>
 </div>
@@ -6418,37 +6418,10 @@ function updateFlashMenu() {
   var flatSec=document.getElementById('fm-flat-section');
 
   if (hasCats) {
-    if(n3sec)n3sec.style.display='';
+    // Sistem lama (cat kanji/vocab/grammar dgn label jenis-kata yang SALAH) DIHAPUS.
+    // Kartu utama sekarang = 品詞 (posOf), jenis kata yang benar & sinkron.
+    if(n3sec)n3sec.style.display='none';
     if(flatSec)flatSec.style.display='none';
-    var cats=catCounts(currentJLPT);
-    var total=getCurrentTotal();
-    // count mastered per cat
-    function catDone(cat){
-      if(currentJLPT==='N3') return countMastered(cat);
-      return (JLPT_DATA[currentJLPT]||[]).filter(function(w){return w.cat===cat&&!!(mastered[currentJLPT]||{})[w.id];}).length;
-    }
-    var kd=catDone('kanji'),vd=catDone('vocab'),gd=catDone('grammar');
-    var kt=cats.kanji,vt=cats.vocab,gt=cats.grammar;
-    // Update labels
-    var d1=document.getElementById('fm-douji-done'),d2=document.getElementById('fm-meishi-done'),d3=document.getElementById('fm-keiyou-done');
-    var p1=document.getElementById('fm-douji-pct'),p2=document.getElementById('fm-meishi-pct'),p3=document.getElementById('fm-keiyou-pct');
-    var b1=document.getElementById('fm-bar-douji'),b2=document.getElementById('fm-bar-meishi'),b3=document.getElementById('fm-bar-keiyou');
-    if(d1)d1.textContent=kd+' / '+kt+' hafal';
-    if(d2)d2.textContent=vd+' / '+vt+' hafal';
-    if(d3)d3.textContent=gd+' / '+gt+' hafal';
-    if(p1)p1.textContent=Math.round(kd/kt*100)+'%';
-    if(p2)p2.textContent=Math.round(vd/vt*100)+'%';
-    if(p3)p3.textContent=Math.round(gd/gt*100)+'%';
-    if(b1)b1.style.width=Math.min(Math.round(kd/kt*100),100)+'%';
-    if(b2)b2.style.width=Math.min(Math.round(vd/vt*100),100)+'%';
-    if(b3)b3.style.width=Math.min(Math.round(gd/gt*100),100)+'%';
-    // Update card counts
-    var c1=document.getElementById('fm-cat-count-kanji');
-    var c2=document.getElementById('fm-cat-count-vocab');
-    var c3=document.getElementById('fm-cat-count-grammar');
-    if(c1)c1.textContent=kt+' kata kerja';
-    if(c2)c2.textContent=vt+' kata benda';
-    if(c3)c3.textContent=gt+' kata sifat';
   } else {
     if(n3sec)n3sec.style.display='none';
     if(flatSec)flatSec.style.display='';
@@ -6756,9 +6729,10 @@ function renderOverviewCategories(){
   var color=JLPT_COLORS[currentJLPT]||'var(--red)';
   var rows=[];
   if(currentJLPT==='N3'){
-    rows=[['動詞 Kata Kerja',countMastered('kanji'),242],
-          ['名詞 Kata Benda',countMastered('vocab'),389],
-          ['形容詞 Kata Sifat',countMastered('grammar'),140]];
+    var pc=_posCounts();
+    var order=[['meishi','名詞 Kata Benda'],['doushi','動詞 Kata Kerja'],['keiyoushi','形容詞 Kata Sifat'],['fukushi','副詞 Keterangan'],['setsuzoku','接続詞 Kata Sambung'],['pola','表現 Pola']];
+    rows=order.filter(function(o){return (pc.count[o[0]]||0)>0;})
+              .map(function(o){return [o[1],(pc.done[o[0]]||0),(pc.count[o[0]]||0)];});
   } else if(currentJLPT==='SSW'){
     var allS=JLPT_DATA['SSW']||[], mS=mastered['SSW']||{};
     function td(k){return allS.filter(function(w){return w.cat===k&&!!mS[w.id];}).length;}
