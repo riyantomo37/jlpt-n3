@@ -4259,8 +4259,9 @@ function stopAudio() {
 // ══ Word Modal ══════════════════════════════════════════════
 var _modalWordId = null;
 var _modalWordCat = null;
+var _modalMode = 'arti';  // 'arti' = hafal makna (Kosakata) | 'baca' = hafal bacaan (Kanji)
 
-function openWordModal(wordId, cat) {
+function openWordModal(wordId, cat, mode) {
   // Find word
   var word = null;
   if (currentJLPT==='N3') {
@@ -4279,10 +4280,18 @@ function openWordModal(wordId, cat) {
 
   _modalWordId = wordId;
   _modalWordCat = cat || word.cat || 'vocab';
+  _modalMode = (mode==='baca') ? 'baca' : 'arti';
 
-  var done = currentJLPT==='N3'
-    ? !!mastered[_modalWordCat][wordId]
-    : !!(mastered[currentJLPT]||{})[wordId];
+  var done;
+  if (_modalMode==='baca') {
+    done = currentJLPT==='N3'
+      ? !!kanjiReadMastered['kf_'+_modalWordCat+'_'+wordId]
+      : !!(mastered['kf_'+currentJLPT]||{})[wordId];
+  } else {
+    done = currentJLPT==='N3'
+      ? !!mastered[_modalWordCat][wordId]
+      : !!(mastered[currentJLPT]||{})[wordId];
+  }
 
   document.getElementById('wm-jp').textContent  = word.jp;
   document.getElementById('wm-rom').textContent = word.rom;
@@ -4313,13 +4322,26 @@ function setWordStatusFromModal(isHafal) {
   var wordId = _modalWordId;
   var cat    = _modalWordCat;
 
-  if (currentJLPT==='N3') {
-    if (isHafal) mastered[cat][wordId] = true;
-    else delete mastered[cat][wordId];
+  if (_modalMode==='baca') {
+    // hafalan BACA kanji
+    if (currentJLPT==='N3') {
+      var kkey='kf_'+cat+'_'+wordId;
+      if (isHafal) kanjiReadMastered[kkey]=true; else delete kanjiReadMastered[kkey];
+    } else {
+      var bkey='kf_'+currentJLPT;
+      if (!mastered[bkey]) mastered[bkey]={};
+      if (isHafal) mastered[bkey][wordId]=true; else delete mastered[bkey][wordId];
+    }
   } else {
-    if (!mastered[currentJLPT]) mastered[currentJLPT] = {};
-    if (isHafal) mastered[currentJLPT][wordId] = true;
-    else delete mastered[currentJLPT][wordId];
+    // hafalan ARTI (kosakata)
+    if (currentJLPT==='N3') {
+      if (isHafal) mastered[cat][wordId] = true;
+      else delete mastered[cat][wordId];
+    } else {
+      if (!mastered[currentJLPT]) mastered[currentJLPT] = {};
+      if (isHafal) mastered[currentJLPT][wordId] = true;
+      else delete mastered[currentJLPT][wordId];
+    }
   }
 
   save();
@@ -4341,7 +4363,7 @@ function setWordStatusFromModal(isHafal) {
   // Re-render just the grid
   renderReview(currentFilter);
   // Reopen modal (since re-render closes it via display)
-  openWordModal(wordId, cat);
+  openWordModal(wordId, cat, _modalMode);
 }
 
 function closeWordModal() {
@@ -7835,7 +7857,7 @@ function renderKanjiList(){
   }
   grid.innerHTML = words.map(function(w){
     var done=_kanjiReadDone(w);
-    return '<div class="vocab-item '+(done?'mastered':'')+'" data-wid="'+w.id+'" data-wcat="'+(w.cat||'vocab')+'" onclick="openWordModal(this.dataset.wid,this.dataset.wcat)" style="cursor:pointer">'
+    return '<div class="vocab-item '+(done?'mastered':'')+'" data-wid="'+w.id+'" data-wcat="'+(w.cat||'vocab')+'" onclick="openWordModal(this.dataset.wid,this.dataset.wcat,\'baca\')" style="cursor:pointer">'
       +'<div class="status-dot '+(done?'done':'todo')+'"></div>'
       +'<div style="flex:1;min-width:0">'
       +'<div class="jp">'+w.jp+'</div>'
