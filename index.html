@@ -6878,6 +6878,31 @@ function showCard() {
   document.getElementById('action-row').classList.add('hidden');
   document.getElementById('tap-hint').classList.remove('hide');
 
+  // Transparansi status: kenapa kartu ini muncul?
+  // - "✓ sudah hafal — review": kartu memang hafal (hanya tampil bila stok belum-hafal < ukuran sesi)
+  // - "baca ✓": bacaan kanji-nya sudah hafal di track 漢字 (track arti & baca terpisah)
+  var stEl = document.getElementById('fc-status-badge');
+  if (!stEl) {
+    stEl = document.createElement('div');
+    stEl.id = 'fc-status-badge';
+    stEl.style.cssText = 'position:absolute;top:10px;right:12px;font-size:11px;font-weight:700;padding:3px 8px;border-radius:10px;z-index:2';
+    fc.style.position = 'relative';
+    fc.appendChild(stEl);
+  }
+  var isDoneArti = (typeof wordDone==='function') && !w._isBunpo && !w._isKazu && wordDone(w);
+  var isDoneBaca = (typeof _kanjiReadDone==='function') && !w._isBunpo && !w._isKazu && _kanjiReadDone(w);
+  if (isDoneArti) {
+    stEl.textContent = '✓ sudah hafal — review';
+    stEl.style.background = 'rgba(46,125,50,.12)'; stEl.style.color = '#2e7d32';
+    stEl.style.display = 'block';
+  } else if (isDoneBaca) {
+    stEl.textContent = 'baca ✓ (arti belum)';
+    stEl.style.background = 'rgba(230,150,0,.12)'; stEl.style.color = '#b8860b';
+    stEl.style.display = 'block';
+  } else {
+    stEl.style.display = 'none';
+  }
+
   // Update progress bar
   const pct = (sessionIdx / sessionQueue.length * 100);
   document.getElementById('flash-prog-fill').style.width = pct + '%';
