@@ -1164,7 +1164,7 @@ header:has(.user-menu.open) { z-index:1000; }
         </div>
       </div>
     </div>
-    <p class="tap-hint" id="tap-hint">👆 Tap kartu untuk lihat arti</p>
+    <p class="tap-hint" id="tap-hint">👆 Tap = lihat arti · Geser ➡ hafal · ⬅ belum</p>
     <div class="action-row hidden" id="action-row">
       <button class="btn-no" onclick="markCard(false)">✗ &nbsp; Belum Hafal</button>
       <button class="btn-yes" onclick="markCard(true)">✓ &nbsp; Sudah Hafal!</button>
@@ -6918,6 +6918,71 @@ function revealCard() {
   document.getElementById('action-row').classList.remove('hidden');
   document.getElementById('tap-hint').classList.add('hide');
 }
+
+// ===== SWIPE FLASHCARD — kanan = hafal, kiri = belum =====
+// Kartu ikut jari + label ✓/✗; ambang 90px; vertikal tetap scroll (touch-action pan-y).
+function attachSwipe(el, onLeft, onRight){
+  if(!el || el._swipeOn) return;
+  el._swipeOn = true;
+  el.style.touchAction = 'pan-y';
+  var lbl = document.createElement('div');
+  lbl.style.cssText = 'position:absolute;top:14px;left:0;right:0;text-align:center;font-size:24px;font-weight:900;letter-spacing:3px;pointer-events:none;opacity:0;z-index:5';
+  el.appendChild(lbl);
+  var sx=0, sy=0, dx=0, horiz=false, active=false, busy=false;
+  function reset(anim){
+    el.style.transition = anim ? 'transform .18s ease-out' : 'none';
+    el.style.transform = '';
+    lbl.style.opacity = 0;
+    if(anim) setTimeout(function(){ el.style.transition=''; }, 200);
+  }
+  el.addEventListener('touchstart', function(e){
+    if(busy || e.touches.length!==1) return;
+    active=true; horiz=false; dx=0;
+    sx=e.touches[0].clientX; sy=e.touches[0].clientY;
+    el.style.transition='none';
+  }, {passive:true});
+  el.addEventListener('touchmove', function(e){
+    if(!active) return;
+    dx = e.touches[0].clientX - sx;
+    var dy = e.touches[0].clientY - sy;
+    if(!horiz){
+      if(Math.abs(dx)>12 && Math.abs(dx)>Math.abs(dy)) horiz=true;
+      else if(Math.abs(dy)>16){ active=false; reset(false); return; } // niatnya scroll
+    }
+    if(horiz){
+      e.preventDefault(); // kunci horizontal utk kita, vertikal tetap milik browser
+      el.style.transform = 'translateX('+dx+'px) rotate('+(dx/18)+'deg)';
+      lbl.textContent  = dx>0 ? '✓ HAFAL' : '✗ BELUM';
+      lbl.style.color  = dx>0 ? '#2e7d32' : '#c62828';
+      lbl.style.opacity = Math.min(Math.abs(dx)/90, 1);
+    }
+  }, {passive:false});
+  el.addEventListener('touchend', function(){
+    if(!active) return;
+    active=false;
+    if(horiz && Math.abs(dx)>90){
+      busy=true;
+      var right = dx>0;
+      el.style.transition='transform .2s ease-in';
+      el.style.transform='translateX('+(right?1:-1)*(window.innerWidth||400)+'px) rotate('+(right?22:-22)+'deg)';
+      setTimeout(function(){
+        reset(false);
+        busy=false;
+        (right?onRight:onLeft)();
+      }, 190);
+    } else reset(true);
+  });
+  el.addEventListener('touchcancel', function(){ if(active){ active=false; reset(true); } });
+}
+// pasang setelah seluruh script tereval (hindari TDZ)
+setTimeout(function(){
+  attachSwipe(document.getElementById('flashcard'),
+    function(){ markCard(false); },
+    function(){ markCard(true);  });
+  attachSwipe(document.getElementById('kf-card'),
+    function(){ markKanjiFlash(false); },
+    function(){ markKanjiFlash(true);  });
+}, 0);
 
 function markCard(isHafal) {
   var w = sessionQueue[sessionIdx];
