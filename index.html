@@ -6912,7 +6912,12 @@ function showCard() {
 }
 
 function revealCard() {
-  if (revealed) return;
+  if (revealed) {
+    // tap lagi = kembali ke sisi kanji (tombol & swipe tetap aktif)
+    revealed = false;
+    document.getElementById('flashcard').classList.remove('revealed');
+    return;
+  }
   revealed = true;
   document.getElementById('flashcard').classList.add('revealed');
   document.getElementById('action-row').classList.remove('hidden');
@@ -7356,7 +7361,11 @@ function showKanjiCard() {
 }
 
 function revealKanjiCard() {
-  if (kfRevealed) return;
+  if (kfRevealed) {
+    kfRevealed = false;
+    document.getElementById('kf-card').classList.remove('revealed');
+    return;
+  }
   kfRevealed = true;
   document.getElementById('kf-card').classList.add('revealed');
   document.getElementById('kf-action-row').classList.remove('hidden');
