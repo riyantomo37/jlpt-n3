@@ -1080,6 +1080,7 @@ header:has(.user-menu.open) { z-index:1000; }
   <button onclick="gotoScreen('katsuyomenu')">活用 Konjugasi</button>
   <button onclick="gotoScreen('dialectmenu')">方言 Dialek</button>
   <button onclick="gotoScreen('kazumenu')">数 Angka</button>
+  <button onclick="gotoScreen('onomenu')">擬音 Onomatope</button>
   <button onclick="gotoScreen('exam')">📝 Ujian</button>
   <button onclick="gotoScreen('review')">📊 Progress</button>
   <button onclick="gotoScreen('leaderboard')">🏆 Ranking</button>
@@ -1401,6 +1402,16 @@ header:has(.user-menu.open) { z-index:1000; }
   <div style="font-size:13px;color:var(--mist);margin-bottom:14px">Hafalkan penyebutan angka: tanggal, hari, bulan, jam, menit, dan penghitung (counter) yang sering tak beraturan.</div>
   <div id="kazu-tabs" style="display:flex;gap:8px;overflow-x:auto;padding-bottom:6px;margin-bottom:14px"></div>
   <div id="kazu-body"></div>
+</div>
+
+<!-- ====== ONOMATOPE ====== -->
+<div id="screen-onomenu" class="screen">
+  <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px">
+    <span style="font-size:22px">💬</span>
+    <div class="section-title" style="margin:0">オノマトペ Onomatope</div>
+  </div>
+  <div style="font-size:13px;color:var(--mist);margin-bottom:14px">Giongo (tiruan bunyi) & gitaigo (tiruan keadaan) — wajib N3 ke atas, sering keluar di ujian & percakapan. Tiap kata ada contoh kalimatnya.</div>
+  <div id="ono-body"></div>
 </div>
 
 <!-- ====== LEADERBOARD ====== -->
@@ -6375,6 +6386,7 @@ function gotoScreen(name) {
   if (name === 'katsuyomenu') updateKatsuyoMenu();
   if (name === 'dialectmenu') updateDialectMenu();
   if (name === 'kazumenu') updateKazuMenu();
+  if (name === 'onomenu') updateOnoMenu();
   if (name === 'exam') { showExamSection('exam-menu'); updateExamLevelBadge(); setExamMode('ai'); bankIndex=null; updateExamHistory(); }
 }
 
@@ -6671,6 +6683,7 @@ function renderOverviewMenu(){
     {scr:'katsuyomenu', emo:'活用', t:'Konjugasi', d:'Bentuk kata kerja', c:'#0a7d6b'},
     {scr:'dialectmenu', emo:'方言', t:'Dialek', d:'Ragam bahasa daerah', c:'#d98c00'},
     {scr:'kazumenu', emo:'数', t:'Angka', d:'Tanggal · jam · counter', c:'#2e7dc0'},
+    {scr:'onomenu', emo:'💬', t:'Onomatope', d:'Giongo & gitaigo + contoh', c:'#c2185b'},
     {scr:'exam',      emo:'📝', t:'Ujian', d:'Simulasi soal JLPT', c:'var(--red)'},
     {scr:'review',    emo:'📊', t:'Progress Hafalan', d:'Kotoba · Kanji · Bunpou · Ujian', c:'var(--jade)'},
     {scr:'leaderboard',emo:'🏆', t:'Ranking', d:'Peringkat poin', c:'#d08700'},
@@ -6889,8 +6902,8 @@ function showCard() {
     fc.style.position = 'relative';
     fc.appendChild(stEl);
   }
-  var isDoneArti = (typeof wordDone==='function') && !w._isBunpo && !w._isKazu && wordDone(w);
-  var isDoneBaca = (typeof _kanjiReadDone==='function') && !w._isBunpo && !w._isKazu && _kanjiReadDone(w);
+  var isDoneArti = (typeof wordDone==='function') && !w._isBunpo && !w._isKazu && !w._isOno && wordDone(w);
+  var isDoneBaca = (typeof _kanjiReadDone==='function') && !w._isBunpo && !w._isKazu && !w._isOno && _kanjiReadDone(w);
   if (isDoneArti) {
     stEl.textContent = '✓ sudah hafal — review';
     stEl.style.background = 'rgba(46,125,50,.12)'; stEl.style.color = '#2e7d32';
@@ -6991,6 +7004,21 @@ setTimeout(function(){
 
 function markCard(isHafal) {
   var w = sessionQueue[sessionIdx];
+  // Sesi onomatope: progress di mastered['ono_'+kategori] (pola persis kazu).
+  if ((sessionCat && sessionCat.indexOf('ono_')===0) || w._isOno) {
+    var ok2 = w._isOno ? ('ono_'+w._onoKey) : sessionCat;
+    if (!mastered[ok2]) mastered[ok2] = {};
+    var wasO = !!mastered[ok2][w.id];
+    if (!sessionHistory) sessionHistory = [];
+    sessionHistory.push({idx:sessionIdx, wordId:w.id, cat:ok2, wasMastered:wasO, kazu:true});
+    if (sessionHistory.length > 20) sessionHistory.shift();
+    if (isHafal) { mastered[ok2][w.id]=true; if(!wasO){ sessionMastered++; todayCount++; } }
+    else delete mastered[ok2][w.id];
+    var tdo=new Date().toDateString();
+    if(lastStudyDate!==tdo){var yo=new Date(Date.now()-86400000).toDateString();streak=(lastStudyDate===yo)?streak+1:1;lastStudyDate=tdo;}
+    save(); sessionReviewed++; sessionIdx++; updateUndoBtn(); showCard();
+    return;
+  }
   // Sesi angka (kazu): progress di mastered['kazu_'+kategori].
   if ((sessionCat && sessionCat.indexOf('kazu_')===0) || w._isKazu) {
     var kk = w._isKazu ? ('kazu_'+w._kazuKey) : sessionCat;
@@ -7100,6 +7128,7 @@ function endSession() {
 
 function continueStudy() {
   if (sessionCat && sessionCat.indexOf('kazu_')===0) startKazuFlash(sessionCat.slice(5));
+  else if (sessionCat && sessionCat.indexOf('ono_')===0) startOnoFlash(sessionCat.slice(4));
   else if (sessionCat==='bunpo') startStudyBunpo();
   else if (typeof sessionCat==='string' && sessionCat.indexOf('pos_')===0) startStudyPos(sessionCat.slice(4));
   else startStudy(sessionCat);
@@ -7994,6 +8023,7 @@ function refreshActiveScreen(){
   else if(id==='katsuyotype') { gotoScreen('katsuyomenu'); }
   else if(id==='dialectmenu') updateDialectMenu();
   else if(id==='kazumenu') updateKazuMenu();
+  else if(id==='onomenu') updateOnoMenu();
   else if(id==='exam')       { showExamSection('exam-menu'); updateExamLevelBadge(); setExamMode('ai'); bankIndex=null; updateExamHistory(); }
   else if(id==='review')     renderReview('all');
   else if(id==='leaderboard') loadLeaderboard(currentJLPT);
@@ -8914,7 +8944,217 @@ var KAZU_TITLE = {"kazu": "数字 Angka Dasar", "hizuke": "日付 Tanggal", "you
 var KAZU_EMOJI = {"kazu": "🔢", "hizuke": "📅", "youbi": "🗓️", "tsuki": "🌙", "ji": "🕐", "fun": "⏱️", "nin": "🧑", "tsu": "🍎", "hon": "🖊️", "mai": "📄", "hiki": "🐶", "tou": "🐮", "wa": "🐦", "ko": "🥚", "hai": "🍵", "satsu": "📚", "dai": "🚗", "kaifloor": "🏢", "sai": "🎂", "kai": "🔁"};
 
 // ===== TAB 数 (Angka & Penghitung) =====
+
+// ===== オノマトペ — Giongo (tiruan bunyi) & Gitaigo (tiruan keadaan) =====
+var ONO_ORDER=['kimochi','warai','itami','shokkan','tenki','ugoki','joutai','oto','nemuri','taido'];
+var ONO_TITLE={kimochi:'気持ち — Perasaan',warai:'笑い・泣き — Tawa & Tangis',itami:'痛み・体調 — Sakit & Kondisi Badan',shokkan:'食感 — Tekstur & Makan',tenki:'天気・自然 — Cuaca & Alam',ugoki:'動き — Gerakan',joutai:'状態 — Keadaan Benda',oto:'音 — Bunyi',nemuri:'眠り・疲れ — Tidur & Lelah',taido:'話し方・態度 — Bicara & Sikap'};
+var ONO_EMOJI={kimochi:'💓',warai:'😂',itami:'🤕',shokkan:'🍘',tenki:'🌧️',ugoki:'🏃',joutai:'📦',oto:'🔔',nemuri:'😴',taido:'🗣️'};
+var ONO_DATA={
+kimochi:[
+{jp:'わくわく',id:'berdebar senang, tak sabar',ex:'旅行のことを考えるとわくわくする。'},
+{jp:'どきどき',id:'deg-degan (gugup/jatuh cinta)',ex:'面接の前で心臓がどきどきした。'},
+{jp:'いらいら',id:'kesal, tidak sabar',ex:'バスが来なくていらいらする。'},
+{jp:'はらはら',id:'was-was menonton sesuatu yang berbahaya',ex:'子供が木に登るのをはらはらしながら見た。'},
+{jp:'ほっと',id:'lega',ex:'試験に合格してほっとした。'},
+{jp:'うきうき',id:'riang gembira (hati melayang)',ex:'デートの前はいつもうきうきする。'},
+{jp:'そわそわ',id:'gelisah tak bisa tenang',ex:'結果発表が気になってそわそわしている。'},
+{jp:'びくびく',id:'ketakutan, was-was terus',ex:'怒られないかびくびくしている。'},
+{jp:'もやもや',id:'perasaan mengganjal, tidak jelas',ex:'彼の説明を聞いても気持ちがもやもやする。'},
+{jp:'すっきり',id:'plong, segar',ex:'走ったあとは気分がすっきりする。'},
+{jp:'がっかり',id:'kecewa',ex:'試合に負けてがっかりした。'},
+{jp:'うっとり',id:'terpesona',ex:'美しい歌声にうっとりした。'},
+{jp:'ひやひや',id:'deg-degan takut ketahuan/bahaya',ex:'スピード違反で捕まらないかひやひやした。'},
+{jp:'むっと',id:'kesal seketika (tersinggung)',ex:'失礼な言葉にむっとした。'},
+{jp:'のびのび',id:'lepas bebas tanpa tekanan',ex:'田舎で子供をのびのび育てたい。'}],
+warai:[
+{jp:'にこにこ',id:'tersenyum ramah',ex:'彼女はいつもにこにこしている。'},
+{jp:'にやにや',id:'senyum-senyum mencurigakan',ex:'何をにやにやしているの？'},
+{jp:'げらげら',id:'tertawa terbahak-bahak',ex:'お笑い番組を見てげらげら笑った。'},
+{jp:'くすくす',id:'cekikikan pelan',ex:'女子たちがくすくす笑っている。'},
+{jp:'しくしく',id:'menangis terisak-isak',ex:'女の子がしくしく泣いている。'},
+{jp:'わんわん',id:'menangis keras-keras',ex:'子供がわんわん泣いている。'},
+{jp:'めそめそ',id:'menangis cengeng terus-menerus',ex:'いつまでもめそめそするな。'},
+{jp:'ぼろぼろ',id:'air mata bercucuran',ex:'映画を見て涙がぼろぼろ出た。'}],
+itami:[
+{jp:'ずきずき',id:'nyeri berdenyut',ex:'虫歯がずきずき痛む。'},
+{jp:'がんがん',id:'kepala nyeri hebat (berdentum)',ex:'二日酔いで頭ががんがんする。'},
+{jp:'きりきり',id:'perut sakit menusuk',ex:'ストレスで胃がきりきり痛む。'},
+{jp:'ちくちく',id:'nyeri tertusuk-tusuk kecil',ex:'セーターが肌にちくちくする。'},
+{jp:'ひりひり',id:'perih (kulit terbakar)',ex:'日焼けで背中がひりひりする。'},
+{jp:'ぞくぞく',id:'meriang, merinding',ex:'熱が出て背中がぞくぞくする。'},
+{jp:'くらくら',id:'pusing berputar',ex:'立ち上がったら頭がくらくらした。'},
+{jp:'ふらふら',id:'sempoyongan, lemas',ex:'熱でふらふらしながら帰った。'},
+{jp:'むずむず',id:'gatal geli (mau bersin)',ex:'花粉症で鼻がむずむずする。'},
+{jp:'ごほごほ',id:'batuk-batuk berat',ex:'風邪でごほごほ咳をしている。'}],
+shokkan:[
+{jp:'さくさく',id:'renyah ringan (biskuit/tempura)',ex:'このクッキーはさくさくしておいしい。'},
+{jp:'ぱりぱり',id:'garing tipis (nori/kerupuk)',ex:'ぱりぱりの海苔が好きだ。'},
+{jp:'かりかり',id:'garing keras (bacon/gorengan)',ex:'ベーコンをかりかりに焼く。'},
+{jp:'ふわふわ',id:'lembut mengembang (roti/pancake)',ex:'このパンケーキはふわふわだ。'},
+{jp:'もちもち',id:'kenyal lembut (mochi/pasta)',ex:'このパンはもちもちしている。'},
+{jp:'とろとろ',id:'lumer lembut (keju/telur)',ex:'とろとろの半熟卵が好き。'},
+{jp:'ねばねば',id:'lengket berlendir (natto/okra)',ex:'納豆はねばねばしている。'},
+{jp:'しゃきしゃき',id:'renyah segar (sayuran)',ex:'レタスがしゃきしゃきしている。'},
+{jp:'こりこり',id:'kenyal renyah (tulang rawan)',ex:'この軟骨はこりこりしておいしい。'},
+{jp:'ぷりぷり',id:'kenyal segar (udang)',ex:'ぷりぷりのエビが入っている。'},
+{jp:'ほくほく',id:'empuk hangat (kentang/ubi)',ex:'焼き芋がほくほくしておいしい。'},
+{jp:'あつあつ',id:'panas mengepul (baru matang)',ex:'あつあつのラーメンを食べた。'},
+{jp:'ぺこぺこ',id:'lapar sekali',ex:'朝から何も食べていなくてお腹がぺこぺこだ。'},
+{jp:'もぐもぐ',id:'mengunyah (mulut penuh)',ex:'子供がパンをもぐもぐ食べている。'},
+{jp:'ごくごく',id:'meneguk minuman cepat',ex:'水をごくごく飲んだ。'},
+{jp:'がぶがぶ',id:'minum banyak sekaligus',ex:'ビールをがぶがぶ飲むな。'}],
+tenki:[
+{jp:'ざあざあ',id:'hujan deras',ex:'雨がざあざあ降っている。'},
+{jp:'しとしと',id:'hujan rintik tenang',ex:'雨がしとしと降る梅雨の季節。'},
+{jp:'ぱらぱら',id:'gerimis / bertaburan sedikit',ex:'雨がぱらぱら降ってきた。'},
+{jp:'ごろごろ',id:'gemuruh guntur',ex:'雷がごろごろ鳴っている。'},
+{jp:'ぴかぴか',id:'berkilau / kilat menyambar',ex:'稲妻がぴかぴか光った。'},
+{jp:'きらきら',id:'berkilauan (bintang/mata)',ex:'星がきらきら輝いている。'},
+{jp:'そよそよ',id:'angin sepoi-sepoi',ex:'春の風がそよそよ吹いている。'},
+{jp:'じめじめ',id:'lembap tidak nyaman',ex:'梅雨はじめじめして嫌いだ。'},
+{jp:'むしむし',id:'gerah pengap',ex:'今日はむしむしして暑い。'},
+{jp:'からから',id:'kering kerontang',ex:'喉がからからだ。'},
+{jp:'ひんやり',id:'sejuk dingin menyegarkan',ex:'朝の空気がひんやりしている。'},
+{jp:'ぽかぽか',id:'hangat nyaman',ex:'春の日差しでぽかぽかする。'}],
+ugoki:[
+{jp:'のろのろ',id:'bergerak lamban',ex:'渋滞で車がのろのろ進む。'},
+{jp:'すたすた',id:'jalan cepat tanpa menoleh',ex:'彼はすたすたと歩いて行った。'},
+{jp:'とぼとぼ',id:'jalan lesu (sedih)',ex:'試合に負けてとぼとぼ帰った。'},
+{jp:'うろうろ',id:'mondar-mandir kebingungan',ex:'駅の前でうろうろしている人がいる。'},
+{jp:'ぶらぶら',id:'jalan-jalan santai tanpa tujuan',ex:'休日は町をぶらぶらした。'},
+{jp:'こっそり',id:'diam-diam, sembunyi-sembunyi',ex:'こっそり部屋を出た。'},
+{jp:'さっさと',id:'cepat-cepat (tanpa menunda)',ex:'さっさと宿題をやりなさい。'},
+{jp:'ぐるぐる',id:'berputar-putar',ex:'同じ道をぐるぐる回ってしまった。'},
+{jp:'ころころ',id:'menggelinding / mudah berubah',ex:'ボールがころころ転がった。'},
+{jp:'ばたばた',id:'sibuk lari ke sana kemari',ex:'朝は準備でばたばたしている。'},
+{jp:'よちよち',id:'jalan tertatih (bayi)',ex:'赤ちゃんがよちよち歩き始めた。'},
+{jp:'きびきび',id:'gesit tangkas',ex:'新人はきびきび働いている。'},
+{jp:'だらだら',id:'bermalas-malasan berlarut-larut',ex:'休みの日は家でだらだらしてしまう。'},
+{jp:'うとうと',id:'terkantuk-kantuk',ex:'授業中にうとうとしてしまった。'}],
+joutai:[
+{jp:'ぴったり',id:'pas persis',ex:'この靴はサイズがぴったりだ。'},
+{jp:'がらがら',id:'kosong melompong',ex:'平日の映画館はがらがらだった。'},
+{jp:'ぎっしり',id:'penuh padat',ex:'予定がぎっしり詰まっている。'},
+{jp:'ばらばら',id:'berantakan, tercerai-berai',ex:'書類がばらばらになってしまった。'},
+{jp:'べたべた',id:'lengket',ex:'汗で体がべたべたする。'},
+{jp:'つるつる',id:'licin mulus',ex:'道が凍ってつるつる滑る。'},
+{jp:'ざらざら',id:'kasar (permukaan)',ex:'砂で床がざらざらしている。'},
+{jp:'ふかふか',id:'empuk mengembang (kasur/sofa)',ex:'ふかふかの布団で寝たい。'},
+{jp:'ぼろぼろ',id:'rusak lusuh',ex:'ぼろぼろの服を着ている。'},
+{jp:'ぶかぶか',id:'kebesaran (pakaian)',ex:'この靴はぶかぶかで歩きにくい。'},
+{jp:'ごちゃごちゃ',id:'berantakan campur aduk',ex:'机の上がごちゃごちゃしている。'},
+{jp:'すかすか',id:'longgar banyak rongga',ex:'この大根は中がすかすかだ。'},
+{jp:'しんと',id:'hening senyap',ex:'教室がしんと静まり返った。'},
+{jp:'ちゃんと',id:'dengan benar/rapi',ex:'ちゃんと片付けなさい。'},
+{jp:'きちんと',id:'rapi teratur',ex:'服をきちんとたたむ。'}],
+oto:[
+{jp:'とんとん',id:'ketukan ringan',ex:'ドアをとんとんとノックした。'},
+{jp:'どんどん',id:'gedoran keras / terus bertambah',ex:'ドアをどんどん叩く音がする。'},
+{jp:'がたがた',id:'berderak-derak / gemetar',ex:'風で窓ががたがた鳴っている。'},
+{jp:'ことこと',id:'rebusan mendidih pelan',ex:'スープをことこと煮込む。'},
+{jp:'ぐつぐつ',id:'mendidih bergolak',ex:'鍋がぐつぐつ煮えている。'},
+{jp:'ばたん',id:'suara pintu dibanting',ex:'ドアがばたんと閉まった。'},
+{jp:'がちゃん',id:'suara pecah / benturan keras',ex:'お皿ががちゃんと割れた。'},
+{jp:'ぺらぺら',id:'membalik halaman / lancar bicara',ex:'雑誌をぺらぺらめくる。'},
+{jp:'かちかち',id:'bunyi detak / beku keras',ex:'時計がかちかち鳴っている。'},
+{jp:'ざわざわ',id:'riuh rendah (keramaian)',ex:'教室がざわざわしている。'}],
+nemuri:[
+{jp:'ぐっすり',id:'tidur pulas',ex:'昨夜はぐっすり眠れた。'},
+{jp:'すやすや',id:'tidur nyenyak damai (bayi)',ex:'赤ちゃんがすやすや眠っている。'},
+{jp:'ごろごろ',id:'bermalas-malasan (rebahan)',ex:'休日は家でごろごろしている。'},
+{jp:'くたくた',id:'capek sekali',ex:'一日中歩いてくたくたになった。'},
+{jp:'へとへと',id:'kelelahan total',ex:'残業続きでへとへとだ。'},
+{jp:'ぼーっと',id:'melamun, bengong',ex:'疲れて頭がぼーっとする。'},
+{jp:'すっと',id:'lega seketika / bergerak mulus',ex:'薬を飲んだら頭がすっとした。'}],
+taido:[
+{jp:'ぺらぺら',id:'fasih (bahasa asing)',ex:'彼は英語がぺらぺらだ。'},
+{jp:'ぶつぶつ',id:'menggerutu pelan',ex:'彼は一人でぶつぶつ言っている。'},
+{jp:'はきはき',id:'bicara tegas jelas',ex:'面接でははきはき答えよう。'},
+{jp:'ひそひそ',id:'berbisik-bisik',ex:'二人でひそひそ話している。'},
+{jp:'がみがみ',id:'mengomel terus',ex:'母にがみがみ叱られた。'},
+{jp:'くどくど',id:'bertele-tele mengulang-ulang',ex:'くどくど言い訳をするな。'},
+{jp:'きっぱり',id:'menolak/memutuskan dengan tegas',ex:'誘いをきっぱり断った。'},
+{jp:'はっきり',id:'dengan jelas',ex:'意見をはっきり言ってください。'},
+{jp:'うっかり',id:'tidak sengaja lupa/lengah',ex:'うっかり約束を忘れてしまった。'},
+{jp:'しっかり',id:'dengan mantap/kokoh',ex:'手すりにしっかりつかまって。'},
+{jp:'のんびり',id:'santai tenang',ex:'温泉でのんびり過ごした。'},
+{jp:'こつこつ',id:'tekun sedikit demi sedikit',ex:'毎日こつこつ勉強する。'},
+{jp:'いきいき',id:'penuh semangat hidup',ex:'彼女はいきいきと働いている。'},
+{jp:'わざわざ',id:'repot-repot (sengaja)',ex:'わざわざ来てくれてありがとう。'},
+{jp:'いちいち',id:'satu per satu (mengganggu)',ex:'いちいち文句を言わないで。'}]
+};
+var onoState = { open:{} };
+function _onoId(k,i){ return 'on_'+k+'_'+i; }
+
 var kazuState = { open:{} };
+
+function updateOnoMenu(){ renderOnoAccordion(); }
+function toggleOno(k){ onoState.open[k]=!onoState.open[k]; renderOnoAccordion(); }
+
+function renderOnoAccordion(){
+  var host=document.getElementById('ono-body'); if(!host) return;
+  var color=JLPT_COLORS[currentJLPT]||'var(--red)';
+  var html='';
+  ONO_ORDER.forEach(function(k){
+    var items=ONO_DATA[k]||[];
+    var mast=mastered['ono_'+k]||{};
+    var done=items.filter(function(it,i){return mast[_onoId(k,i)];}).length;
+    var pct=items.length?Math.round(done/items.length*100):0;
+    var open=!!onoState.open[k];
+    html+='<div style="background:white;border:1px solid var(--border);border-radius:12px;overflow:hidden;margin-bottom:10px;box-shadow:var(--shadow)">';
+    html+='<div onclick="toggleOno(\''+k+'\')" style="display:flex;align-items:center;gap:11px;padding:13px 14px;cursor:pointer">'
+      +'<span style="font-size:20px;flex-shrink:0">'+(ONO_EMOJI[k]||'')+'</span>'
+      +'<div style="flex:1;min-width:0">'
+      +'<div style="font-size:15px;font-weight:800;color:var(--ink)">'+(ONO_TITLE[k]||k)+'</div>'
+      +'<div style="background:rgba(26,26,46,.08);border-radius:3px;height:4px;overflow:hidden;margin-top:5px"><div style="height:100%;width:'+pct+'%;background:'+color+'"></div></div>'
+      +'</div>'
+      +'<div style="text-align:right;flex-shrink:0"><div style="font-family:\'DM Mono\',monospace;font-size:12px;font-weight:700;color:'+color+'">'+pct+'%</div>'
+      +'<div style="font-size:10px;color:var(--mist)">'+done+'/'+items.length+'</div></div>'
+      +'<span style="font-size:12px;color:var(--mist);flex-shrink:0;width:14px;text-align:center">'+(open?'▲':'▼')+'</span>'
+      +'</div>';
+    if(open){
+      html+='<div style="padding:0 14px 12px">';
+      html+='<button onclick="event.stopPropagation();startOnoFlash(\''+k+'\')" style="width:100%;padding:10px;border-radius:10px;border:none;background:'+color+';color:#fff;cursor:pointer;font-weight:700;font-size:13px;margin-bottom:10px">▶ Hafalkan kategori ini</button>';
+      html+='<div style="display:flex;flex-direction:column;gap:6px">';
+      items.forEach(function(it,i){
+        var isDone=!!mast[_onoId(k,i)];
+        html+='<div style="background:rgba(0,0,0,.02);border-radius:10px;padding:10px 12px'+(isDone?';border-left:3px solid '+color:'')+'">'
+          +'<div style="display:flex;align-items:baseline;gap:10px">'
+          +'<span style="font-size:17px;font-weight:800;color:var(--ink)">'+it.jp+'</span>'
+          +'<span style="font-size:12px;color:var(--mist);flex:1">'+it.id+'</span>'
+          +(isDone?'<span style="font-size:12px;color:'+color+'">✓</span>':'')
+          +'</div>'
+          +'<div style="font-size:12px;color:#555;margin-top:4px;font-family:\'Noto Serif JP\',serif">'+it.ex+'</div>'
+          +'</div>';
+      });
+      html+='</div></div>';
+    }
+    html+='</div>';
+  });
+  host.innerHTML=html;
+}
+
+// Hafalan onomatope per kategori — reuse mesin sesi flashcard (pola kazu).
+function startOnoFlash(k){
+  var items=ONO_DATA[k]||[];
+  sessionCat='ono_'+k; sessionReviewed=0; sessionMastered=0; revealed=false; sessionHistory=[];
+  var cards=items.map(function(it,i){ return {id:_onoId(k,i), jp:it.jp, rom:it.ex, id_:it.id, _isOno:true, _onoKey:k}; });
+  var mast=mastered['ono_'+k]||{};
+  var unmastered=cards.filter(function(w){return !mast[w.id];});
+  var done=cards.filter(function(w){return mast[w.id];});
+  shuffle(unmastered); shuffle(done);
+  sessionQueue=unmastered.concat(done).slice(0,SESSION_SIZE);
+  sessionIdx=0;
+  document.getElementById('flash-category-title').textContent=(ONO_EMOJI[k]||'')+' '+(ONO_TITLE[k]||k);
+  document.getElementById('flash-subtitle').textContent=unmastered.length+' belum hafal · '+done.length+' sudah hafal';
+  document.querySelectorAll('.screen').forEach(function(sc){sc.classList.remove('active');});
+  document.getElementById('screen-flash').classList.add('active');
+  document.querySelectorAll('nav button').forEach(function(b){b.classList.remove('active');});
+  document.getElementById('session-done-panel').style.display='none';
+  document.getElementById('flash-active').style.display='block';
+  if(!sessionQueue.length) document.getElementById('flash-subtitle').textContent='Kosong';
+  showCard();
+}
 
 function updateKazuMenu(){
   renderKazuAccordion();
