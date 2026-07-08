@@ -2581,7 +2581,8 @@ function bankBasePath(){ return 'bank/' + currentJLPT.toLowerCase() + '/'; }
 // ===== BANK KOTOBA — kosakata per level dimuat on-demand (pola bank soal) =====
 // N3 tetap inline (ALL_WORDS). Level lain: bank/kotoba/<level>.json
 var _kotobaLoading={};   // in-flight guard per level
-var KOTOBA_VER='v1';     // naikkan jika format data berubah (invalidate cache)
+var KOTOBA_VER='v2';     // naikkan jika format data berubah (invalidate cache) — v2: audit arti N4/N5 2026-07
+try{Object.keys(localStorage).forEach(function(k){if(k.indexOf('kotoba_')===0&&k.indexOf('_v2')<0)localStorage.removeItem(k);});}catch(e){} // bersihkan cache versi lama
 function kotobaLoaded(level){
   return level==='N3' || (JLPT_DATA[level] && JLPT_DATA[level].length>0);
 }
