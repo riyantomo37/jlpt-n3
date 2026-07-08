@@ -1109,6 +1109,7 @@ header:has(.user-menu.open) { z-index:1000; }
 
   <div class="section-title">Menu Belajar</div>
   <div id="ov-menu-grid" style="display:grid;grid-template-columns:repeat(2,1fr);gap:12px;margin-bottom:24px"></div>
+  <div style="text-align:center;font-size:10px;color:var(--mist);margin-top:14px">build 2026-07-08 · tab 単語 Kotoba</div>
 
   <div style="display:flex;justify-content:space-between;align-items:center;margin:24px 0 12px">
     <div class="section-title" style="margin:0">🏆 Ranking <span id="ov-lb-level">N3</span></div>
@@ -6666,6 +6667,7 @@ function renderOverviewMenu(){
   var isSSW=currentJLPT==='SSW';
   var items=[
     {scr:'flashmenu', emo:'📚', t:'Flashcard', d:'Hafal kosakata '+currentJLPT, c:color},
+    {scr:'kotoba', emo:'単語', t:'Daftar Kotoba', d:'Semua kata + centang arti & baca', c:'#00838f'},
     {scr:'kanjimenu', emo:'漢字', t:'Baca Kanji', d:'Latihan baca kanji', c:'var(--gold)'},
     {scr:'bunpomenu', emo:'文法', t:'Bunpo', d:'Belajar tata bahasa', c:'#7a5cc4', hide:isSSW},
     {scr:'katsuyomenu', emo:'活用', t:'Konjugasi', d:'Bentuk kata kerja', c:'#0a7d6b'},
