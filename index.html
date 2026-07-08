@@ -1501,6 +1501,17 @@ header:has(.user-menu.open) { z-index:1000; }
   <!-- ===== PROGRESS HAFALAN DASHBOARD ===== -->
   <div id="progress-dashboard"></div>
 
+  <!-- ===== BACKUP TANPA LOGIN ===== -->
+  <div style="background:white;border:1px solid var(--border);border-radius:12px;box-shadow:var(--shadow);margin-top:14px;padding:14px">
+    <div style="font-size:14px;font-weight:700;margin-bottom:4px">💾 Backup Data</div>
+    <p style="font-size:12px;color:var(--mist);margin:0 0 12px">Progress tersimpan otomatis di perangkat ini tanpa login. Untuk cadangan atau pindah HP tanpa akun Google, ekspor ke file lalu impor di perangkat lain.</p>
+    <div style="display:flex;gap:8px">
+      <button onclick="exportProgress()" style="flex:1;padding:11px;border:none;border-radius:10px;background:var(--jade);color:white;font-family:inherit;font-size:13px;font-weight:700;cursor:pointer">⬇️ Ekspor</button>
+      <button onclick="document.getElementById('import-file').click()" style="flex:1;padding:11px;border:1.5px solid var(--border);border-radius:10px;background:white;color:var(--ink);font-family:inherit;font-size:13px;font-weight:700;cursor:pointer">⬆️ Impor</button>
+      <input type="file" id="import-file" accept=".json,application/json" style="display:none" onchange="importProgress(event)">
+    </div>
+  </div>
+
 </div>
 
 <!-- ====== AI PLACEHOLDER --><!-- ====== EXAM SCREEN ====== -->
@@ -7852,7 +7863,7 @@ function toggleListSection(which){
 }
 
 // ============================================================
-// NAV DROPDOWN "BELAJAR" + TOMBOL LONCAT KE ATAS
+// NAV DROPDOWN BELAJAR + TOMBOL LONCAT KE ATAS
 // ============================================================
 function toggleNavLearn(ev){
   if(ev) ev.stopPropagation();
@@ -7877,6 +7888,55 @@ window.addEventListener('scroll',function(){
   var b=document.getElementById('backtotop');
   if(b) b.style.display=(window.scrollY>400)?'block':'none';
 },{passive:true});
+
+// ============================================================
+// BACKUP TANPA LOGIN — ekspor/impor progress sebagai file JSON
+// ============================================================
+function exportProgress(){
+  var data={app:'mantenkosu',ver:1,exported:new Date().toISOString(),
+    mastered:mastered,
+    kanjiReadMastered:kanjiReadMastered,
+    streak:streak,lastStudyDate:lastStudyDate,
+    todayDate:todayDate,todayCount:todayCount,
+    bunpoProgress:bunpoProgress,bunpoLearned:bunpoLearned,
+    examHistory:(typeof examHistory!=='undefined')?examHistory:[]};
+  var blob=new Blob([JSON.stringify(data)],{type:'application/json'});
+  var a=document.createElement('a');
+  a.href=URL.createObjectURL(blob);
+  a.download='jlpt-progress-'+new Date().toISOString().slice(0,10)+'.json';
+  document.body.appendChild(a); a.click();
+  setTimeout(function(){ URL.revokeObjectURL(a.href); a.remove(); },500);
+}
+function importProgress(ev){
+  var f=ev.target.files&&ev.target.files[0]; if(!f) return;
+  var r=new FileReader();
+  r.onload=function(){
+    try{
+      var d=JSON.parse(r.result);
+      if(!d||d.app!=='mantenkosu'||!d.mastered) throw new Error('format');
+      var when=d.exported?d.exported.slice(0,10):'?';
+      if(!confirm('Impor backup tanggal '+when+'?\nSemua progress di perangkat ini akan DITIMPA dengan isi backup.')){ ev.target.value=''; return; }
+      mastered=d.mastered;
+      kanjiReadMastered=d.kanjiReadMastered||{};
+      if(typeof d.streak==='number') streak=d.streak;
+      if(d.lastStudyDate) lastStudyDate=d.lastStudyDate;
+      if(typeof d.todayCount==='number'&&d.todayDate===new Date().toDateString()){ todayDate=d.todayDate; todayCount=d.todayCount; }
+      if(d.bunpoProgress) bunpoProgress=d.bunpoProgress;
+      if(d.bunpoLearned) bunpoLearned=d.bunpoLearned;
+      if(d.examHistory&&typeof examHistory!=='undefined'){
+        examHistory=d.examHistory;
+        try{ localStorage.setItem('examHistory',JSON.stringify(examHistory)); }catch(e){}
+      }
+      saveToLocal();
+      try{ localStorage.setItem('n3_dirty','1'); }catch(e){}
+      alert('\u2705 Backup berhasil diimpor!');
+      renderReview('all');
+      if(typeof updateOverview==='function') updateOverview();
+    }catch(e){ alert('\u274c File backup tidak valid.'); }
+    ev.target.value='';
+  };
+  r.readAsText(f);
+}
 
 // ============================================================
 // TAB 単語 KOTOBA — daftar kosakata terpusat (arti + baca kanji + label 品詞)
@@ -7922,7 +7982,7 @@ function ktAllWords(){ return posLevelWords().concat(ktExtraWords()); }
 function ktPosOf(w){
   if(w._ext) return w._pos;
   var head=(w.jp||'').split(/[;\uff1b,\uff0c\s]/)[0];
-  if(/^[\u4e00\u4e8c\u4e09\u56db\u4e94\u516d\u4e03\u516b\u4e5d\u5341]\u3064$/.test(head)||head==='\u3044\u304f\u3064'||/^[\u4e00\u4e8c\u4e09\u56db\u4e94\u516d\u4e03\u516b\u4e5d\u5341]+\u65e5$/.test(head)||/^[\u4e00\u4e8c]\u4eba$/.test(head)) return 'suuji';
+  if(/^[一二三四五六七八九十]つ$/.test(head)||head==='いくつ'||/^[一二三四五六七八九十]+日$/.test(head)||/^[一二]人$/.test(head)) return 'suuji';
   return posOf(w);
 }
 function ktHasKanji(w){ return /[\u4e00-\u9fff]/.test(w.jp||''); }
