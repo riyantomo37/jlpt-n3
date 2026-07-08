@@ -367,7 +367,12 @@ nav button.active {
   color:var(--mist);
 }
 .kfilter-btn.active { background:var(--ink); color:white; border-color:var(--ink); }
-.kt-pos{font-size:9px;color:#fff;padding:2px 7px;border-radius:8px;font-weight:700;vertical-align:middle;margin-left:4px;display:inline-block}
+#nav-learn-menu{display:none;position:fixed;background:white;border:1px solid var(--border);border-radius:12px;box-shadow:0 8px 24px rgba(0,0,0,.15);z-index:1000;min-width:190px;flex-direction:column;padding:6px;gap:2px}
+#nav-learn-menu.open{display:flex}
+#nav-learn-menu button{text-align:left;padding:11px 14px;border:none;background:none;border-radius:8px;font-family:'Noto Sans JP',sans-serif;font-size:13px;font-weight:500;cursor:pointer;color:var(--ink)}
+#nav-learn-menu button:active{background:rgba(26,26,46,.06)}
+#backtotop{position:fixed;right:16px;bottom:24px;z-index:999;width:44px;height:44px;border-radius:50%;border:none;background:var(--ink);color:#fff;font-size:20px;box-shadow:0 4px 14px rgba(0,0,0,.25);cursor:pointer;display:none}
+.kt-pos{font-size:10px;color:#fff;padding:2px 7px;border-radius:8px;font-weight:700;vertical-align:middle;margin-left:4px;display:inline-block}
 .kt-btn{border:1.5px solid var(--border);background:#fff;color:var(--mist);font-size:11px;font-weight:700;padding:5px 10px;border-radius:9px;cursor:pointer;font-family:inherit;white-space:nowrap}
 .kt-btn.on{background:var(--jade);border-color:var(--jade);color:#fff}
 .kt-btn.baca.on{background:#2d5aa0;border-color:#2d5aa0}
@@ -1078,19 +1083,23 @@ header:has(.user-menu.open) { z-index:1000; }
 </div>
 <nav>
   <button class="active" onclick="gotoScreen('overview')">🏠 Dashboard</button>
-  <button onclick="gotoScreen('flashmenu')">📚 Flashcard</button>
-  <button onclick="gotoScreen('kotoba')">単語 Kotoba</button>
-  <button onclick="gotoScreen('kanjimenu')">漢字 Kanji</button>
-  <button onclick="gotoScreen('bunpomenu')">文法 Bunpo</button>
-  <button onclick="gotoScreen('katsuyomenu')">活用 Konjugasi</button>
-  <button onclick="gotoScreen('dialectmenu')">方言 Dialek</button>
-  <button onclick="gotoScreen('kazumenu')">数 Angka</button>
-  <button onclick="gotoScreen('onomenu')">擬音 Onomatope</button>
+  <button id="nav-learn-btn" onclick="toggleNavLearn(event)">📚 Belajar ▾</button>
   <button onclick="gotoScreen('exam')">📝 Ujian</button>
   <button onclick="gotoScreen('review')">📊 Progress</button>
   <button onclick="gotoScreen('leaderboard')">🏆 Ranking</button>
   <button onclick="gotoScreen('ai')">🤖 Sensei</button>
 </nav>
+<div id="nav-learn-menu">
+  <button onclick="gotoScreen('flashmenu')">📚 Flashcard</button>
+  <button onclick="gotoScreen('kotoba')">📖 Daftar Kotoba</button>
+  <button onclick="gotoScreen('kanjimenu')">✍️ Baca Kanji</button>
+  <button onclick="gotoScreen('bunpomenu')">📐 Tata Bahasa</button>
+  <button onclick="gotoScreen('katsuyomenu')">🔄 Konjugasi</button>
+  <button onclick="gotoScreen('dialectmenu')">🗾 Dialek</button>
+  <button onclick="gotoScreen('kazumenu')">🔢 Angka</button>
+  <button onclick="gotoScreen('onomenu')">💬 Onomatope</button>
+</div>
+<button id="backtotop" onclick="window.scrollTo({top:0,behavior:'smooth'})" title="Kembali ke atas">↑</button>
 
 <!-- ====== OVERVIEW ====== -->
 <div id="screen-overview" class="screen active">
@@ -1465,16 +1474,16 @@ header:has(.user-menu.open) { z-index:1000; }
     <button class="filter-btn" onclick="ktSetStat('todo',this)">✗ Belum</button>
   </div>
   <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px">
-    <button class="filter-btn active" onclick="ktSetPos('all',this)">Semua 品詞</button>
-    <button class="filter-btn" onclick="ktSetPos('doushi',this)">動詞</button>
-    <button class="filter-btn" onclick="ktSetPos('meishi',this)">名詞</button>
-    <button class="filter-btn" onclick="ktSetPos('keiyoushi',this)">形容詞</button>
-    <button class="filter-btn" onclick="ktSetPos('fukushi',this)">副詞</button>
-    <button class="filter-btn" onclick="ktSetPos('setsuzoku',this)">接続詞</button>
-    <button class="filter-btn" onclick="ktSetPos('pola',this)">表現</button>
-    <button class="filter-btn" onclick="ktSetPos('suuji',this)">数字</button>
-    <button class="filter-btn" onclick="ktSetPos('hougen',this)">方言</button>
-    <button class="filter-btn" onclick="ktSetPos('ono',this)">擬音</button>
+    <button class="filter-btn active" onclick="ktSetPos('all',this)">Semua Jenis</button>
+    <button class="filter-btn" onclick="ktSetPos('doushi',this)">Kata Kerja</button>
+    <button class="filter-btn" onclick="ktSetPos('meishi',this)">Kata Benda</button>
+    <button class="filter-btn" onclick="ktSetPos('keiyoushi',this)">Kata Sifat</button>
+    <button class="filter-btn" onclick="ktSetPos('fukushi',this)">Keterangan</button>
+    <button class="filter-btn" onclick="ktSetPos('setsuzoku',this)">Konjungsi</button>
+    <button class="filter-btn" onclick="ktSetPos('pola',this)">Pola</button>
+    <button class="filter-btn" onclick="ktSetPos('suuji',this)">Angka</button>
+    <button class="filter-btn" onclick="ktSetPos('hougen',this)">Dialek</button>
+    <button class="filter-btn" onclick="ktSetPos('ono',this)">Onomatope</button>
   </div>
   <div id="kt-count" style="font-size:12px;color:var(--mist);margin-bottom:10px"></div>
   <div class="vocab-grid" id="kt-grid"></div>
@@ -6366,6 +6375,11 @@ function gotoScreen(name) {
     var m = oc.match(/gotoScreen\(['"]([^'"]+)['"]\)/);
     b.classList.toggle('active', !!m && m[1] === name);
   });
+  var _lm=document.getElementById('nav-learn-menu');
+  if(_lm) _lm.classList.remove('open');
+  var _learnScreens=['flashmenu','kotoba','kanjimenu','bunpomenu','katsuyomenu','dialectmenu','kazumenu','onomenu'];
+  var _lb=document.getElementById('nav-learn-btn');
+  if(_lb) _lb.classList.toggle('active', _learnScreens.indexOf(name)>=0);
   if (name === 'overview') updateOverview();
   if (name === 'flashmenu') updateFlashMenu();
   if (name === 'kanjimenu') updateKanjiMenu();
@@ -7836,6 +7850,33 @@ function toggleListSection(which){
 }
 
 // ============================================================
+// NAV DROPDOWN "BELAJAR" + TOMBOL LONCAT KE ATAS
+// ============================================================
+function toggleNavLearn(ev){
+  if(ev) ev.stopPropagation();
+  var menu=document.getElementById('nav-learn-menu');
+  var btn=document.getElementById('nav-learn-btn');
+  if(!menu||!btn) return;
+  var willOpen=!menu.classList.contains('open');
+  if(willOpen){
+    var r=btn.getBoundingClientRect();
+    menu.style.top=(r.bottom+4)+'px';
+    menu.style.left=Math.max(8,Math.min(r.left,window.innerWidth-206))+'px';
+  }
+  menu.classList.toggle('open',willOpen);
+}
+document.addEventListener('click',function(e){
+  var menu=document.getElementById('nav-learn-menu');
+  if(menu&&menu.classList.contains('open')&&!menu.contains(e.target)&&e.target.id!=='nav-learn-btn'){
+    menu.classList.remove('open');
+  }
+});
+window.addEventListener('scroll',function(){
+  var b=document.getElementById('backtotop');
+  if(b) b.style.display=(window.scrollY>400)?'block':'none';
+},{passive:true});
+
+// ============================================================
 // TAB 単語 KOTOBA — daftar kosakata terpusat (arti + baca kanji + label 品詞)
 // Ekstra: 数字 (KAZU_DATA), 方言 (DIALECT_DATA), 擬音 (ONO_DATA).
 // Hafalan ekstra disimpan di kanjiReadMastered: 'xa_'+id (arti), 'xb_'+id (baca)
@@ -7843,9 +7884,9 @@ function toggleListSection(which){
 // ============================================================
 var ktState={pos:'all',stat:'all',q:'',limit:300};
 var KT_POS_META={
-  doushi:['\u52d5\u8a5e','#c0392b'],meishi:['\u540d\u8a5e','#2d5aa0'],keiyoushi:['\u5f62\u5bb9\u8a5e','#0a7d6b'],
-  fukushi:['\u526f\u8a5e','#b8860b'],setsuzoku:['\u63a5\u7d9a\u8a5e','#7a5cc4'],pola:['\u8868\u73fe','#c2185b'],
-  suuji:['\u6570\u5b57','#00838f'],hougen:['\u65b9\u8a00','#5d4037'],ono:['\u64ec\u97f3','#e65100']
+  doushi:['K. Kerja','#c0392b'],meishi:['K. Benda','#2d5aa0'],keiyoushi:['K. Sifat','#0a7d6b'],
+  fukushi:['Keterangan','#b8860b'],setsuzoku:['Konjungsi','#7a5cc4'],pola:['Pola','#c2185b'],
+  suuji:['Angka','#00838f'],hougen:['Dialek','#5d4037'],ono:['Onomatope','#e65100']
 };
 var _ktExtraCache=null;
 function ktExtraWords(){
@@ -9228,6 +9269,7 @@ joutai:[
 {jp:'びしょびしょ',id:'basah kuyup',ex:'雨で服がびしょびしょになった。'},
 {jp:'ぐちゃぐちゃ',id:'hancur berantakan (basah)',ex:'雨で髪がぐちゃぐちゃだ。'}],
 oto:[
+{jp:'わいわい',id:'riuh ramai (banyak orang)',ex:'子供たちが公園でわいわい騒いでいる。'},
 {jp:'とんとん',id:'ketukan ringan',ex:'ドアをとんとんとノックした。'},
 {jp:'どんどん',id:'gedoran keras / terus bertambah',ex:'ドアをどんどん叩く音がする。'},
 {jp:'がたがた',id:'berderak-derak / gemetar',ex:'風で窓ががたがた鳴っている。'},
@@ -9322,7 +9364,8 @@ ryou:[
 {jp:'ちょっぴり',id:'sedikit sekali',ex:'ちょっぴり寂しい気がする。'},
 {jp:'うんと',id:'sangat banyak / sekuatnya',ex:'うんと勉強して合格した。'},
 {jp:'ほんのり',id:'samar tipis (aroma/warna)',ex:'ほんのり桜の香りがする。'},
-{jp:'めっきり',id:'berubah drastis terasa',ex:'めっきり寒くなった。'}]
+{jp:'めっきり',id:'berubah drastis terasa',ex:'めっきり寒くなった。'},
+{jp:'まあまあ',id:'lumayan, biasa saja',ex:'このレストランはまあまあおいしい。'}]
 };
 var onoState = { open:{} };
 function _onoId(k,i){ return 'on_'+k+'_'+i; }
