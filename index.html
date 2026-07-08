@@ -367,6 +367,10 @@ nav button.active {
   color:var(--mist);
 }
 .kfilter-btn.active { background:var(--ink); color:white; border-color:var(--ink); }
+.kt-pos{font-size:9px;color:#fff;padding:2px 7px;border-radius:8px;font-weight:700;vertical-align:middle;margin-left:4px;display:inline-block}
+.kt-btn{border:1.5px solid var(--border);background:#fff;color:var(--mist);font-size:11px;font-weight:700;padding:5px 10px;border-radius:9px;cursor:pointer;font-family:inherit;white-space:nowrap}
+.kt-btn.on{background:var(--jade);border-color:var(--jade);color:#fff}
+.kt-btn.baca.on{background:#2d5aa0;border-color:#2d5aa0}
 .vocab-grid {
   display:grid;
   grid-template-columns:repeat(auto-fill,minmax(220px,1fr));
@@ -1075,6 +1079,7 @@ header:has(.user-menu.open) { z-index:1000; }
 <nav>
   <button class="active" onclick="gotoScreen('overview')">🏠 Dashboard</button>
   <button onclick="gotoScreen('flashmenu')">📚 Flashcard</button>
+  <button onclick="gotoScreen('kotoba')">単語 Kotoba</button>
   <button onclick="gotoScreen('kanjimenu')">漢字 Kanji</button>
   <button onclick="gotoScreen('bunpomenu')">文法 Bunpo</button>
   <button onclick="gotoScreen('katsuyomenu')">活用 Konjugasi</button>
@@ -1443,6 +1448,37 @@ header:has(.user-menu.open) { z-index:1000; }
   </div>
 </div>
 
+<!-- ====== KOTOBA TAB (daftar kosakata terpusat) ====== -->
+<div id="screen-kotoba" class="screen">
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+    <div class="section-title" style="margin:0">単語 Daftar Kotoba</div>
+    <span id="kt-level-badge" style="font-family:'DM Mono',monospace;font-size:11px;padding:3px 10px;border-radius:10px;font-weight:700;background:var(--red);color:white">N3</span>
+  </div>
+  <div id="kt-summary" style="font-size:12px;color:var(--mist);margin-bottom:10px"></div>
+  <div style="display:flex;gap:8px;margin-bottom:10px">
+    <input id="kt-search" type="text" placeholder="🔍 Cari kata / romaji / arti..." style="flex:1;padding:10px 14px;border:2px solid var(--border);border-radius:10px;font-family:'Noto Sans JP',sans-serif;font-size:13px;outline:none;background:white;box-sizing:border-box" oninput="ktSearch()">
+  </div>
+  <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px">
+    <button class="filter-btn active" onclick="ktSetStat('all',this)">Semua</button>
+    <button class="filter-btn" onclick="ktSetStat('done',this)">✓ Hafal</button>
+    <button class="filter-btn" onclick="ktSetStat('todo',this)">✗ Belum</button>
+  </div>
+  <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px">
+    <button class="filter-btn active" onclick="ktSetPos('all',this)">Semua 品詞</button>
+    <button class="filter-btn" onclick="ktSetPos('doushi',this)">動詞</button>
+    <button class="filter-btn" onclick="ktSetPos('meishi',this)">名詞</button>
+    <button class="filter-btn" onclick="ktSetPos('keiyoushi',this)">形容詞</button>
+    <button class="filter-btn" onclick="ktSetPos('fukushi',this)">副詞</button>
+    <button class="filter-btn" onclick="ktSetPos('setsuzoku',this)">接続詞</button>
+    <button class="filter-btn" onclick="ktSetPos('pola',this)">表現</button>
+    <button class="filter-btn" onclick="ktSetPos('suuji',this)">数字</button>
+    <button class="filter-btn" onclick="ktSetPos('hougen',this)">方言</button>
+    <button class="filter-btn" onclick="ktSetPos('ono',this)">擬音</button>
+  </div>
+  <div id="kt-count" style="font-size:12px;color:var(--mist);margin-bottom:10px"></div>
+  <div class="vocab-grid" id="kt-grid"></div>
+</div>
+
 <!-- ====== REVIEW SCREEN ====== -->
 <div id="screen-review" class="screen">
   <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
@@ -1453,56 +1489,6 @@ header:has(.user-menu.open) { z-index:1000; }
   <!-- ===== PROGRESS HAFALAN DASHBOARD ===== -->
   <div id="progress-dashboard"></div>
 
-  <!-- ===== DAFTAR KOSAKATA (hafal arti) — DROPDOWN ===== -->
-  <div style="background:white;border:1px solid var(--border);border-radius:12px;box-shadow:var(--shadow);margin-top:14px;overflow:hidden">
-    <div onclick="toggleListSection('kosakata')" style="display:flex;justify-content:space-between;align-items:center;padding:13px 14px;cursor:pointer">
-      <span style="font-size:14px;font-weight:700">📖 Daftar Kosakata <span style="font-size:11px;color:var(--mist);font-weight:400">(hafal arti)</span></span>
-      <span style="display:flex;align-items:center;gap:8px">
-        <span id="kosakata-count" style="font-size:11px;color:var(--mist)"></span>
-        <span id="kosakata-arrow" style="font-size:11px;color:var(--mist)">▼</span>
-      </span>
-    </div>
-    <div id="kosakata-body" style="display:none;padding:0 14px 14px">
-      <div style="display:flex;gap:8px;margin-bottom:10px">
-        <input id="search-input" type="text" placeholder="🔍 Cari kosakata..."
-          style="flex:1;padding:10px 14px;border:2px solid var(--border);border-radius:10px;font-family:'Noto Sans JP',sans-serif;font-size:13px;outline:none;background:white;box-sizing:border-box"
-          oninput="doSearch()">
-        <button onclick="clearSearch()" id="search-clear" style="display:none;padding:0 14px;border:1px solid var(--border);background:white;border-radius:10px;cursor:pointer;font-size:13px;color:var(--mist)">✕</button>
-      </div>
-      <div id="review-filter-bar" style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px">
-        <button class="filter-btn active" onclick="setFilter('all',this)">Semua</button>
-        <button class="filter-btn" onclick="setFilter('done',this)">✓ Hafal</button>
-        <button class="filter-btn" onclick="setFilter('todo',this)">✗ Belum</button>
-      </div>
-      <div style="font-size:12px;color:var(--mist);margin-bottom:10px" id="review-count">Memuat...</div>
-      <div class="vocab-grid" id="vocab-grid"></div>
-    </div>
-  </div>
-
-  <!-- ===== DAFTAR KANJI (hafal baca) — DROPDOWN ===== -->
-  <div style="background:white;border:1px solid var(--border);border-radius:12px;box-shadow:var(--shadow);margin-top:12px;overflow:hidden">
-    <div onclick="toggleListSection('kanjilist')" style="display:flex;justify-content:space-between;align-items:center;padding:13px 14px;cursor:pointer">
-      <span style="font-size:14px;font-weight:700">漢字 Daftar Kanji <span style="font-size:11px;color:var(--mist);font-weight:400">(hafal baca)</span></span>
-      <span style="display:flex;align-items:center;gap:8px">
-        <span id="kanjilist-count" style="font-size:11px;color:var(--mist)"></span>
-        <span id="kanjilist-arrow" style="font-size:11px;color:var(--mist)">▼</span>
-      </span>
-    </div>
-    <div id="kanjilist-body" style="display:none;padding:0 14px 14px">
-      <div style="display:flex;gap:8px;margin-bottom:10px">
-        <input id="kanji-search-input" type="text" placeholder="🔍 Cari kanji..."
-          style="flex:1;padding:10px 14px;border:2px solid var(--border);border-radius:10px;font-family:'Noto Sans JP',sans-serif;font-size:13px;outline:none;background:white;box-sizing:border-box"
-          oninput="doKanjiSearch()">
-      </div>
-      <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px">
-        <button class="kfilter-btn active" onclick="setKanjiFilter('all',this)">Semua</button>
-        <button class="kfilter-btn" onclick="setKanjiFilter('done',this)">✓ Hafal</button>
-        <button class="kfilter-btn" onclick="setKanjiFilter('todo',this)">✗ Belum</button>
-      </div>
-      <div style="font-size:12px;color:var(--mist);margin-bottom:10px" id="kanjilist-detail">Memuat...</div>
-      <div class="vocab-grid" id="kanji-grid"></div>
-    </div>
-  </div>
 </div>
 
 <!-- ====== AI PLACEHOLDER --><!-- ====== EXAM SCREEN ====== -->
@@ -6382,6 +6368,7 @@ function gotoScreen(name) {
   if (name === 'overview') updateOverview();
   if (name === 'flashmenu') updateFlashMenu();
   if (name === 'kanjimenu') updateKanjiMenu();
+  if (name === 'kotoba') renderKotobaTab();
   if (name === 'review') { renderReview('all'); } else if (name === '___DUMMY___') renderReview('all');
   if (name === 'bunpomenu') updateBunpoMenu();
   if (name === 'katsuyomenu') updateKatsuyoMenu();
@@ -7724,8 +7711,6 @@ function renderReview(filter) {
   if(titleEl) titleEl.textContent='📊 Progress Hafalan';
   if(badgeEl){badgeEl.textContent=currentJLPT;badgeEl.style.background=color;}
   renderProgressDashboard();
-  renderKosakataList();
-  renderKanjiList();
 }
 
 // ── DAFTAR KOSAKATA (hafal ARTI) ──
@@ -7846,6 +7831,147 @@ function toggleListSection(which){
   var open=body.style.display==='none'||!body.style.display;
   body.style.display=open?'block':'none';
   if(arr) arr.textContent=open?'▲':'▼';
+}
+
+// ============================================================
+// TAB 単語 KOTOBA — daftar kosakata terpusat (arti + baca kanji + label 品詞)
+// Ekstra: 数字 (KAZU_DATA), 方言 (DIALECT_DATA), 擬音 (ONO_DATA).
+// Hafalan ekstra disimpan di kanjiReadMastered: 'xa_'+id (arti), 'xb_'+id (baca)
+// agar ikut tersinkron ke cloud tanpa mengubah skema Firestore.
+// ============================================================
+var ktState={pos:'all',stat:'all',q:'',limit:300};
+var KT_POS_META={
+  doushi:['\u52d5\u8a5e','#c0392b'],meishi:['\u540d\u8a5e','#2d5aa0'],keiyoushi:['\u5f62\u5bb9\u8a5e','#0a7d6b'],
+  fukushi:['\u526f\u8a5e','#b8860b'],setsuzoku:['\u63a5\u7d9a\u8a5e','#7a5cc4'],pola:['\u8868\u73fe','#c2185b'],
+  suuji:['\u6570\u5b57','#00838f'],hougen:['\u65b9\u8a00','#5d4037'],ono:['\u64ec\u97f3','#e65100']
+};
+var _ktExtraCache=null;
+function ktExtraWords(){
+  if(_ktExtraCache) return _ktExtraCache;
+  var out=[];
+  try{
+    ONO_ORDER.forEach(function(k){(ONO_DATA[k]||[]).forEach(function(o,i){
+      out.push({id:'ono_'+k+'_'+i,jp:o.jp,rom:'',id_:o.id,_ext:1,_pos:'ono'});
+    });});
+  }catch(e){}
+  try{
+    DIALECT_ORDER.forEach(function(k){
+      if(k==='kanto') return; // standar = duplikat kosakata biasa
+      var d=DIALECT_DATA[k]; if(!d) return;
+      (d.items||[]).forEach(function(o,i){
+        var arti=(o.id||'');
+        if(o.hyo&&o.hyo!==o.dia) arti+=' (\u6a19\u6e96: '+o.hyo+')';
+        out.push({id:'dia_'+k+'_'+i,jp:o.dia,rom:o.rom||'',id_:arti,_ext:1,_pos:'hougen',_sub:d.label});
+      });
+    });
+  }catch(e){}
+  try{
+    KAZU_ORDER.forEach(function(k){(KAZU_DATA[k]||[]).forEach(function(o,i){
+      out.push({id:'kazu_'+k+'_'+i,jp:o.jp,rom:o.rom||'',id_:o.id,_ext:1,_pos:'suuji',_sub:KAZU_TITLE[k]});
+    });});
+  }catch(e){}
+  _ktExtraCache=out;
+  return out;
+}
+function ktAllWords(){ return posLevelWords().concat(ktExtraWords()); }
+function ktPosOf(w){ return w._ext? w._pos : posOf(w); }
+function ktHasKanji(w){ return /[\u4e00-\u9fff]/.test(w.jp||''); }
+function ktArtiDone(w){
+  if(w._ext) return !!kanjiReadMastered['xa_'+w.id];
+  return wordDone(w);
+}
+function ktBacaDone(w){
+  if(w._ext) return !!kanjiReadMastered['xb_'+w.id];
+  if(currentJLPT==='N3') return !!kanjiReadMastered['kf_'+(w.cat||'vocab')+'_'+w.id];
+  return !!(mastered['kf_'+currentJLPT]||{})[w.id];
+}
+function ktSetArti(w,val){
+  if(w._ext){ if(val) kanjiReadMastered['xa_'+w.id]=true; else delete kanjiReadMastered['xa_'+w.id]; return; }
+  if(currentJLPT==='N3'){ var c=w.cat||'vocab'; if(!mastered[c]) mastered[c]={}; if(val) mastered[c][w.id]=true; else delete mastered[c][w.id]; return; }
+  if(!mastered[currentJLPT]) mastered[currentJLPT]={};
+  if(val) mastered[currentJLPT][w.id]=true; else delete mastered[currentJLPT][w.id];
+}
+function ktSetBaca(w,val){
+  if(w._ext){ if(val) kanjiReadMastered['xb_'+w.id]=true; else delete kanjiReadMastered['xb_'+w.id]; return; }
+  if(currentJLPT==='N3'){ var k='kf_'+(w.cat||'vocab')+'_'+w.id; if(val) kanjiReadMastered[k]=true; else delete kanjiReadMastered[k]; return; }
+  var bk='kf_'+currentJLPT; if(!mastered[bk]) mastered[bk]={};
+  if(val) mastered[bk][w.id]=true; else delete mastered[bk][w.id];
+}
+function ktFindWord(id){
+  var all=ktAllWords();
+  for(var i=0;i<all.length;i++) if(String(all[i].id)===String(id)) return all[i];
+  return null;
+}
+function ktToggle(btn){
+  var id=btn.dataset.wid, mode=btn.dataset.mode;
+  var w=ktFindWord(id); if(!w) return;
+  var cur=(mode==='baca')?ktBacaDone(w):ktArtiDone(w);
+  if(mode==='baca') ktSetBaca(w,!cur); else ktSetArti(w,!cur);
+  save();
+  var row=btn.closest('.kt-row');
+  if(row) row.outerHTML=ktRowHtml(w);
+  ktUpdateCounts();
+}
+function ktRowHtml(w){
+  var pos=ktPosOf(w); var meta=KT_POS_META[pos]||['?','#888'];
+  var a=ktArtiDone(w), hasK=ktHasKanji(w), b=hasK?ktBacaDone(w):false;
+  var full=a&&(!hasK||b);
+  return '<div class="vocab-item kt-row '+(full?'mastered':'')+'" data-wid="'+w.id+'">'
+    +'<div style="flex:1;min-width:0">'
+    +'<div class="jp">'+w.jp+' <span class="kt-pos" style="background:'+meta[1]+'">'+meta[0]+'</span></div>'
+    +'<div class="id-meaning">'+(w.id_||'')+'</div>'
+    +'<div style="font-size:10px;color:var(--mist)">'+(w.rom||'')+(w._sub?' \u00b7 '+w._sub:'')+'</div>'
+    +'</div>'
+    +'<div style="display:flex;flex-direction:column;gap:5px;flex-shrink:0">'
+    +'<button class="kt-btn '+(a?'on':'')+'" data-wid="'+w.id+'" data-mode="arti" onclick="ktToggle(this)">'+(a?'\u2713':'\u25cb')+' Arti</button>'
+    +(hasK?'<button class="kt-btn baca '+(b?'on':'')+'" data-wid="'+w.id+'" data-mode="baca" onclick="ktToggle(this)">'+(b?'\u2713':'\u25cb')+' Baca</button>':'')
+    +'</div>'
+    +'</div>';
+}
+function ktFiltered(){
+  var words=ktAllWords();
+  if(ktState.pos!=='all') words=words.filter(function(w){return ktPosOf(w)===ktState.pos;});
+  if(ktState.stat==='done') words=words.filter(function(w){return ktArtiDone(w)&&(!ktHasKanji(w)||ktBacaDone(w));});
+  if(ktState.stat==='todo') words=words.filter(function(w){return !(ktArtiDone(w)&&(!ktHasKanji(w)||ktBacaDone(w)));});
+  if(ktState.q){var q=ktState.q;
+    words=words.filter(function(w){return (w.jp||'').toLowerCase().indexOf(q)>=0||(w.rom||'').toLowerCase().indexOf(q)>=0||(w.id_||'').toLowerCase().indexOf(q)>=0;});
+  }
+  return words;
+}
+function ktUpdateCounts(){
+  var all=ktAllWords();
+  var artiDone=0,bacaDone=0,bacaTot=0;
+  all.forEach(function(w){ if(ktArtiDone(w))artiDone++; if(ktHasKanji(w)){bacaTot++; if(ktBacaDone(w))bacaDone++;} });
+  var el=document.getElementById('kt-summary');
+  if(el) el.textContent='Hafal arti: '+artiDone+' / '+all.length+' \u00b7 Hafal baca kanji: '+bacaDone+' / '+bacaTot;
+}
+function _ktActivate(btn){ if(!btn)return; btn.parentNode.querySelectorAll('button').forEach(function(b){b.classList.remove('active');}); btn.classList.add('active'); }
+function ktSetPos(p,btn){ ktState.pos=p; ktState.limit=300; _ktActivate(btn); renderKotobaList(); }
+function ktSetStat(s,btn){ ktState.stat=s; ktState.limit=300; _ktActivate(btn); renderKotobaList(); }
+function ktSearch(){ var el=document.getElementById('kt-search'); ktState.q=(el?el.value:'').trim().toLowerCase(); ktState.limit=300; renderKotobaList(); }
+function ktMore(){ ktState.limit+=300; renderKotobaList(); }
+function renderKotobaList(){
+  var grid=document.getElementById('kt-grid'); if(!grid) return;
+  var words=ktFiltered();
+  var cnt=document.getElementById('kt-count');
+  if(cnt) cnt.textContent='Menampilkan '+Math.min(words.length,ktState.limit)+' dari '+words.length+' kata';
+  if(!words.length){ grid.innerHTML='<div style="text-align:center;padding:30px;color:var(--mist);grid-column:1/-1"><div style="font-size:28px">\ud83d\udd0d</div>Tidak ada kata yang cocok</div>'; return; }
+  var shown=words.slice(0,ktState.limit);
+  var html=shown.map(ktRowHtml).join('');
+  if(words.length>ktState.limit) html+='<button onclick="ktMore()" style="grid-column:1/-1;padding:12px;border:1px dashed var(--border);background:white;border-radius:10px;color:var(--mist);cursor:pointer;font-family:inherit">\u25bc Muat 300 berikutnya ('+(words.length-ktState.limit)+' tersisa)</button>';
+  grid.innerHTML=html;
+}
+async function renderKotobaTab(){
+  var color=JLPT_COLORS[currentJLPT]||'var(--red)';
+  var badge=document.getElementById('kt-level-badge');
+  if(badge){badge.textContent=currentJLPT==='SSW'?'SSW \u98df\u54c1':currentJLPT;badge.style.background=color;}
+  if(currentJLPT!=='N3' && !kotobaLoaded(currentJLPT)){
+    var g=document.getElementById('kt-grid');
+    if(g) g.innerHTML='<div style="text-align:center;padding:30px;color:var(--mist);grid-column:1/-1">\u23f3 Memuat kosakata '+currentJLPT+'...</div>';
+    await loadKotoba(currentJLPT);
+  }
+  ktUpdateCounts();
+  renderKotobaList();
 }
 
 // ============================================================
