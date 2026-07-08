@@ -6717,7 +6717,7 @@ function renderOverviewMenu(){
 var POS_FUKUSHI={'とても':1,'もう':1,'ずっと':1,'だんだん':1,'たぶん':1,'ちょっと':1,'よく':1,'すぐに':1,'少し':1,'もっと':1,'いつも':1,'まだ':1,'また':1,'時々':1,'丁度':1,'多分':1,'本当に':1,'いくら':1,'なぜ':1,'どうして':1,'まっすぐ':1,'ゆっくりと':1,'初めて':1,'たくさん':1,'沢山':1,'段々':1,'どうぞ':1,'どうも':1,'いかが':1,'必ず':1,'はっきり':1,'しっかり':1,'すっかり':1,'やっと':1,'きっと':1,'ぜひ':1,'是非':1,'なかなか':1,'中々':1,'随分':1,'まず':1,'特に':1,'大体':1,'もうすぐ':1,'しばらく':1,'だいぶ':1,'大分':1,'もちろん':1,'例えば':1,'そろそろ':1,'なるべく':1,'なるほど':1,'ほとんど':1,'ちっとも':1,'決して':1,'最も':1,'とうとう':1,'やはり':1,'やっぱり':1,'どんどん':1,'さっき':1};
 var POS_SETSUZOKU={'しかし':1,'でも':1,'だから':1,'それで':1,'それから':1,'そして':1,'そうして':1,'それでは':1,'では':1,'じゃ':1,'または':1,'けれど':1,'けれども':1,'すると':1,'それに':1,'それなのに':1};
 // Override manual untuk kata yang salah tebak oleh heuristik posOf (audit Riyan 2026-07).
-var POS_OVERRIDE={'匂い':'meishi','お祝い':'meishi','お見舞い':'meishi','オートバイ':'meishi','ネクタイ':'meishi','お手洗い':'meishi','はい':'meishi','向こう':'meishi','ない':'pola','下さい':'pola','たまに':'fukushi','非常に':'fukushi','そんなに':'fukushi','色々':'fukushi','いろいろ':'fukushi'};
+var POS_OVERRIDE={'匂い':'meishi','お祝い':'meishi','お見舞い':'meishi','オートバイ':'meishi','ネクタイ':'meishi','お手洗い':'meishi','はい':'meishi','向こう':'meishi','ない':'pola','下さい':'pola','そう':'fukushi','たまに':'fukushi','非常に':'fukushi','そんなに':'fukushi','色々':'fukushi','いろいろ':'fukushi','ぶどう':'meishi','ごちそう':'meishi','こう':'fukushi','遠く':'meishi','近く':'meishi','いつ':'meishi','どう':'fukushi','いくつ':'meishi','一つ':'meishi','二つ':'meishi','三つ':'meishi','四つ':'meishi','五つ':'meishi','六つ':'meishi','七つ':'meishi','八つ':'meishi','九つ':'meishi'};
 
 // SATU-SATUNYA predikat "kata sudah hafal (arti)" — dipakai semua UI & sesi
 // agar tulis/baca selalu ke bucket yang sama. Jangan buat salinan lokal lagi.
@@ -7919,7 +7919,12 @@ function ktExtraWords(){
   return out;
 }
 function ktAllWords(){ return posLevelWords().concat(ktExtraWords()); }
-function ktPosOf(w){ return w._ext? w._pos : posOf(w); }
+function ktPosOf(w){
+  if(w._ext) return w._pos;
+  var head=(w.jp||'').split(/[;\uff1b,\uff0c\s]/)[0];
+  if(/^[\u4e00\u4e8c\u4e09\u56db\u4e94\u516d\u4e03\u516b\u4e5d\u5341]\u3064$/.test(head)||head==='\u3044\u304f\u3064'||/^[\u4e00\u4e8c\u4e09\u56db\u4e94\u516d\u4e03\u516b\u4e5d\u5341]+\u65e5$/.test(head)||/^[\u4e00\u4e8c]\u4eba$/.test(head)) return 'suuji';
+  return posOf(w);
+}
 function ktHasKanji(w){ return /[\u4e00-\u9fff]/.test(w.jp||''); }
 function ktArtiDone(w){
   if(w._ext) return !!kanjiReadMastered['xa_'+w.id];
