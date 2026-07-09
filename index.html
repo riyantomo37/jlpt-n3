@@ -6540,14 +6540,14 @@ function renderPosCards(){
     return [dn,tot];
   }
   var extCards=[
-    ['💬','オノマトペ','Onomatope · semua level','#e65100','onomenu',_aggExt('ono_',ONO_ORDER,ONO_DATA,false)],
-    ['🔢','数字','Angka · semua level','#00838f','kazumenu',_aggExt('kazu_',KAZU_ORDER,KAZU_DATA,false)],
-    ['🗾','方言','Dialek · semua level','#5d4037','dialectmenu',_aggExt('dia_',DIALECT_ORDER,DIALECT_DATA,true)]
+    ['💬','オノマトペ','Onomatope · acak campuran','#e65100','ono',_aggExt('ono_',ONO_ORDER,ONO_DATA,false)],
+    ['🔢','数字','Angka · acak campuran','#00838f','kazu',_aggExt('kazu_',KAZU_ORDER,KAZU_DATA,false)],
+    ['🗾','方言','Dialek · acak campuran','#5d4037','dia',_aggExt('dia_',DIALECT_ORDER,DIALECT_DATA,true)]
   ];
   extCards.forEach(function(c){
     var dn=c[5][0], tot=c[5][1];
     var pct=tot?Math.round(dn/tot*100):0;
-    html+='<div onclick="gotoScreen(\''+c[4]+'\')" '
+    html+='<div onclick="startExtFlashAll(\''+c[4]+'\')" '
       +'style="background:white;border:1px solid var(--border);border-top:3px solid '+c[3]+';border-radius:12px;padding:14px;cursor:pointer">'
       +'<div style="display:flex;align-items:center;gap:8px;margin-bottom:4px">'
       +'<span style="font-size:20px">'+c[0]+'</span>'
@@ -7194,7 +7194,8 @@ function endSession() {
 }
 
 function continueStudy() {
-  if (sessionCat && sessionCat.indexOf('kazu_')===0) startKazuFlash(sessionCat.slice(5));
+  if (sessionCat && sessionCat.indexOf('mix_')===0) startExtFlashAll(sessionCat.slice(4));
+  else if (sessionCat && sessionCat.indexOf('kazu_')===0) startKazuFlash(sessionCat.slice(5));
   else if (sessionCat && sessionCat.indexOf('ono_')===0) startOnoFlash(sessionCat.slice(4));
   else if (sessionCat && sessionCat.indexOf('dia_')===0) startDialectFlash(sessionCat.slice(4));
   else if (sessionCat==='bunpo') startStudyBunpo();
@@ -9634,6 +9635,36 @@ function startDialectFlash(k){
   showCard();
 }
 function _kazuId(k,i){ return 'kz_'+k+'_'+i; }
+function _extAllCards(kind){
+  var cards=[];
+  if(kind==='ono'){ ONO_ORDER.forEach(function(k){(ONO_DATA[k]||[]).forEach(function(it,i){ cards.push({id:_onoId(k,i),jp:it.jp,rom:it.ex,id_:it.id,_isOno:true,_onoKey:k}); });}); }
+  if(kind==='kazu'){ KAZU_ORDER.forEach(function(k){(KAZU_DATA[k]||[]).forEach(function(it,i){ cards.push({id:_kazuId(k,i),jp:it.jp,rom:it.rom,id_:it.id,_isKazu:true,_kazuKey:k}); });}); }
+  if(kind==='dia'){ DIALECT_ORDER.forEach(function(k){ if(k==='kanto')return; var d=DIALECT_DATA[k]; if(!d)return; (d.items||[]).forEach(function(it,i){ cards.push({id:_diaId(k,i),jp:it.dia,rom:it.rom||'',id_:(it.id||'')+(it.hyo&&it.hyo!==it.dia?' 〔標準: '+it.hyo+'〕':''),_isDia:true,_diaKey:k}); });}); }
+  return cards;
+}
+function _extDone(w){
+  var key=w._isOno?('ono_'+w._onoKey):(w._isKazu?('kazu_'+w._kazuKey):('dia_'+w._diaKey));
+  return !!(mastered[key]||{})[w.id];
+}
+function startExtFlashAll(kind){
+  var titles={ono:'💬 オノマトペ — Acak Campuran',kazu:'🔢 数字 — Acak Campuran',dia:'🗾 方言 — Acak Campuran'};
+  sessionCat='mix_'+kind; sessionReviewed=0; sessionMastered=0; revealed=false; sessionHistory=[];
+  var cards=_extAllCards(kind);
+  var unmastered=cards.filter(function(w){return !_extDone(w);});
+  var done=cards.filter(function(w){return _extDone(w);});
+  shuffle(unmastered); shuffle(done);
+  sessionQueue=unmastered.concat(done).slice(0,SESSION_SIZE);
+  sessionIdx=0;
+  document.getElementById('flash-category-title').textContent=titles[kind]||kind;
+  document.getElementById('flash-subtitle').textContent=unmastered.length+' belum hafal · '+done.length+' sudah hafal';
+  document.querySelectorAll('.screen').forEach(function(sc){sc.classList.remove('active');});
+  document.getElementById('screen-flash').classList.add('active');
+  document.querySelectorAll('nav button').forEach(function(b){b.classList.remove('active');});
+  document.getElementById('session-done-panel').style.display='none';
+  document.getElementById('flash-active').style.display='block';
+  if(!sessionQueue.length) document.getElementById('flash-subtitle').textContent='Kosong';
+  showCard();
+}
 
 // Flashcard hafalan untuk satu kategori angka (reuse mesin sesi flashcard).
 function startKazuFlash(k){
