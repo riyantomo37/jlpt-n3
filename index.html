@@ -6600,6 +6600,7 @@ var ROMAJI_MAP = (function(){
 })();
 
 var SMALL_Y = {'ゃ':'ya','ゅ':'yu','ょ':'yo','ャ':'ya','ュ':'yu','ョ':'yo'};
+var SMALL_V = {'ァ':'a','ィ':'i','ゥ':'u','ェ':'e','ォ':'o','ぁ':'a','ぃ':'i','ぅ':'u','ぇ':'e','ぉ':'o'};
 
 function toRomaji(kana){
   if (!kana) return '';
@@ -6617,6 +6618,15 @@ function toRomaji(kana){
       }
       continue;
     }
+    // Vokal kecil: チェ→che, フォ→fo, ティ→ti, ウィ→ui
+    if (next && SMALL_V[next] && ROMAJI_MAP[c]){
+      var bsv = ROMAJI_MAP[c];
+      out += (bsv.length>1 ? bsv.slice(0,-1) : bsv) + SMALL_V[next];
+      i++; continue;
+    }
+    if (SMALL_V[c]){ out += SMALL_V[c]; continue; }
+    // Tanda panjang ー: ulangi vokal terakhir (パーティー→paatii)
+    if (c === 'ー'){ var lv = out.charAt(out.length-1); if ('aiueo'.indexOf(lv)>=0) out += lv; continue; }
     // Yoon: base + small ya/yu/yo (mis. きゃ -> kya)
     if (next && SMALL_Y[next] && ROMAJI_MAP[c]){
       var base = ROMAJI_MAP[c];
@@ -8092,7 +8102,18 @@ function ktFiltered(){
   if(ktState.stat==='done') words=words.filter(function(w){return ktArtiDone(w)&&(!ktHasKanji(w)||ktBacaDone(w));});
   if(ktState.stat==='todo') words=words.filter(function(w){return !(ktArtiDone(w)&&(!ktHasKanji(w)||ktBacaDone(w)));});
   if(ktState.q){var q=ktState.q;
-    words=words.filter(function(w){return (w.jp||'').toLowerCase().indexOf(q)>=0||(w.rom||'').toLowerCase().indexOf(q)>=0||(w.id_||'').toLowerCase().indexOf(q)>=0;});
+    var qc=q.split(' ').join('');  // abaikan spasi di kueri romaji
+    words=words.filter(function(w){
+      if((w.jp||'').toLowerCase().indexOf(q)>=0) return true;
+      if((w.rom||'').toLowerCase().indexOf(q)>=0) return true;
+      if((w.id_||'').toLowerCase().indexOf(q)>=0) return true;
+      // Pencarian romaji: ketik "katai" → cocok かたい / 固い
+      try{
+        var rj=toRomaji(w.rom||w.jp||'').toLowerCase().split(' ').join('');
+        if(rj && rj.indexOf(qc)>=0) return true;
+      }catch(e){}
+      return false;
+    });
   }
   return words;
 }
