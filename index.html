@@ -1119,6 +1119,7 @@ header:has(.user-menu.open) { z-index:1000; }
   </div>
 
   <div class="section-title">Menu Belajar</div>
+  <div id="ov-reco" style="display:none;margin-bottom:14px"></div>
   <div id="ov-menu-grid" style="display:grid;grid-template-columns:repeat(2,1fr);gap:12px;margin-bottom:24px"></div>
   <div style="text-align:center;font-size:10px;color:var(--mist);margin-top:14px">build 2026-07-08 · tab 単語 Kotoba</div>
 
@@ -1278,6 +1279,10 @@ header:has(.user-menu.open) { z-index:1000; }
           <div class="divider" style="margin-top:4px"></div>
           <!-- arti -->
           <div class="meaning-text" id="kf-meaning">berterima kasih</div>
+          <div id="kf-mnemonic" style="display:none;margin-top:10px;padding:10px 12px;background:rgba(45,53,97,.06);border-radius:10px;text-align:left">
+            <div id="kf-mnemonic-parts" style="font-size:12px;font-weight:700;color:var(--indigo);margin-bottom:2px"></div>
+            <div id="kf-mnemonic-story" style="font-size:12px;color:var(--mist)"></div>
+          </div>
         </div>
       </div>
     </div>
@@ -6767,7 +6772,32 @@ function renderOverviewProgCards(){
 }
 
 // Menu cards on the dashboard — clickable shortcuts to every tab, level-aware.
+function renderOverviewReco(){
+  var box=document.getElementById('ov-reco');
+  if(!box) return;
+  var due=srsDueCount();
+  if(due>0){
+    box.innerHTML='<div onclick="startSrsReview()" style="background:linear-gradient(135deg,#1a1a2e,#2d3561);color:#fff;border-radius:14px;padding:16px;cursor:pointer;display:flex;align-items:center;gap:12px;box-shadow:0 6px 18px rgba(26,26,46,.25)">'
+      +'<span style="font-size:30px">🔁</span>'
+      +'<div style="flex:1">'
+      +'<div style="font-weight:800;font-size:15px">Review Harian — '+due+' kata menunggu</div>'
+      +'<div style="font-size:11px;opacity:.85;line-height:1.5">Metode spaced repetition: mengulang tepat sebelum lupa. 5 menit sehari, kanji nempel permanen — jangan biarkan antrean menumpuk!</div>'
+      +'</div>'
+      +'<span style="background:#ffd166;color:#1a1a2e;font-weight:800;font-size:12px;padding:8px 14px;border-radius:10px;white-space:nowrap">Mulai ▶</span>'
+      +'</div>';
+  } else {
+    box.innerHTML='<div onclick="startTwinQuiz()" style="background:white;border:1.5px dashed var(--border);border-radius:14px;padding:14px;cursor:pointer;display:flex;align-items:center;gap:12px">'
+      +'<span style="font-size:26px">✅</span>'
+      +'<div style="flex:1">'
+      +'<div style="font-weight:800;font-size:14px;color:var(--jade)">Review hari ini beres!</div>'
+      +'<div style="font-size:11px;color:var(--mist)">Masih semangat? Asah mata dengan Kuis Kanji Kembar ⚔️ — bedakan 待↔持, 借↔貸…</div>'
+      +'</div>'
+      +'</div>';
+  }
+  box.style.display='block';
+}
 function renderOverviewMenu(){
+  renderOverviewReco();
   var grid=document.getElementById('ov-menu-grid');
   if(!grid) return;
   var color=JLPT_COLORS[currentJLPT]||'var(--red)';
@@ -7507,6 +7537,18 @@ function showKanjiCard() {
   // Romaji latin untuk pemula (N4/N5)
   document.getElementById('kf-latin-back').textContent = needRomaji() ? toRomaji(w.rom) : '';
   document.getElementById('kf-meaning').textContent    = w.id_;
+  // Mnemonik radikal (jika kanji pertama punya entri)
+  (function(){
+    var box=document.getElementById('kf-mnemonic');
+    if(!box) return;
+    var mn=null, jp=w.jp||'';
+    for(var ci=0; ci<jp.length; ci++){ if(KANJI_MNEMONIC[jp.charAt(ci)]){ mn=KANJI_MNEMONIC[jp.charAt(ci)]; break; } }
+    if(mn){
+      document.getElementById('kf-mnemonic-parts').textContent='🧩 '+mn[0];
+      document.getElementById('kf-mnemonic-story').textContent=mn[1];
+      box.style.display='block';
+    } else box.style.display='none';
+  })();
 
   const card = document.getElementById('kf-card');
   card.classList.remove('revealed');
@@ -7976,6 +8018,75 @@ function toggleListSection(which){
 // KUIS KANJI KEMBAR — bedakan kanji yang mirip bentuk
 // Tiap set: kanji serumpun + kata contoh [potongan kata, okurigana-tampil, kana, arti]
 // ============================================================
+// ============================================================
+// MNEMONIK RADIKAL — pecahan bagian + cerita Indonesia
+// ============================================================
+var KANJI_MNEMONIC={
+'待':['彳 jalan + 寺 kuil','Berjalan ke kuil lalu MENUNGGU giliran berdoa.'],
+'持':['扌 tangan + 寺 kuil','Tangan MEMBAWA sesajen ke kuil.'],
+'特':['牛 sapi + 寺 kuil','Sapi KHUSUS persembahan kuil.'],
+'借':['亻 orang + 昔 dulu','Orang zaman dulu hobi MEMINJAM.'],
+'貸':['代 ganti + 貝 uang','Uang berpindah dengan jaminan = MEMINJAMKAN.'],
+'買':['罒 jaring + 貝 uang','Jaring penuh uang untuk MEMBELI.'],
+'売':['士 samurai + 儿 meja','Samurai berdiri di meja MENJUAL dagangan.'],
+'読':['言 kata + 売 jual','Kata-kata yang dijual = buku → MEMBACA.'],
+'聞':['門 gerbang + 耳 telinga','Telinga menempel di gerbang: MENDENGAR.'],
+'間':['門 gerbang + 日 matahari','Matahari terlihat DI ANTARA celah gerbang.'],
+'開':['門 gerbang + 廾 dua tangan','Dua tangan MEMBUKA gerbang.'],
+'閉':['門 gerbang + 才 palang','Palang kayu MENUTUP gerbang.'],
+'問':['門 gerbang + 口 mulut','Mulut di gerbang BERTANYA "siapa di sana?"'],
+'新':['立 berdiri + 木 pohon + 斤 kapak','Menebang pohon dengan kapak → kayu BARU.'],
+'親':['立 + 木 + 見 melihat','ORANG TUA naik pohon mengawasi anaknya.'],
+'験':['馬 kuda + 僉 semua','Semua kuda diuji → UJIAN.'],
+'険':['阝 bukit + 僉','Bukit terjal itu BERBAHAYA.'],
+'検':['木 kayu + 僉','MEMERIKSA semua kayu satu per satu.'],
+'病':['疒 ranjang sakit + 丙','Terbaring di ranjang = SAKIT.'],
+'疲':['疒 + 皮 kulit','Kulit sampai lesu = LELAH.'],
+'痛':['疒 + 甬 menembus','Rasa menembus badan = NYERI.'],
+'島':['山 gunung + 鳥 burung','Gunung tempat burung hinggap di laut = PULAU.'],
+'鳥':['ekor & sayap','BURUNG dengan bulu ekor panjang.'],
+'馬':['surai & 4 kaki','KUDA berlari, 4 titik = kakinya.'],
+'教':['孝 bakti + 攵 pukulan','Guru "memukul" dengan ilmu = MENGAJAR.'],
+'数':['米 beras + 女 wanita + 攵','Wanita menghitung butir beras = ANGKA.'],
+'場':['土 tanah + 昜 terang','Tanah lapang yang terang = TEMPAT.'],
+'湯':['氵 air + 昜 terang/panas','Air yang dipanaskan = AIR PANAS.'],
+'住':['亻 orang + 主 tuan','Orang jadi tuan rumah = TINGGAL.'],
+'注':['氵 air + 主','Menuangkan air ke titik utama = MENUANG/PERHATIAN.'],
+'使':['亻 orang + 吏 pejabat','Pejabat MEMAKAI orang untuk bekerja.'],
+'便':['亻 orang + 更 memperbarui','Orang membuat hidup lebih mudah = PRAKTIS/POS.'],
+'者':['耂 tua + 日','ORANG yang matang oleh waktu.'],
+'暑':['日 matahari + 者','Matahari di atas orang = PANAS (cuaca).'],
+'切':['七 tujuh + 刀 pisau','Pisau MEMOTONG jadi tujuh bagian.'],
+'初':['衤 kain + 刀 pisau','PERTAMA kali menggunting kain baju baru.'],
+'帰':['刀 + 帚 sapu','Bawa sapu PULANG ke rumah.'],
+'婦':['女 wanita + 帚 sapu','Wanita dengan sapu = IBU RUMAH TANGGA (kanji lama).'],
+'曜':['日 + 羽 sayap + 隹 burung','Burung berjemur tiap HARI.'],
+'濯':['氵 air + 曜','MENCUCI pakaian dengan banyak air tiap hari.'],
+'近':['⻌ jalan + 斤 kapak','Jarak lempar kapak = DEKAT.'],
+'返':['⻌ + 反 balik','Berjalan balik = MENGEMBALIKAN.'],
+'送':['⻌ + 关','Mengantar lewat jalan = MENGIRIM.'],
+'迎':['⻌ + 卬 menengadah','Berjalan menyambut = MENJEMPUT.'],
+'遅':['⻌ + 犀 badak','Jalan selambat badak = TERLAMBAT.'],
+'暗':['日 matahari + 音 suara','Matahari "bersuara" tapi tak terlihat = GELAP.'],
+'意':['音 suara + 心 hati','Suara hati = MAKSUD/ARTI.'],
+'洗':['氵 air + 先 duluan','Air lebih dulu menyentuh = MENCUCI.'],
+'究':['穴 lubang + 九 sembilan','Menggali lubang sedalam 9 lapis = MENELITI.'],
+'空':['穴 lubang + 工','Lubang besar tanpa isi = LANGIT/KOSONG.'],
+'突':['穴 lubang + 犬 anjing','Anjing MENYERUAK keluar lubang = TIBA-TIBA.'],
+'休':['亻 orang + 木 pohon','Orang bersandar ke pohon = ISTIRAHAT.'],
+'体':['亻 orang + 本 akar','Akar dari orang = BADAN.'],
+'働':['亻 orang + 動 bergerak','Orang yang terus bergerak = BEKERJA.'],
+'動':['重 berat + 力 tenaga','Tenaga memindahkan benda berat = BERGERAK.'],
+'重':['orang memikul','Memikul beban = BERAT.'],
+'習':['羽 sayap + 白 putih','Anak burung sayap putih BERLATIH terbang.'],
+'題':['是 + 頁 kepala','Isi kepala tentang soal = JUDUL/SOAL.'],
+'質':['斤斤 + 貝 uang','Menimbang mutu barang gadai = KUALITAS.'],
+'貿':['卯 + 貝 uang','Uang lintas negara = PERDAGANGAN.'],
+'銀':['金 logam + 艮','Logam putih berkilau = PERAK/BANK.'],
+'鉄':['金 logam + 失','Logam yang mudah hilang berkarat = BESI.'],
+'駅':['馬 kuda + 尺','Pemberhentian kuda zaman dulu = STASIUN.']
+};
+
 var TWIN_SETS=[
  {g:['待','持','特'], w:[['待','＿つ','まつ','menunggu'],['持','＿つ','もつ','memegang, membawa'],['特','＿に','とくに','khususnya']]},
  {g:['買','貸','借'], w:[['買','＿う','かう','membeli'],['貸','＿す','かす','meminjamkan'],['借','＿りる','かりる','meminjam']]},
@@ -8062,6 +8173,8 @@ function tqAnswer(btn){
   if(ok) st.score++;
   // penjelasan: arti tiap kanji serumpun biar bedanya nempel
   var expl=cur.set.w.map(function(w){return '<b>'+w[0]+'</b> '+w[3];}).join(' · ');
+  var mn=KANJI_MNEMONIC[cur.correct];
+  if(mn) expl+='<br><span style="color:var(--indigo)">🧩 '+cur.correct+' = '+mn[0]+' — '+mn[1]+'</span>';
   document.getElementById('tq-feedback').innerHTML=(ok?'<span style="color:var(--jade);font-weight:800">✓ Benar!</span> ':'<span style="color:#c0392b;font-weight:800">✗ Jawaban: '+cur.correct+'</span> ')+'<br><span style="color:var(--mist)">'+expl+'</span>';
   document.getElementById('tq-score').textContent=st.score+'/'+st.q;
   if(st.q>=st.total){
@@ -8111,8 +8224,10 @@ function srsDueWords(){
 function srsDueCount(){
   var n=0, now=Date.now();
   try{
-    var pool=posLevelWords().concat(typeof ktExtraWords==='function'? ktExtraWords():[]);
-    pool.forEach(function(w){ var e=srsData[srsKey(w)]; if(e&&e.due<=now) n++; });
+    Object.keys(srsData).forEach(function(k){
+      var e=srsData[k];
+      if(e && e.due<=now && (k.indexOf(currentJLPT+':')===0 || /^(on_|kz_|di_)/.test(k))) n++;
+    });
   }catch(e){}
   return n;
 }
