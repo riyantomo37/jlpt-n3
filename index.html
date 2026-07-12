@@ -1227,6 +1227,14 @@ header:has(.user-menu.open) { z-index:1000; }
     <span id="km-level-badge" style="font-family:'DM Mono',monospace;font-size:11px;padding:3px 10px;border-radius:10px;font-weight:700;background:var(--red);color:white">N3</span>
   </div>
   <p style="font-size:13px;color:var(--mist);margin-bottom:20px">Depan: kanji — Belakang: furigana + arti. Nilai sendiri bisa/belum.</p>
+  <div onclick="startTwinQuiz()" style="background:linear-gradient(135deg,#5d1a1a,#8c2f2f);color:#fff;border-radius:12px;padding:14px;cursor:pointer;display:flex;align-items:center;gap:12px;margin-bottom:18px">
+    <span style="font-size:26px">⚔️</span>
+    <div style="flex:1">
+      <div style="font-weight:800;font-size:15px">Kuis Kanji Kembar</div>
+      <div style="font-size:11px;opacity:.85">Latihan membedakan kanji mirip: 待↔持, 借↔貸, 間↔聞↔開…</div>
+    </div>
+    <span style="font-size:18px">▶</span>
+  </div>
   <div id="km-n3-section" style="display:none"></div>
   <div id="km-flat-section" style="display:none">
     <div id="km-flat-content" style="background:white;border:1px solid var(--border);border-radius:16px;padding:36px 24px;text-align:center"></div>
@@ -1457,6 +1465,27 @@ header:has(.user-menu.open) { z-index:1000; }
   <!-- Ranking list -->
   <div id="lb-list">
     <div style="text-align:center;padding:32px;color:var(--mist)">⏳ Memuat...</div>
+  </div>
+</div>
+
+<!-- ====== KUIS KANJI KEMBAR ====== -->
+<div id="screen-twinquiz" class="screen">
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+    <div class="section-title" style="margin:0">⚔️ Kanji Kembar</div>
+    <span id="tq-score" style="font-family:'DM Mono',monospace;font-size:13px;font-weight:700;color:var(--mist)">0/0</span>
+  </div>
+  <div id="tq-card" style="background:white;border:1px solid var(--border);border-radius:16px;padding:28px 20px;text-align:center;margin-bottom:14px">
+    <div id="tq-prompt" style="font-size:34px;font-weight:800;color:var(--ink);margin-bottom:6px">＿つ</div>
+    <div id="tq-reading" style="font-family:'DM Mono',monospace;font-size:15px;color:var(--indigo);margin-bottom:2px">まつ</div>
+    <div id="tq-arti" style="font-size:15px;color:var(--mist)">menunggu</div>
+  </div>
+  <div id="tq-choices" style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px"></div>
+  <div id="tq-feedback" style="min-height:44px;font-size:13px;text-align:center;margin-bottom:10px"></div>
+  <button id="tq-next" onclick="tqNext()" style="display:none;width:100%;padding:13px;border:none;border-radius:12px;background:var(--ink);color:#fff;font-family:inherit;font-size:14px;font-weight:700;cursor:pointer">Soal Berikutnya ▶</button>
+  <div id="tq-done" style="display:none;text-align:center;background:white;border:1px solid var(--border);border-radius:16px;padding:26px">
+    <div style="font-size:34px;margin-bottom:6px">🏁</div>
+    <div id="tq-done-score" style="font-size:20px;font-weight:800;margin-bottom:12px"></div>
+    <button onclick="startTwinQuiz()" style="padding:12px 22px;border:none;border-radius:12px;background:var(--jade);color:#fff;font-family:inherit;font-size:14px;font-weight:700;cursor:pointer">🔄 Main Lagi</button>
   </div>
 </div>
 
@@ -7942,6 +7971,110 @@ function toggleListSection(which){
   body.style.display=open?'block':'none';
   if(arr) arr.textContent=open?'▲':'▼';
 }
+
+// ============================================================
+// KUIS KANJI KEMBAR — bedakan kanji yang mirip bentuk
+// Tiap set: kanji serumpun + kata contoh [potongan kata, okurigana-tampil, kana, arti]
+// ============================================================
+var TWIN_SETS=[
+ {g:['待','持','特'], w:[['待','＿つ','まつ','menunggu'],['持','＿つ','もつ','memegang, membawa'],['特','＿に','とくに','khususnya']]},
+ {g:['買','貸','借'], w:[['買','＿う','かう','membeli'],['貸','＿す','かす','meminjamkan'],['借','＿りる','かりる','meminjam']]},
+ {g:['間','聞','開','閉','問'], w:[['間','＿','あいだ','di antara'],['聞','＿く','きく','mendengar'],['開','＿く','あく','terbuka'],['閉','＿まる','しまる','tertutup'],['問','質＿','しつもん','pertanyaan']]},
+ {g:['右','石'], w:[['右','＿','みぎ','kanan'],['石','＿','いし','batu']]},
+ {g:['白','百','自'], w:[['白','＿い','しろい','putih'],['百','＿','ひゃく','seratus'],['自','＿分','じぶん','diri sendiri']]},
+ {g:['午','牛','年'], w:[['午','＿前','ごぜん','pagi (AM)'],['牛','＿','うし','sapi'],['年','＿','とし','tahun']]},
+ {g:['休','体','本'], w:[['休','＿む','やすむ','beristirahat'],['体','＿','からだ','badan'],['本','＿','ほん','buku']]},
+ {g:['読','売','続'], w:[['読','＿む','よむ','membaca'],['売','＿る','うる','menjual'],['続','＿く','つづく','berlanjut']]},
+ {g:['教','数'], w:[['教','＿える','おしえる','mengajar'],['数','＿','かず','angka, jumlah']]},
+ {g:['場','湯'], w:[['場','＿所','ばしょ','tempat'],['湯','お＿','おゆ','air panas']]},
+ {g:['島','鳥','馬'], w:[['島','＿','しま','pulau'],['鳥','＿','とり','burung'],['馬','＿','うま','kuda']]},
+ {g:['犬','太','大'], w:[['犬','＿','いぬ','anjing'],['太','＿る','ふとる','menjadi gemuk'],['大','＿きい','おおきい','besar']]},
+ {g:['使','便'], w:[['使','＿う','つかう','memakai'],['便','＿利','べんり','praktis']]},
+ {g:['住','注','主'], w:[['住','＿む','すむ','tinggal'],['注','＿意','ちゅうい','perhatian'],['主','＿人','しゅじん','suami; tuan']]},
+ {g:['者','暑','著'], w:[['者','医＿','いしゃ','dokter'],['暑','＿い','あつい','panas (cuaca)']]},
+ {g:['新','親'], w:[['新','＿しい','あたらしい','baru'],['親','＿','おや','orang tua']]},
+ {g:['切','初'], w:[['切','＿る','きる','memotong'],['初','＿めて','はじめて','pertama kali']]},
+ {g:['験','険','検'], w:[['験','試＿','しけん','ujian'],['険','危＿','きけん','berbahaya'],['検','＿査','けんさ','pemeriksaan']]},
+ {g:['帰','婦'], w:[['帰','＿る','かえる','pulang'],['婦','主＿','しゅふ','ibu rumah tangga']]},
+ {g:['曜','濯'], w:[['曜','日＿日','にちようび','hari Minggu'],['濯','洗＿','せんたく','mencuci (pakaian)']]},
+ {g:['病','疲','痛'], w:[['病','＿気','びょうき','sakit, penyakit'],['疲','＿れる','つかれる','lelah'],['痛','＿い','いたい','sakit, nyeri']]},
+ {g:['近','返','送','迎','遅'], w:[['近','＿い','ちかい','dekat'],['返','＿す','かえす','mengembalikan'],['送','＿る','おくる','mengirim'],['迎','＿える','むかえる','menjemput'],['遅','＿い','おそい','lambat, terlambat']]},
+ {g:['暗','音','意'], w:[['暗','＿い','くらい','gelap'],['音','＿','おと','bunyi'],['意','＿味','いみ','arti, makna']]},
+ {g:['洗','先'], w:[['洗','＿う','あらう','mencuci'],['先','＿生','せんせい','guru']]},
+ {g:['究','空','突'], w:[['究','研＿','けんきゅう','penelitian'],['空','＿','そら','langit'],['突','＿然','とつぜん','tiba-tiba']]}
+];
+var tqState={q:0,score:0,total:10,cur:null};
+function _tqAllKanji(){
+  var s=[]; TWIN_SETS.forEach(function(t){t.g.forEach(function(k){if(s.indexOf(k)<0)s.push(k);});});
+  return s;
+}
+function tqMakeQuestion(){
+  var set=TWIN_SETS[Math.floor(Math.random()*TWIN_SETS.length)];
+  var word=set.w[Math.floor(Math.random()*set.w.length)];
+  var correct=word[0];
+  var choices=set.g.slice();
+  if(choices.length<4){
+    var pool=_tqAllKanji().filter(function(k){return choices.indexOf(k)<0;});
+    shuffle(pool);
+    while(choices.length<4 && pool.length) choices.push(pool.pop());
+  }
+  if(choices.length>4){
+    var others=choices.filter(function(k){return k!==correct;});
+    shuffle(others);
+    choices=[correct].concat(others.slice(0,3));
+  }
+  shuffle(choices);
+  return {set:set, correct:correct, prompt:word[1], reading:word[2], arti:word[3], choices:choices};
+}
+function startTwinQuiz(){
+  tqState={q:0,score:0,total:10,cur:null};
+  gotoScreenRaw('twinquiz');
+  document.getElementById('tq-done').style.display='none';
+  document.getElementById('tq-card').style.display='block';
+  tqShow();
+}
+function tqShow(){
+  var st=tqState;
+  st.cur=tqMakeQuestion();
+  document.getElementById('tq-score').textContent=st.score+'/'+st.q+' · soal '+(st.q+1)+' dari '+st.total;
+  document.getElementById('tq-prompt').textContent=st.cur.prompt;
+  document.getElementById('tq-reading').textContent=st.cur.reading;
+  document.getElementById('tq-arti').textContent=st.cur.arti;
+  document.getElementById('tq-feedback').innerHTML='';
+  document.getElementById('tq-next').style.display='none';
+  var box=document.getElementById('tq-choices');
+  box.innerHTML=st.cur.choices.map(function(k){
+    return '<button class="tq-choice" data-k="'+k+'" onclick="tqAnswer(this)" style="padding:18px;border:2px solid var(--border);border-radius:14px;background:white;font-size:34px;font-family:\'Noto Sans JP\',sans-serif;cursor:pointer">'+k+'</button>';
+  }).join('');
+  document.getElementById('tq-choices').style.pointerEvents='auto';
+}
+function tqAnswer(btn){
+  var st=tqState, cur=st.cur;
+  var pick=btn.dataset.k;
+  var ok=pick===cur.correct;
+  document.getElementById('tq-choices').style.pointerEvents='none';
+  document.querySelectorAll('.tq-choice').forEach(function(b){
+    if(b.dataset.k===cur.correct){ b.style.borderColor='var(--jade)'; b.style.background='rgba(10,125,107,.1)'; }
+    else if(b===btn && !ok){ b.style.borderColor='#c0392b'; b.style.background='rgba(192,57,43,.08)'; }
+    else b.style.opacity='.45';
+  });
+  st.q++;
+  if(ok) st.score++;
+  // penjelasan: arti tiap kanji serumpun biar bedanya nempel
+  var expl=cur.set.w.map(function(w){return '<b>'+w[0]+'</b> '+w[3];}).join(' · ');
+  document.getElementById('tq-feedback').innerHTML=(ok?'<span style="color:var(--jade);font-weight:800">✓ Benar!</span> ':'<span style="color:#c0392b;font-weight:800">✗ Jawaban: '+cur.correct+'</span> ')+'<br><span style="color:var(--mist)">'+expl+'</span>';
+  document.getElementById('tq-score').textContent=st.score+'/'+st.q;
+  if(st.q>=st.total){
+    document.getElementById('tq-next').style.display='none';
+    setTimeout(function(){
+      document.getElementById('tq-done').style.display='block';
+      document.getElementById('tq-done-score').textContent='Skor: '+st.score+' / '+st.total+(st.score===st.total?' — 完璧! 🎉':st.score>=7?' — bagus!':' — ulangi lagi ya');
+    },900);
+  } else {
+    document.getElementById('tq-next').style.display='block';
+  }
+}
+function tqNext(){ tqShow(); }
 
 // ============================================================
 // SRS — REVIEW BERKALA (spaced repetition ringan)
