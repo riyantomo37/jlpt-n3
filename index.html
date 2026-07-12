@@ -7790,6 +7790,24 @@ function renderProgressDashboard(){
   if(!host) return;
   var isSSW=currentJLPT==='SSW';
 
+  // ── Tingkat Hafalan gabungan (arti + baca + kematangan SRS) ──
+  var _thHtml='';
+  try{
+    var _pool=posLevelWords();
+    if(_pool.length){
+      var _s=0,_full=0;
+      _pool.forEach(function(w){ var sc=ktScore(w); _s+=sc; if(sc>=100)_full++; });
+      var _avg=Math.round(_s/_pool.length);
+      _thHtml='<div style="background:linear-gradient(135deg,#1a1a2e,#2d3561);color:#fff;border-radius:14px;padding:16px;margin-bottom:14px">'
+        +'<div style="display:flex;align-items:baseline;justify-content:space-between;margin-bottom:6px">'
+        +'<span style="font-weight:800;font-size:14px">\ud83c\udfc6 Tingkat Hafalan '+currentJLPT+'</span>'
+        +'<span style="font-family:\'DM Mono\',monospace;font-size:24px;font-weight:700;color:#ffd166">'+_avg+'%</span></div>'
+        +'<div style="background:rgba(255,255,255,.15);border-radius:4px;height:7px;overflow:hidden;margin-bottom:8px"><div style="height:100%;width:'+_avg+'%;background:#ffd166"></div></div>'
+        +'<div style="font-size:11px;opacity:.85;line-height:1.5">'+_full+' dari '+_pool.length+' kata sudah 100% (arti \u2713 baca \u2713 review SRS 3\u00d7 \u2713). Arti = 40%, baca kanji = 30%, kematangan review = 30%.</div>'
+        +'</div>';
+    }
+  }catch(e){}
+
   var ko=_countKotoba();
   var ka=_countKanji();
   var totPat=(BUNPO_DATA[currentJLPT]||[]).length;
@@ -7866,8 +7884,7 @@ function renderProgressDashboard(){
       +'</div>';
   }
 
-  host.innerHTML =
-    cards
+  host.innerHTML = _thHtml + cards
     + posBlock
     +'<div style="background:white;border:1px solid var(--border);border-radius:12px;box-shadow:var(--shadow);overflow:hidden">'
     +'<div onclick="toggleExamHistory()" style="display:flex;justify-content:space-between;align-items:center;padding:13px 14px;cursor:pointer">'
@@ -8376,6 +8393,21 @@ function ktArtiDone(w){
   if(w._ext) return !!(mastered[w._mkey]||{})[w.id];
   return wordDone(w);
 }
+// Skor Hafalan gabungan 0-100:
+// kata berkanji : Arti 40% + Baca 30% + Kematangan SRS 30%
+// kata tanpa kanji: Arti 50% + Kematangan SRS 50%
+// Kematangan SRS = level/3 (level 3 = lolos review 3x: interval 1-3-7 hari)
+function ktScore(w){
+  var hasK=ktHasKanji(w);
+  var arti=ktArtiDone(w)?1:0;
+  var e=(typeof srsData!=='undefined')?srsData[srsKey(w)]:null;
+  var srs=Math.min((e?e.lv:0)/3,1);
+  if(hasK){
+    var baca=ktBacaDone(w)?1:0;
+    return Math.round(arti*40+baca*30+srs*30);
+  }
+  return Math.round(arti*50+srs*50);
+}
 function ktBacaDone(w){
   if(w._ext) return !!kanjiReadMastered['xb_'+w.id];
   if(currentJLPT==='N3') return !!kanjiReadMastered['kf_'+(w.cat||'vocab')+'_'+w.id];
@@ -8411,12 +8443,14 @@ function ktToggle(btn){
 function ktRowHtml(w){
   var pos=ktPosOf(w); var meta=KT_POS_META[pos]||['?','#888'];
   var a=ktArtiDone(w), hasK=ktHasKanji(w), b=hasK?ktBacaDone(w):false;
+  var sc=ktScore(w);
+  var scColor=sc>=100?'var(--jade)':sc>=70?'#b8860b':sc>0?'#c0532e':'var(--mist)';
   var full=a&&(!hasK||b);
   return '<div class="vocab-item kt-row '+(full?'mastered':'')+'" data-wid="'+w.id+'">'
     +'<div style="flex:1;min-width:0">'
     +'<div class="jp">'+w.jp+' <span class="kt-pos" style="background:'+meta[1]+'">'+meta[0]+'</span></div>'
     +'<div class="id-meaning">'+(w.id_||'')+'</div>'
-    +'<div style="font-size:10px;color:var(--mist)">'+(w.rom||'')+(w._sub?' \u00b7 '+w._sub:'')+'</div>'
+    +'<div style="font-size:10px;color:var(--mist)">'+(w.rom||'')+(w._sub?' \u00b7 '+w._sub:'')+' \u00b7 <b style="color:'+scColor+'">'+sc+'%</b></div>'
     +'</div>'
     +'<div style="display:flex;flex-direction:column;gap:5px;flex-shrink:0">'
     +'<button class="kt-btn '+(a?'on':'')+'" data-wid="'+w.id+'" data-mode="arti" onclick="ktToggle(this)">'+(a?'\u2713':'\u25cb')+' Arti</button>'
@@ -8449,8 +8483,12 @@ function ktUpdateCounts(){
   var all=ktAllWords();
   var artiDone=0,bacaDone=0,bacaTot=0;
   all.forEach(function(w){ if(ktArtiDone(w))artiDone++; if(ktHasKanji(w)){bacaTot++; if(ktBacaDone(w))bacaDone++;} });
+  var sum=0;
+  all.forEach(function(w){ sum+=ktScore(w); });
+  var avg=all.length?Math.round(sum/all.length):0;
   var el=document.getElementById('kt-summary');
-  if(el) el.textContent='Hafal arti: '+artiDone+' / '+all.length+' \u00b7 Hafal baca kanji: '+bacaDone+' / '+bacaTot;
+  if(el) el.innerHTML='<b style="color:var(--ink)">Tingkat Hafalan: '+avg+'%</b> \u00b7 Arti '+artiDone+'/'+all.length+' \u00b7 Baca '+bacaDone+'/'+bacaTot
+    +'<br><span style="font-size:10px">100% = arti \u2713 + baca \u2713 + lolos review SRS 3\u00d7</span>';
 }
 function _ktActivate(btn){ if(!btn)return; btn.parentNode.querySelectorAll('button').forEach(function(b){b.classList.remove('active');}); btn.classList.add('active'); }
 function ktSetPos(p,btn){ ktState.pos=p; ktState.limit=300; _ktActivate(btn); renderKotobaList(); }
