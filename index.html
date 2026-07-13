@@ -1493,8 +1493,12 @@ header:has(.user-menu.open) { z-index:1000; }
     </div>
     <div id="write-info" style="text-align:center;font-size:12.5px;color:var(--mist);margin-top:8px;min-height:16px"></div>
     <div id="write-score-row" style="display:flex;gap:8px;margin-top:8px">
-      <button onclick="writeScore(false)" style="flex:1;padding:11px;border:1.5px solid #c0392b;border-radius:10px;background:rgba(192,57,43,.06);color:#c0392b;font-family:inherit;font-size:13px;font-weight:700;cursor:pointer">✗ Belum</button>
-      <button onclick="writeScore(true)" style="flex:1;padding:11px;border:none;border-radius:10px;background:var(--jade);color:#fff;font-family:inherit;font-size:13px;font-weight:700;cursor:pointer">✓ Bisa!</button>
+      <button onclick="writeScore(false)" style="flex:1;padding:11px;border:1.5px solid #c0392b;border-radius:10px;background:rgba(192,57,43,.06);color:#c0392b;font-family:inherit;font-size:13px;font-weight:700;cursor:pointer">✗ Tulisan Salah</button>
+      <button onclick="writeScore(true)" style="flex:1;padding:11px;border:none;border-radius:10px;background:var(--indigo);color:#fff;font-family:inherit;font-size:13px;font-weight:700;cursor:pointer">✓ Tulisan Benar</button>
+    </div>
+    <div id="write-assess-row" style="display:none;gap:8px;margin-top:8px">
+      <button onclick="writeAssess(false)" style="flex:1;padding:11px;border:1.5px solid #c0392b;border-radius:10px;background:rgba(192,57,43,.06);color:#c0392b;font-family:inherit;font-size:13px;font-weight:700;cursor:pointer">🙅 Belum Hafal</button>
+      <button onclick="writeAssess(true)" style="flex:1;padding:11px;border:none;border-radius:10px;background:var(--jade);color:#fff;font-family:inherit;font-size:13px;font-weight:700;cursor:pointer">💯 Hafal!</button>
     </div>
     <div id="write-mnemo" style="display:none;margin-top:10px;padding:9px 11px;background:rgba(45,53,97,.06);border-radius:10px;font-size:11.5px;color:var(--mist);line-height:1.55"></div>
     <button id="write-again" onclick="startWritePractice()" style="display:none;width:100%;margin-top:10px;padding:12px;border:none;border-radius:10px;background:var(--jade);color:#fff;font-family:inherit;font-size:14px;font-weight:700;cursor:pointer">🔄 Sesi Baru</button>
@@ -7881,7 +7885,7 @@ function renderProgressDashboard(){
         +'<span style="font-weight:800;font-size:14px">\ud83c\udfc6 Tingkat Hafalan '+currentJLPT+'</span>'
         +'<span style="font-family:\'DM Mono\',monospace;font-size:24px;font-weight:700;color:#ffd166">'+_avg+'%</span></div>'
         +'<div style="background:rgba(255,255,255,.15);border-radius:4px;height:7px;overflow:hidden;margin-bottom:8px"><div style="height:100%;width:'+_avg+'%;background:#ffd166"></div></div>'
-        +'<div style="font-size:11px;opacity:.85;line-height:1.5">'+_full+' dari '+_pool.length+' kata sudah 100% (arti \u2713 baca \u2713 review SRS 3\u00d7 \u2713). Arti = 40%, baca kanji = 30%, kematangan review = 30%.</div>'
+        +'<div style="font-size:11px;opacity:.85;line-height:1.5">'+_full+' dari '+_pool.length+' kata sudah 100%. Semua metode dihitung: Arti 30 \u00b7 Baca 20 \u00b7 Review SRS 20 \u00b7 Kanji Kembar 15 \u00b7 Menulis 15.</div>'
         +'</div>';
     }
   }catch(e){}
@@ -8147,6 +8151,7 @@ function _openWriteWord(w, practice){
     else mbox.style.display='none';
   }
   var row=document.getElementById('write-score-row'); if(row) row.style.display='flex';
+  var ar2=document.getElementById('write-assess-row'); if(ar2) ar2.style.display='none';
   var nx=document.getElementById('write-next'); if(nx) nx.style.display='none';
   var ag=document.getElementById('write-again'); if(ag) ag.style.display='none';
   document.getElementById('write-modal').style.display='flex';
@@ -8176,16 +8181,30 @@ function openWriteModal(){
   _openWriteWord(w||{jp:jp,rom:'',id_:''}, false);
 }
 function writeScore(ok){
-  if(_writeWord && _writeWord.id){ try{ srsTouch(_writeWord, ok); }catch(e){} }
+  // Langkah 1: benar/salah tulisan (akurasi) — belum menyentuh hafalan
   _ms('writeQ');
-  if(ok){
-    _ms('writeOk');
+  if(ok){ _ms('writeOk'); _wpOkSes++; }
+  var row=document.getElementById('write-score-row'); if(row) row.style.display='none';
+  var ar=document.getElementById('write-assess-row'); if(ar) ar.style.display='flex';
+  var inf=document.getElementById('write-info');
+  if(inf && _writeWord) inf.innerHTML='<b style="color:var(--ink)">'+_writeHead(_writeWord.jp)+'</b> — sekarang jujur: hafal atau menebak?';
+}
+function writeAssess(hafal){
+  // Langkah 2: hafal/belum — ini yang masuk SRS, poin, dan persen hafalan
+  if(_writeWord && _writeWord.id){
+    try{
+      srsTouch(_writeWord, hafal);
+      var fk='wr_'+srsKey(_writeWord);
+      if(hafal) kanjiReadMastered[fk]=true; else delete kanjiReadMastered[fk];
+    }catch(e){}
+  }
+  if(hafal){
     todayCount++;
     var _td=new Date().toDateString();
     if(lastStudyDate!==_td){var _yd=new Date(Date.now()-86400000).toDateString();streak=(lastStudyDate===_yd)?streak+1:1;lastStudyDate=_td;}
-    _wpOkSes++;
   }
   save();
+  var ar=document.getElementById('write-assess-row'); if(ar) ar.style.display='none';
   if(!_writePracticeMode){ closeWriteModal(); return; }
   _wpIdx++;
   if(_wpIdx>=_wpList.length) _writeShowDone();
@@ -8197,6 +8216,7 @@ function _writeShowDone(){
   var g=document.getElementById('write-ghost'); if(g) g.textContent='';
   writeClear();
   var row=document.getElementById('write-score-row'); if(row) row.style.display='none';
+  var ar3=document.getElementById('write-assess-row'); if(ar3) ar3.style.display='none';
   var nx=document.getElementById('write-next'); if(nx) nx.style.display='none';
   var ag=document.getElementById('write-again'); if(ag) ag.style.display='block';
   var mb=document.getElementById('write-mnemo'); if(mb) mb.style.display='none';
@@ -8338,6 +8358,14 @@ function _tqAllKanji(){
   var s=[]; TWIN_SETS.forEach(function(t){t.g.forEach(function(k){if(s.indexOf(k)<0)s.push(k);});});
   return s;
 }
+var _twSetCache={};
+function _twinKanjiSet(){
+  if(_twSetCache[currentJLPT]) return _twSetCache[currentJLPT];
+  var s={};
+  _twinPool().forEach(function(t){ t.g.forEach(function(k){ s[k]=1; }); });
+  _twSetCache[currentJLPT]=s;
+  return s;
+}
 function _twinPool(){
   var num={'N5':5,'N4':4,'N3':3,'N2':3,'N1':3,'SSW':4}[currentJLPT]||4;
   var pool=TWIN_SETS.filter(function(t){return (t.lv||4)>=num;});
@@ -8396,35 +8424,64 @@ function tqAnswer(btn){
   });
   st.q++;
   _ms('twinQ');
-  if(ok){
-    st.score++;
-    _ms('twinOk');
-    todayCount++;
-    var _td=new Date().toDateString();
-    if(lastStudyDate!==_td){var _yd=new Date(Date.now()-86400000).toDateString();streak=(lastStudyDate===_yd)?streak+1:1;lastStudyDate=_td;}
-  }
-  save();
-  // Sumbang skor Tingkat Hafalan: sinkronkan jadwal SRS kata level yang cocok
+  if(ok){ st.score++; _ms('twinOk'); }
+  // kata level yang terkait soal ini (untuk penilaian hafal)
+  _tqLW=null;
   try{
-    var _pool=posLevelWords(), _lw=null;
+    var _pool=posLevelWords();
     for(var _pi=0;_pi<_pool.length;_pi++){
       var _pw=_pool[_pi];
-      if((_pw.rom||'')===cur.reading && (_pw.jp||'').indexOf(cur.correct)>=0){ _lw=_pw; break; }
+      if((_pw.rom||'')===cur.reading && (_pw.jp||'').indexOf(cur.correct)>=0){ _tqLW=_pw; break; }
     }
-    if(_lw){ srsTouch(_lw, ok); save(); }
   }catch(e){}
+  save();
   // penjelasan: arti tiap kanji serumpun biar bedanya nempel
   var expl=cur.set.w.map(function(w){return '<b>'+w[0]+'</b> '+w[3];}).join(' · ');
   var mn=KANJI_MNEMONIC[cur.correct];
   if(mn) expl+='<br><span style="color:var(--indigo)">🧩 '+cur.correct+' = '+mn[0]+' — '+mn[1]+'</span>';
-  document.getElementById('tq-feedback').innerHTML=(ok?'<span style="color:var(--jade);font-weight:800">✓ Benar!</span> ':'<span style="color:#c0392b;font-weight:800">✗ Jawaban: '+cur.correct+'</span> ')+'<br><span style="color:var(--mist)">'+expl+'</span>';
+  var fb=(ok?'<span style="color:var(--jade);font-weight:800">✓ Benar!</span> ':'<span style="color:#c0392b;font-weight:800">✗ Jawaban: '+cur.correct+'</span> ')+'<br><span style="color:var(--mist)">'+expl+'</span>';
+  if(_tqLW){
+    // Benar ≠ hafal (bisa jadi menebak) → nilai dirimu sendiri
+    fb+='<div style="margin-top:10px;font-weight:700;color:var(--ink)">Apakah kamu benar-benar hafal '+_tqLW.jp.split(/[;；]/)[0]+'?</div>'
+      +'<div style="display:flex;gap:8px;margin-top:6px">'
+      +'<button onclick="tqAssess(false)" style="flex:1;padding:10px;border:1.5px solid #c0392b;border-radius:10px;background:rgba(192,57,43,.06);color:#c0392b;font-family:inherit;font-size:13px;font-weight:700;cursor:pointer">🙅 Belum Hafal</button>'
+      +'<button onclick="tqAssess(true)" style="flex:1;padding:10px;border:none;border-radius:10px;background:var(--jade);color:#fff;font-family:inherit;font-size:13px;font-weight:700;cursor:pointer">💯 Hafal!</button>'
+      +'</div>';
+  }
+  document.getElementById('tq-feedback').innerHTML=fb;
   document.getElementById('tq-score').textContent=st.score+'/'+st.q;
+  if(_tqLW){ document.getElementById('tq-next').style.display='none'; }
+  else _tqProceed();
+}
+var _tqLW=null;
+function tqAssess(hafal){
+  if(_tqLW){
+    try{
+      srsTouch(_tqLW, hafal);
+      var fk='tw_'+srsKey(_tqLW);
+      if(hafal) kanjiReadMastered[fk]=true; else delete kanjiReadMastered[fk];
+      if(hafal){
+        todayCount++;
+        var _td=new Date().toDateString();
+        if(lastStudyDate!==_td){var _yd=new Date(Date.now()-86400000).toDateString();streak=(lastStudyDate===_yd)?streak+1:1;lastStudyDate=_td;}
+      }
+      save();
+    }catch(e){}
+  }
+  // matikan tombol penilaian setelah dipakai
+  var fbEl=document.getElementById('tq-feedback');
+  if(fbEl){ fbEl.querySelectorAll('button').forEach(function(b){b.disabled=true;b.style.opacity='.4';}); }
+  _tqLW=null;
+  _tqProceed();
+}
+function _tqProceed(){
+  var st=tqState;
   if(st.q>=st.total){
     document.getElementById('tq-next').style.display='none';
     setTimeout(function(){
       document.getElementById('tq-done').style.display='block';
       document.getElementById('tq-done-score').textContent='Skor: '+st.score+' / '+st.total+(st.score===st.total?' — 完璧! 🎉':st.score>=7?' — bagus!':' — ulangi lagi ya');
-    },900);
+    },700);
   } else {
     document.getElementById('tq-next').style.display='block';
   }
@@ -8625,15 +8682,25 @@ function ktArtiDone(w){
 // kata tanpa kanji: Arti 50% + Kematangan SRS 50%
 // Kematangan SRS = level/3 (level 3 = lolos review 3x: interval 1-3-7 hari)
 function ktScore(w){
+  // Komponen (bobot dinormalisasi thd yang berlaku utk kata ini):
+  //  Arti 30 · Baca kanji 20 · SRS matang 20 · Hafal Kanji Kembar 15 · Hafal Menulis 15
+  //  Kata tanpa kanji: hanya Arti + SRS. Kembar hanya jika kanjinya masuk set kembar level ini.
   var hasK=ktHasKanji(w);
-  var arti=ktArtiDone(w)?1:0;
   var e=(typeof srsData!=='undefined')?srsData[srsKey(w)]:null;
   var srs=Math.min((e?e.lv:0)/3,1);
+  var head=(w.jp||'').split(/[;\uff1b,\uff0c\s]/)[0];
+  var comps=[[30, ktArtiDone(w)?1:0],[20, srs]];
   if(hasK){
-    var baca=ktBacaDone(w)?1:0;
-    return Math.round(arti*40+baca*30+srs*30);
+    comps.push([20, ktBacaDone(w)?1:0]);
+    comps.push([15, kanjiReadMastered['wr_'+srsKey(w)]?1:0]);
+    var tset=(typeof _twinKanjiSet==='function')?_twinKanjiSet():{};
+    var inTwin=false;
+    for(var ci=0;ci<head.length;ci++){ if(tset[head.charAt(ci)]){ inTwin=true; break; } }
+    if(inTwin) comps.push([15, kanjiReadMastered['tw_'+srsKey(w)]?1:0]);
   }
-  return Math.round(arti*50+srs*50);
+  var tot=0, got=0;
+  comps.forEach(function(c){ tot+=c[0]; got+=c[0]*c[1]; });
+  return tot?Math.round(got/tot*100):0;
 }
 function ktBacaDone(w){
   if(w._ext) return !!kanjiReadMastered['xb_'+w.id];
@@ -8715,7 +8782,7 @@ function ktUpdateCounts(){
   var avg=all.length?Math.round(sum/all.length):0;
   var el=document.getElementById('kt-summary');
   if(el) el.innerHTML='<b style="color:var(--ink)">Tingkat Hafalan: '+avg+'%</b> \u00b7 Arti '+artiDone+'/'+all.length+' \u00b7 Baca '+bacaDone+'/'+bacaTot
-    +'<br><span style="font-size:10px">100% = arti \u2713 + baca \u2713 + lolos review SRS 3\u00d7</span>';
+    +'<br><span style="font-size:10px">100% = arti + baca + review SRS 3\u00d7 + hafal di Kanji Kembar + hafal menulis</span>';
 }
 function _ktActivate(btn){ if(!btn)return; btn.parentNode.querySelectorAll('button').forEach(function(b){b.classList.remove('active');}); btn.classList.add('active'); }
 function ktSetPos(p,btn){ ktState.pos=p; ktState.limit=300; _ktActivate(btn); renderKotobaList(); }
