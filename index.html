@@ -1284,7 +1284,6 @@ header:has(.user-menu.open) { z-index:1000; }
             <div id="kf-mnemonic-story" style="font-size:12px;color:var(--mist)"></div>
           </div>
           <div id="kf-family" style="display:none;margin-top:8px;padding:10px 12px;background:rgba(10,125,107,.06);border-radius:10px;text-align:left;font-size:12px;color:var(--mist);line-height:1.7"></div>
-          <button onclick="openWriteFromKf(event)" style="margin-top:10px;padding:8px 16px;border:1.5px solid var(--indigo);border-radius:10px;background:white;color:var(--indigo);font-family:inherit;font-weight:700;font-size:12px;cursor:pointer">✍️ Latihan Tulis</button>
           <div id="kf-related" style="display:none;margin-top:8px;font-size:12px;color:var(--mist);text-align:left;line-height:1.6"></div>
           <button onclick="event.stopPropagation();openWriteModal()" style="margin-top:10px;padding:8px 16px;border:1.5px solid var(--border);border-radius:10px;background:white;color:var(--ink);font-family:inherit;font-size:12px;font-weight:700;cursor:pointer">✍️ Latihan Tulis</button>
         </div>
@@ -1497,20 +1496,6 @@ header:has(.user-menu.open) { z-index:1000; }
 </div>
 
 <!-- ====== MODAL LATIHAN TULIS ====== -->
-<div id="write-modal" style="display:none;position:fixed;inset:0;background:rgba(26,26,46,.75);z-index:2000;align-items:center;justify-content:center" onclick="if(event.target===this)closeWriteModal()">
-  <div style="background:white;border-radius:16px;padding:16px;max-width:340px;width:92%">
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
-      <b style="font-size:15px">✍️ Latihan Tulis</b>
-      <button onclick="closeWriteModal()" style="border:none;background:none;font-size:20px;cursor:pointer">✕</button>
-    </div>
-    <canvas id="write-canvas" width="300" height="300" style="width:100%;border:2px dashed var(--border);border-radius:12px;touch-action:none;background:#fdfdfb"></canvas>
-    <div style="display:flex;gap:8px;margin-top:10px">
-      <button onclick="writeClear()" style="flex:1;padding:10px;border:1.5px solid var(--border);border-radius:10px;background:white;font-family:inherit;font-weight:700;cursor:pointer">🧽 Hapus</button>
-      <button onclick="writeToggleGhost()" id="write-ghost-btn" style="flex:1;padding:10px;border:none;border-radius:10px;background:var(--indigo);color:#fff;font-family:inherit;font-weight:700;cursor:pointer">👻 Contoh: ON</button>
-    </div>
-    <p style="font-size:11px;color:var(--mist);margin:8px 0 0">Tulis 2–3× mengikuti bayangan, lalu matikan contoh dan tulis dari ingatan — gerakan tangan mengunci bentuk kanji.</p>
-  </div>
-</div>
 
 <!-- ====== KUIS KANJI KEMBAR ====== -->
 <div id="screen-twinquiz" class="screen">
@@ -6833,6 +6818,24 @@ function renderOverviewReco(){
       +'</div>'
       +'</div>';
   }
+  // ── Strip metode belajar baru (scroll horizontal) ──
+  var methods=[
+    ['⚔️','Kanji Kembar','Bedakan 待↔持, 借↔貸 — jawaban benar menaikkan skor','startTwinQuiz()','#8c2f2f'],
+    ['🧩','Mnemonik Radikal','63 kanji dipecah + cerita Indonesia di kartu kanji',"gotoScreen('kanjimenu')",'#2d5aa0'],
+    ['🔗','Kata Sekeluarga','Tiap kartu kanji menampilkan kata lain sekanji',"gotoScreen('kanjimenu')",'#0a7d6b'],
+    ['✍️','Latihan Tulis','Jiplak kanji dengan jari — memori motorik',"gotoScreen('kanjimenu')",'#b8860b']
+  ];
+  var strip='<div style="font-size:11px;font-weight:800;color:var(--mist);letter-spacing:.06em;margin:12px 0 6px">✨ METODE BELAJAR BARU</div>'
+    +'<div style="display:flex;gap:10px;overflow-x:auto;padding-bottom:4px;-webkit-overflow-scrolling:touch">';
+  methods.forEach(function(mt){
+    strip+='<div onclick="'+mt[3]+'" style="flex:0 0 170px;background:white;border:1px solid var(--border);border-top:3px solid '+mt[4]+';border-radius:12px;padding:12px;cursor:pointer">'
+      +'<div style="font-size:22px;margin-bottom:4px">'+mt[0]+'</div>'
+      +'<div style="font-weight:800;font-size:13px;color:var(--ink);margin-bottom:3px">'+mt[1]+'</div>'
+      +'<div style="font-size:10.5px;color:var(--mist);line-height:1.5">'+mt[2]+'</div>'
+      +'</div>';
+  });
+  strip+='</div>';
+  box.innerHTML+=strip;
   box.style.display='block';
 }
 function renderOverviewMenu(){
@@ -8149,45 +8152,6 @@ function closeWriteModal(){ document.getElementById('write-modal').style.display
 // LATIHAN TULIS — canvas dengan bayangan kanji sebagai panduan
 // ============================================================
 var _wm={ghost:true,char:'',drawing:false,ctx:null,paths:[]};
-function openWriteFromKf(ev){
-  if(ev) ev.stopPropagation();
-  var jp=(document.getElementById('kf-word').textContent||'');
-  var m=jp.match(/[\u4e00-\u9fff]/);
-  openWriteModal(m?m[0]:jp.charAt(0));
-}
-function openWriteModal(ch){
-  _wm.char=ch||''; _wm.ghost=true; _wm.paths=[]; _wm.drawing=false;
-  var gb=document.getElementById('write-ghost-btn'); if(gb) gb.textContent='👻 Contoh: ON';
-  var mo=document.getElementById('write-modal'); mo.style.display='flex';
-  var cv=document.getElementById('write-canvas'); _wm.ctx=cv.getContext('2d');
-  if(!cv._bound){ cv._bound=true;
-    cv.addEventListener('pointerdown',function(e){ _wm.drawing=true; _wm.paths.push([_wmPos(cv,e)]); _wmRedraw(); e.preventDefault(); });
-    cv.addEventListener('pointermove',function(e){ if(!_wm.drawing)return; _wm.paths[_wm.paths.length-1].push(_wmPos(cv,e)); _wmRedraw(); e.preventDefault(); });
-    ['pointerup','pointerleave','pointercancel'].forEach(function(ev2){ cv.addEventListener(ev2,function(){ _wm.drawing=false; }); });
-  }
-  _wmRedraw();
-}
-function _wmPos(cv,e){ var r=cv.getBoundingClientRect(); return [(e.clientX-r.left)*cv.width/r.width,(e.clientY-r.top)*cv.height/r.height]; }
-function _wmRedraw(){
-  var cv=document.getElementById('write-canvas'), ctx=_wm.ctx;
-  if(!ctx) return;
-  ctx.clearRect(0,0,cv.width,cv.height);
-  if(_wm.ghost && _wm.char){
-    ctx.save(); ctx.fillStyle='rgba(26,26,46,.10)';
-    ctx.font='230px "Noto Serif JP",serif'; ctx.textAlign='center'; ctx.textBaseline='middle';
-    ctx.fillText(_wm.char,150,162); ctx.restore();
-  }
-  ctx.strokeStyle='#1a1a2e'; ctx.lineWidth=7; ctx.lineCap='round'; ctx.lineJoin='round'; ctx.fillStyle='#1a1a2e';
-  _wm.paths.forEach(function(p){
-    if(p.length<2){ ctx.beginPath(); ctx.arc(p[0][0],p[0][1],3.5,0,7); ctx.fill(); return; }
-    ctx.beginPath(); ctx.moveTo(p[0][0],p[0][1]);
-    for(var i=1;i<p.length;i++) ctx.lineTo(p[i][0],p[i][1]);
-    ctx.stroke();
-  });
-}
-function writeClear(){ _wm.paths=[]; _wmRedraw(); }
-function writeToggleGhost(){ _wm.ghost=!_wm.ghost; var b=document.getElementById('write-ghost-btn'); if(b) b.textContent='👻 Contoh: '+(_wm.ghost?'ON':'OFF'); _wmRedraw(); }
-function closeWriteModal(){ document.getElementById('write-modal').style.display='none'; }
 
 // ============================================================
 // KUIS KANJI KEMBAR — bedakan kanji yang mirip bentuk
