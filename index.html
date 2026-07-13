@@ -8120,38 +8120,63 @@ function toggleListSection(which){
 // LATIHAN MENULIS — canvas jiplak kanji (memori motorik)
 // ============================================================
 var _kfCurrentJp='';
-function _openWriteChar(kj, practice){
-  document.getElementById('write-ghost').textContent=kj;
-  document.getElementById('write-ghost').style.opacity='1';
-  var mn=(typeof KANJI_MNEMONIC!=='undefined')?KANJI_MNEMONIC[kj]:null;
+var _writeWord=null, _writePracticeMode=false;
+var _wpList=[], _wpIdx=0, _wpOkSes=0, WP_SESSION=10;
+function _writeHead(jp){ return (jp||'').split(/[;；,，]/)[0].trim(); }
+function _openWriteWord(w, practice){
+  _writeWord=w; _writePracticeMode=!!practice;
+  var head=_writeHead(w.jp);
+  var g=document.getElementById('write-ghost');
+  var n=head.length;
+  g.textContent=head;
+  g.style.fontSize=(n<=1?200:n===2?130:n===3?90:n===4?68:54)+'px';
+  g.style.opacity='1';
+  // info kata lengkap
+  var inf=document.getElementById('write-info');
+  if(inf) inf.innerHTML='<b style="color:var(--ink)">'+head+'</b>（'+(w.rom||'')+'）'+(w.id_||'')
+    +(practice?' <span style="color:var(--indigo);font-weight:700">· '+(_wpIdx+1)+'/'+WP_SESSION+'</span>':'');
+  // mnemonik: kanji pertama dalam kata yang punya entri
   var mbox=document.getElementById('write-mnemo');
   if(mbox){
-    if(mn){ mbox.innerHTML='🧩 <b>'+kj+'</b> = '+mn[0]+'<br>'+mn[1]; mbox.style.display='block'; }
+    var mn=null, mk='';
+    for(var ci=0;ci<head.length;ci++){
+      var c=head.charAt(ci);
+      if(typeof KANJI_MNEMONIC!=='undefined' && KANJI_MNEMONIC[c]){ mn=KANJI_MNEMONIC[c]; mk=c; break; }
+    }
+    if(mn){ mbox.innerHTML='🧩 <b>'+mk+'</b> = '+mn[0]+'<br>'+mn[1]; mbox.style.display='block'; }
     else mbox.style.display='none';
   }
-  _writeChar=kj; _writePracticeMode=!!practice;
-  var _lw=_writeLinkedWord(kj);
-  var inf=document.getElementById('write-info');
-  if(inf) inf.innerHTML=_lw?('<b style="color:var(--ink)">'+_lw.jp+'</b>（'+(_lw.rom||'')+'）'+(_lw.id_||'')):'';
-  var nx=document.getElementById('write-next');
-  if(nx) nx.style.display = practice ? 'block' : 'none';
+  var row=document.getElementById('write-score-row'); if(row) row.style.display='flex';
+  var nx=document.getElementById('write-next'); if(nx) nx.style.display='none';
+  var ag=document.getElementById('write-again'); if(ag) ag.style.display='none';
   document.getElementById('write-modal').style.display='flex';
   setTimeout(function(){ _writeInitCanvas(); writeClear(); },60);
 }
-var _writeChar='', _writePracticeMode=false;
-function _writeLinkedWord(kj){
-  try{
-    var best=null;
-    posLevelWords().forEach(function(w){
-      if((w.jp||'').indexOf(kj)>=0){ if(!best || (w.jp||'').length<(best.jp||'').length) best=w; }
-    });
-    return best;
-  }catch(e){ return null; }
+function startWritePractice(){
+  var pool=[];
+  try{ pool=posLevelWords().filter(function(w){return /[一-鿿]/.test(w.jp||'');}); }catch(e){}
+  if(!pool.length){ alert('Level ini belum punya kata berkanji.'); return; }
+  shuffle(pool);
+  // prioritaskan kata yang kanjinya punya mnemonik
+  var withM=pool.filter(function(w){var h=_writeHead(w.jp);for(var i=0;i<h.length;i++){if(KANJI_MNEMONIC[h.charAt(i)])return true;}return false;});
+  var without=pool.filter(function(w){return withM.indexOf(w)<0;});
+  _wpList=withM.concat(without).slice(0, WP_SESSION);
+  _wpIdx=0; _wpOkSes=0;
+  _openWriteWord(_wpList[0], true);
 }
-var _wpNum=0, _wpOkSes=0, WP_SESSION=10;
+function openWriteRandom(){ startWritePractice(); }
+function openWriteModal(){
+  var jp=_kfCurrentJp||'';
+  if(!/[一-鿿]/.test(jp)){ alert('Kata ini tidak mengandung kanji.'); return; }
+  var w=null;
+  try{
+    var pl=posLevelWords();
+    for(var i=0;i<pl.length;i++){ if(pl[i].jp===jp){ w=pl[i]; break; } }
+  }catch(e){}
+  _openWriteWord(w||{jp:jp,rom:'',id_:''}, false);
+}
 function writeScore(ok){
-  var lw=_writeLinkedWord(_writeChar);
-  if(lw){ try{ srsTouch(lw, ok); }catch(e){} }
+  if(_writeWord && _writeWord.id){ try{ srsTouch(_writeWord, ok); }catch(e){} }
   _ms('writeQ');
   if(ok){
     _ms('writeOk');
@@ -8162,56 +8187,21 @@ function writeScore(ok){
   }
   save();
   if(!_writePracticeMode){ closeWriteModal(); return; }
-  _wpNum++;
-  if(_wpNum>=WP_SESSION) _writeShowDone();
-  else writeNext();
+  _wpIdx++;
+  if(_wpIdx>=_wpList.length) _writeShowDone();
+  else _openWriteWord(_wpList[_wpIdx], true);
 }
 function _writeShowDone(){
   var inf=document.getElementById('write-info');
-  if(inf) inf.innerHTML='<b style="color:var(--ink);font-size:15px">🏁 Sesi selesai — '+_wpOkSes+' / '+WP_SESSION+' bisa!</b>';
+  if(inf) inf.innerHTML='<b style="color:var(--ink);font-size:15px">🏁 Sesi selesai — '+_wpOkSes+' / '+_wpList.length+' bisa!</b>';
+  var g=document.getElementById('write-ghost'); if(g) g.textContent='';
+  writeClear();
   var row=document.getElementById('write-score-row'); if(row) row.style.display='none';
   var nx=document.getElementById('write-next'); if(nx) nx.style.display='none';
   var ag=document.getElementById('write-again'); if(ag) ag.style.display='block';
   var mb=document.getElementById('write-mnemo'); if(mb) mb.style.display='none';
 }
-function openWriteRandom(){
-  try{
-    var pool=posLevelWords().filter(function(w){return /[一-鿿]/.test(w.jp||'');});
-    if(!pool.length){ alert('Level ini belum punya kata berkanji.'); return; }
-    var w=pool[Math.floor(Math.random()*pool.length)];
-    _kfCurrentJp=w.jp;
-    openWriteModal();
-  }catch(e){}
-}
-function openWriteModal(){
-  var jp=_kfCurrentJp||'', kj='';
-  for(var i=0;i<jp.length;i++){ if(/[一-鿿]/.test(jp.charAt(i))){ kj=jp.charAt(i); break; } }
-  if(!kj){ alert('Kata ini tidak mengandung kanji.'); return; }
-  _openWriteChar(kj, false);
-}
-var _wpList=[], _wpIdx=0;
-function startWritePractice(){
-  var chars=[], seen={};
-  try{
-    posLevelWords().forEach(function(w){
-      (w.jp||'').split('').forEach(function(c){ if(/[一-鿿]/.test(c) && !seen[c]){ seen[c]=1; chars.push(c); } });
-    });
-  }catch(e){}
-  if(!chars.length){ alert('Belum ada kanji di level ini.'); return; }
-  var withM=chars.filter(function(c){return KANJI_MNEMONIC[c];});
-  var without=chars.filter(function(c){return !KANJI_MNEMONIC[c];});
-  shuffle(withM); shuffle(without);
-  _wpList=withM.concat(without); _wpIdx=0;
-  _wpNum=0; _wpOkSes=0;
-  var ag=document.getElementById('write-again'); if(ag) ag.style.display='none';
-  var row=document.getElementById('write-score-row'); if(row) row.style.display='flex';
-  _openWriteChar(_wpList[0], true);
-}
-function writeNext(){
-  if(!_wpList.length) return;
-  _wpIdx=(_wpIdx+1)%_wpList.length;
-  _openWriteChar(_wpList[_wpIdx], true);
-}
+function writeNext(){ writeScore(false); } // kompatibilitas: lewati = belum bisa
 function _writeInitCanvas(){
   var cv=document.getElementById('write-canvas');
   var r=cv.getBoundingClientRect();
@@ -8228,7 +8218,7 @@ function _writeInitCanvas(){
     cv.addEventListener('pointercancel',function(){ cv._draw=false; });
   }
 }
-function writeClear(){ var cv=document.getElementById('write-canvas'); if(cv._ctx) cv._ctx.clearRect(0,0,cv.width,cv.height); }
+function writeClear(){ var cv=document.getElementById('write-canvas'); if(cv&&cv._ctx) cv._ctx.clearRect(0,0,cv.width,cv.height); }
 function writeToggleGhost(){ var g=document.getElementById('write-ghost'); g.style.opacity=(g.style.opacity==='0')?'1':'0'; }
 function closeWriteModal(){ document.getElementById('write-modal').style.display='none'; }
 
