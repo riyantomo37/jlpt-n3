@@ -1491,6 +1491,8 @@ header:has(.user-menu.open) { z-index:1000; }
       <button onclick="writeClear()" style="flex:1;padding:10px;border:1.5px solid var(--border);border-radius:10px;background:white;font-family:inherit;font-size:13px;font-weight:700;cursor:pointer">🧹 Hapus</button>
       <button onclick="writeToggleGhost()" style="flex:1;padding:10px;border:1.5px solid var(--border);border-radius:10px;background:white;font-family:inherit;font-size:13px;font-weight:700;cursor:pointer">👁 Contoh On/Off</button>
     </div>
+    <div id="write-mnemo" style="display:none;margin-top:10px;padding:9px 11px;background:rgba(45,53,97,.06);border-radius:10px;font-size:11.5px;color:var(--mist);line-height:1.55"></div>
+    <button id="write-next" onclick="writeNext()" style="display:none;width:100%;margin-top:10px;padding:11px;border:none;border-radius:10px;background:var(--ink);color:#fff;font-family:inherit;font-size:13px;font-weight:700;cursor:pointer">Kanji Berikutnya ▶</button>
     <p style="font-size:11px;color:var(--mist);margin:8px 0 0">Tulis 2–3× mengikuti bayangan, lalu matikan contoh dan tulis dari ingatan.</p>
   </div>
 </div>
@@ -6800,28 +6802,23 @@ function renderOverviewReco(){
   var box=document.getElementById('ov-reco');
   if(!box) return;
   var due=srsDueCount();
-  var head, sub, cta;
-  if(due>0){
-    head='Review Harian — '+due+' kata menunggu';
-    sub='Ulang tepat sebelum lupa · 5 menit sehari';
-    cta='<span onclick="event.stopPropagation();startSrsReview()" style="background:#ffd166;color:#1a1a2e;font-weight:800;font-size:12px;padding:8px 14px;border-radius:10px;white-space:nowrap;cursor:pointer">Mulai ▶</span>';
-  } else {
-    head='Review hari ini beres ✓';
-    sub='Semua jadwal terlewati — lanjut materi baru';
-    cta='';
+  function banner(emo, head, sub, action, ctaLabel){
+    return '<div onclick="'+action+'" style="background:linear-gradient(135deg,#1a1a2e,#2d3561);color:#fff;border-radius:14px;padding:13px 16px;box-shadow:0 4px 14px rgba(26,26,46,.22);display:flex;align-items:center;gap:12px;cursor:pointer;margin-bottom:10px">'
+      +'<span style="font-size:24px">'+emo+'</span>'
+      +'<div style="flex:1;min-width:0">'
+      +'<div style="font-weight:800;font-size:14px">'+head+'</div>'
+      +'<div style="font-size:11px;opacity:.8">'+sub+'</div>'
+      +'</div>'
+      +'<span style="background:#ffd166;color:#1a1a2e;font-weight:800;font-size:12px;padding:8px 14px;border-radius:10px;white-space:nowrap">'+ctaLabel+'</span>'
+      +'</div>';
   }
-  box.innerHTML='<div style="background:linear-gradient(135deg,#1a1a2e,#2d3561);color:#fff;border-radius:14px;padding:14px 16px;box-shadow:0 6px 18px rgba(26,26,46,.25)">'
-    +'<div onclick="startSrsReview()" style="display:flex;align-items:center;gap:12px;cursor:pointer">'
-    +'<span style="font-size:26px">🔁</span>'
-    +'<div style="flex:1;min-width:0">'
-    +'<div style="font-weight:800;font-size:14px">'+head+'</div>'
-    +'<div style="font-size:11px;opacity:.8">'+sub+'</div>'
-    +'</div>'+cta+'</div>'
-    +'<div style="display:flex;gap:8px;margin-top:12px;border-top:1px solid rgba(255,255,255,.14);padding-top:12px">'
-    +'<span onclick="startTwinQuiz()" style="flex:1;text-align:center;background:rgba(255,255,255,.1);border-radius:10px;padding:9px 6px;font-size:12px;font-weight:700;cursor:pointer">⚔️ Kanji Kembar</span>'
-    +'<span onclick="gotoScreen(&apos;kanjimenu&apos;)" style="flex:1;text-align:center;background:rgba(255,255,255,.1);border-radius:10px;padding:9px 6px;font-size:12px;font-weight:700;cursor:pointer">🧩 Mnemonik &amp; Tulis</span>'
-    +'</div>'
-    +'</div>';
+  var html='';
+  html+=banner('🔁', due>0?('Review Harian — '+due+' kata'):'Review Harian — beres ✓',
+    'Ulang berkala tepat sebelum lupa', 'startSrsReview()', due>0?'Mulai ▶':'Cek');
+  html+=banner('⚔️','Kanji Kembar','Bedakan kanji mirip: 待↔持, 借↔貸','startTwinQuiz()','Kuis ▶');
+  html+=banner('🧩','Mnemonik Radikal','Pecahan radikal + cerita &amp; kata sekeluarga di balik kartu kanji','startKanjiFlash(&apos;vocab&apos;)','Kartu ▶');
+  html+=banner('✍️','Latihan Tulis','Jiplak kanji acak dengan jari — memori motorik','openWriteRandom()','Tulis ▶');
+  box.innerHTML=html;
   box.style.display='block';
 }
 function renderOverviewMenu(){
@@ -8104,14 +8101,54 @@ function toggleListSection(which){
 // LATIHAN MENULIS — canvas jiplak kanji (memori motorik)
 // ============================================================
 var _kfCurrentJp='';
+function _openWriteChar(kj, practice){
+  document.getElementById('write-ghost').textContent=kj;
+  document.getElementById('write-ghost').style.opacity='1';
+  var mn=(typeof KANJI_MNEMONIC!=='undefined')?KANJI_MNEMONIC[kj]:null;
+  var mbox=document.getElementById('write-mnemo');
+  if(mbox){
+    if(mn){ mbox.innerHTML='🧩 <b>'+kj+'</b> = '+mn[0]+'<br>'+mn[1]; mbox.style.display='block'; }
+    else mbox.style.display='none';
+  }
+  var nx=document.getElementById('write-next');
+  if(nx) nx.style.display = practice ? 'block' : 'none';
+  document.getElementById('write-modal').style.display='flex';
+  setTimeout(function(){ _writeInitCanvas(); writeClear(); },60);
+}
+function openWriteRandom(){
+  try{
+    var pool=posLevelWords().filter(function(w){return /[一-鿿]/.test(w.jp||'');});
+    if(!pool.length){ alert('Level ini belum punya kata berkanji.'); return; }
+    var w=pool[Math.floor(Math.random()*pool.length)];
+    _kfCurrentJp=w.jp;
+    openWriteModal();
+  }catch(e){}
+}
 function openWriteModal(){
   var jp=_kfCurrentJp||'', kj='';
   for(var i=0;i<jp.length;i++){ if(/[一-鿿]/.test(jp.charAt(i))){ kj=jp.charAt(i); break; } }
   if(!kj){ alert('Kata ini tidak mengandung kanji.'); return; }
-  document.getElementById('write-ghost').textContent=kj;
-  document.getElementById('write-ghost').style.opacity='1';
-  document.getElementById('write-modal').style.display='flex';
-  setTimeout(_writeInitCanvas,60);
+  _openWriteChar(kj, false);
+}
+var _wpList=[], _wpIdx=0;
+function startWritePractice(){
+  var chars=[], seen={};
+  try{
+    posLevelWords().forEach(function(w){
+      (w.jp||'').split('').forEach(function(c){ if(/[一-鿿]/.test(c) && !seen[c]){ seen[c]=1; chars.push(c); } });
+    });
+  }catch(e){}
+  if(!chars.length){ alert('Belum ada kanji di level ini.'); return; }
+  var withM=chars.filter(function(c){return KANJI_MNEMONIC[c];});
+  var without=chars.filter(function(c){return !KANJI_MNEMONIC[c];});
+  shuffle(withM); shuffle(without);
+  _wpList=withM.concat(without); _wpIdx=0;
+  _openWriteChar(_wpList[0], true);
+}
+function writeNext(){
+  if(!_wpList.length) return;
+  _wpIdx=(_wpIdx+1)%_wpList.length;
+  _openWriteChar(_wpList[_wpIdx], true);
 }
 function _writeInitCanvas(){
   var cv=document.getElementById('write-canvas');
