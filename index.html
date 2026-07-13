@@ -1492,11 +1492,12 @@ header:has(.user-menu.open) { z-index:1000; }
       <button onclick="writeToggleGhost()" style="flex:1;padding:10px;border:1.5px solid var(--border);border-radius:10px;background:white;font-family:inherit;font-size:13px;font-weight:700;cursor:pointer">👁 Contoh On/Off</button>
     </div>
     <div id="write-info" style="text-align:center;font-size:12.5px;color:var(--mist);margin-top:8px;min-height:16px"></div>
-    <div style="display:flex;gap:8px;margin-top:8px">
+    <div id="write-score-row" style="display:flex;gap:8px;margin-top:8px">
       <button onclick="writeScore(false)" style="flex:1;padding:11px;border:1.5px solid #c0392b;border-radius:10px;background:rgba(192,57,43,.06);color:#c0392b;font-family:inherit;font-size:13px;font-weight:700;cursor:pointer">✗ Belum</button>
       <button onclick="writeScore(true)" style="flex:1;padding:11px;border:none;border-radius:10px;background:var(--jade);color:#fff;font-family:inherit;font-size:13px;font-weight:700;cursor:pointer">✓ Bisa!</button>
     </div>
     <div id="write-mnemo" style="display:none;margin-top:10px;padding:9px 11px;background:rgba(45,53,97,.06);border-radius:10px;font-size:11.5px;color:var(--mist);line-height:1.55"></div>
+    <button id="write-again" onclick="startWritePractice()" style="display:none;width:100%;margin-top:10px;padding:12px;border:none;border-radius:10px;background:var(--jade);color:#fff;font-family:inherit;font-size:14px;font-weight:700;cursor:pointer">🔄 Sesi Baru</button>
     <button id="write-next" onclick="writeNext()" style="display:none;width:100%;margin-top:10px;padding:11px;border:none;border-radius:10px;background:var(--ink);color:#fff;font-family:inherit;font-size:13px;font-weight:700;cursor:pointer">Kanji Berikutnya ▶</button>
     <p style="font-size:11px;color:var(--mist);margin:8px 0 0">Tulis 2–3× mengikuti bayangan, lalu matikan contoh dan tulis dari ingatan.</p>
   </div>
@@ -2571,6 +2572,8 @@ async function loadDashboardLeaderboard() {
 // ══════════════════════════════════════════════════
 var examHistory   = JSON.parse(localStorage.getItem('examHistory')||'[]');
 var srsData       = JSON.parse(localStorage.getItem('srsData')||'{}'); // jadwal review berkala: key -> {lv,due}
+var methodStats   = JSON.parse(localStorage.getItem('methodStats')||'{}'); // hitungan aktivitas per metode
+function _ms(k){ methodStats[k]=(methodStats[k]||0)+1; }
 var reviewingPastId = null;
 var examSections  = [];   // Array of section objects
 var examAnswers   = {};   // {questionId: choiceIndex}
@@ -4539,6 +4542,7 @@ async function loadFromFirestore() {
       }
       if (data.kanjiReadMastered) kanjiReadMastered = data.kanjiReadMastered;
       if (data.srs) srsData = data.srs;
+      if (data.methodStats) methodStats = data.methodStats;
       if (data.bunpoProgress) bunpoProgress = data.bunpoProgress;
       if (data.bunpoLearned)  bunpoLearned  = data.bunpoLearned;
       if (data.streak)            streak            = data.streak;
@@ -4593,6 +4597,7 @@ async function saveToFirestore() {
       mastered: mastered,
       kanjiReadMastered: kanjiReadMastered,
       srs: srsData,
+      methodStats: methodStats,
       streak: streak,
       lastStudyDate: lastStudyDate,
       todayDate: new Date().toDateString(),
@@ -4672,6 +4677,7 @@ function saveToLocal() {
     localStorage.setItem('n3_bunpoprog',  JSON.stringify(bunpoProgress));
     localStorage.setItem('n3_bunpolearned', JSON.stringify(bunpoLearned));
     localStorage.setItem('srsData',         JSON.stringify(srsData));
+    localStorage.setItem('methodStats',     JSON.stringify(methodStats));
   } catch(e) {}
 }
 
@@ -7175,6 +7181,7 @@ function markCard(isHafal) {
     var tds=new Date().toDateString();
     if(lastStudyDate!==tds){var yds=new Date(Date.now()-86400000).toDateString();streak=(lastStudyDate===yds)?streak+1:1;lastStudyDate=tds;}
     if(isHafal){ sessionMastered++; todayCount++; }
+    _ms('srsRev');
     save(); sessionReviewed++; sessionIdx++; updateUndoBtn(); showCard();
     return;
   }
@@ -7955,7 +7962,14 @@ function renderProgressDashboard(){
       +'</div>';
   }
 
-  host.innerHTML = _thHtml + cards
+  var _msHtml='<div style="background:white;border:1px solid var(--border);border-radius:12px;box-shadow:var(--shadow);padding:12px 14px;margin-bottom:14px">'
+    +'<div style="font-size:13px;font-weight:800;color:var(--ink);margin-bottom:4px">📊 Aktivitas Metode</div>'
+    +'<div style="font-size:12px;color:var(--mist);line-height:1.7">'
+    +'🔁 Review SRS: <b>'+(methodStats.srsRev||0)+'</b> kartu direview<br>'
+    +'⚔️ Kanji Kembar: <b>'+(methodStats.twinOk||0)+'</b> benar dari <b>'+(methodStats.twinQ||0)+'</b> soal<br>'
+    +'✍️ Latihan Tulis: <b>'+(methodStats.writeOk||0)+'</b> bisa dari <b>'+(methodStats.writeQ||0)+'</b> kanji'
+    +'</div></div>';
+  host.innerHTML = _thHtml + _msHtml + cards
     + posBlock
     +'<div style="background:white;border:1px solid var(--border);border-radius:12px;box-shadow:var(--shadow);overflow:hidden">'
     +'<div onclick="toggleExamHistory()" style="display:flex;justify-content:space-between;align-items:center;padding:13px 14px;cursor:pointer">'
@@ -8134,11 +8148,31 @@ function _writeLinkedWord(kj){
     return best;
   }catch(e){ return null; }
 }
+var _wpNum=0, _wpOkSes=0, WP_SESSION=10;
 function writeScore(ok){
   var lw=_writeLinkedWord(_writeChar);
-  if(lw){ try{ srsTouch(lw, ok); save(); }catch(e){} }
-  if(_writePracticeMode) writeNext();
-  else closeWriteModal();
+  if(lw){ try{ srsTouch(lw, ok); }catch(e){} }
+  _ms('writeQ');
+  if(ok){
+    _ms('writeOk');
+    todayCount++;
+    var _td=new Date().toDateString();
+    if(lastStudyDate!==_td){var _yd=new Date(Date.now()-86400000).toDateString();streak=(lastStudyDate===_yd)?streak+1:1;lastStudyDate=_td;}
+    _wpOkSes++;
+  }
+  save();
+  if(!_writePracticeMode){ closeWriteModal(); return; }
+  _wpNum++;
+  if(_wpNum>=WP_SESSION) _writeShowDone();
+  else writeNext();
+}
+function _writeShowDone(){
+  var inf=document.getElementById('write-info');
+  if(inf) inf.innerHTML='<b style="color:var(--ink);font-size:15px">🏁 Sesi selesai — '+_wpOkSes+' / '+WP_SESSION+' bisa!</b>';
+  var row=document.getElementById('write-score-row'); if(row) row.style.display='none';
+  var nx=document.getElementById('write-next'); if(nx) nx.style.display='none';
+  var ag=document.getElementById('write-again'); if(ag) ag.style.display='block';
+  var mb=document.getElementById('write-mnemo'); if(mb) mb.style.display='none';
 }
 function openWriteRandom(){
   try{
@@ -8168,6 +8202,9 @@ function startWritePractice(){
   var without=chars.filter(function(c){return !KANJI_MNEMONIC[c];});
   shuffle(withM); shuffle(without);
   _wpList=withM.concat(without); _wpIdx=0;
+  _wpNum=0; _wpOkSes=0;
+  var ag=document.getElementById('write-again'); if(ag) ag.style.display='none';
+  var row=document.getElementById('write-score-row'); if(row) row.style.display='flex';
   _openWriteChar(_wpList[0], true);
 }
 function writeNext(){
@@ -8368,7 +8405,15 @@ function tqAnswer(btn){
     else b.style.opacity='.45';
   });
   st.q++;
-  if(ok) st.score++;
+  _ms('twinQ');
+  if(ok){
+    st.score++;
+    _ms('twinOk');
+    todayCount++;
+    var _td=new Date().toDateString();
+    if(lastStudyDate!==_td){var _yd=new Date(Date.now()-86400000).toDateString();streak=(lastStudyDate===_yd)?streak+1:1;lastStudyDate=_td;}
+  }
+  save();
   // Sumbang skor Tingkat Hafalan: sinkronkan jadwal SRS kata level yang cocok
   try{
     var _pool=posLevelWords(), _lw=null;
@@ -8488,6 +8533,7 @@ function exportProgress(){
     mastered:mastered,
     kanjiReadMastered:kanjiReadMastered,
     srs:srsData,
+    methodStats:methodStats,
     streak:streak,lastStudyDate:lastStudyDate,
     todayDate:todayDate,todayCount:todayCount,
     bunpoProgress:bunpoProgress,bunpoLearned:bunpoLearned,
@@ -8515,6 +8561,7 @@ function importProgress(ev){
       if(typeof d.todayCount==='number'&&d.todayDate===new Date().toDateString()){ todayDate=d.todayDate; todayCount=d.todayCount; }
       if(d.bunpoProgress) bunpoProgress=d.bunpoProgress;
       if(d.srs) srsData=d.srs;
+      if(d.methodStats) methodStats=d.methodStats;
       if(d.bunpoLearned) bunpoLearned=d.bunpoLearned;
       if(d.examHistory&&typeof examHistory!=='undefined'){
         examHistory=d.examHistory;
