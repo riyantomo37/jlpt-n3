@@ -6800,42 +6800,28 @@ function renderOverviewReco(){
   var box=document.getElementById('ov-reco');
   if(!box) return;
   var due=srsDueCount();
+  var head, sub, cta;
   if(due>0){
-    box.innerHTML='<div onclick="startSrsReview()" style="background:linear-gradient(135deg,#1a1a2e,#2d3561);color:#fff;border-radius:14px;padding:16px;cursor:pointer;display:flex;align-items:center;gap:12px;box-shadow:0 6px 18px rgba(26,26,46,.25)">'
-      +'<span style="font-size:30px">🔁</span>'
-      +'<div style="flex:1">'
-      +'<div style="font-weight:800;font-size:15px">Review Harian — '+due+' kata menunggu</div>'
-      +'<div style="font-size:11px;opacity:.85;line-height:1.5">Metode spaced repetition: mengulang tepat sebelum lupa. 5 menit sehari, kanji nempel permanen — jangan biarkan antrean menumpuk!</div>'
-      +'</div>'
-      +'<span style="background:#ffd166;color:#1a1a2e;font-weight:800;font-size:12px;padding:8px 14px;border-radius:10px;white-space:nowrap">Mulai ▶</span>'
-      +'</div>';
+    head='Review Harian — '+due+' kata menunggu';
+    sub='Ulang tepat sebelum lupa · 5 menit sehari';
+    cta='<span onclick="event.stopPropagation();startSrsReview()" style="background:#ffd166;color:#1a1a2e;font-weight:800;font-size:12px;padding:8px 14px;border-radius:10px;white-space:nowrap;cursor:pointer">Mulai ▶</span>';
   } else {
-    box.innerHTML='<div onclick="startTwinQuiz()" style="background:white;border:1.5px dashed var(--border);border-radius:14px;padding:14px;cursor:pointer;display:flex;align-items:center;gap:12px">'
-      +'<span style="font-size:26px">✅</span>'
-      +'<div style="flex:1">'
-      +'<div style="font-weight:800;font-size:14px;color:var(--jade)">Review hari ini beres!</div>'
-      +'<div style="font-size:11px;color:var(--mist)">Masih semangat? Asah mata dengan Kuis Kanji Kembar ⚔️ — bedakan 待↔持, 借↔貸…</div>'
-      +'</div>'
-      +'</div>';
+    head='Review hari ini beres ✓';
+    sub='Semua jadwal terlewati — lanjut materi baru';
+    cta='';
   }
-  // ── Strip metode belajar baru (scroll horizontal) ──
-  var methods=[
-    ['⚔️','Kanji Kembar','Bedakan 待↔持, 借↔貸 — jawaban benar menaikkan skor','startTwinQuiz()','#8c2f2f'],
-    ['🧩','Mnemonik Radikal','63 kanji dipecah + cerita Indonesia di kartu kanji',"gotoScreen('kanjimenu')",'#2d5aa0'],
-    ['🔗','Kata Sekeluarga','Tiap kartu kanji menampilkan kata lain sekanji',"gotoScreen('kanjimenu')",'#0a7d6b'],
-    ['✍️','Latihan Tulis','Jiplak kanji dengan jari — memori motorik',"gotoScreen('kanjimenu')",'#b8860b']
-  ];
-  var strip='<div style="font-size:11px;font-weight:800;color:var(--mist);letter-spacing:.06em;margin:12px 0 6px">✨ METODE BELAJAR BARU</div>'
-    +'<div style="display:flex;gap:10px;overflow-x:auto;padding-bottom:4px;-webkit-overflow-scrolling:touch">';
-  methods.forEach(function(mt){
-    strip+='<div onclick="'+mt[3]+'" style="flex:0 0 170px;background:white;border:1px solid var(--border);border-top:3px solid '+mt[4]+';border-radius:12px;padding:12px;cursor:pointer">'
-      +'<div style="font-size:22px;margin-bottom:4px">'+mt[0]+'</div>'
-      +'<div style="font-weight:800;font-size:13px;color:var(--ink);margin-bottom:3px">'+mt[1]+'</div>'
-      +'<div style="font-size:10.5px;color:var(--mist);line-height:1.5">'+mt[2]+'</div>'
-      +'</div>';
-  });
-  strip+='</div>';
-  box.innerHTML+=strip;
+  box.innerHTML='<div style="background:linear-gradient(135deg,#1a1a2e,#2d3561);color:#fff;border-radius:14px;padding:14px 16px;box-shadow:0 6px 18px rgba(26,26,46,.25)">'
+    +'<div onclick="startSrsReview()" style="display:flex;align-items:center;gap:12px;cursor:pointer">'
+    +'<span style="font-size:26px">🔁</span>'
+    +'<div style="flex:1;min-width:0">'
+    +'<div style="font-weight:800;font-size:14px">'+head+'</div>'
+    +'<div style="font-size:11px;opacity:.8">'+sub+'</div>'
+    +'</div>'+cta+'</div>'
+    +'<div style="display:flex;gap:8px;margin-top:12px;border-top:1px solid rgba(255,255,255,.14);padding-top:12px">'
+    +'<span onclick="startTwinQuiz()" style="flex:1;text-align:center;background:rgba(255,255,255,.1);border-radius:10px;padding:9px 6px;font-size:12px;font-weight:700;cursor:pointer">⚔️ Kanji Kembar</span>'
+    +'<span onclick="gotoScreen(&apos;kanjimenu&apos;)" style="flex:1;text-align:center;background:rgba(255,255,255,.1);border-radius:10px;padding:9px 6px;font-size:12px;font-weight:700;cursor:pointer">🧩 Mnemonik &amp; Tulis</span>'
+    +'</div>'
+    +'</div>';
   box.style.display='block';
 }
 function renderOverviewMenu(){
@@ -6847,8 +6833,7 @@ function renderOverviewMenu(){
   var items=[
     {scr:'flashmenu', emo:'📚', t:'Flashcard', d:'Hafal kosakata '+currentJLPT, c:color},
     {scr:'kotoba', emo:'単語', t:'Daftar Kotoba', d:'Semua kata + centang arti & baca', c:'#00838f'},
-    {fn:'startSrsReview', emo:'🔁', t:'Review SRS', d:'Ulang berkala harian biar nempel', c:'#2d3561'},
-    {fn:'startTwinQuiz', emo:'⚔️', t:'Kanji Kembar', d:'Bedakan kanji mirip: 待↔持, 借↔貸', c:'#8c2f2f'},
+
     {scr:'kanjimenu', emo:'漢字', t:'Baca Kanji', d:'Latihan baca kanji', c:'var(--gold)'},
     {scr:'bunpomenu', emo:'文法', t:'Bunpo', d:'Belajar tata bahasa', c:'#7a5cc4', hide:isSSW},
     {scr:'katsuyomenu', emo:'活用', t:'Konjugasi', d:'Bentuk kata kerja', c:'#0a7d6b'},
