@@ -1491,6 +1491,11 @@ header:has(.user-menu.open) { z-index:1000; }
       <button onclick="writeClear()" style="flex:1;padding:10px;border:1.5px solid var(--border);border-radius:10px;background:white;font-family:inherit;font-size:13px;font-weight:700;cursor:pointer">🧹 Hapus</button>
       <button onclick="writeToggleGhost()" style="flex:1;padding:10px;border:1.5px solid var(--border);border-radius:10px;background:white;font-family:inherit;font-size:13px;font-weight:700;cursor:pointer">👁 Contoh On/Off</button>
     </div>
+    <div id="write-info" style="text-align:center;font-size:12.5px;color:var(--mist);margin-top:8px;min-height:16px"></div>
+    <div style="display:flex;gap:8px;margin-top:8px">
+      <button onclick="writeScore(false)" style="flex:1;padding:11px;border:1.5px solid #c0392b;border-radius:10px;background:rgba(192,57,43,.06);color:#c0392b;font-family:inherit;font-size:13px;font-weight:700;cursor:pointer">✗ Belum</button>
+      <button onclick="writeScore(true)" style="flex:1;padding:11px;border:none;border-radius:10px;background:var(--jade);color:#fff;font-family:inherit;font-size:13px;font-weight:700;cursor:pointer">✓ Bisa!</button>
+    </div>
     <div id="write-mnemo" style="display:none;margin-top:10px;padding:9px 11px;background:rgba(45,53,97,.06);border-radius:10px;font-size:11.5px;color:var(--mist);line-height:1.55"></div>
     <button id="write-next" onclick="writeNext()" style="display:none;width:100%;margin-top:10px;padding:11px;border:none;border-radius:10px;background:var(--ink);color:#fff;font-family:inherit;font-size:13px;font-weight:700;cursor:pointer">Kanji Berikutnya ▶</button>
     <p style="font-size:11px;color:var(--mist);margin:8px 0 0">Tulis 2–3× mengikuti bayangan, lalu matikan contoh dan tulis dari ingatan.</p>
@@ -6817,7 +6822,7 @@ function renderOverviewReco(){
     'Ulang berkala tepat sebelum lupa', 'startSrsReview()', due>0?'Mulai ▶':'Cek');
   html+=banner('⚔️','Kanji Kembar','Bedakan kanji mirip: 待↔持, 借↔貸','startTwinQuiz()','Kuis ▶');
   html+=banner('🧩','Mnemonik Radikal','Pecahan radikal + cerita &amp; kata sekeluarga di balik kartu kanji','startKanjiFlash(&apos;vocab&apos;)','Kartu ▶');
-  html+=banner('✍️','Latihan Tulis','Jiplak kanji acak dengan jari — memori motorik','openWriteRandom()','Tulis ▶');
+  html+=banner('✍️','Latihan Tulis','Jiplak kanji '+currentJLPT+' — nilai dirimu, masuk jadwal SRS','startWritePractice()','Tulis ▶');
   box.innerHTML=html;
   box.style.display='block';
 }
@@ -8110,10 +8115,30 @@ function _openWriteChar(kj, practice){
     if(mn){ mbox.innerHTML='🧩 <b>'+kj+'</b> = '+mn[0]+'<br>'+mn[1]; mbox.style.display='block'; }
     else mbox.style.display='none';
   }
+  _writeChar=kj; _writePracticeMode=!!practice;
+  var _lw=_writeLinkedWord(kj);
+  var inf=document.getElementById('write-info');
+  if(inf) inf.innerHTML=_lw?('<b style="color:var(--ink)">'+_lw.jp+'</b>（'+(_lw.rom||'')+'）'+(_lw.id_||'')):'';
   var nx=document.getElementById('write-next');
   if(nx) nx.style.display = practice ? 'block' : 'none';
   document.getElementById('write-modal').style.display='flex';
   setTimeout(function(){ _writeInitCanvas(); writeClear(); },60);
+}
+var _writeChar='', _writePracticeMode=false;
+function _writeLinkedWord(kj){
+  try{
+    var best=null;
+    posLevelWords().forEach(function(w){
+      if((w.jp||'').indexOf(kj)>=0){ if(!best || (w.jp||'').length<(best.jp||'').length) best=w; }
+    });
+    return best;
+  }catch(e){ return null; }
+}
+function writeScore(ok){
+  var lw=_writeLinkedWord(_writeChar);
+  if(lw){ try{ srsTouch(lw, ok); save(); }catch(e){} }
+  if(_writePracticeMode) writeNext();
+  else closeWriteModal();
 }
 function openWriteRandom(){
   try{
@@ -8249,44 +8274,56 @@ var KANJI_MNEMONIC={
 };
 
 var TWIN_SETS=[
- {g:['待','持','特'], w:[['待','＿つ','まつ','menunggu'],['持','＿つ','もつ','memegang, membawa'],['特','＿に','とくに','khususnya']]},
- {g:['買','貸','借'], w:[['買','＿う','かう','membeli'],['貸','＿す','かす','meminjamkan'],['借','＿りる','かりる','meminjam']]},
- {g:['間','聞','開','閉','問'], w:[['間','＿','あいだ','di antara'],['聞','＿く','きく','mendengar'],['開','＿く','あく','terbuka'],['閉','＿まる','しまる','tertutup'],['問','質＿','しつもん','pertanyaan']]},
- {g:['右','石'], w:[['右','＿','みぎ','kanan'],['石','＿','いし','batu']]},
- {g:['白','百','自'], w:[['白','＿い','しろい','putih'],['百','＿','ひゃく','seratus'],['自','＿分','じぶん','diri sendiri']]},
- {g:['午','牛','年'], w:[['午','＿前','ごぜん','pagi (AM)'],['牛','＿','うし','sapi'],['年','＿','とし','tahun']]},
- {g:['休','体','本'], w:[['休','＿む','やすむ','beristirahat'],['体','＿','からだ','badan'],['本','＿','ほん','buku']]},
- {g:['読','売','続'], w:[['読','＿む','よむ','membaca'],['売','＿る','うる','menjual'],['続','＿く','つづく','berlanjut']]},
- {g:['教','数'], w:[['教','＿える','おしえる','mengajar'],['数','＿','かず','angka, jumlah']]},
- {g:['場','湯'], w:[['場','＿所','ばしょ','tempat'],['湯','お＿','おゆ','air panas']]},
- {g:['島','鳥','馬'], w:[['島','＿','しま','pulau'],['鳥','＿','とり','burung'],['馬','＿','うま','kuda']]},
- {g:['犬','太','大'], w:[['犬','＿','いぬ','anjing'],['太','＿る','ふとる','menjadi gemuk'],['大','＿きい','おおきい','besar']]},
- {g:['使','便'], w:[['使','＿う','つかう','memakai'],['便','＿利','べんり','praktis']]},
- {g:['住','注','主'], w:[['住','＿む','すむ','tinggal'],['注','＿意','ちゅうい','perhatian'],['主','＿人','しゅじん','suami; tuan']]},
- {g:['者','暑','著'], w:[['者','医＿','いしゃ','dokter'],['暑','＿い','あつい','panas (cuaca)']]},
- {g:['新','親'], w:[['新','＿しい','あたらしい','baru'],['親','＿','おや','orang tua']]},
- {g:['切','初'], w:[['切','＿る','きる','memotong'],['初','＿めて','はじめて','pertama kali']]},
- {g:['験','険','検'], w:[['験','試＿','しけん','ujian'],['険','危＿','きけん','berbahaya'],['検','＿査','けんさ','pemeriksaan']]},
- {g:['帰','婦'], w:[['帰','＿る','かえる','pulang'],['婦','主＿','しゅふ','ibu rumah tangga']]},
- {g:['曜','濯'], w:[['曜','日＿日','にちようび','hari Minggu'],['濯','洗＿','せんたく','mencuci (pakaian)']]},
- {g:['病','疲','痛'], w:[['病','＿気','びょうき','sakit, penyakit'],['疲','＿れる','つかれる','lelah'],['痛','＿い','いたい','sakit, nyeri']]},
- {g:['近','返','送','迎','遅'], w:[['近','＿い','ちかい','dekat'],['返','＿す','かえす','mengembalikan'],['送','＿る','おくる','mengirim'],['迎','＿える','むかえる','menjemput'],['遅','＿い','おそい','lambat, terlambat']]},
- {g:['暗','音','意'], w:[['暗','＿い','くらい','gelap'],['音','＿','おと','bunyi'],['意','＿味','いみ','arti, makna']]},
- {g:['洗','先'], w:[['洗','＿う','あらう','mencuci'],['先','＿生','せんせい','guru']]},
- {g:['究','空','突'], w:[['究','研＿','けんきゅう','penelitian'],['空','＿','そら','langit'],['突','＿然','とつぜん','tiba-tiba']]}
+ {lv:4, g:['待','持','特'], w:[['待','＿つ','まつ','menunggu'],['持','＿つ','もつ','memegang, membawa'],['特','＿に','とくに','khususnya']]},
+ {lv:4, g:['買','貸','借'], w:[['買','＿う','かう','membeli'],['貸','＿す','かす','meminjamkan'],['借','＿りる','かりる','meminjam']]},
+ {lv:4, g:['間','聞','開','閉','問'], w:[['間','＿','あいだ','di antara'],['聞','＿く','きく','mendengar'],['開','＿く','あく','terbuka'],['閉','＿まる','しまる','tertutup'],['問','質＿','しつもん','pertanyaan']]},
+ {lv:5, g:['右','石'], w:[['右','＿','みぎ','kanan'],['石','＿','いし','batu']]},
+ {lv:5, g:['白','百','自'], w:[['白','＿い','しろい','putih'],['百','＿','ひゃく','seratus'],['自','＿分','じぶん','diri sendiri']]},
+ {lv:5, g:['午','牛','年'], w:[['午','＿前','ごぜん','pagi (AM)'],['牛','＿','うし','sapi'],['年','＿','とし','tahun']]},
+ {lv:5, g:['休','体','本'], w:[['休','＿む','やすむ','beristirahat'],['体','＿','からだ','badan'],['本','＿','ほん','buku']]},
+ {lv:4, g:['読','売','続'], w:[['読','＿む','よむ','membaca'],['売','＿る','うる','menjual'],['続','＿く','つづく','berlanjut']]},
+ {lv:4, g:['教','数'], w:[['教','＿える','おしえる','mengajar'],['数','＿','かず','angka, jumlah']]},
+ {lv:4, g:['場','湯'], w:[['場','＿所','ばしょ','tempat'],['湯','お＿','おゆ','air panas']]},
+ {lv:4, g:['島','鳥','馬'], w:[['島','＿','しま','pulau'],['鳥','＿','とり','burung'],['馬','＿','うま','kuda']]},
+ {lv:5, g:['犬','太','大'], w:[['犬','＿','いぬ','anjing'],['太','＿る','ふとる','menjadi gemuk'],['大','＿きい','おおきい','besar']]},
+ {lv:4, g:['使','便'], w:[['使','＿う','つかう','memakai'],['便','＿利','べんり','praktis']]},
+ {lv:4, g:['住','注','主'], w:[['住','＿む','すむ','tinggal'],['注','＿意','ちゅうい','perhatian'],['主','＿人','しゅじん','suami; tuan']]},
+ {lv:4, g:['者','暑','著'], w:[['者','医＿','いしゃ','dokter'],['暑','＿い','あつい','panas (cuaca)']]},
+ {lv:4, g:['新','親'], w:[['新','＿しい','あたらしい','baru'],['親','＿','おや','orang tua']]},
+ {lv:4, g:['切','初'], w:[['切','＿る','きる','memotong'],['初','＿めて','はじめて','pertama kali']]},
+ {lv:4, g:['験','険','検'], w:[['験','試＿','しけん','ujian'],['険','危＿','きけん','berbahaya'],['検','＿査','けんさ','pemeriksaan']]},
+ {lv:4, g:['帰','婦'], w:[['帰','＿る','かえる','pulang'],['婦','主＿','しゅふ','ibu rumah tangga']]},
+ {lv:4, g:['曜','濯'], w:[['曜','日＿日','にちようび','hari Minggu'],['濯','洗＿','せんたく','mencuci (pakaian)']]},
+ {lv:4, g:['病','疲','痛'], w:[['病','＿気','びょうき','sakit, penyakit'],['疲','＿れる','つかれる','lelah'],['痛','＿い','いたい','sakit, nyeri']]},
+ {lv:4, g:['近','返','送','迎','遅'], w:[['近','＿い','ちかい','dekat'],['返','＿す','かえす','mengembalikan'],['送','＿る','おくる','mengirim'],['迎','＿える','むかえる','menjemput'],['遅','＿い','おそい','lambat, terlambat']]},
+ {lv:4, g:['暗','音','意'], w:[['暗','＿い','くらい','gelap'],['音','＿','おと','bunyi'],['意','＿味','いみ','arti, makna']]},
+ {lv:4, g:['洗','先'], w:[['洗','＿う','あらう','mencuci'],['先','＿生','せんせい','guru']]},
+ {lv:4, g:['究','空','突'], w:[['究','研＿','けんきゅう','penelitian'],['空','＿','そら','langit'],['突','＿然','とつぜん','tiba-tiba']]},
+ {lv:3, g:['未','末'], w:[['未','＿来','みらい','masa depan'],['末','週＿','しゅうまつ','akhir pekan']]},
+ {lv:3, g:['復','複','腹'], w:[['復','＿習','ふくしゅう','mengulang pelajaran'],['複','＿雑','ふくざつ','rumit'],['腹','お＿','おなか','perut']]},
+ {lv:3, g:['招','紹'], w:[['招','＿く','まねく','mengundang'],['紹','＿介','しょうかい','perkenalan']]},
+ {lv:3, g:['象','像'], w:[['象','＿','ぞう','gajah'],['像','想＿','そうぞう','imajinasi, membayangkan']]},
+ {lv:3, g:['識','職','織'], w:[['識','知＿','ちしき','pengetahuan'],['職','＿業','しょくぎょう','pekerjaan'],['織','＿る','おる','menenun']]},
+ {lv:3, g:['経','軽'], w:[['経','＿験','けいけん','pengalaman'],['軽','＿い','かるい','ringan']]}
 ];
 var tqState={q:0,score:0,total:10,cur:null};
 function _tqAllKanji(){
   var s=[]; TWIN_SETS.forEach(function(t){t.g.forEach(function(k){if(s.indexOf(k)<0)s.push(k);});});
   return s;
 }
+function _twinPool(){
+  var num={'N5':5,'N4':4,'N3':3,'N2':3,'N1':3,'SSW':4}[currentJLPT]||4;
+  var pool=TWIN_SETS.filter(function(t){return (t.lv||4)>=num;});
+  return pool.length?pool:TWIN_SETS;
+}
 function tqMakeQuestion(){
-  var set=TWIN_SETS[Math.floor(Math.random()*TWIN_SETS.length)];
+  var _tp=_twinPool();
+  var set=_tp[Math.floor(Math.random()*_tp.length)];
   var word=set.w[Math.floor(Math.random()*set.w.length)];
   var correct=word[0];
   var choices=set.g.slice();
   if(choices.length<4){
-    var pool=_tqAllKanji().filter(function(k){return choices.indexOf(k)<0;});
+    var pool=[]; _twinPool().forEach(function(t){t.g.forEach(function(k){if(pool.indexOf(k)<0&&choices.indexOf(k)<0)pool.push(k);});});
     shuffle(pool);
     while(choices.length<4 && pool.length) choices.push(pool.pop());
   }
