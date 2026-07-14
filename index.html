@@ -8755,13 +8755,45 @@ function kmShow(){
   document.getElementById('km-assess-row').style.display='none';
 }
 function _kmNorm(s){ return (s||'').toLowerCase().split(' ').join('').split('　').join('').trim(); }
+function _kmVowelFold(s){
+  // ryoukou / ryoko / ryookoo dianggap sama
+  return (s||'').split('ou').join('o').split('oo').join('o').split('uu').join('u')
+                .split('ee').join('e').split('ii').join('i').split('aa').join('a');
+}
+function _kmReadVariants(rom){
+  var base=_kmNorm(rom).split('／')[0].split('/')[0].split('、')[0].split('･')[0];
+  base=base.split('～').join('').split('~').join('');
+  var out=[];
+  function add(v){ if(v && out.indexOf(v)<0) out.push(v); }
+  add(base);
+  // buang akhiran する / した / します (kata benda-verba: 経験する → 経験)
+  ['する','します','した','しました'].forEach(function(sfx){
+    if(base.length>sfx.length && base.slice(-sfx.length)===sfx) add(base.slice(0,-sfx.length));
+  });
+  // versi romaji dari tiap varian kana
+  var kanaVars=out.slice();
+  kanaVars.forEach(function(k){
+    try{ add(_kmNorm(toRomaji(k))); }catch(e){}
+  });
+  // buang akhiran 'suru' dari bentuk romaji
+  out.slice().forEach(function(v){
+    if(v.length>4 && v.slice(-4)==='suru') add(v.slice(0,-4));
+  });
+  return out;
+}
 function _kmBacaOk(userIn, rom){
   var u=_kmNorm(userIn); if(!u) return false;
-  var kana=_kmNorm(rom).split('／')[0].split('/')[0];
-  if(!kana) return false;
-  if(u===kana) return true;
-  try{ if(u===_kmNorm(toRomaji(kana))) return true; }catch(e){}
-  try{ if(_kmNorm(romajiToHira(u).split('　').join(''))===kana) return true; }catch(e){}
+  var vars=_kmReadVariants(rom);
+  if(!vars.length) return false;
+  // cocokkan langsung
+  for(var i=0;i<vars.length;i++){ if(u===vars[i]) return true; }
+  // user mengetik romaji, varian berupa kana → konversi user ke hiragana
+  var uHira='';
+  try{ uHira=_kmNorm(romajiToHira(u).split('　').join('')); }catch(e){}
+  if(uHira){ for(var j=0;j<vars.length;j++){ if(uHira===vars[j]) return true; } }
+  // toleransi vokal panjang (ryoukou = ryoko)
+  var uf=_kmVowelFold(u);
+  for(var k=0;k<vars.length;k++){ if(uf===_kmVowelFold(vars[k])) return true; }
   return false;
 }
 function _kmArtiOk(userIn, arti){
