@@ -1076,30 +1076,35 @@ header:has(.user-menu.open) { z-index:1000; }
 
 <div id="upper-menu">
   <div class="upper-label">JLPT:</div>
-  <button class="level-select-btn" onclick="switchJLPT('N5')">N5</button>
-  <button class="level-select-btn" onclick="switchJLPT('N4')">N4</button>
-  <button class="level-select-btn active" onclick="switchJLPT('N3')">N3</button>
-  <button class="level-select-btn" onclick="switchJLPT('N2')">N2</button>
-  <button class="level-select-btn" onclick="switchJLPT('N1')">N1</button>
-  <button class="level-select-btn" onclick="switchJLPT('SSW')" style="background:#0a7d6b;color:#fff;border-color:#0a7d6b">SSW</button>
+  <button class="level-select-btn" onclick="navLevel('N5')">N5</button>
+  <button class="level-select-btn" onclick="navLevel('N4')">N4</button>
+  <button class="level-select-btn active" onclick="navLevel('N3')">N3</button>
+  <button class="level-select-btn" onclick="navLevel('N2')">N2</button>
+  <button class="level-select-btn" onclick="navLevel('N1')">N1</button>
+  <button class="level-select-btn" onclick="navLevel('SSW')" style="background:#0a7d6b;color:#fff;border-color:#0a7d6b">SSW</button>
 </div>
 <nav>
-  <button class="active" onclick="gotoScreen('overview')">🏠 Dashboard</button>
+  <button class="active" onclick="navTo('overview')">🏠 Dashboard</button>
   <button id="nav-learn-btn" onclick="toggleNavLearn(event)">📚 Belajar ▾</button>
-  <button onclick="gotoScreen('exam')">📝 Ujian</button>
-  <button onclick="gotoScreen('review')">📊 Progress</button>
-  <button onclick="gotoScreen('leaderboard')">🏆 Ranking</button>
-  <button onclick="gotoScreen('ai')">🤖 Sensei</button>
+  <button onclick="navTo('exam')">📝 Ujian</button>
+  <button onclick="navTo('review')">📊 Progress</button>
+  <button onclick="navTo('leaderboard')">🏆 Ranking</button>
+  <button onclick="navTo('ai')">🤖 Sensei</button>
 </nav>
 <div id="nav-learn-menu">
-  <button onclick="gotoScreen('flashmenu')">📚 Flashcard</button>
-  <button onclick="gotoScreen('kotoba')">📖 Daftar Kotoba</button>
-  <button onclick="gotoScreen('kanjimenu')">✍️ Baca Kanji</button>
-  <button onclick="gotoScreen('bunpomenu')">📐 Tata Bahasa</button>
-  <button onclick="gotoScreen('katsuyomenu')">🔄 Konjugasi</button>
-  <button onclick="gotoScreen('dialectmenu')">🗾 Dialek</button>
-  <button onclick="gotoScreen('kazumenu')">🔢 Angka</button>
-  <button onclick="gotoScreen('onomenu')">💬 Onomatope</button>
+  <button onclick="navTo('flashmenu')">📚 Flashcard</button>
+  <button onclick="navTo('kotoba')">📖 Daftar Kotoba</button>
+  <button onclick="navTo('kanjimenu')">✍️ Baca Kanji</button>
+  <button onclick="navTo('bunpomenu')">📐 Tata Bahasa</button>
+  <button onclick="navTo('katsuyomenu')">🔄 Konjugasi</button>
+  <button onclick="navTo('dialectmenu')">🗾 Dialek</button>
+  <button onclick="navTo('kazumenu')">🔢 Angka</button>
+  <button onclick="navTo('onomenu')">💬 Onomatope</button>
+  <div style="border-top:1px solid var(--border);margin:4px 0"></div>
+  <button onclick="startSrsReview()">🔁 Review SRS</button>
+  <button onclick="startTwinQuiz()">⚔️ Kanji Kembar</button>
+  <button onclick="startWritePractice()">✍️ Latihan Tulis</button>
+  <button onclick="startKalimat()">📖 Belajar Kalimat</button>
 </div>
 <button id="backtotop" onclick="window.scrollTo({top:0,behavior:'smooth'})" title="Kembali ke atas">↑</button>
 
@@ -1125,7 +1130,7 @@ header:has(.user-menu.open) { z-index:1000; }
 
   <div style="display:flex;justify-content:space-between;align-items:center;margin:24px 0 12px">
     <div class="section-title" style="margin:0">🏆 Ranking <span id="ov-lb-level">N3</span></div>
-    <span onclick="gotoScreen('leaderboard')" style="font-size:12px;color:var(--indigo);cursor:pointer;font-weight:600">Lihat semua ›</span>
+    <span onclick="navTo('leaderboard')" style="font-size:12px;color:var(--indigo);cursor:pointer;font-weight:600">Lihat semua ›</span>
   </div>
   <div id="ov-lb-list" style="display:flex;flex-direction:column;gap:8px">
     <div style="text-align:center;padding:16px;color:var(--mist);font-size:13px">Memuat ranking…</div>
@@ -1199,6 +1204,7 @@ header:has(.user-menu.open) { z-index:1000; }
         ↩ Kartu sebelumnya
       </button>
     </div>
+    <button onclick="endSession()" style="width:100%;margin-top:10px;padding:10px;border:1.5px solid var(--border);border-radius:10px;background:white;color:var(--mist);font-family:inherit;font-size:12px;font-weight:700;cursor:pointer">✕ Akhiri Sesi</button>
   </div>
 
   <!-- Session complete -->
@@ -1305,6 +1311,7 @@ header:has(.user-menu.open) { z-index:1000; }
         ↩ Kartu sebelumnya
       </button>
     </div>
+    <button onclick="endSession()" style="width:100%;margin-top:10px;padding:10px;border:1.5px solid var(--border);border-radius:10px;background:white;color:var(--mist);font-family:inherit;font-size:12px;font-weight:700;cursor:pointer">✕ Akhiri Sesi</button>
   </div>
 
   <!-- Session done -->
@@ -1357,7 +1364,7 @@ header:has(.user-menu.open) { z-index:1000; }
 <!-- ====== BUNPO STUDY (belajar pola) ====== -->
 <div id="screen-bunpostudy" class="screen">
   <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
-    <button onclick="gotoScreen('bunpomenu')" style="background:none;border:none;color:var(--mist);cursor:pointer;font-size:13px">← Kembali</button>
+    <button onclick="navTo('bunpomenu')" style="background:none;border:none;color:var(--mist);cursor:pointer;font-size:13px">← Kembali</button>
     <span id="bs-progress" style="font-family:'DM Mono',monospace;font-size:12px;color:var(--mist)">1 / 3</span>
   </div>
   <div id="bs-card" style="background:white;border:1px solid var(--border);border-radius:16px;padding:24px"></div>
@@ -1398,7 +1405,7 @@ header:has(.user-menu.open) { z-index:1000; }
 <!-- ====== KATSUYO QUIZ (pilihan ganda) ====== -->
 <div id="screen-katsuyoquiz" class="screen">
   <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
-    <button onclick="gotoScreen('katsuyomenu')" style="background:none;border:none;color:var(--mist);cursor:pointer;font-size:13px">← Kembali</button>
+    <button onclick="navTo('katsuyomenu')" style="background:none;border:none;color:var(--mist);cursor:pointer;font-size:13px">← Kembali</button>
     <span id="kq-progress" style="font-family:'DM Mono',monospace;font-size:12px;color:var(--mist)">Soal 1</span>
   </div>
   <div id="kq-card" style="background:white;border:1px solid var(--border);border-radius:16px;padding:22px;box-shadow:var(--shadow)"></div>
@@ -1408,7 +1415,7 @@ header:has(.user-menu.open) { z-index:1000; }
 <!-- ====== KATSUYO TYPE (latihan ketik) ====== -->
 <div id="screen-katsuyotype" class="screen">
   <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
-    <button onclick="gotoScreen('katsuyomenu')" style="background:none;border:none;color:var(--mist);cursor:pointer;font-size:13px">← Kembali</button>
+    <button onclick="navTo('katsuyomenu')" style="background:none;border:none;color:var(--mist);cursor:pointer;font-size:13px">← Kembali</button>
     <span id="kt-progress" style="font-family:'DM Mono',monospace;font-size:12px;color:var(--mist)">Soal 1</span>
   </div>
   <div id="kt-card" style="background:white;border:1px solid var(--border);border-radius:16px;padding:22px;box-shadow:var(--shadow)"></div>
@@ -1509,6 +1516,47 @@ header:has(.user-menu.open) { z-index:1000; }
 
 <!-- ====== MODAL LATIHAN TULIS ====== -->
 
+<!-- ====== DETAIL KOTOBA ====== -->
+<div id="kd-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:2500;align-items:center;justify-content:center;padding:12px" onclick="if(event.target===this)kdClose()">
+  <div style="background:white;border-radius:16px;padding:18px;width:min(94vw,400px);max-height:88vh;overflow-y:auto">
+    <div style="display:flex;justify-content:space-between;align-items:start;margin-bottom:10px">
+      <div>
+        <div id="kd-jp" style="font-size:28px;font-weight:800;color:var(--ink);line-height:1.2"></div>
+        <div id="kd-rom" style="font-family:'DM Mono',monospace;font-size:14px;color:var(--indigo)"></div>
+        <div id="kd-arti" style="font-size:14px;color:var(--mist)"></div>
+      </div>
+      <button onclick="kdClose()" style="border:none;background:none;font-size:22px;cursor:pointer;color:var(--mist)">✕</button>
+    </div>
+    <div style="background:linear-gradient(135deg,#1a1a2e,#2d3561);color:#fff;border-radius:12px;padding:12px;margin-bottom:12px">
+      <div style="display:flex;justify-content:space-between;align-items:baseline">
+        <span style="font-size:12px;font-weight:700">Tingkat Hafalan</span>
+        <span id="kd-pct" style="font-family:'DM Mono',monospace;font-size:22px;font-weight:700;color:#ffd166"></span>
+      </div>
+      <div style="background:rgba(255,255,255,.15);border-radius:4px;height:6px;overflow:hidden;margin-top:6px"><div id="kd-bar" style="height:100%;width:0;background:#ffd166"></div></div>
+    </div>
+    <div style="font-size:12px;font-weight:800;color:var(--mist);margin-bottom:6px">RINCIAN POIN</div>
+    <div id="kd-comps" style="margin-bottom:12px"></div>
+    <div id="kd-todo" style="font-size:12px;color:var(--ink);background:rgba(255,209,102,.16);border-radius:10px;padding:10px;margin-bottom:12px"></div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap">
+      <button onclick="kdGoWrite()" style="flex:1;min-width:120px;padding:10px;border:none;border-radius:10px;background:var(--indigo);color:#fff;font-family:inherit;font-size:12px;font-weight:700;cursor:pointer">✍️ Tulis kata ini</button>
+      <button onclick="kdGoKalimat()" style="flex:1;min-width:120px;padding:10px;border:none;border-radius:10px;background:var(--jade);color:#fff;font-family:inherit;font-size:12px;font-weight:700;cursor:pointer">📖 Belajar Kalimat</button>
+    </div>
+  </div>
+</div>
+
+<!-- ====== KONFIRMASI KELUAR SESI ====== -->
+<div id="exit-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:3000;align-items:center;justify-content:center" onclick="if(event.target===this)exitCancel()">
+  <div style="background:white;border-radius:16px;padding:20px;width:min(90vw,340px);text-align:center">
+    <div style="font-size:34px;margin-bottom:6px">⚠️</div>
+    <div style="font-size:16px;font-weight:800;color:var(--ink);margin-bottom:4px">Keluar dari sesi?</div>
+    <p id="exit-msg" style="font-size:13px;color:var(--mist);margin:0 0 16px">Progress sesi yang sedang berjalan akan hilang.</p>
+    <div style="display:flex;gap:8px">
+      <button onclick="exitConfirm()" style="flex:1;padding:12px;border:1.5px solid #c0392b;border-radius:12px;background:rgba(192,57,43,.06);color:#c0392b;font-family:inherit;font-size:13px;font-weight:700;cursor:pointer">Keluar</button>
+      <button onclick="exitCancel()" style="flex:1;padding:12px;border:none;border-radius:12px;background:var(--jade);color:#fff;font-family:inherit;font-size:13px;font-weight:700;cursor:pointer">Lanjutkan Sesi</button>
+    </div>
+  </div>
+</div>
+
 <!-- ====== BELAJAR KALIMAT ====== -->
 <div id="screen-kalimat" class="screen">
   <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
@@ -1526,16 +1574,24 @@ header:has(.user-menu.open) { z-index:1000; }
       <div id="km-trans" style="font-size:14px;color:var(--mist)"></div>
       <div id="km-word" style="font-size:13px;color:var(--ink);margin-top:8px;font-weight:700"></div>
     </div>
+    <div id="km-hint" style="display:none;font-size:12px;color:var(--red);font-weight:700;margin-top:8px"></div>
+    <div style="display:none">
+    </div>
   </div>
-  <button id="km-reveal" onclick="kmReveal()" style="display:none;width:100%;padding:13px;border:none;border-radius:12px;background:var(--ink);color:#fff;font-family:inherit;font-size:14px;font-weight:700;cursor:pointer;margin-bottom:10px">👁 Lihat Arti</button>
-  <div id="km-score-row" style="display:none;gap:8px;margin-bottom:10px">
-    <button onclick="kmScore(false)" style="flex:1;padding:12px;border:1.5px solid #c0392b;border-radius:12px;background:rgba(192,57,43,.06);color:#c0392b;font-family:inherit;font-size:13px;font-weight:700;cursor:pointer">✗ Salah Paham</button>
-    <button onclick="kmScore(true)" style="flex:1;padding:12px;border:none;border-radius:12px;background:var(--indigo);color:#fff;font-family:inherit;font-size:13px;font-weight:700;cursor:pointer">✓ Paham Benar</button>
+  <div id="km-answer" style="display:none;margin-bottom:10px">
+    <input id="km-in-baca" type="text" placeholder="Cara baca kata merah (hiragana / romaji)..." autocomplete="off" style="width:100%;box-sizing:border-box;padding:11px 14px;border:2px solid var(--border);border-radius:10px;font-family:'Noto Sans JP',sans-serif;font-size:14px;outline:none;margin-bottom:8px">
+    <input id="km-in-arti" type="text" placeholder="Arti kata merah (Indonesia)..." autocomplete="off" style="width:100%;box-sizing:border-box;padding:11px 14px;border:2px solid var(--border);border-radius:10px;font-family:'Noto Sans JP',sans-serif;font-size:14px;outline:none;margin-bottom:8px">
+    <div style="display:flex;gap:8px">
+      <button onclick="kmSkip()" style="padding:12px 14px;border:1.5px solid var(--border);border-radius:12px;background:white;color:var(--mist);font-family:inherit;font-size:13px;font-weight:700;cursor:pointer">🤷 Tidak tahu</button>
+      <button onclick="kmCheck()" style="flex:1;padding:12px;border:none;border-radius:12px;background:var(--ink);color:#fff;font-family:inherit;font-size:14px;font-weight:700;cursor:pointer">Periksa ✓</button>
+    </div>
+    <div id="km-verdict" style="min-height:20px;font-size:13px;margin-top:8px;text-align:center"></div>
   </div>
   <div id="km-assess-row" style="display:none;gap:8px;margin-bottom:10px">
     <button onclick="kmAssess(false)" style="flex:1;padding:12px;border:1.5px solid #c0392b;border-radius:12px;background:rgba(192,57,43,.06);color:#c0392b;font-family:inherit;font-size:13px;font-weight:700;cursor:pointer">🙅 Belum Hafal</button>
     <button onclick="kmAssess(true)" style="flex:1;padding:12px;border:none;border-radius:12px;background:var(--jade);color:#fff;font-family:inherit;font-size:13px;font-weight:700;cursor:pointer">💯 Hafal!</button>
   </div>
+  <button id="km-end" onclick="endSession()" style="width:100%;padding:10px;border:1.5px solid var(--border);border-radius:10px;background:white;color:var(--mist);font-family:inherit;font-size:12px;font-weight:700;cursor:pointer;margin-bottom:10px">✕ Akhiri Sesi</button>
   <div id="km-done" style="display:none;text-align:center;background:white;border:1px solid var(--border);border-radius:16px;padding:26px">
     <div style="font-size:34px;margin-bottom:6px">🏁</div>
     <div id="km-done-score" style="font-size:18px;font-weight:800;margin-bottom:12px"></div>
@@ -1555,6 +1611,7 @@ header:has(.user-menu.open) { z-index:1000; }
     <div id="tq-arti" style="font-size:15px;color:var(--mist)">menunggu</div>
   </div>
   <div id="tq-choices" style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px"></div>
+  <button onclick="endSession()" style="width:100%;padding:10px;border:1.5px solid var(--border);border-radius:10px;background:white;color:var(--mist);font-family:inherit;font-size:12px;font-weight:700;cursor:pointer;margin-bottom:10px">✕ Akhiri Sesi</button>
   <div id="tq-feedback" style="min-height:44px;font-size:13px;text-align:center;margin-bottom:10px"></div>
   <button id="tq-next" onclick="tqNext()" style="display:none;width:100%;padding:13px;border:none;border-radius:12px;background:var(--ink);color:#fff;font-family:inherit;font-size:14px;font-weight:700;cursor:pointer">Soal Berikutnya ▶</button>
   <div id="tq-done" style="display:none;text-align:center;background:white;border:1px solid var(--border);border-radius:16px;padding:26px">
@@ -6895,7 +6952,7 @@ function renderOverviewMenu(){
   var html='';
   items.forEach(function(it){
     if(it.hide) return;
-    var _oc = it.fn ? (it.fn+'()') : ('gotoScreen(&apos;'+it.scr+'&apos;)');
+    var _oc = it.fn ? (it.fn+'()') : ('navTo(&apos;'+it.scr+'&apos;)');
     html+='<div onclick="'+_oc+'" style="background:white;border:1px solid var(--border);border-top:3px solid '+it.c+';border-radius:12px;padding:16px;cursor:pointer;transition:transform .15s" onmouseover="this.style.transform=&apos;translateY(-3px)&apos;" onmouseout="this.style.transform=&apos;&apos;">'
       +'<div style="font-size:24px;margin-bottom:6px">'+it.emo+'</div>'
       +'<div style="font-weight:700;font-size:14px;margin-bottom:2px">'+it.t+'</div>'
@@ -8295,6 +8352,120 @@ function closeWriteModal(){ document.getElementById('write-modal').style.display
 var _wm={ghost:true,char:'',drawing:false,ctx:null,paths:[]};
 
 // ============================================================
+// DETAIL KOTOBA — rincian poin per metode, biar tahu apa yang kurang
+// ============================================================
+var _kdWord=null;
+function kdComponents(w){
+  var hasK=ktHasKanji(w);
+  var e=(typeof srsData!=='undefined')?srsData[srsKey(w)]:null;
+  var lv=e?e.lv:0;
+  var srs=Math.min(lv/3,1);
+  var sk=srsKey(w);
+  var head=(w.jp||'').split(/[;；,，\s]/)[0];
+  var out=[];
+  if(hasK){
+    out.push(['📝 Hafal arti', 25, ktArtiDone(w)?1:0, 'Centang "Arti" di daftar / flashcard']);
+    out.push(['🈁 Hafal baca kanji', 15, ktBacaDone(w)?1:0, 'Centang "Baca" / sesi Baca Kanji']);
+    out.push(['🔁 Review SRS ('+Math.min(lv,3)+'/3)', 20, srs, 'Lolos review berkala 3×']);
+    out.push(['✍️ Hafal menulis', 15, kanjiReadMastered['wr_'+sk]?1:0, 'Sesi Latihan Tulis']);
+    out.push(['📖 Hafal lewat kalimat', 15, kanjiReadMastered['st_'+sk]?1:0, 'Sesi Belajar Kalimat']);
+    var tset=(typeof _twinKanjiSet==='function')?_twinKanjiSet():{};
+    var inTwin=false;
+    for(var ci=0;ci<head.length;ci++){ if(tset[head.charAt(ci)]){ inTwin=true; break; } }
+    if(inTwin) out.push(['⚔️ Hafal di Kanji Kembar', 10, kanjiReadMastered['tw_'+sk]?1:0, 'Kuis Kanji Kembar']);
+  } else {
+    out.push(['📝 Hafal arti', 35, ktArtiDone(w)?1:0, 'Centang "Arti" di daftar / flashcard']);
+    out.push(['🔁 Review SRS ('+Math.min(lv,3)+'/3)', 35, srs, 'Lolos review berkala 3×']);
+    out.push(['📖 Hafal lewat kalimat', 30, kanjiReadMastered['st_'+sk]?1:0, 'Sesi Belajar Kalimat']);
+  }
+  return out;
+}
+function kdOpen(id){
+  var w=ktFindWord(id);
+  if(!w) return;
+  _kdWord=w;
+  var head=(w.jp||'').split(/[;；]/)[0];
+  document.getElementById('kd-jp').textContent=w.jp;
+  document.getElementById('kd-rom').textContent=w.rom||'';
+  document.getElementById('kd-arti').textContent=w.id_||'';
+  var pct=ktScore(w);
+  document.getElementById('kd-pct').textContent=pct+'%';
+  document.getElementById('kd-bar').style.width=pct+'%';
+  var comps=kdComponents(w);
+  var totW=0; comps.forEach(function(c){ totW+=c[1]; });
+  var html='', todo=[];
+  comps.forEach(function(c){
+    var done=c[2]>=1, part=c[2]>0&&c[2]<1;
+    var earned=Math.round(c[1]*c[2]/totW*100);
+    var maxp=Math.round(c[1]/totW*100);
+    var col=done?'var(--jade)':(part?'#b8860b':'var(--mist)');
+    var icon=done?'✓':(part?'◐':'○');
+    html+='<div style="display:flex;align-items:center;gap:8px;padding:7px 0;border-bottom:1px solid var(--border)">'
+      +'<span style="color:'+col+';font-weight:800;font-size:14px">'+icon+'</span>'
+      +'<span style="flex:1;font-size:12.5px;color:'+(done?'var(--ink)':'var(--mist)')+'">'+c[0]+'</span>'
+      +'<span style="font-family:\'DM Mono\',monospace;font-size:12px;font-weight:700;color:'+col+'">'+earned+'/'+maxp+'</span>'
+      +'</div>';
+    if(!done) todo.push(c[3]);
+  });
+  document.getElementById('kd-comps').innerHTML=html;
+  var td=document.getElementById('kd-todo');
+  if(todo.length) td.innerHTML='<b>Belum terpenuhi:</b><br>· '+todo.join('<br>· ');
+  else td.innerHTML='🎉 <b>Sempurna!</b> Semua metode sudah kamu tuntaskan untuk kata ini.';
+  document.getElementById('kd-modal').style.display='flex';
+}
+function kdClose(){ document.getElementById('kd-modal').style.display='none'; _kdWord=null; }
+function kdGoWrite(){
+  var w=_kdWord; kdClose();
+  if(!w || !ktHasKanji(w)){ alert('Kata ini tidak mengandung kanji.'); return; }
+  _kfCurrentJp=(w.jp||'').split(/[;；]/)[0];
+  openWriteModal();
+}
+function kdGoKalimat(){ kdClose(); startKalimat(); }
+
+// ============================================================
+// PENJAGA SESI — cegah progress hilang karena salah pencet
+// ============================================================
+var SESSION_SCREENS=['flash','kanjiflash','exam','twinquiz','kalimat'];
+var _exitAction=null;
+function inSession(){
+  var act=document.querySelector('.screen.active');
+  if(!act) return false;
+  var nm=(act.id||'').replace('screen-','');
+  if(SESSION_SCREENS.indexOf(nm)<0) return false;
+  var d1=document.getElementById('session-done-panel');
+  if((nm==='flash'||nm==='kanjiflash') && d1 && d1.style.display==='block') return false;
+  var d2=document.getElementById('tq-done');
+  if(nm==='twinquiz' && d2 && d2.style.display==='block') return false;
+  var d3=document.getElementById('km-done');
+  if(nm==='kalimat' && d3 && d3.style.display==='block') return false;
+  return true;
+}
+function guardExit(fn, msg){
+  if(!inSession()){ fn(); return; }
+  _exitAction=fn;
+  var m=document.getElementById('exit-msg');
+  if(m) m.textContent=msg||'Progress sesi yang sedang berjalan akan hilang.';
+  document.getElementById('exit-modal').style.display='flex';
+}
+function exitConfirm(){
+  document.getElementById('exit-modal').style.display='none';
+  var f=_exitAction; _exitAction=null;
+  if(f) f();
+}
+function exitCancel(){
+  document.getElementById('exit-modal').style.display='none';
+  _exitAction=null;
+}
+function navTo(name){ guardExit(function(){ gotoScreen(name); }); }
+function navLevel(level){
+  guardExit(function(){
+    switchJLPT(level);
+    gotoScreen('overview');
+  }, 'Ganti level akan mengakhiri sesi yang sedang berjalan.');
+}
+function endSession(){ guardExit(function(){ gotoScreen('overview'); }, 'Yakin akhiri sesi ini? Progress sesi akan hilang.'); }
+
+// ============================================================
 // BELAJAR KALIMAT — hafalkan kata lewat konteks kalimat (AI)
 // Dua lapis: paham benar/salah (akurasi) lalu hafal/belum (SRS+poin).
 // ============================================================
@@ -8303,8 +8474,7 @@ async function startKalimat(){
   gotoScreenRaw('kalimat');
   document.getElementById('km-done').style.display='none';
   document.getElementById('km-card').style.display='none';
-  document.getElementById('km-reveal').style.display='none';
-  document.getElementById('km-score-row').style.display='none';
+  document.getElementById('km-answer').style.display='none';
   document.getElementById('km-assess-row').style.display='none';
   document.getElementById('km-loading').style.display='block';
   document.getElementById('km-pos').textContent='';
@@ -8319,8 +8489,12 @@ async function startKalimat(){
   pool.sort(function(a,b){ return ktScore(a)-ktScore(b); });
   var picks=pool.slice(0,12); shuffle(picks); picks=picks.slice(0,5);
   var lines=picks.map(function(w){ return w.jp.split(/[;；]/)[0]+'（'+(w.rom||'')+'）= '+(w.id_||''); }).join('\n');
-  var prompt='Buat 1 kalimat bahasa Jepang PENDEK dan alami level '+currentJLPT+' untuk MASING-MASING kata berikut (kata harus muncul di kalimatnya):\n'+lines
-    +'\nBalas HANYA JSON array: [{"w":"kata target persis","s":"kalimat jepang","r":"cara baca kalimat dalam hiragana","t":"terjemahan Indonesia"}] tanpa teks lain.';
+  var prompt='Buat 1 kalimat bahasa Jepang PENDEK dan alami level '+currentJLPT+' untuk MASING-MASING kata berikut.\n'+lines
+    +'\nATURAN WAJIB:\n'
+    +'1. Kata target HARUS muncul PERSIS seperti tertulis di atas (jangan diubah ke kana jika aslinya kanji, jangan dikonjugasikan).\n'
+    +'2. Gunakan KANJI normal untuk seluruh kalimat (jangan tulis semua dalam hiragana), agar berguna untuk latihan membaca.\n'
+    +'3. Kalimat maksimal 15 kata.\n'
+    +'Balas HANYA JSON array: [{"w":"kata target persis","s":"kalimat jepang berkanji","r":"cara baca seluruh kalimat dalam hiragana","t":"terjemahan Indonesia"}] tanpa teks lain.';
   var items=[];
   try{
     var res=await fetch('/api/groq',{method:'POST',headers:{'Content-Type':'application/json'},
@@ -8351,31 +8525,81 @@ async function startKalimat(){
 function kmShow(){
   var st=kmState, it=st.items[st.idx];
   document.getElementById('km-pos').textContent=(st.idx+1)+' / '+st.items.length;
-  var head=it.word.jp.split(/[;；]/)[0];
-  var sHtml=(it.s||'').split(head).join('<b style="color:var(--red)">'+head+'</b>');
+  // Sorot kata target: coba bentuk asli, lalu tiap varian (漢字/かな) agar tak pernah gagal
+  var raw=it.s||'';
+  var cands=[];
+  (it.word.jp||'').split(/[;；]/).forEach(function(v){ v=v.trim(); if(v) cands.push(v); });
+  if(it.word.rom) cands.push(it.word.rom);
+  cands.sort(function(a,b){return b.length-a.length;});
+  var sHtml=raw, hit=false;
+  for(var ci=0;ci<cands.length;ci++){
+    if(raw.indexOf(cands[ci])>=0){
+      sHtml=raw.split(cands[ci]).join('<b style="color:var(--red)">'+cands[ci]+'</b>');
+      hit=true; break;
+    }
+  }
   document.getElementById('km-sentence').innerHTML=sHtml;
+  var hint=document.getElementById('km-hint');
+  if(hint){
+    if(hit){ hint.style.display='none'; }
+    else { hint.textContent='🎯 Kata target: '+(it.word.jp||'').split(/[;；]/)[0]; hint.style.display='block'; }
+  }
   document.getElementById('km-hidden').style.display='none';
   document.getElementById('km-card').style.display='block';
-  document.getElementById('km-reveal').style.display='block';
-  document.getElementById('km-score-row').style.display='none';
+  var ans=document.getElementById('km-answer');
+  ans.style.display='block';
+  ans.querySelectorAll('input,button').forEach(function(el){ el.disabled=false; el.style.opacity='1'; });
+  document.getElementById('km-in-baca').value='';
+  document.getElementById('km-in-arti').value='';
+  document.getElementById('km-verdict').innerHTML='';
   document.getElementById('km-assess-row').style.display='none';
 }
-function kmReveal(){
+function _kmNorm(s){ return (s||'').toLowerCase().split(' ').join('').split('　').join('').trim(); }
+function _kmBacaOk(userIn, rom){
+  var u=_kmNorm(userIn); if(!u) return false;
+  var kana=_kmNorm(rom).split('／')[0].split('/')[0];
+  if(!kana) return false;
+  if(u===kana) return true;
+  try{ if(u===_kmNorm(toRomaji(kana))) return true; }catch(e){}
+  try{ if(_kmNorm(romajiToHira(u).split('　').join(''))===kana) return true; }catch(e){}
+  return false;
+}
+function _kmArtiOk(userIn, arti){
+  var u=_kmNorm(userIn); if(!u) return false;
+  var toks=(arti||'').toLowerCase().split(/[,;\/()（）·]+/);
+  for(var i=0;i<toks.length;i++){
+    var t=_kmNorm(toks[i]); if(!t) continue;
+    if(t===u) return true;
+    if(u.length>=3 && t.indexOf(u)>=0) return true;
+    if(t.length>=3 && u.indexOf(t)>=0) return true;
+  }
+  return false;
+}
+function _kmRevealAnswer(bacaOk, artiOk, skipped){
   var it=kmState.items[kmState.idx];
+  var head=(it.word.jp||'').split(/[;；]/)[0];
   document.getElementById('km-reading').textContent=it.r||'';
   document.getElementById('km-trans').textContent=it.t||'';
-  var head=it.word.jp.split(/[;；]/)[0];
   document.getElementById('km-word').textContent='🎯 '+head+'（'+(it.word.rom||'')+'）= '+(it.word.id_||'');
   document.getElementById('km-hidden').style.display='block';
-  document.getElementById('km-reveal').style.display='none';
-  document.getElementById('km-score-row').style.display='flex';
-}
-function kmScore(ok){
-  _ms('sentQ');
-  if(ok){ _ms('sentOk'); kmState.okN++; }
-  document.getElementById('km-score-row').style.display='none';
+  var v=document.getElementById('km-verdict');
+  if(skipped) v.innerHTML='<span style="color:var(--mist)">Jawaban ditampilkan — pelajari dulu ya.</span>';
+  else v.innerHTML='Baca: '+(bacaOk?'<b style="color:var(--jade)">✓ benar</b>':'<b style="color:#c0392b">✗ salah</b>')
+      +' &nbsp;·&nbsp; Arti: '+(artiOk?'<b style="color:var(--jade)">✓ benar</b>':'<b style="color:#c0392b">✗ salah</b>');
+  var ans=document.getElementById('km-answer');
+  ans.querySelectorAll('input,button').forEach(function(el){ el.disabled=true; el.style.opacity='.55'; });
   document.getElementById('km-assess-row').style.display='flex';
 }
+function kmCheck(){
+  var it=kmState.items[kmState.idx];
+  var bacaOk=_kmBacaOk(document.getElementById('km-in-baca').value, it.word.rom||'');
+  var artiOk=_kmArtiOk(document.getElementById('km-in-arti').value, it.word.id_||'');
+  var ok=bacaOk&&artiOk;
+  _ms('sentQ');
+  if(ok){ _ms('sentOk'); kmState.okN++; }
+  _kmRevealAnswer(bacaOk, artiOk, false);
+}
+function kmSkip(){ _ms('sentQ'); _kmRevealAnswer(false,false,true); }
 function kmAssess(hafal){
   var it=kmState.items[kmState.idx];
   try{
@@ -8394,6 +8618,7 @@ function kmAssess(hafal){
   if(kmState.idx>=kmState.items.length){
     document.getElementById('km-card').style.display='none';
     document.getElementById('km-assess-row').style.display='none';
+    document.getElementById('km-answer').style.display='none';
     document.getElementById('km-done').style.display='block';
     document.getElementById('km-done-score').textContent='Paham '+kmState.okN+'/'+kmState.items.length+' · Hafal '+kmState.hafalN+'/'+kmState.items.length;
   } else kmShow();
@@ -8700,6 +8925,7 @@ function startSrsReview(){
 // ============================================================
 // NAV DROPDOWN BELAJAR + TOMBOL LONCAT KE ATAS
 // ============================================================
+function closeNavLearn(){ var m=document.getElementById('nav-learn-menu'); if(m) m.classList.remove('open'); }
 function toggleNavLearn(ev){
   if(ev) ev.stopPropagation();
   var menu=document.getElementById('nav-learn-menu');
@@ -8896,7 +9122,7 @@ function ktRowHtml(w){
   var scColor=sc>=100?'var(--jade)':sc>=70?'#b8860b':sc>0?'#c0532e':'var(--mist)';
   var full=a&&(!hasK||b);
   return '<div class="vocab-item kt-row '+(full?'mastered':'')+'" data-wid="'+w.id+'">'
-    +'<div style="flex:1;min-width:0">'
+    +'<div style="flex:1;min-width:0;cursor:pointer" onclick="kdOpen(\''+w.id+'\')">'
     +'<div class="jp">'+w.jp+' <span class="kt-pos" style="background:'+meta[1]+'">'+meta[0]+'</span></div>'
     +'<div class="id-meaning">'+(w.id_||'')+'</div>'
     +'<div style="font-size:10px;color:var(--mist)">'+(w.rom||'')+(w._sub?' \u00b7 '+w._sub:'')+' \u00b7 <b style="color:'+scColor+'">'+sc+'%</b></div>'
