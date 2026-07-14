@@ -1547,6 +1547,38 @@ header:has(.user-menu.open) { z-index:1000; }
   </div>
 </div>
 
+<!-- ====== DETAIL KANJI ====== -->
+<div id="kj-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:2600;align-items:center;justify-content:center;padding:12px" onclick="if(event.target===this)kjClose()">
+  <div style="background:white;border-radius:16px;padding:18px;width:min(94vw,400px);max-height:88vh;overflow-y:auto">
+    <div style="display:flex;justify-content:space-between;align-items:start;margin-bottom:10px">
+      <div>
+        <div id="kj-char" style="font-size:40px;font-weight:800;color:var(--ink);line-height:1.1"></div>
+        <div id="kj-arti" style="font-size:14px;color:var(--mist);margin-top:2px"></div>
+      </div>
+      <button onclick="kjClose()" style="border:none;background:none;font-size:22px;cursor:pointer;color:var(--mist)">✕</button>
+    </div>
+    <div style="background:linear-gradient(135deg,#1a1a2e,#2d3561);color:#fff;border-radius:12px;padding:12px;margin-bottom:12px">
+      <div style="display:flex;gap:14px">
+        <div style="flex:1">
+          <div style="font-size:11px;font-weight:700;opacity:.8">音読み ON'YOMI</div>
+          <div id="kj-on" style="font-family:'DM Mono',monospace;font-size:15px;font-weight:700;color:#ffd166;margin-top:2px"></div>
+        </div>
+        <div style="flex:1">
+          <div style="font-size:11px;font-weight:700;opacity:.8">訓読み KUN'YOMI</div>
+          <div id="kj-kun" style="font-family:'DM Mono',monospace;font-size:15px;font-weight:700;color:#8fd3ff;margin-top:2px"></div>
+        </div>
+      </div>
+    </div>
+    <div id="kj-mnemonic" style="font-size:12.5px;color:var(--indigo);line-height:1.5;background:rgba(99,102,241,.08);border-radius:10px;padding:9px 10px;margin-bottom:12px"></div>
+    <div id="kj-twins-wrap" style="margin-bottom:12px">
+      <div style="font-size:12px;font-weight:800;color:var(--mist);margin-bottom:6px">⚔️ MIRIP DENGAN</div>
+      <div id="kj-twins"></div>
+    </div>
+    <div style="font-size:12px;font-weight:800;color:var(--mist);margin-bottom:6px">🔗 CONTOH KATA</div>
+    <div id="kj-words"></div>
+  </div>
+</div>
+
 <!-- ====== DETAIL KOTOBA ====== -->
 <div id="kd-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:2500;align-items:center;justify-content:center;padding:12px" onclick="if(event.target===this)kdClose()">
   <div style="background:white;border-radius:16px;padding:18px;width:min(94vw,400px);max-height:88vh;overflow-y:auto">
@@ -8520,13 +8552,26 @@ function kanjiInfoHtml(jp){
   var html='';
   kjs.forEach(function(kj){
     var block='';
+    var rd=(typeof KANJI_READ!=='undefined')?KANJI_READ[kj]:null;
+    if(rd){
+      var onS=(rd[0]&&rd[0].length)?rd[0].join('・'):'';
+      var kunS=(rd[1]&&rd[1].length)?rd[1].join('・'):'';
+      var rdLine='';
+      if(onS) rdLine+='<span style="color:var(--mist)">音</span> '+onS;
+      if(kunS) rdLine+=(rdLine?'　':'')+'<span style="color:var(--mist)">訓</span> '+kunS;
+      if(rdLine) block+='<div style="font-size:11.5px;color:var(--ink);line-height:1.5;font-weight:600">'+rdLine+'</div>';
+    }
     var mn=(typeof KANJI_MNEMONIC!=='undefined')?KANJI_MNEMONIC[kj]:null;
     if(mn) block+='<div style="font-size:11.5px;color:var(--indigo);line-height:1.5">🧩 <b>'+mn[0]+'</b> — '+mn[1]+'</div>';
     var fam=[];
     for(var oi=0;oi<pool.length && fam.length<3;oi++){
       var o=pool[oi];
       var oh=(o.jp||'').split(/[;；]/)[0];
-      if(oh!==head && oh.indexOf(kj)>=0) fam.push(oh+'（'+(o.rom||'')+'）'+(o.id_||''));
+      if(oh!==head && oh.indexOf(kj)>=0){
+        var lbl=oh+'（'+(o.rom||'')+'）'+(o.id_||'');
+        if(o.id!=null) fam.push('<span class="ki-word" data-wid="'+o.id+'" onclick="event.stopPropagation();kdOpen(this.dataset.wid)" style="cursor:pointer;text-decoration:underline dotted;text-underline-offset:2px">'+lbl+'</span>');
+        else fam.push(lbl);
+      }
     }
     if(fam.length) block+='<div style="font-size:11.5px;color:var(--mist);line-height:1.5;margin-top:2px">🔗 '+fam.join(' · ')+'</div>';
     if(tset[kj]){
@@ -8536,15 +8581,72 @@ function kanjiInfoHtml(jp){
           if(t.g.indexOf(kj)>=0) t.g.forEach(function(g){ if(g!==kj && twins.indexOf(g)<0) twins.push(g); });
         });
       }catch(e){}
-      if(twins.length) block+='<div style="font-size:11.5px;color:#c0532e;line-height:1.5;margin-top:2px">⚔️ Mirip: '+twins.join(' ')+'</div>';
+      if(twins.length){
+        var twinHtml=twins.map(function(g){
+          return '<span class="ki-word" data-kj="'+g+'" onclick="event.stopPropagation();kjOpen(this.dataset.kj)" style="cursor:pointer;text-decoration:underline dotted;text-underline-offset:2px">'+g+'</span>';
+        }).join(' ');
+        block+='<div style="font-size:11.5px;color:#c0532e;line-height:1.5;margin-top:2px">⚔️ Mirip: '+twinHtml+'</div>';
+      }
     }
     if(block){
       html+='<div style="padding:7px 0;border-top:1px solid var(--border)">'
-        +'<div style="font-size:15px;font-weight:800;color:var(--ink);margin-bottom:2px">'+kj+'</div>'+block+'</div>';
+        +'<div class="ki-word" data-kj="'+kj+'" onclick="event.stopPropagation();kjOpen(this.dataset.kj)" style="font-size:15px;font-weight:800;color:var(--ink);margin-bottom:2px;cursor:pointer;display:inline-block">'+kj+' <span style="font-size:10px;color:var(--mist);font-weight:400">detail ›</span></div>'+block+'</div>';
     }
   });
   return html;
 }
+// ============================================================
+// Detail Kanji (modal): dibuka via klik kanji di kanjiInfoHtml()
+// ============================================================
+function kjOpen(kj){
+  if(!kj) return;
+  var rd=(typeof KANJI_READ!=='undefined')?KANJI_READ[kj]:null;
+  var mn=(typeof KANJI_MNEMONIC!=='undefined')?KANJI_MNEMONIC[kj]:null;
+  document.getElementById('kj-char').textContent=kj;
+  var onS=(rd&&rd[0]&&rd[0].length)?rd[0].join('・'):'—';
+  var kunS=(rd&&rd[1]&&rd[1].length)?rd[1].join('・'):'—';
+  var arti=(rd&&rd[2])?rd[2]:'';
+  document.getElementById('kj-arti').textContent=arti;
+  document.getElementById('kj-on').textContent=onS;
+  document.getElementById('kj-kun').textContent=kunS;
+  var mnHtml='';
+  if(mn) mnHtml='🧩 <b>'+mn[0]+'</b> — '+mn[1];
+  document.getElementById('kj-mnemonic').innerHTML=mnHtml;
+  document.getElementById('kj-mnemonic').style.display=mn?'block':'none';
+
+  var pool=[]; try{ pool=posLevelWords(); }catch(e){}
+  var fam=[];
+  for(var oi=0;oi<pool.length && fam.length<8;oi++){
+    var o=pool[oi];
+    var oh=(o.jp||'').split(/[;；]/)[0];
+    if(oh.indexOf(kj)>=0 && o.id!=null){
+      fam.push('<div class="ki-word" data-wid="'+o.id+'" onclick="kdOpen(this.dataset.wid)" style="padding:6px 0;border-bottom:1px solid var(--border);cursor:pointer;font-size:13px"><b>'+oh+'</b> <span style="color:var(--mist)">（'+(o.rom||'')+'）</span> '+(o.id_||'')+'</div>');
+    }
+  }
+  document.getElementById('kj-words').innerHTML=fam.length?fam.join(''):'<div style="font-size:12px;color:var(--mist)">Belum ada contoh kata.</div>';
+
+  var tset=(typeof _twinKanjiSet==='function')?_twinKanjiSet():{};
+  var twinHtml='';
+  if(tset[kj]){
+    var twins=[];
+    try{
+      _twinPool().forEach(function(t){
+        if(t.g.indexOf(kj)>=0) t.g.forEach(function(g){ if(g!==kj && twins.indexOf(g)<0) twins.push(g); });
+      });
+    }catch(e){}
+    if(twins.length){
+      twinHtml=twins.map(function(g){
+        return '<span class="ki-word" data-kj="'+g+'" onclick="kjOpen(this.dataset.kj)" style="cursor:pointer;padding:4px 9px;border:1px solid #c0532e;border-radius:8px;color:#c0532e;font-weight:700;display:inline-block;margin:2px">'+g+'</span>';
+      }).join('');
+    }
+  }
+  document.getElementById('kj-twins-wrap').style.display=twinHtml?'block':'none';
+  document.getElementById('kj-twins').innerHTML=twinHtml;
+
+  document.getElementById('kj-modal').style.display='flex';
+}
+function kjClose(){ document.getElementById('kj-modal').style.display='none'; }
+
 
 // ============================================================
 // DETAIL KOTOBA — rincian poin per metode, biar tahu apa yang kurang
@@ -8928,6 +9030,104 @@ var KANJI_MNEMONIC={
 '鉄':['金 logam + 失','Logam yang mudah hilang berkarat = BESI.'],
 '駅':['馬 kuda + 尺','Pemberhentian kuda zaman dulu = STASIUN.']
 };
+// KANJI_READ: on'yomi, kun'yomi, arti untuk kanji di MNEMONIC + TWIN_SETS
+var KANJI_READ={
+'主':[["シュ", "ス"],["ぬし", "おも"],"tuan, utama"],
+'休':[["キュウ"],["やすむ", "やすまる", "やすめる"],"istirahat"],
+'住':[["ジュウ"],["すむ", "すまう"],"tinggal, menetap"],
+'体':[["タイ", "テイ"],["からだ"],"badan, tubuh"],
+'使':[["シ"],["つかう"],"menggunakan, utusan"],
+'便':[["ベン", "ビン"],["たより"],"nyaman, kabar"],
+'借':[["シャク"],["かりる"],"meminjam"],
+'働':[["ドウ"],["はたらく"],"bekerja"],
+'像':[["ゾウ"],[],"patung, gambaran"],
+'先':[["セン"],["さき"],"lebih dulu, ujung"],
+'切':[["セツ", "サイ"],["きる", "きれる"],"memotong"],
+'初':[["ショ"],["はじめ", "はじめて", "はつ", "うい", "そめる"],"awal, pertama"],
+'動':[["ドウ"],["うごく", "うごかす"],"bergerak"],
+'午':[["ゴ"],[],"tengah hari"],
+'右':[["ウ", "ユウ"],["みぎ"],"kanan"],
+'問':[["モン"],["とう", "とい"],"pertanyaan"],
+'場':[["ジョウ"],["ば"],"tempat"],
+'売':[["バイ"],["うる", "うれる"],"menjual"],
+'大':[["ダイ", "タイ"],["おおきい", "おお"],"besar"],
+'太':[["タイ", "タ"],["ふとい", "ふとる"],"gemuk, tebal"],
+'婦':[["フ"],[],"wanita, istri"],
+'島':[["トウ"],["しま"],"pulau"],
+'帰':[["キ"],["かえる", "かえす"],"pulang, kembali"],
+'年':[["ネン"],["とし"],"tahun"],
+'待':[["タイ"],["まつ"],"menunggu"],
+'復':[["フク"],[],"pulih, kembali"],
+'意':[["イ"],[],"maksud, hati"],
+'招':[["ショウ"],["まねく"],"mengundang"],
+'持':[["ジ"],["もつ"],"memegang, membawa"],
+'教':[["キョウ"],["おしえる", "おそわる"],"mengajar"],
+'数':[["スウ", "ス"],["かず", "かぞえる"],"angka, jumlah"],
+'新':[["シン"],["あたらしい", "あらた", "にい"],"baru"],
+'暑':[["ショ"],["あつい"],"panas (cuaca)"],
+'暗':[["アン"],["くらい"],"gelap"],
+'曜':[["ヨウ"],[],"hari (dalam minggu)"],
+'未':[["ミ"],[],"belum"],
+'末':[["マツ", "バツ"],["すえ"],"akhir, ujung"],
+'本':[["ホン"],["もと"],"buku, asal"],
+'検':[["ケン"],[],"memeriksa"],
+'注':[["チュウ"],["そそぐ"],"menuang, memperhatikan"],
+'洗':[["セン"],["あらう"],"mencuci"],
+'湯':[["トウ"],["ゆ"],"air panas"],
+'濯':[["タク"],[],"membilas, mencuci"],
+'牛':[["ギュウ"],["うし"],"sapi"],
+'特':[["トク"],[],"khusus"],
+'犬':[["ケン"],["いぬ"],"anjing"],
+'疲':[["ヒ"],["つかれる"],"lelah"],
+'病':[["ビョウ", "ヘイ"],["やむ", "やまい"],"sakit, penyakit"],
+'痛':[["ツウ"],["いたい", "いたむ"],"sakit, nyeri"],
+'白':[["ハク", "ビャク"],["しろ", "しろい"],"putih"],
+'百':[["ヒャク"],[],"seratus"],
+'石':[["セキ", "シャク", "コク"],["いし"],"batu"],
+'究':[["キュウ"],["きわめる"],"meneliti, mendalami"],
+'空':[["クウ"],["そら", "あく", "あける", "から"],"langit, kosong"],
+'突':[["トツ"],["つく"],"menusuk, tiba-tiba"],
+'紹':[["ショウ"],[],"memperkenalkan"],
+'経':[["ケイ", "キョウ"],["へる"],"melalui, ekonomi"],
+'続':[["ゾク"],["つづく", "つづける"],"berlanjut"],
+'織':[["ショク", "シキ"],["おる"],"menenun, organisasi"],
+'習':[["シュウ"],["ならう"],"belajar, berlatih"],
+'者':[["シャ"],["もの"],"orang"],
+'聞':[["ブン", "モン"],["きく", "きこえる"],"mendengar"],
+'職':[["ショク"],[],"pekerjaan, jabatan"],
+'腹':[["フク"],["はら"],"perut"],
+'自':[["ジ", "シ"],["みずから"],"diri sendiri"],
+'著':[["チョ"],["いちじるしい", "あらわす"],"mencolok, mengarang"],
+'複':[["フク"],[],"ganda, rangkap"],
+'親':[["シン"],["おや", "したしい"],"orang tua, akrab"],
+'読':[["ドク", "トク", "トウ"],["よむ"],"membaca"],
+'識':[["シキ"],[],"pengetahuan, kesadaran"],
+'象':[["ショウ", "ゾウ"],[],"gajah, bentuk/gambaran"],
+'買':[["バイ"],["かう"],"membeli"],
+'貸':[["タイ"],["かす"],"meminjamkan"],
+'貿':[["ボウ"],[],"perdagangan"],
+'質':[["シツ", "シチ", "チ"],[],"kualitas, pertanyaan"],
+'軽':[["ケイ"],["かるい"],"ringan"],
+'迎':[["ゲイ"],["むかえる"],"menyambut"],
+'近':[["キン"],["ちかい"],"dekat"],
+'返':[["ヘン"],["かえす", "かえる"],"mengembalikan"],
+'送':[["ソウ"],["おくる"],"mengirim"],
+'遅':[["チ"],["おそい", "おくれる"],"terlambat, lambat"],
+'重':[["ジュウ", "チョウ"],["おもい", "かさねる", "かさなる"],"berat, tumpuk"],
+'鉄':[["テツ"],[],"besi"],
+'銀':[["ギン"],[],"perak"],
+'閉':[["ヘイ"],["しまる", "しめる", "とじる"],"menutup"],
+'開':[["カイ"],["あく", "あける", "ひらく"],"membuka"],
+'間':[["カン", "ケン"],["あいだ", "ま"],"di antara, ruang/waktu"],
+'険':[["ケン"],["けわしい"],"berbahaya, curam"],
+'音':[["オン", "イン"],["おと", "ね"],"suara, bunyi"],
+'題':[["ダイ"],[],"tema, judul, soal"],
+'馬':[["バ"],["うま"],"kuda"],
+'駅':[["エキ"],[],"stasiun"],
+'験':[["ケン", "ゲン"],[],"ujian, bukti"],
+'鳥':[["チョウ"],["とり"],"burung"]
+};
+
 
 var TWIN_SETS=[
  {lv:4, g:['待','持','特'], w:[['待','＿つ','まつ','menunggu'],['持','＿つ','もつ','memegang, membawa'],['特','＿に','とくに','khususnya']]},
