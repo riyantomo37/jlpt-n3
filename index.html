@@ -1100,6 +1100,7 @@ header:has(.user-menu.open) { z-index:1000; }
   <button onclick="navTo('dialectmenu')">🗾 Dialek</button>
   <button onclick="navTo('kazumenu')">🔢 Angka</button>
   <button onclick="navTo('onomenu')">💬 Onomatope</button>
+  <button onclick="navTo('onyomenu')">🈁 On-Kun</button>
   <div style="border-top:1px solid var(--border);margin:4px 0"></div>
   <button onclick="startSrsReview()">🔁 Review SRS</button>
   <button onclick="startTwinQuiz()">⚔️ Kanji Kembar</button>
@@ -1681,6 +1682,49 @@ header:has(.user-menu.open) { z-index:1000; }
     <div style="font-size:34px;margin-bottom:6px">🏁</div>
     <div id="tq-done-score" style="font-size:20px;font-weight:800;margin-bottom:12px"></div>
     <button onclick="startTwinQuiz()" style="padding:12px 22px;border:none;border-radius:12px;background:var(--jade);color:#fff;font-family:inherit;font-size:14px;font-weight:700;cursor:pointer">🔄 Main Lagi</button>
+  </div>
+</div>
+
+<!-- ====== ON'YOMI-KUN'YOMI: HUB MENU ====== -->
+<div id="screen-onyomenu" class="screen">
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+    <div class="section-title" style="margin:0">🈁 On'yomi–Kun'yomi</div>
+  </div>
+  <div style="background:white;border:1px solid var(--border);border-radius:16px;padding:20px;margin-bottom:14px">
+    <div style="font-size:13px;color:var(--mist);margin-bottom:10px" id="oy-menu-kanji-count">— kanji</div>
+    <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:6px">
+      <span style="font-size:12px;font-weight:700;color:var(--mist)">PROGRESS BACAAN</span>
+      <span id="oy-menu-pct" style="font-family:'DM Mono',monospace;font-size:13px;font-weight:700;color:var(--ink)">0/0 (0%)</span>
+    </div>
+    <div style="background:var(--border);border-radius:4px;height:8px;overflow:hidden">
+      <div id="oy-menu-bar" style="height:100%;width:0;background:var(--jade)"></div>
+    </div>
+  </div>
+  <button onclick="startOyQuiz()" style="width:100%;padding:16px;border:none;border-radius:14px;background:var(--ink);color:#fff;font-family:inherit;font-size:15px;font-weight:800;cursor:pointer;margin-bottom:10px">▶️ Mulai Latihan (10 soal)</button>
+  <div style="font-size:12px;color:var(--mist);line-height:1.6;padding:0 4px">
+    Tiap soal menunjukkan 1 kanji + jenis bacaan (音 on'yomi atau 訓 kun'yomi). Pilih jawaban benar, lalu nilai sendiri apakah kamu benar-benar hafal — hasilnya masuk poin, streak harian, dan SRS review sepertimu di metode lain.
+  </div>
+</div>
+
+<!-- ====== ON'YOMI-KUN'YOMI: SESI KUIS ====== -->
+<div id="screen-onyoquiz" class="screen">
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+    <div class="section-title" style="margin:0">🈁 Latihan Bacaan</div>
+    <span id="oy-score" style="font-family:'DM Mono',monospace;font-size:13px;font-weight:700;color:var(--mist)">0/0</span>
+  </div>
+  <div id="oy-card" style="background:white;border:1px solid var(--border);border-radius:16px;padding:28px 20px;text-align:center;margin-bottom:14px">
+    <span id="oy-type-badge" style="display:inline-block;padding:3px 12px;border-radius:10px;font-size:11px;font-weight:700;color:#fff;background:#1a1a2e;margin-bottom:10px"></span>
+    <div id="oy-kanji" style="font-size:54px;font-weight:800;color:var(--ink);font-family:'Noto Serif JP',serif;margin-bottom:6px">待</div>
+    <div id="oy-arti" style="font-size:14px;color:var(--mist)"></div>
+  </div>
+  <div id="oy-choices" style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px"></div>
+  <button onclick="endSession()" style="width:100%;padding:10px;border:1.5px solid var(--border);border-radius:10px;background:white;color:var(--mist);font-family:inherit;font-size:12px;font-weight:700;cursor:pointer;margin-bottom:10px">✕ Akhiri Sesi</button>
+  <div id="oy-feedback" style="min-height:44px;font-size:13px;text-align:center;margin-bottom:10px"></div>
+  <button id="oy-next" onclick="oyNext()" style="display:none;width:100%;padding:13px;border:none;border-radius:12px;background:var(--ink);color:#fff;font-family:inherit;font-size:14px;font-weight:700;cursor:pointer">Soal Berikutnya ▶</button>
+  <div id="oy-done" style="display:none;text-align:center;background:white;border:1px solid var(--border);border-radius:16px;padding:26px">
+    <div style="font-size:34px;margin-bottom:6px">🏁</div>
+    <div id="oy-done-score" style="font-size:20px;font-weight:800;margin-bottom:12px"></div>
+    <button onclick="startOyQuiz()" style="padding:12px 22px;border:none;border-radius:12px;background:var(--jade);color:#fff;font-family:inherit;font-size:14px;font-weight:700;cursor:pointer">🔄 Main Lagi</button>
   </div>
 </div>
 
@@ -6624,7 +6668,7 @@ function gotoScreen(name) {
   });
   var _lm=document.getElementById('nav-learn-menu');
   if(_lm) _lm.classList.remove('open');
-  var _learnScreens=['flashmenu','kotoba','kanjimenu','bunpomenu','katsuyomenu','dialectmenu','kazumenu','onomenu'];
+  var _learnScreens=['flashmenu','kotoba','kanjimenu','bunpomenu','katsuyomenu','dialectmenu','kazumenu','onomenu','onyomenu'];
   var _lb=document.getElementById('nav-learn-btn');
   if(_lb) _lb.classList.toggle('active', _learnScreens.indexOf(name)>=0);
   if (name === 'overview') updateOverview();
@@ -6637,6 +6681,7 @@ function gotoScreen(name) {
   if (name === 'dialectmenu') updateDialectMenu();
   if (name === 'kazumenu') updateKazuMenu();
   if (name === 'onomenu') updateOnoMenu();
+  if (name === 'onyomenu') updateOyMenu();
   if (name === 'exam') { showExamSection('exam-menu'); updateExamLevelBadge(); setExamMode('ai'); bankIndex=null; updateExamHistory(); }
 }
 
@@ -7008,6 +7053,7 @@ function renderOverviewMenu(){
     {scr:'dialectmenu', emo:'方言', t:'Dialek', d:'Ragam bahasa daerah', c:'#d98c00'},
     {scr:'kazumenu', emo:'数', t:'Angka', d:'Tanggal · jam · counter', c:'#2e7dc0'},
     {scr:'onomenu', emo:'💬', t:'Onomatope', d:'Giongo & gitaigo + contoh', c:'#c2185b'},
+    {scr:'onyomenu', emo:'🈁', t:"On-Kun", d:'Latihan bacaan kanji', c:'#5c4b8a'},
     {scr:'exam',      emo:'📝', t:'Ujian', d:'Simulasi soal JLPT', c:'var(--red)'},
     {scr:'review',    emo:'📊', t:'Progress Hafalan', d:'Kotoba · Kanji · Bunpou · Ujian', c:'var(--jade)'},
     {scr:'leaderboard',emo:'🏆', t:'Ranking', d:'Peringkat poin', c:'#d08700'},
@@ -9296,6 +9342,157 @@ function _tqProceed(){
   }
 }
 function tqNext(){ tqShow(); }
+
+// ============================================================
+// 音訓 ON'YOMI–KUN'YOMI: menu + latihan bacaan kanji
+// Dua lapis penilaian: (1) pilihan ganda benar/salah,
+// (2) self-assessment hafal/belum → SRS + kanjiReadMastered['oy_'+kj+'_'+type]
+// ============================================================
+function _oyKanjiLevel(kj){
+  var best=null;
+  TWIN_SETS.forEach(function(t){ if(t.g.indexOf(kj)>=0){ var lv=t.lv||4; if(best===null||lv<best) best=lv; } });
+  return best===null?4:best;
+}
+function _oyPool(){
+  var num={'N5':5,'N4':4,'N3':3,'N2':3,'N1':3,'SSW':4}[currentJLPT]||4;
+  var all=(typeof KANJI_READ!=='undefined')?Object.keys(KANJI_READ):[];
+  var pool=all.filter(function(k){ return _oyKanjiLevel(k)>=num; });
+  return pool.length?pool:all;
+}
+var oyState={q:0,score:0,total:10,cur:null};
+
+function _oyMakeQuestion(){
+  var pool=_oyPool();
+  var kj=null, type=null, tries=0;
+  while(!type && tries<25){
+    var c=pool[Math.floor(Math.random()*pool.length)];
+    var rd=KANJI_READ[c];
+    var hasOn=rd[0]&&rd[0].length, hasKun=rd[1]&&rd[1].length;
+    if(hasOn&&hasKun){ kj=c; type=Math.random()<0.5?'on':'kun'; }
+    else if(hasOn){ kj=c; type='on'; }
+    else if(hasKun){ kj=c; type='kun'; }
+    tries++;
+  }
+  if(!type){ kj='待'; type='on'; }
+  var rd=KANJI_READ[kj];
+  var readings=(type==='on'?rd[0]:rd[1])||[];
+  var correct=readings[Math.floor(Math.random()*readings.length)];
+  var distractPool=[];
+  pool.forEach(function(k){
+    if(k===kj) return;
+    var r=KANJI_READ[k];
+    var arr=(type==='on'?r[0]:r[1])||[];
+    arr.forEach(function(x){ if(x!==correct && distractPool.indexOf(x)<0) distractPool.push(x); });
+  });
+  shuffle(distractPool);
+  var choices=[correct].concat(distractPool.slice(0,3));
+  var pad=['あ','い','う','か'];
+  while(choices.length<4){ var p=pad[choices.length]; if(choices.indexOf(p)<0) choices.push(p); }
+  shuffle(choices);
+  return {kj:kj, type:type, correct:correct, arti:rd[2]||'', choices:choices};
+}
+function startOyQuiz(){
+  oyState={q:0,score:0,total:10,cur:null};
+  gotoScreenRaw('onyoquiz');
+  document.getElementById('oy-done').style.display='none';
+  document.getElementById('oy-card').style.display='block';
+  oyShow();
+}
+function oyShow(){
+  var st=oyState;
+  st.cur=_oyMakeQuestion();
+  document.getElementById('oy-score').textContent=st.score+'/'+st.q+' · soal '+(st.q+1)+' dari '+st.total;
+  document.getElementById('oy-kanji').textContent=st.cur.kj;
+  var badge=document.getElementById('oy-type-badge');
+  badge.textContent=st.cur.type==='on'?"音 ON'YOMI":"訓 KUN'YOMI";
+  badge.style.background=st.cur.type==='on'?'#1a1a2e':'#2d5aa0';
+  document.getElementById('oy-arti').textContent=st.cur.arti;
+  document.getElementById('oy-feedback').innerHTML='';
+  document.getElementById('oy-next').style.display='none';
+  var box=document.getElementById('oy-choices');
+  box.innerHTML=st.cur.choices.map(function(r){
+    return '<button class="oy-choice" data-r="'+r+'" onclick="oyAnswer(this)" style="padding:16px;border:2px solid var(--border);border-radius:14px;background:white;font-size:19px;font-family:\'Noto Sans JP\',sans-serif;cursor:pointer">'+r+'</button>';
+  }).join('');
+  box.style.pointerEvents='auto';
+}
+function oyAnswer(btn){
+  var st=oyState, cur=st.cur;
+  var pick=btn.dataset.r;
+  var ok=pick===cur.correct;
+  document.getElementById('oy-choices').style.pointerEvents='none';
+  document.querySelectorAll('.oy-choice').forEach(function(b){
+    if(b.dataset.r===cur.correct){ b.style.borderColor='var(--jade)'; b.style.background='rgba(10,125,107,.1)'; }
+    else if(b===btn && !ok){ b.style.borderColor='#c0392b'; b.style.background='rgba(192,57,43,.08)'; }
+    else b.style.opacity='.45';
+  });
+  st.q++;
+  if(ok) st.score++;
+  save();
+  var mn=(typeof KANJI_MNEMONIC!=='undefined')?KANJI_MNEMONIC[cur.kj]:null;
+  var fb=(ok?'<span style="color:var(--jade);font-weight:800">✓ Benar!</span> ':'<span style="color:#c0392b;font-weight:800">✗ Jawaban: '+cur.correct+'</span> ')
+    +'<br><span style="color:var(--mist)">'+cur.kj+' — '+cur.arti+'</span>';
+  if(mn) fb+='<br><span style="color:var(--indigo)">🧩 '+mn[0]+' — '+mn[1]+'</span>';
+  fb+='<div style="margin-top:10px;font-weight:700;color:var(--ink)">Apakah kamu benar-benar hafal bacaan ini?</div>'
+    +'<div style="display:flex;gap:8px;margin-top:6px">'
+    +'<button onclick="oyAssess(false)" style="flex:1;padding:10px;border:1.5px solid #c0392b;border-radius:10px;background:rgba(192,57,43,.06);color:#c0392b;font-family:inherit;font-size:13px;font-weight:700;cursor:pointer">🙅 Belum Hafal</button>'
+    +'<button onclick="oyAssess(true)" style="flex:1;padding:10px;border:none;border-radius:10px;background:var(--jade);color:#fff;font-family:inherit;font-size:13px;font-weight:700;cursor:pointer">💯 Hafal!</button>'
+    +'</div>';
+  document.getElementById('oy-feedback').innerHTML=fb;
+  document.getElementById('oy-score').textContent=st.score+'/'+st.q;
+}
+function oyAssess(hafal){
+  var st=oyState, cur=st.cur;
+  if(cur){
+    try{
+      var card={id:'ry_'+cur.kj+'_'+cur.type, jp:cur.kj};
+      srsTouch(card, hafal);
+      var fk='oy_'+cur.kj+'_'+cur.type;
+      if(hafal) kanjiReadMastered[fk]=true; else delete kanjiReadMastered[fk];
+      if(hafal){
+        todayCount++;
+        var _td=new Date().toDateString();
+        if(lastStudyDate!==_td){ var _yd=new Date(Date.now()-86400000).toDateString(); streak=(lastStudyDate===_yd)?streak+1:1; lastStudyDate=_td; }
+      }
+      save();
+    }catch(e){}
+  }
+  var fbEl=document.getElementById('oy-feedback');
+  if(fbEl) fbEl.querySelectorAll('button').forEach(function(b){b.disabled=true;b.style.opacity='.4';});
+  _oyProceed();
+}
+function _oyProceed(){
+  var st=oyState;
+  if(st.q>=st.total){
+    document.getElementById('oy-next').style.display='none';
+    setTimeout(function(){
+      document.getElementById('oy-done').style.display='block';
+      document.getElementById('oy-done-score').textContent='Skor: '+st.score+' / '+st.total+(st.score===st.total?' — 完璧! 🎉':st.score>=7?' — bagus!':' — ulangi lagi ya');
+      updateOyMenu();
+    },700);
+  } else {
+    document.getElementById('oy-next').style.display='block';
+  }
+}
+function oyNext(){ oyShow(); }
+function oyProgress(){
+  var pool=_oyPool();
+  var total=0, done=0;
+  pool.forEach(function(kj){
+    var rd=KANJI_READ[kj];
+    if(rd[0]&&rd[0].length){ total++; if(kanjiReadMastered['oy_'+kj+'_on']) done++; }
+    if(rd[1]&&rd[1].length){ total++; if(kanjiReadMastered['oy_'+kj+'_kun']) done++; }
+  });
+  return {done:done, total:total, pct: total?Math.round(done/total*100):0};
+}
+function updateOyMenu(){
+  var p=oyProgress();
+  var el=document.getElementById('oy-menu-pct');
+  if(el) el.textContent=p.done+'/'+p.total+' bacaan dikuasai ('+p.pct+'%)';
+  var bar=document.getElementById('oy-menu-bar');
+  if(bar) bar.style.width=p.pct+'%';
+  var kjEl=document.getElementById('oy-menu-kanji-count');
+  if(kjEl) kjEl.textContent=_oyPool().length+' kanji untuk level '+currentJLPT;
+}
 
 // ============================================================
 // SRS — REVIEW BERKALA (spaced repetition ringan)
