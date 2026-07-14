@@ -1509,6 +1509,40 @@ header:has(.user-menu.open) { z-index:1000; }
 
 <!-- ====== MODAL LATIHAN TULIS ====== -->
 
+<!-- ====== BELAJAR KALIMAT ====== -->
+<div id="screen-kalimat" class="screen">
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+    <div class="section-title" style="margin:0">📖 Belajar Kalimat</div>
+    <span id="km-pos" style="font-family:'DM Mono',monospace;font-size:13px;font-weight:700;color:var(--mist)"></span>
+  </div>
+  <div id="km-loading" style="display:none;text-align:center;padding:44px 16px;background:white;border:1px solid var(--border);border-radius:16px">
+    <div style="font-size:30px;margin-bottom:8px">⏳</div>
+    <div style="font-size:13px;color:var(--mist)">Sensei sedang membuat kalimat untukmu...</div>
+  </div>
+  <div id="km-card" style="display:none;background:white;border:1px solid var(--border);border-radius:16px;padding:24px 18px;margin-bottom:14px">
+    <div id="km-sentence" style="font-size:22px;line-height:1.8;color:var(--ink);margin-bottom:14px"></div>
+    <div id="km-hidden" style="display:none;border-top:1px dashed var(--border);padding-top:12px">
+      <div id="km-reading" style="font-size:13px;color:var(--indigo);margin-bottom:4px"></div>
+      <div id="km-trans" style="font-size:14px;color:var(--mist)"></div>
+      <div id="km-word" style="font-size:13px;color:var(--ink);margin-top:8px;font-weight:700"></div>
+    </div>
+  </div>
+  <button id="km-reveal" onclick="kmReveal()" style="display:none;width:100%;padding:13px;border:none;border-radius:12px;background:var(--ink);color:#fff;font-family:inherit;font-size:14px;font-weight:700;cursor:pointer;margin-bottom:10px">👁 Lihat Arti</button>
+  <div id="km-score-row" style="display:none;gap:8px;margin-bottom:10px">
+    <button onclick="kmScore(false)" style="flex:1;padding:12px;border:1.5px solid #c0392b;border-radius:12px;background:rgba(192,57,43,.06);color:#c0392b;font-family:inherit;font-size:13px;font-weight:700;cursor:pointer">✗ Salah Paham</button>
+    <button onclick="kmScore(true)" style="flex:1;padding:12px;border:none;border-radius:12px;background:var(--indigo);color:#fff;font-family:inherit;font-size:13px;font-weight:700;cursor:pointer">✓ Paham Benar</button>
+  </div>
+  <div id="km-assess-row" style="display:none;gap:8px;margin-bottom:10px">
+    <button onclick="kmAssess(false)" style="flex:1;padding:12px;border:1.5px solid #c0392b;border-radius:12px;background:rgba(192,57,43,.06);color:#c0392b;font-family:inherit;font-size:13px;font-weight:700;cursor:pointer">🙅 Belum Hafal</button>
+    <button onclick="kmAssess(true)" style="flex:1;padding:12px;border:none;border-radius:12px;background:var(--jade);color:#fff;font-family:inherit;font-size:13px;font-weight:700;cursor:pointer">💯 Hafal!</button>
+  </div>
+  <div id="km-done" style="display:none;text-align:center;background:white;border:1px solid var(--border);border-radius:16px;padding:26px">
+    <div style="font-size:34px;margin-bottom:6px">🏁</div>
+    <div id="km-done-score" style="font-size:18px;font-weight:800;margin-bottom:12px"></div>
+    <button onclick="startKalimat()" style="padding:12px 22px;border:none;border-radius:12px;background:var(--jade);color:#fff;font-family:inherit;font-size:14px;font-weight:700;cursor:pointer">🔄 Sesi Baru</button>
+  </div>
+</div>
+
 <!-- ====== KUIS KANJI KEMBAR ====== -->
 <div id="screen-twinquiz" class="screen">
   <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
@@ -6833,6 +6867,7 @@ function renderOverviewReco(){
   html+=banner('⚔️','Kanji Kembar','Bedakan kanji mirip: 待↔持, 借↔貸','startTwinQuiz()','Kuis ▶');
   html+=banner('🧩','Mnemonik Radikal','Pecahan radikal + cerita &amp; kata sekeluarga di balik kartu kanji','startKanjiFlash(&apos;vocab&apos;)','Kartu ▶');
   html+=banner('✍️','Latihan Tulis','Jiplak kanji '+currentJLPT+' — nilai dirimu, masuk jadwal SRS','startWritePractice()','Tulis ▶');
+  html+=banner('📖','Belajar Kalimat','Hafalkan kata lewat kalimat buatan Sensei AI','startKalimat()','Baca ▶');
   box.innerHTML=html;
   box.style.display='block';
 }
@@ -7581,24 +7616,35 @@ function showKanjiCard() {
   document.getElementById('kf-latin-back').textContent = needRomaji() ? toRomaji(w.rom) : '';
   document.getElementById('kf-meaning').textContent    = w.id_;
   _kfCurrentJp = w.jp || '';
-  // Kata sekeluarga: kata lain di level ini yang memakai kanji yang sama (belajar lewat konteks)
+  // Kata sekeluarga per KANJI: tiap kanji dalam kata dapat baris keluarganya sendiri
   (function(){
     var rel=document.getElementById('kf-related');
     if(!rel) return;
-    var jp=w.jp||''; var kj=null;
-    for(var ci=0;ci<jp.length;ci++){ if(/[一-鿿]/.test(jp.charAt(ci))){ kj=jp.charAt(ci); break; } }
-    if(!kj){ rel.style.display='none'; return; }
-    var others=[];
-    try{
-      posLevelWords().forEach(function(o){
-        if(others.length>=3) return;
+    var jp=w.jp||'';
+    var head=jp.split(/[;\uff1b,\uff0c\s]/)[0];
+    var kjs=[];
+    for(var ci=0;ci<head.length;ci++){
+      var c=head.charAt(ci);
+      if(/[一-鿿]/.test(c) && kjs.indexOf(c)<0) kjs.push(c);
+    }
+    if(!kjs.length){ rel.style.display='none'; return; }
+    var pool=[];
+    try{ pool=posLevelWords(); }catch(e){}
+    var html='';
+    kjs.forEach(function(kj){
+      var others=[];
+      for(var oi=0;oi<pool.length && others.length<3;oi++){
+        var o=pool[oi];
         if(o.jp!==jp && (o.jp||'').indexOf(kj)>=0) others.push(o);
-      });
-    }catch(e){}
-    if(others.length){
-      rel.innerHTML='🔗 <b style="color:var(--ink)">Kata sekeluarga「'+kj+'」:</b> '+others.map(function(o){return '<b>'+o.jp+'</b>（'+o.rom+'）'+(o.id_||'');}).join(' · ');
-      rel.style.display='block';
-    } else rel.style.display='none';
+      }
+      if(others.length){
+        html+='<div style="margin-top:4px">🔗 <b style="color:var(--ink)">「'+kj+'」:</b> '
+          +others.map(function(o){return '<b>'+o.jp.split(/[;\uff1b]/)[0]+'</b>（'+(o.rom||'')+'）'+(o.id_||'');}).join(' \u00b7 ')
+          +'</div>';
+      }
+    });
+    if(html){ rel.innerHTML=html; rel.style.display='block'; }
+    else rel.style.display='none';
   })();
   // Mnemonik radikal (jika kanji pertama punya entri)
   (function(){
@@ -7885,7 +7931,7 @@ function renderProgressDashboard(){
         +'<span style="font-weight:800;font-size:14px">\ud83c\udfc6 Tingkat Hafalan '+currentJLPT+'</span>'
         +'<span style="font-family:\'DM Mono\',monospace;font-size:24px;font-weight:700;color:#ffd166">'+_avg+'%</span></div>'
         +'<div style="background:rgba(255,255,255,.15);border-radius:4px;height:7px;overflow:hidden;margin-bottom:8px"><div style="height:100%;width:'+_avg+'%;background:#ffd166"></div></div>'
-        +'<div style="font-size:11px;opacity:.85;line-height:1.5">'+_full+' dari '+_pool.length+' kata sudah 100%. Semua metode dihitung: Arti 30 \u00b7 Baca 20 \u00b7 Review SRS 20 \u00b7 Kanji Kembar 15 \u00b7 Menulis 15.</div>'
+        +'<div style="font-size:11px;opacity:.85;line-height:1.5">'+_full+' dari '+_pool.length+' kata sudah 100%. Semua metode dihitung: Arti 25 \u00b7 Baca 15 \u00b7 SRS 20 \u00b7 Menulis 15 \u00b7 Kalimat 15 \u00b7 Kembar 10.</div>'
         +'</div>';
     }
   }catch(e){}
@@ -7971,7 +8017,8 @@ function renderProgressDashboard(){
     +'<div style="font-size:12px;color:var(--mist);line-height:1.7">'
     +'🔁 Review SRS: <b>'+(methodStats.srsRev||0)+'</b> kartu direview<br>'
     +'⚔️ Kanji Kembar: <b>'+(methodStats.twinOk||0)+'</b> benar dari <b>'+(methodStats.twinQ||0)+'</b> soal<br>'
-    +'✍️ Latihan Tulis: <b>'+(methodStats.writeOk||0)+'</b> bisa dari <b>'+(methodStats.writeQ||0)+'</b> kanji'
+    +'✍️ Latihan Tulis: <b>'+(methodStats.writeOk||0)+'</b> benar dari <b>'+(methodStats.writeQ||0)+'</b> kata<br>'
+    +'📖 Belajar Kalimat: <b>'+(methodStats.sentOk||0)+'</b> paham dari <b>'+(methodStats.sentQ||0)+'</b> kalimat'
     +'</div></div>';
   host.innerHTML = _thHtml + _msHtml + cards
     + posBlock
@@ -8246,6 +8293,111 @@ function closeWriteModal(){ document.getElementById('write-modal').style.display
 // LATIHAN TULIS — canvas dengan bayangan kanji sebagai panduan
 // ============================================================
 var _wm={ghost:true,char:'',drawing:false,ctx:null,paths:[]};
+
+// ============================================================
+// BELAJAR KALIMAT — hafalkan kata lewat konteks kalimat (AI)
+// Dua lapis: paham benar/salah (akurasi) lalu hafal/belum (SRS+poin).
+// ============================================================
+var kmState={items:[],idx:0,okN:0,hafalN:0};
+async function startKalimat(){
+  gotoScreenRaw('kalimat');
+  document.getElementById('km-done').style.display='none';
+  document.getElementById('km-card').style.display='none';
+  document.getElementById('km-reveal').style.display='none';
+  document.getElementById('km-score-row').style.display='none';
+  document.getElementById('km-assess-row').style.display='none';
+  document.getElementById('km-loading').style.display='block';
+  document.getElementById('km-pos').textContent='';
+  // pilih 5 kata level: prioritas yang skor hafalannya rendah
+  var pool=[];
+  try{
+    if(currentJLPT!=='N3' && !kotobaLoaded(currentJLPT)) await loadKotoba(currentJLPT);
+    pool=posLevelWords();
+  }catch(e){}
+  if(!pool.length){ alert('Kosakata level ini belum termuat.'); gotoScreen('overview'); return; }
+  shuffle(pool);
+  pool.sort(function(a,b){ return ktScore(a)-ktScore(b); });
+  var picks=pool.slice(0,12); shuffle(picks); picks=picks.slice(0,5);
+  var lines=picks.map(function(w){ return w.jp.split(/[;；]/)[0]+'（'+(w.rom||'')+'）= '+(w.id_||''); }).join('\n');
+  var prompt='Buat 1 kalimat bahasa Jepang PENDEK dan alami level '+currentJLPT+' untuk MASING-MASING kata berikut (kata harus muncul di kalimatnya):\n'+lines
+    +'\nBalas HANYA JSON array: [{"w":"kata target persis","s":"kalimat jepang","r":"cara baca kalimat dalam hiragana","t":"terjemahan Indonesia"}] tanpa teks lain.';
+  var items=[];
+  try{
+    var res=await fetch('/api/groq',{method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({temperature:0.6,max_tokens:1500,
+        messages:[
+          {role:'system',content:'あなたは日本語教師です。出力は有効なJSON配列のみ。'},
+          {role:'user',content:prompt}
+        ]})});
+    var d=await res.json();
+    var raw=(d.choices && d.choices[0] && d.choices[0].message && d.choices[0].message.content || '[]').replace(/```json|```/g,'').trim();
+    var st=raw.indexOf('['), en=raw.lastIndexOf(']');
+    if(st>=0&&en>st) raw=raw.slice(st,en+1);
+    var arr=JSON.parse(raw);
+    if(Array.isArray(arr)){
+      arr.forEach(function(it,i){
+        if(it && it.s && picks[i]) items.push({word:picks[i], s:it.s, r:it.r||'', t:it.t||''});
+      });
+    }
+  }catch(e){}
+  document.getElementById('km-loading').style.display='none';
+  if(!items.length){
+    alert('Gagal membuat kalimat (koneksi/AI). Coba lagi sebentar lagi.');
+    gotoScreen('overview'); return;
+  }
+  kmState={items:items,idx:0,okN:0,hafalN:0};
+  kmShow();
+}
+function kmShow(){
+  var st=kmState, it=st.items[st.idx];
+  document.getElementById('km-pos').textContent=(st.idx+1)+' / '+st.items.length;
+  var head=it.word.jp.split(/[;；]/)[0];
+  var sHtml=(it.s||'').split(head).join('<b style="color:var(--red)">'+head+'</b>');
+  document.getElementById('km-sentence').innerHTML=sHtml;
+  document.getElementById('km-hidden').style.display='none';
+  document.getElementById('km-card').style.display='block';
+  document.getElementById('km-reveal').style.display='block';
+  document.getElementById('km-score-row').style.display='none';
+  document.getElementById('km-assess-row').style.display='none';
+}
+function kmReveal(){
+  var it=kmState.items[kmState.idx];
+  document.getElementById('km-reading').textContent=it.r||'';
+  document.getElementById('km-trans').textContent=it.t||'';
+  var head=it.word.jp.split(/[;；]/)[0];
+  document.getElementById('km-word').textContent='🎯 '+head+'（'+(it.word.rom||'')+'）= '+(it.word.id_||'');
+  document.getElementById('km-hidden').style.display='block';
+  document.getElementById('km-reveal').style.display='none';
+  document.getElementById('km-score-row').style.display='flex';
+}
+function kmScore(ok){
+  _ms('sentQ');
+  if(ok){ _ms('sentOk'); kmState.okN++; }
+  document.getElementById('km-score-row').style.display='none';
+  document.getElementById('km-assess-row').style.display='flex';
+}
+function kmAssess(hafal){
+  var it=kmState.items[kmState.idx];
+  try{
+    srsTouch(it.word, hafal);
+    var fk='st_'+srsKey(it.word);
+    if(hafal) kanjiReadMastered[fk]=true; else delete kanjiReadMastered[fk];
+    if(hafal){
+      kmState.hafalN++;
+      todayCount++;
+      var _td=new Date().toDateString();
+      if(lastStudyDate!==_td){var _yd=new Date(Date.now()-86400000).toDateString();streak=(lastStudyDate===_yd)?streak+1:1;lastStudyDate=_td;}
+    }
+    save();
+  }catch(e){}
+  kmState.idx++;
+  if(kmState.idx>=kmState.items.length){
+    document.getElementById('km-card').style.display='none';
+    document.getElementById('km-assess-row').style.display='none';
+    document.getElementById('km-done').style.display='block';
+    document.getElementById('km-done-score').textContent='Paham '+kmState.okN+'/'+kmState.items.length+' · Hafal '+kmState.hafalN+'/'+kmState.items.length;
+  } else kmShow();
+}
 
 // ============================================================
 // KUIS KANJI KEMBAR — bedakan kanji yang mirip bentuk
@@ -8682,21 +8834,24 @@ function ktArtiDone(w){
 // kata tanpa kanji: Arti 50% + Kematangan SRS 50%
 // Kematangan SRS = level/3 (level 3 = lolos review 3x: interval 1-3-7 hari)
 function ktScore(w){
-  // Komponen (bobot dinormalisasi thd yang berlaku utk kata ini):
-  //  Arti 30 · Baca kanji 20 · SRS matang 20 · Hafal Kanji Kembar 15 · Hafal Menulis 15
-  //  Kata tanpa kanji: hanya Arti + SRS. Kembar hanya jika kanjinya masuk set kembar level ini.
+  // Bobot dinormalisasi thd komponen yang berlaku:
+  //  kanji : Arti 25 · Baca 15 · SRS 20 · Tulis 15 · Kembar 10 · Kalimat 15
+  //  kana  : Arti 35 · SRS 35 · Kalimat 30
   var hasK=ktHasKanji(w);
   var e=(typeof srsData!=='undefined')?srsData[srsKey(w)]:null;
   var srs=Math.min((e?e.lv:0)/3,1);
   var head=(w.jp||'').split(/[;\uff1b,\uff0c\s]/)[0];
-  var comps=[[30, ktArtiDone(w)?1:0],[20, srs]];
+  var sk=srsKey(w);
+  var comps;
   if(hasK){
-    comps.push([20, ktBacaDone(w)?1:0]);
-    comps.push([15, kanjiReadMastered['wr_'+srsKey(w)]?1:0]);
+    comps=[[25, ktArtiDone(w)?1:0],[15, ktBacaDone(w)?1:0],[20, srs],
+           [15, kanjiReadMastered['wr_'+sk]?1:0],[15, kanjiReadMastered['st_'+sk]?1:0]];
     var tset=(typeof _twinKanjiSet==='function')?_twinKanjiSet():{};
     var inTwin=false;
     for(var ci=0;ci<head.length;ci++){ if(tset[head.charAt(ci)]){ inTwin=true; break; } }
-    if(inTwin) comps.push([15, kanjiReadMastered['tw_'+srsKey(w)]?1:0]);
+    if(inTwin) comps.push([10, kanjiReadMastered['tw_'+sk]?1:0]);
+  } else {
+    comps=[[35, ktArtiDone(w)?1:0],[35, srs],[30, kanjiReadMastered['st_'+sk]?1:0]];
   }
   var tot=0, got=0;
   comps.forEach(function(c){ tot+=c[0]; got+=c[0]*c[1]; });
@@ -8782,7 +8937,7 @@ function ktUpdateCounts(){
   var avg=all.length?Math.round(sum/all.length):0;
   var el=document.getElementById('kt-summary');
   if(el) el.innerHTML='<b style="color:var(--ink)">Tingkat Hafalan: '+avg+'%</b> \u00b7 Arti '+artiDone+'/'+all.length+' \u00b7 Baca '+bacaDone+'/'+bacaTot
-    +'<br><span style="font-size:10px">100% = arti + baca + review SRS 3\u00d7 + hafal di Kanji Kembar + hafal menulis</span>';
+    +'<br><span style="font-size:10px">100% = arti + baca + review SRS 3\u00d7 + Kanji Kembar + menulis + kalimat</span>';
 }
 function _ktActivate(btn){ if(!btn)return; btn.parentNode.querySelectorAll('button').forEach(function(b){b.classList.remove('active');}); btn.classList.add('active'); }
 function ktSetPos(p,btn){ ktState.pos=p; ktState.limit=300; _ktActivate(btn); renderKotobaList(); }
