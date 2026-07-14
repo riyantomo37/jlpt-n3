@@ -1105,6 +1105,7 @@ header:has(.user-menu.open) { z-index:1000; }
   <button onclick="startTwinQuiz()">⚔️ Kanji Kembar</button>
   <button onclick="startWritePractice()">✍️ Latihan Tulis</button>
   <button onclick="startKalimat()">📖 Belajar Kalimat</button>
+  <button onclick="startMnemonic()">🧩 Latihan Mnemonik</button>
 </div>
 <button id="backtotop" onclick="window.scrollTo({top:0,behavior:'smooth'})" title="Kembali ke atas">↑</button>
 
@@ -1185,6 +1186,7 @@ header:has(.user-menu.open) { z-index:1000; }
           <div class="meaning-text" id="fc-meaning">makan</div>
           <div class="meaning-romaji" id="fc-romaji-back">taberu</div>
           <div id="fc-latin-back" style="font-family:'DM Mono',monospace;font-size:12px;color:var(--mist);margin-top:1px;letter-spacing:.5px"></div>
+          <div id="fc-kanjinfo" style="display:none;margin-top:10px;text-align:left"></div>
         </div>
       </div>
     </div>
@@ -1515,6 +1517,35 @@ header:has(.user-menu.open) { z-index:1000; }
 </div>
 
 <!-- ====== MODAL LATIHAN TULIS ====== -->
+
+<!-- ====== LATIHAN MNEMONIK ====== -->
+<div id="screen-mnemo" class="screen">
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+    <div class="section-title" style="margin:0">🧩 Latihan Mnemonik</div>
+    <span id="mn-pos" style="font-family:'DM Mono',monospace;font-size:13px;font-weight:700;color:var(--mist)"></span>
+  </div>
+  <div id="mn-card" style="background:white;border:1px solid var(--border);border-radius:16px;padding:22px 18px;margin-bottom:14px">
+    <div style="font-size:11px;font-weight:800;color:var(--mist);letter-spacing:.06em;margin-bottom:8px">KANJI APA INI?</div>
+    <div id="mn-parts" style="font-size:17px;font-weight:800;color:var(--indigo);margin-bottom:8px"></div>
+    <div id="mn-story" style="font-size:14px;color:var(--ink);line-height:1.65"></div>
+    <div id="mn-reveal" style="display:none;border-top:1px dashed var(--border);margin-top:14px;padding-top:12px">
+      <div id="mn-answer" style="font-size:46px;font-weight:800;color:var(--ink);text-align:center;line-height:1.1"></div>
+      <div id="mn-words" style="font-size:12.5px;color:var(--mist);margin-top:8px;line-height:1.6"></div>
+    </div>
+  </div>
+  <div id="mn-choices" style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px"></div>
+  <div id="mn-verdict" style="min-height:22px;font-size:13px;text-align:center;margin-bottom:10px"></div>
+  <div id="mn-assess-row" style="display:none;gap:8px;margin-bottom:10px">
+    <button onclick="mnAssess(false)" style="flex:1;padding:12px;border:1.5px solid #c0392b;border-radius:12px;background:rgba(192,57,43,.06);color:#c0392b;font-family:inherit;font-size:13px;font-weight:700;cursor:pointer">🙅 Belum Hafal</button>
+    <button onclick="mnAssess(true)" style="flex:1;padding:12px;border:none;border-radius:12px;background:var(--jade);color:#fff;font-family:inherit;font-size:13px;font-weight:700;cursor:pointer">💯 Hafal!</button>
+  </div>
+  <button onclick="endSession()" style="width:100%;padding:10px;border:1.5px solid var(--border);border-radius:10px;background:white;color:var(--mist);font-family:inherit;font-size:12px;font-weight:700;cursor:pointer;margin-bottom:10px">✕ Akhiri Sesi</button>
+  <div id="mn-done" style="display:none;text-align:center;background:white;border:1px solid var(--border);border-radius:16px;padding:26px">
+    <div style="font-size:34px;margin-bottom:6px">🏁</div>
+    <div id="mn-done-score" style="font-size:18px;font-weight:800;margin-bottom:12px"></div>
+    <button onclick="startMnemonic()" style="padding:12px 22px;border:none;border-radius:12px;background:var(--jade);color:#fff;font-family:inherit;font-size:14px;font-weight:700;cursor:pointer">🔄 Sesi Baru</button>
+  </div>
+</div>
 
 <!-- ====== DETAIL KOTOBA ====== -->
 <div id="kd-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:2500;align-items:center;justify-content:center;padding:12px" onclick="if(event.target===this)kdClose()">
@@ -6925,6 +6956,7 @@ function renderOverviewReco(){
   html+=banner('🧩','Mnemonik Radikal','Pecahan radikal + cerita &amp; kata sekeluarga di balik kartu kanji','startKanjiFlash(&apos;vocab&apos;)','Kartu ▶');
   html+=banner('✍️','Latihan Tulis','Jiplak kanji '+currentJLPT+' — nilai dirimu, masuk jadwal SRS','startWritePractice()','Tulis ▶');
   html+=banner('📖','Belajar Kalimat','Hafalkan kata lewat kalimat buatan Sensei AI','startKalimat()','Baca ▶');
+  html+=banner('🧩','Latihan Mnemonik','Dari cerita radikal — tebak kanjinya','startMnemonic()','Tebak ▶');
   box.innerHTML=html;
   box.style.display='block';
 }
@@ -7143,6 +7175,12 @@ function showCard() {
   var fcLatin = needRomaji() ? toRomaji(w.rom) : '';
   document.getElementById('fc-latin').textContent = fcLatin;
   document.getElementById('fc-latin-back').textContent = fcLatin;
+  var _fki=document.getElementById('fc-kanjinfo');
+  if(_fki){
+    var _h=(typeof kanjiInfoHtml==='function')?kanjiInfoHtml(w.jp||''):'';
+    if(_h){ _fki.innerHTML=_h; _fki.style.display='block'; }
+    else _fki.style.display='none';
+  }
   var meaningEl = document.getElementById('fc-meaning');
   if (w._isBunpo && /\n/.test(w.id_||'')) {
     var esc=String(w.id_).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
@@ -7988,7 +8026,7 @@ function renderProgressDashboard(){
         +'<span style="font-weight:800;font-size:14px">\ud83c\udfc6 Tingkat Hafalan '+currentJLPT+'</span>'
         +'<span style="font-family:\'DM Mono\',monospace;font-size:24px;font-weight:700;color:#ffd166">'+_avg+'%</span></div>'
         +'<div style="background:rgba(255,255,255,.15);border-radius:4px;height:7px;overflow:hidden;margin-bottom:8px"><div style="height:100%;width:'+_avg+'%;background:#ffd166"></div></div>'
-        +'<div style="font-size:11px;opacity:.85;line-height:1.5">'+_full+' dari '+_pool.length+' kata sudah 100%. Semua metode dihitung: Arti 25 \u00b7 Baca 15 \u00b7 SRS 20 \u00b7 Menulis 15 \u00b7 Kalimat 15 \u00b7 Kembar 10.</div>'
+        +'<div style="font-size:11px;opacity:.85;line-height:1.5">'+_full+' dari '+_pool.length+' kata sudah 100%. Semua metode dihitung: Arti \u00b7 Baca \u00b7 SRS \u00b7 Menulis \u00b7 Kalimat \u00b7 Kanji Kembar \u00b7 Mnemonik.</div>'
         +'</div>';
     }
   }catch(e){}
@@ -8075,7 +8113,8 @@ function renderProgressDashboard(){
     +'🔁 Review SRS: <b>'+(methodStats.srsRev||0)+'</b> kartu direview<br>'
     +'⚔️ Kanji Kembar: <b>'+(methodStats.twinOk||0)+'</b> benar dari <b>'+(methodStats.twinQ||0)+'</b> soal<br>'
     +'✍️ Latihan Tulis: <b>'+(methodStats.writeOk||0)+'</b> benar dari <b>'+(methodStats.writeQ||0)+'</b> kata<br>'
-    +'📖 Belajar Kalimat: <b>'+(methodStats.sentOk||0)+'</b> paham dari <b>'+(methodStats.sentQ||0)+'</b> kalimat'
+    +'📖 Belajar Kalimat: <b>'+(methodStats.sentOk||0)+'</b> paham dari <b>'+(methodStats.sentQ||0)+'</b> kalimat<br>'
+    +'🧩 Latihan Mnemonik: <b>'+(methodStats.mnOk||0)+'</b> benar dari <b>'+(methodStats.mnQ||0)+'</b> kanji'
     +'</div></div>';
   host.innerHTML = _thHtml + _msHtml + cards
     + posBlock
@@ -8352,6 +8391,162 @@ function closeWriteModal(){ document.getElementById('write-modal').style.display
 var _wm={ghost:true,char:'',drawing:false,ctx:null,paths:[]};
 
 // ============================================================
+// LATIHAN MNEMONIK — dari cerita radikal, tebak kanjinya (kebalikan flashcard)
+// Sesuai level: hanya kanji yang muncul di kosakata level aktif.
+// ============================================================
+var mnState={items:[],idx:0,okN:0,hafalN:0};
+function _mnLevelKanji(){
+  var out=[], seen={};
+  var pool=[];
+  try{ pool=posLevelWords(); }catch(e){}
+  pool.forEach(function(w){
+    var head=(w.jp||'').split(/[;；]/)[0];
+    for(var i=0;i<head.length;i++){
+      var c=head.charAt(i);
+      if(/[一-鿿]/.test(c) && !seen[c] && KANJI_MNEMONIC[c]){ seen[c]=1; out.push(c); }
+    }
+  });
+  return out;
+}
+function startMnemonic(){
+  if(typeof closeNavLearn==='function') closeNavLearn();
+  var pool=_mnLevelKanji();
+  if(pool.length<4){ alert('Kanji bermnemonik di level ini belum cukup ('+pool.length+'). Coba level lain.'); return; }
+  shuffle(pool);
+  var picks=pool.slice(0,10);
+  mnState={items:picks,idx:0,okN:0,hafalN:0,pool:pool};
+  gotoScreenRaw('mnemo');
+  document.getElementById('mn-done').style.display='none';
+  document.getElementById('mn-card').style.display='block';
+  mnShow();
+}
+function mnShow(){
+  var st=mnState, kj=st.items[st.idx];
+  var mn=KANJI_MNEMONIC[kj];
+  document.getElementById('mn-pos').textContent=(st.idx+1)+' / '+st.items.length;
+  document.getElementById('mn-parts').textContent='🧩 '+mn[0];
+  document.getElementById('mn-story').textContent=mn[1].replace(new RegExp(kj,'g'),'＿');
+  document.getElementById('mn-reveal').style.display='none';
+  document.getElementById('mn-verdict').innerHTML='';
+  document.getElementById('mn-assess-row').style.display='none';
+  // 4 pilihan: jawaban + 3 pengecoh dari pool level
+  var others=st.pool.filter(function(k){return k!==kj;});
+  shuffle(others);
+  var ch=[kj].concat(others.slice(0,3));
+  shuffle(ch);
+  var box=document.getElementById('mn-choices');
+  box.style.pointerEvents='auto';
+  box.innerHTML=ch.map(function(k){
+    return '<button class="mn-choice" data-k="'+k+'" onclick="mnAnswer(this)" style="padding:18px;border:2px solid var(--border);border-radius:14px;background:white;font-size:34px;font-family:\'Noto Sans JP\',sans-serif;cursor:pointer">'+k+'</button>';
+  }).join('');
+}
+function mnAnswer(btn){
+  var st=mnState, kj=st.items[st.idx];
+  var ok=btn.dataset.k===kj;
+  document.getElementById('mn-choices').style.pointerEvents='none';
+  document.querySelectorAll('.mn-choice').forEach(function(b){
+    if(b.dataset.k===kj){ b.style.borderColor='var(--jade)'; b.style.background='rgba(10,125,107,.1)'; }
+    else if(b===btn && !ok){ b.style.borderColor='#c0392b'; b.style.background='rgba(192,57,43,.08)'; }
+    else b.style.opacity='.45';
+  });
+  _ms('mnQ');
+  if(ok){ _ms('mnOk'); st.okN++; }
+  document.getElementById('mn-verdict').innerHTML=ok
+    ? '<span style="color:var(--jade);font-weight:800">✓ Benar!</span>'
+    : '<span style="color:#c0392b;font-weight:800">✗ Jawabannya '+kj+'</span>';
+  // reveal: kanji + contoh kata di level ini
+  document.getElementById('mn-answer').textContent=kj;
+  var ex=[];
+  try{
+    posLevelWords().forEach(function(w){
+      if(ex.length>=4) return;
+      var h=(w.jp||'').split(/[;；]/)[0];
+      if(h.indexOf(kj)>=0) ex.push('<b>'+h+'</b>（'+(w.rom||'')+'）'+(w.id_||''));
+    });
+  }catch(e){}
+  document.getElementById('mn-words').innerHTML=ex.length?('🔗 Contoh kata: '+ex.join(' · ')):'';
+  document.getElementById('mn-reveal').style.display='block';
+  document.getElementById('mn-assess-row').style.display='flex';
+}
+function mnAssess(hafal){
+  var st=mnState, kj=st.items[st.idx];
+  // tandai semua kata level yang memuat kanji ini
+  try{
+    var touched=0;
+    posLevelWords().forEach(function(w){
+      if(touched>=3) return;
+      var h=(w.jp||'').split(/[;；]/)[0];
+      if(h.indexOf(kj)>=0){
+        srsTouch(w, hafal);
+        var fk='mn_'+srsKey(w);
+        if(hafal) kanjiReadMastered[fk]=true; else delete kanjiReadMastered[fk];
+        touched++;
+      }
+    });
+    if(hafal){
+      st.hafalN++;
+      todayCount++;
+      var _td=new Date().toDateString();
+      if(lastStudyDate!==_td){var _yd=new Date(Date.now()-86400000).toDateString();streak=(lastStudyDate===_yd)?streak+1:1;lastStudyDate=_td;}
+    }
+    save();
+  }catch(e){}
+  st.idx++;
+  if(st.idx>=st.items.length){
+    document.getElementById('mn-card').style.display='none';
+    document.getElementById('mn-choices').innerHTML='';
+    document.getElementById('mn-assess-row').style.display='none';
+    document.getElementById('mn-verdict').innerHTML='';
+    document.getElementById('mn-done').style.display='block';
+    document.getElementById('mn-done-score').textContent='Benar '+st.okN+'/'+st.items.length+' · Hafal '+st.hafalN+'/'+st.items.length;
+  } else mnShow();
+}
+
+// ============================================================
+// PANEL INFO KANJI — mnemonik + kata sekeluarga + peringatan kanji kembar
+// Dipakai di flashcard kosakata, flashcard kanji, dan detail kotoba.
+// ============================================================
+function kanjiInfoHtml(jp){
+  var head=(jp||'').split(/[;；,，\s]/)[0];
+  var kjs=[];
+  for(var i=0;i<head.length;i++){
+    var c=head.charAt(i);
+    if(/[一-鿿]/.test(c) && kjs.indexOf(c)<0) kjs.push(c);
+  }
+  if(!kjs.length) return '';
+  var pool=[];
+  try{ pool=posLevelWords(); }catch(e){}
+  var tset=(typeof _twinKanjiSet==='function')?_twinKanjiSet():{};
+  var html='';
+  kjs.forEach(function(kj){
+    var block='';
+    var mn=(typeof KANJI_MNEMONIC!=='undefined')?KANJI_MNEMONIC[kj]:null;
+    if(mn) block+='<div style="font-size:11.5px;color:var(--indigo);line-height:1.5">🧩 <b>'+mn[0]+'</b> — '+mn[1]+'</div>';
+    var fam=[];
+    for(var oi=0;oi<pool.length && fam.length<3;oi++){
+      var o=pool[oi];
+      var oh=(o.jp||'').split(/[;；]/)[0];
+      if(oh!==head && oh.indexOf(kj)>=0) fam.push(oh+'（'+(o.rom||'')+'）'+(o.id_||''));
+    }
+    if(fam.length) block+='<div style="font-size:11.5px;color:var(--mist);line-height:1.5;margin-top:2px">🔗 '+fam.join(' · ')+'</div>';
+    if(tset[kj]){
+      var twins=[];
+      try{
+        _twinPool().forEach(function(t){
+          if(t.g.indexOf(kj)>=0) t.g.forEach(function(g){ if(g!==kj && twins.indexOf(g)<0) twins.push(g); });
+        });
+      }catch(e){}
+      if(twins.length) block+='<div style="font-size:11.5px;color:#c0532e;line-height:1.5;margin-top:2px">⚔️ Mirip: '+twins.join(' ')+'</div>';
+    }
+    if(block){
+      html+='<div style="padding:7px 0;border-top:1px solid var(--border)">'
+        +'<div style="font-size:15px;font-weight:800;color:var(--ink);margin-bottom:2px">'+kj+'</div>'+block+'</div>';
+    }
+  });
+  return html;
+}
+
+// ============================================================
 // DETAIL KOTOBA — rincian poin per metode, biar tahu apa yang kurang
 // ============================================================
 var _kdWord=null;
@@ -8373,6 +8568,9 @@ function kdComponents(w){
     var inTwin=false;
     for(var ci=0;ci<head.length;ci++){ if(tset[head.charAt(ci)]){ inTwin=true; break; } }
     if(inTwin) out.push(['⚔️ Hafal di Kanji Kembar', 10, kanjiReadMastered['tw_'+sk]?1:0, 'Kuis Kanji Kembar']);
+    var hasMn=false;
+    for(var mi=0;mi<head.length;mi++){ if(typeof KANJI_MNEMONIC!=='undefined' && KANJI_MNEMONIC[head.charAt(mi)]) hasMn=true; }
+    if(hasMn) out.push(['🧩 Hafal mnemonik', 10, kanjiReadMastered['mn_'+sk]?1:0, 'Sesi Latihan Mnemonik']);
   } else {
     out.push(['📝 Hafal arti', 35, ktArtiDone(w)?1:0, 'Centang "Arti" di daftar / flashcard']);
     out.push(['🔁 Review SRS ('+Math.min(lv,3)+'/3)', 35, srs, 'Lolos review berkala 3×']);
@@ -8425,7 +8623,7 @@ function kdGoKalimat(){ kdClose(); startKalimat(); }
 // ============================================================
 // PENJAGA SESI — cegah progress hilang karena salah pencet
 // ============================================================
-var SESSION_SCREENS=['flash','kanjiflash','exam','twinquiz','kalimat'];
+var SESSION_SCREENS=['flash','kanjiflash','exam','twinquiz','kalimat','mnemo'];
 var _exitAction=null;
 function inSession(){
   var act=document.querySelector('.screen.active');
@@ -8438,6 +8636,8 @@ function inSession(){
   if(nm==='twinquiz' && d2 && d2.style.display==='block') return false;
   var d3=document.getElementById('km-done');
   if(nm==='kalimat' && d3 && d3.style.display==='block') return false;
+  var d4=document.getElementById('mn-done');
+  if(nm==='mnemo' && d4 && d4.style.display==='block') return false;
   return true;
 }
 function guardExit(fn, msg){
@@ -9060,9 +9260,6 @@ function ktArtiDone(w){
 // kata tanpa kanji: Arti 50% + Kematangan SRS 50%
 // Kematangan SRS = level/3 (level 3 = lolos review 3x: interval 1-3-7 hari)
 function ktScore(w){
-  // Bobot dinormalisasi thd komponen yang berlaku:
-  //  kanji : Arti 25 · Baca 15 · SRS 20 · Tulis 15 · Kembar 10 · Kalimat 15
-  //  kana  : Arti 35 · SRS 35 · Kalimat 30
   var hasK=ktHasKanji(w);
   var e=(typeof srsData!=='undefined')?srsData[srsKey(w)]:null;
   var srs=Math.min((e?e.lv:0)/3,1);
@@ -9073,9 +9270,14 @@ function ktScore(w){
     comps=[[25, ktArtiDone(w)?1:0],[15, ktBacaDone(w)?1:0],[20, srs],
            [15, kanjiReadMastered['wr_'+sk]?1:0],[15, kanjiReadMastered['st_'+sk]?1:0]];
     var tset=(typeof _twinKanjiSet==='function')?_twinKanjiSet():{};
-    var inTwin=false;
-    for(var ci=0;ci<head.length;ci++){ if(tset[head.charAt(ci)]){ inTwin=true; break; } }
+    var inTwin=false, hasMn=false;
+    for(var ci=0;ci<head.length;ci++){
+      var c=head.charAt(ci);
+      if(tset[c]) inTwin=true;
+      if(typeof KANJI_MNEMONIC!=='undefined' && KANJI_MNEMONIC[c]) hasMn=true;
+    }
     if(inTwin) comps.push([10, kanjiReadMastered['tw_'+sk]?1:0]);
+    if(hasMn) comps.push([10, kanjiReadMastered['mn_'+sk]?1:0]);
   } else {
     comps=[[35, ktArtiDone(w)?1:0],[35, srs],[30, kanjiReadMastered['st_'+sk]?1:0]];
   }
