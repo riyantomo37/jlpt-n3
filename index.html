@@ -8778,7 +8778,7 @@ function kdGoKalimat(){ kdClose(); startKalimat(); }
 // ============================================================
 // PENJAGA SESI — cegah progress hilang karena salah pencet
 // ============================================================
-var SESSION_SCREENS=['flash','kanjiflash','exam','twinquiz','kalimat','mnemo'];
+var SESSION_SCREENS=['flash','kanjiflash','exam','twinquiz','kalimat','mnemo','onyoquiz'];
 var _exitAction=null;
 function inSession(){
   var act=document.querySelector('.screen.active');
@@ -8793,6 +8793,8 @@ function inSession(){
   if(nm==='kalimat' && d3 && d3.style.display==='block') return false;
   var d4=document.getElementById('mn-done');
   if(nm==='mnemo' && d4 && d4.style.display==='block') return false;
+  var d5=document.getElementById('oy-done');
+  if(nm==='onyoquiz' && d5 && d5.style.display==='block') return false;
   return true;
 }
 function guardExit(fn, msg){
