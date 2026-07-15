@@ -369,7 +369,7 @@ nav button.active {
   color:var(--mist);
 }
 .kfilter-btn.active { background:var(--ink); color:white; border-color:var(--ink); }
-#nav-learn-menu{display:none;position:fixed;background:white;border:1px solid var(--border);border-radius:12px;box-shadow:0 8px 24px rgba(0,0,0,.15);z-index:1000;min-width:190px;flex-direction:column;padding:6px;gap:2px}
+#nav-learn-menu{display:none;position:fixed;background:white;border:1px solid var(--border);border-radius:12px;box-shadow:0 8px 24px rgba(0,0,0,.15);z-index:1000;min-width:190px;flex-direction:column;padding:6px;gap:2px;overflow-y:auto;overscroll-behavior:contain}
 #nav-learn-menu.open{display:flex}
 #nav-learn-menu button{text-align:left;padding:11px 14px;border:none;background:none;border-radius:8px;font-family:'Noto Sans JP',sans-serif;font-size:13px;font-weight:500;cursor:pointer;color:var(--ink)}
 #nav-learn-menu button:active{background:rgba(26,26,46,.06)}
@@ -9663,8 +9663,10 @@ function toggleNavLearn(ev){
   var willOpen=!menu.classList.contains('open');
   if(willOpen){
     var r=btn.getBoundingClientRect();
-    menu.style.top=(r.bottom+4)+'px';
+    var top=r.bottom+4;
+    menu.style.top=top+'px';
     menu.style.left=Math.max(8,Math.min(r.left,window.innerWidth-206))+'px';
+    menu.style.maxHeight=Math.max(160,window.innerHeight-top-12)+'px';
   }
   menu.classList.toggle('open',willOpen);
 }
