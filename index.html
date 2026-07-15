@@ -1748,7 +1748,30 @@ header:has(.user-menu.open) { z-index:1000; }
     Kanji dikelompokkan berdasarkan komponen/radikal yang sama. Tap kelompok untuk buka kanji-nya, tap kanji untuk lihat contoh kata.
   </div>
   <input id="wt-search" type="text" oninput="wtSearch()" placeholder="🔍 Cari komponen atau kanji..." style="width:100%;padding:11px 14px;border-radius:10px;border:1px solid var(--border);background:white;color:var(--ink);font-size:14px;margin-bottom:14px;box-sizing:border-box">
+  <button onclick="startWtQuiz()" style="width:100%;padding:13px;border:none;border-radius:12px;background:#2d7d46;color:#fff;font-family:inherit;font-size:14px;font-weight:700;cursor:pointer;margin-bottom:14px">▶️ Mulai Kuis Pohon Kata</button>
   <div id="wt-list"></div>
+</div>
+
+<!-- ====== KUIS POHON KATA ====== -->
+<div id="screen-wtquiz" class="screen">
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+    <div class="section-title" style="margin:0">🌳 Kuis Pohon Kata</div>
+    <span id="wtq-score" style="font-family:'DM Mono',monospace;font-size:13px;font-weight:700;color:var(--mist)">0/0</span>
+  </div>
+  <div id="wtq-card" style="background:white;border:1px solid var(--border);border-radius:16px;padding:26px 20px;text-align:center;margin-bottom:14px">
+    <div style="font-size:12px;color:var(--mist);margin-bottom:8px">Kanji apa yang satu keluarga/komponen dengan ini?</div>
+    <div id="wtq-prompt" style="font-size:52px;font-weight:800;color:var(--ink);font-family:'Noto Serif JP',serif;margin-bottom:6px">待</div>
+    <div id="wtq-hint" style="font-size:11px;color:#2d7d46;font-weight:700"></div>
+  </div>
+  <div id="wtq-choices" style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px"></div>
+  <button onclick="endSession()" style="width:100%;padding:10px;border:1.5px solid var(--border);border-radius:10px;background:white;color:var(--mist);font-family:inherit;font-size:12px;font-weight:700;cursor:pointer;margin-bottom:10px">✕ Akhiri Sesi</button>
+  <div id="wtq-feedback" style="min-height:44px;font-size:13px;text-align:center;margin-bottom:10px"></div>
+  <button id="wtq-next" onclick="wtQuizNext()" style="display:none;width:100%;padding:13px;border:none;border-radius:12px;background:var(--ink);color:#fff;font-family:inherit;font-size:14px;font-weight:700;cursor:pointer">Soal Berikutnya ▶</button>
+  <div id="wtq-done" style="display:none;text-align:center;background:white;border:1px solid var(--border);border-radius:16px;padding:26px">
+    <div style="font-size:34px;margin-bottom:6px">🌳</div>
+    <div id="wtq-done-score" style="font-size:20px;font-weight:800;margin-bottom:12px"></div>
+    <button onclick="startWtQuiz()" style="padding:12px 22px;border:none;border-radius:12px;background:#2d7d46;color:#fff;font-family:inherit;font-size:14px;font-weight:700;cursor:pointer">🔄 Main Lagi</button>
+  </div>
 </div>
 
 <!-- ====== KOTOBA TAB (daftar kosakata terpusat) ====== -->
@@ -7137,6 +7160,7 @@ function renderOverviewReco(){
   html+=banner('🈁', "On'yomi–Kun'yomi", oyp.done+'/'+oyp.total+' bacaan dikuasai ('+oyp.pct+'%)', 'startOyQuiz()', 'Latihan ▶', ['#5c4b8a','#7c63b8']);
   html+=banner('⚔️','Kanji Kembar','Bedakan kanji mirip: 待↔持, 借↔貸','startTwinQuiz()','Kuis ▶', ['#c0532e','#e0703f']);
   html+=banner('🧩','Latihan Mnemonik','Dari cerita radikal — tebak kanjinya','startMnemonic()','Tebak ▶', ['#0a7d6b','#14a08c']);
+  html+=banner('🌳','Pohon Kata','Tebak kanji satu keluarga/komponen','startWtQuiz()','Kuis ▶', ['#2d7d46','#4aa869']);
   html+='<div style="border-top:1px solid var(--border);margin:12px 0 10px"></div>';
   html+=banner('🔁', due>0?('Review Harian — '+due+' kata'):'Review Harian — beres ✓',
     'Ulang berkala tepat sebelum lupa', 'startSrsReview()', due>0?'Mulai ▶':'Cek');
@@ -8882,7 +8906,7 @@ function kdGoKalimat(){ kdClose(); startKalimat(); }
 // ============================================================
 // PENJAGA SESI — cegah progress hilang karena salah pencet
 // ============================================================
-var SESSION_SCREENS=['flash','kanjiflash','exam','twinquiz','kalimat','mnemo','onyoquiz'];
+var SESSION_SCREENS=['flash','kanjiflash','exam','twinquiz','kalimat','mnemo','onyoquiz','wtquiz'];
 var _exitAction=null;
 function inSession(){
   var act=document.querySelector('.screen.active');
@@ -8899,6 +8923,8 @@ function inSession(){
   if(nm==='mnemo' && d4 && d4.style.display==='block') return false;
   var d5=document.getElementById('oy-done');
   if(nm==='onyoquiz' && d5 && d5.style.display==='block') return false;
+  var d6=document.getElementById('wtq-done');
+  if(nm==='wtquiz' && d6 && d6.style.display==='block') return false;
   return true;
 }
 function guardExit(fn, msg){
@@ -10735,6 +10761,109 @@ function updateWordTree(){
   WORD_TREE=null; // rebuild kalau data berubah antar sesi
   wtRenderRoots('');
 }
+
+// ============================================================
+// 🌳 KUIS POHON KATA: tebak kanji satu keluarga/komponen
+// Dua lapis penilaian: pilihan ganda benar/salah -> hafal/belum -> SRS
+// ============================================================
+var wtState = {q:0, score:0, total:10, cur:null};
+
+function _wtMakeQuestion(){
+  var roots = _wtBuildTree().filter(function(r){ return r.kanji.length>=2; });
+  if(!roots.length) return null;
+  var root = roots[Math.floor(Math.random()*roots.length)];
+  var pool = root.kanji.slice();
+  var promptK = pool[Math.floor(Math.random()*pool.length)];
+  var siblings = pool.filter(function(k){ return k!==promptK; });
+  var correct = siblings[Math.floor(Math.random()*siblings.length)];
+
+  var allKanji = Object.keys(KANJI_READ||{});
+  var inRoot = {}; root.kanji.forEach(function(k){ inRoot[k]=true; });
+  var distractPool = allKanji.filter(function(k){ return !inRoot[k]; });
+  shuffle(distractPool);
+  var choices = [correct].concat(distractPool.slice(0,3));
+  shuffle(choices);
+  return {root:root, prompt:promptK, correct:correct, choices:choices};
+}
+function startWtQuiz(){
+  wtState = {q:0, score:0, total:10, cur:null};
+  gotoScreenRaw('wtquiz');
+  document.getElementById('wtq-done').style.display='none';
+  document.getElementById('wtq-card').style.display='block';
+  wtQuizShow();
+}
+function wtQuizShow(){
+  var st = wtState;
+  var q = _wtMakeQuestion();
+  if(!q){ document.getElementById('wtq-card').innerHTML='<div style="text-align:center;color:var(--mist);padding:20px">Data kelompok belum cukup.</div>'; return; }
+  st.cur = q;
+  document.getElementById('wtq-score').textContent = st.score+'/'+st.q+' · soal '+(st.q+1)+' dari '+st.total;
+  document.getElementById('wtq-prompt').textContent = q.prompt;
+  document.getElementById('wtq-hint').textContent = 'Komponen: '+q.root.label;
+  document.getElementById('wtq-feedback').innerHTML = '';
+  document.getElementById('wtq-next').style.display = 'none';
+  var box = document.getElementById('wtq-choices');
+  box.innerHTML = q.choices.map(function(k){
+    return '<button class="wtq-choice" data-k="'+k+'" onclick="wtQuizAnswer(this)" style="padding:18px;border:2px solid var(--border);border-radius:14px;background:white;font-size:26px;font-family:\'Noto Serif JP\',serif;cursor:pointer">'+k+'</button>';
+  }).join('');
+  box.style.pointerEvents = 'auto';
+}
+function wtQuizAnswer(btn){
+  var st = wtState, cur = st.cur;
+  var pick = btn.dataset.k;
+  var ok = pick === cur.correct;
+  document.getElementById('wtq-choices').style.pointerEvents = 'none';
+  document.querySelectorAll('.wtq-choice').forEach(function(b){
+    if(b.dataset.k===cur.correct){ b.style.borderColor='var(--jade)'; b.style.background='rgba(10,125,107,.1)'; }
+    else if(b===btn && !ok){ b.style.borderColor='#c0392b'; b.style.background='rgba(192,57,43,.08)'; }
+    else b.style.opacity='.45';
+  });
+  st.q++;
+  if(ok) st.score++;
+  save();
+  var rd = (typeof KANJI_READ!=='undefined') ? KANJI_READ[cur.correct] : null;
+  var arti = rd ? rd[2] : '';
+  var fb = (ok?'<span style="color:var(--jade);font-weight:800">✓ Benar!</span> ':'<span style="color:#c0392b;font-weight:800">✗ Jawaban: '+cur.correct+'</span> ')
+    + '<br><span style="color:var(--mist)">'+cur.prompt+' &amp; '+cur.correct+' sama-sama pakai komponen '+cur.root.label+' — '+cur.correct+' artinya '+arti+'</span>';
+  fb += '<div style="margin-top:10px;font-weight:700;color:var(--ink)">Apakah kamu benar-benar hafal hubungan kelompok ini?</div>'
+    + '<div style="display:flex;gap:8px;margin-top:6px">'
+    + '<button onclick="wtQuizAssess(false)" style="flex:1;padding:10px;border:1.5px solid #c0392b;border-radius:10px;background:rgba(192,57,43,.06);color:#c0392b;font-family:inherit;font-size:13px;font-weight:700;cursor:pointer">🙅 Belum Hafal</button>'
+    + '<button onclick="wtQuizAssess(true)" style="flex:1;padding:10px;border:none;border-radius:10px;background:var(--jade);color:#fff;font-family:inherit;font-size:13px;font-weight:700;cursor:pointer">💯 Hafal!</button>'
+    + '</div>';
+  document.getElementById('wtq-feedback').innerHTML = fb;
+  document.getElementById('wtq-score').textContent = st.score+'/'+st.q;
+}
+function wtQuizAssess(hafal){
+  var st = wtState, cur = st.cur;
+  if(cur){
+    try{
+      var card = {id:'wt_'+cur.root.key+'_'+cur.correct, jp:cur.correct};
+      srsTouch(card, hafal);
+      if(hafal){
+        todayCount++;
+        var _td = new Date().toDateString();
+        if(lastStudyDate!==_td){ var _yd=new Date(Date.now()-86400000).toDateString(); streak=(lastStudyDate===_yd)?streak+1:1; lastStudyDate=_td; }
+      }
+      save();
+    }catch(e){}
+  }
+  var fbEl = document.getElementById('wtq-feedback');
+  if(fbEl) fbEl.querySelectorAll('button').forEach(function(b){ b.disabled=true; b.style.opacity='.4'; });
+  _wtQuizProceed();
+}
+function _wtQuizProceed(){
+  var st = wtState;
+  if(st.q >= st.total){
+    document.getElementById('wtq-next').style.display = 'none';
+    setTimeout(function(){
+      document.getElementById('wtq-done').style.display = 'block';
+      document.getElementById('wtq-done-score').textContent = 'Skor: '+st.score+' / '+st.total+(st.score===st.total?' — hafal keluarga kanji! 🎉':st.score>=7?' — bagus!':' — jelajahi lagi Pohon Kata ya');
+    }, 700);
+  } else {
+    document.getElementById('wtq-next').style.display = 'block';
+  }
+}
+function wtQuizNext(){ wtQuizShow(); }
 
 // ============================================================
 // SRS — REVIEW BERKALA (spaced repetition ringan)
