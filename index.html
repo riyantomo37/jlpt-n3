@@ -1101,6 +1101,7 @@ header:has(.user-menu.open) { z-index:1000; }
   <button onclick="navTo('kazumenu')">🔢 Angka</button>
   <button onclick="navTo('onomenu')">💬 Onomatope</button>
   <button onclick="navTo('onyomenu')">🈁 On-Kun</button>
+  <button onclick="navTo('wordtree')">🌳 Pohon Kata</button>
   <div style="border-top:1px solid var(--border);margin:4px 0"></div>
   <button onclick="startSrsReview()">🔁 Review SRS</button>
   <button onclick="startTwinQuiz()">⚔️ Kanji Kembar</button>
@@ -1738,6 +1739,16 @@ header:has(.user-menu.open) { z-index:1000; }
     <div id="oy-done-score" style="font-size:20px;font-weight:800;margin-bottom:12px"></div>
     <button onclick="startOyQuiz()" style="padding:12px 22px;border:none;border-radius:12px;background:var(--jade);color:#fff;font-family:inherit;font-size:14px;font-weight:700;cursor:pointer">🔄 Main Lagi</button>
   </div>
+</div>
+
+<!-- ====== POHON KATA (word tree: komponen → kanji → kosakata) ====== -->
+<div id="screen-wordtree" class="screen">
+  <div class="section-title" style="margin-bottom:6px">🌳 Pohon Kata</div>
+  <div style="font-size:12px;color:var(--mist);line-height:1.5;margin-bottom:12px">
+    Kanji dikelompokkan berdasarkan komponen/radikal yang sama. Tap kelompok untuk buka kanji-nya, tap kanji untuk lihat contoh kata.
+  </div>
+  <input id="wt-search" type="text" oninput="wtSearch()" placeholder="🔍 Cari komponen atau kanji..." style="width:100%;padding:11px 14px;border-radius:10px;border:1px solid var(--border);background:white;color:var(--ink);font-size:14px;margin-bottom:14px;box-sizing:border-box">
+  <div id="wt-list"></div>
 </div>
 
 <!-- ====== KOTOBA TAB (daftar kosakata terpusat) ====== -->
@@ -6759,7 +6770,7 @@ function gotoScreen(name) {
   });
   var _lm=document.getElementById('nav-learn-menu');
   if(_lm) _lm.classList.remove('open');
-  var _learnScreens=['flashmenu','kotoba','kanjimenu','bunpomenu','katsuyomenu','dialectmenu','kazumenu','onomenu','onyomenu'];
+  var _learnScreens=['flashmenu','kotoba','kanjimenu','bunpomenu','katsuyomenu','dialectmenu','kazumenu','onomenu','onyomenu','wordtree'];
   var _lb=document.getElementById('nav-learn-btn');
   if(_lb) _lb.classList.toggle('active', _learnScreens.indexOf(name)>=0);
   if (name === 'overview') updateOverview();
@@ -6773,6 +6784,7 @@ function gotoScreen(name) {
   if (name === 'kazumenu') updateKazuMenu();
   if (name === 'onomenu') updateOnoMenu();
   if (name === 'onyomenu') updateOyMenu();
+  if (name === 'wordtree') updateWordTree();
   if (name === 'exam') { showExamSection('exam-menu'); updateExamLevelBadge(); setExamMode('ai'); bankIndex=null; updateExamHistory(); }
 }
 
@@ -7152,6 +7164,7 @@ function renderOverviewMenu(){
     {scr:'kazumenu', emo:'数', t:'Angka', d:'Tanggal · jam · counter', c:'#2e7dc0'},
     {scr:'onomenu', emo:'💬', t:'Onomatope', d:'Giongo & gitaigo + contoh', c:'#c2185b'},
     {scr:'onyomenu', emo:'🈁', t:"On-Kun", d:'Latihan bacaan kanji', c:'#5c4b8a'},
+    {scr:'wordtree', emo:'🌳', t:'Pohon Kata', d:'Jelajahi keluarga kanji & kata', c:'#2d7d46'},
     {scr:'exam',      emo:'📝', t:'Ujian', d:'Simulasi soal JLPT', c:'var(--red)'},
     {scr:'review',    emo:'📊', t:'Progress Hafalan', d:'Kotoba · Kanji · Bunpou · Ujian', c:'var(--jade)'},
     {scr:'leaderboard',emo:'🏆', t:'Ranking', d:'Peringkat poin', c:'#d08700'},
@@ -9592,6 +9605,135 @@ function updateOyMenu(){
   if(bar) bar.style.width=p.pct+'%';
   var kjEl=document.getElementById('oy-menu-kanji-count');
   if(kjEl) kjEl.textContent=_oyPool().length+' kanji untuk level '+currentJLPT;
+}
+
+// ============================================================
+// 🌳 POHON KATA: komponen/radikal → kanji → kosakata
+// Digabung dari KANJI_MNEMONIC (parsing komponen) + TWIN_SETS (union kelompok mirip)
+// ============================================================
+var WORD_TREE = null;
+function _wtBuildTree(){
+  if(WORD_TREE) return WORD_TREE;
+  var compMap = {};
+  Object.keys(KANJI_MNEMONIC||{}).forEach(function(k){
+    var parts = (KANJI_MNEMONIC[k]||[])[0]||'';
+    parts.split('+').forEach(function(seg){
+      seg = seg.trim();
+      var m = seg.match(/^([\u4e00-\u9faf\u3040-\u30ff]{1,4})\s*(.*)$/);
+      if(!m) return;
+      var comp = m[1], arti = m[2]||'';
+      if(!compMap[comp]) compMap[comp] = {arti:arti, kanji:[]};
+      if(compMap[comp].kanji.indexOf(k)<0) compMap[comp].kanji.push(k);
+    });
+  });
+  var roots = [];
+  Object.keys(compMap).forEach(function(c){
+    if(compMap[c].kanji.length>=2) roots.push({type:'comp', key:c, label:c, sub:compMap[c].arti, kanji:compMap[c].kanji.slice()});
+  });
+  var usedKanji = {};
+  roots.forEach(function(r){ r.kanji.forEach(function(k){ usedKanji[k]=true; }); });
+
+  var orphanIdx=0;
+  (TWIN_SETS||[]).forEach(function(t){
+    var g = t.g||[];
+    var matched = false;
+    for(var i=0;i<roots.length;i++){
+      var r = roots[i];
+      if(r.type!=='comp') continue;
+      var overlap = g.filter(function(k){ return r.kanji.indexOf(k)>=0; });
+      if(overlap.length>=2){
+        g.forEach(function(k){ if(r.kanji.indexOf(k)<0){ r.kanji.push(k); usedKanji[k]=true; } });
+        matched = true;
+        break;
+      }
+    }
+    if(!matched && g.length>=2){
+      orphanIdx++;
+      roots.push({type:'twin', key:'twin_'+orphanIdx, label:g.join('・'), sub:'kelompok kanji mirip', kanji:g.slice()});
+      g.forEach(function(k){ usedKanji[k]=true; });
+    }
+  });
+
+  var leftover = Object.keys(KANJI_READ||{}).filter(function(k){ return !usedKanji[k]; });
+  if(leftover.length){
+    roots.push({type:'other', key:'other', label:'Lainnya', sub:'kanji tanpa kelompok', kanji:leftover});
+  }
+  roots.sort(function(a,b){ return b.kanji.length - a.kanji.length; });
+  WORD_TREE = roots;
+  return roots;
+}
+function wtKanjiRow(k){
+  var rd = (typeof KANJI_READ!=='undefined')?KANJI_READ[k]:null;
+  var onS = (rd&&rd[0]&&rd[0].length) ? rd[0][0] : '';
+  var kunS = (rd&&rd[1]&&rd[1].length) ? rd[1][0] : '';
+  var arti = rd?rd[2]:'';
+  return '<div class="wt-kanji-wrap" style="border-top:1px solid var(--border)">'
+    + '<div class="wt-kanji-row" data-kj="'+k+'" onclick="wtToggleKanji(this)" style="display:flex;align-items:center;gap:10px;padding:9px 2px;cursor:pointer">'
+    + '<span style="font-size:20px;font-weight:800;color:var(--ink);font-family:\'Noto Serif JP\',serif;min-width:28px">'+k+'</span>'
+    + '<span style="font-size:11px;color:var(--mist);flex:1;min-width:0">'+onS+(onS&&kunS?'・':'')+kunS+' — '+arti+'</span>'
+    + '<span onclick="event.stopPropagation();kjOpen(this.parentElement.dataset.kj)" style="font-size:10.5px;color:var(--indigo);text-decoration:underline;white-space:nowrap;padding:2px 4px;flex-shrink:0">detail</span>'
+    + '</div>'
+    + '<div class="wt-word-body" style="display:none;padding:0 0 8px 34px"></div>'
+    + '</div>';
+}
+function wtRenderRoots(filter){
+  var roots = _wtBuildTree();
+  var f = (filter||'').trim();
+  var box = document.getElementById('wt-list');
+  if(!box) return;
+  var shown = 0;
+  var html = roots.map(function(r,ri){
+    if(f && r.label.indexOf(f)<0 && !r.kanji.some(function(k){return k.indexOf(f)>=0;})) return '';
+    shown++;
+    var icon = r.type==='comp' ? '🧩' : (r.type==='twin' ? '⚔️' : '📎');
+    return '<div class="wt-root" style="background:white;border:1px solid var(--border);border-radius:12px;margin-bottom:8px;overflow:hidden">'
+      + '<div class="wt-root-head" onclick="wtToggleRoot(this)" style="padding:12px 14px;display:flex;align-items:center;gap:10px;cursor:pointer">'
+      + '<span style="font-size:20px">'+icon+'</span>'
+      + '<div style="flex:1;min-width:0"><div style="font-weight:800;font-size:15px;color:var(--ink)">'+r.label+'</div>'
+      + '<div style="font-size:11px;color:var(--mist)">'+r.sub+' · '+r.kanji.length+' kanji</div></div>'
+      + '<span class="wt-arrow" style="color:var(--mist);display:inline-block;transition:transform .2s">▸</span>'
+      + '</div>'
+      + '<div class="wt-root-body" style="display:none;padding:0 12px 10px">'
+      + r.kanji.map(wtKanjiRow).join('')
+      + '</div></div>';
+  }).join('');
+  box.innerHTML = shown ? html : '<div style="text-align:center;color:var(--mist);padding:30px 0;font-size:13px">Tidak ditemukan.</div>';
+}
+function wtToggleRoot(el){
+  var body = el.nextElementSibling;
+  var arrow = el.querySelector('.wt-arrow');
+  var open = body.style.display==='block';
+  body.style.display = open?'none':'block';
+  if(arrow) arrow.style.transform = open?'rotate(0deg)':'rotate(90deg)';
+}
+function wtToggleKanji(el){
+  var wrap = el.parentElement;
+  var body = wrap.querySelector('.wt-word-body');
+  var open = body.style.display==='block';
+  if(open){ body.style.display='none'; return; }
+  if(!body.dataset.loaded){
+    var k = el.dataset.kj;
+    var pool=[]; try{ pool=posLevelWords(); }catch(e){}
+    var fam=[];
+    for(var i=0;i<pool.length && fam.length<10;i++){
+      var o=pool[i];
+      var oh=(o.jp||'').split(/[;；]/)[0];
+      if(oh.indexOf(k)>=0 && o.id!=null){
+        fam.push('<div data-wid="'+o.id+'" onclick="kdOpen(this.dataset.wid)" style="padding:5px 0;font-size:12.5px;color:var(--ink);cursor:pointer;text-decoration:underline dotted;text-underline-offset:2px">'+oh+' <span style="color:var(--mist)">('+(o.rom||'')+')</span></div>');
+      }
+    }
+    body.innerHTML = fam.length ? fam.join('') : '<div style="font-size:11.5px;color:var(--mist);padding:4px 0">Belum ada contoh kata.</div>';
+    body.dataset.loaded='1';
+  }
+  body.style.display='block';
+}
+function wtSearch(){
+  var el=document.getElementById('wt-search');
+  wtRenderRoots(el?el.value:'');
+}
+function updateWordTree(){
+  WORD_TREE=null; // rebuild kalau data berubah antar sesi
+  wtRenderRoots('');
 }
 
 // ============================================================
