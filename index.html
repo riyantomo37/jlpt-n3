@@ -10644,8 +10644,12 @@ function updateOyMenu(){
 var WORD_TREE = null;
 function _wtBuildTree(){
   if(WORD_TREE) return WORD_TREE;
+  var num={'N5':5,'N4':4,'N3':3,'N2':3,'N1':3,'SSW':4}[currentJLPT]||4;
+  function inScope(k){ return _oyKanjiLevel(k) >= num; }
+
   var compMap = {};
   Object.keys(KANJI_MNEMONIC||{}).forEach(function(k){
+    if(!inScope(k)) return;
     var parts = (KANJI_MNEMONIC[k]||[])[0]||'';
     parts.split('+').forEach(function(seg){
       seg = seg.trim();
@@ -10665,7 +10669,8 @@ function _wtBuildTree(){
 
   var orphanIdx=0;
   (TWIN_SETS||[]).forEach(function(t){
-    var g = t.g||[];
+    var g = (t.g||[]).filter(inScope);
+    if(g.length<2) return;
     var matched = false;
     for(var i=0;i<roots.length;i++){
       var r = roots[i];
@@ -10677,32 +10682,24 @@ function _wtBuildTree(){
         break;
       }
     }
-    if(!matched && g.length>=2){
+    if(!matched){
       orphanIdx++;
       roots.push({type:'twin', key:'twin_'+orphanIdx, label:g.join('・'), sub:'kelompok kanji mirip', kanji:g.slice()});
       g.forEach(function(k){ usedKanji[k]=true; });
     }
   });
 
-  // Kanji tanpa komponen/grup (mayoritas dari perluasan N5-N3): kelompokkan per level, bukan ditumpuk jadi satu bucket raksasa.
-  var leftoverByLevel = {N5:[], N4:[], N3:[]};
-  Object.keys(KANJI_READ||{}).forEach(function(k){
-    if(usedKanji[k]) return;
-    var lv = (typeof KANJI_LEVEL_HINT!=='undefined' && KANJI_LEVEL_HINT[k]) ? KANJI_LEVEL_HINT[k] : 'N3';
-    if(!leftoverByLevel[lv]) leftoverByLevel[lv]=[];
-    leftoverByLevel[lv].push(k);
-  });
-  ['N5','N4','N3'].forEach(function(lv){
-    var ks = leftoverByLevel[lv];
-    if(ks && ks.length){
-      roots.push({type:'other', key:'other_'+lv, label:'Kanji Lain — '+lv, sub:'belum berkelompok mnemonic/kembar', kanji:ks});
-    }
-  });
+  // Kanji tanpa komponen/grup pada level aktif: satu bucket, dicari lewat search kalau perlu.
+  var leftover = Object.keys(KANJI_READ||{}).filter(function(k){ return inScope(k) && !usedKanji[k]; });
+  if(leftover.length){
+    roots.push({type:'other', key:'other', label:'Kanji Lain', sub:'belum berkelompok mnemonic/kembar', kanji:leftover});
+  }
 
   roots.sort(function(a,b){ return b.kanji.length - a.kanji.length; });
   WORD_TREE = roots;
   return roots;
 }
+
 
 function wtKanjiRow(k){
   var rd = (typeof KANJI_READ!=='undefined')?KANJI_READ[k]:null;
@@ -11465,6 +11462,7 @@ function switchJLPT(level){
   if(currentJLPT===level) return;
   currentJLPT=level;
   lbCurrentLevel=level;
+  if(typeof WORD_TREE!=='undefined') WORD_TREE=null;
   document.querySelectorAll('.level-select-btn').forEach(function(b){
     b.classList.toggle('active', b.textContent.trim()===level);
   });
