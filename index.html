@@ -7161,7 +7161,16 @@ function renderOverviewReco(){
       +'</div>';
   }
   var oyp=oyProgress();
+  var wtRoots=(typeof _wtBuildTree==='function')?_wtBuildTree().filter(function(r){return r.type!=='other';}):[];
   var html='';
+  // ── Pohon Kata: banner khusus paling atas, beda gaya dari yang lain ──
+  html+='<div onclick="navTo(\'wordtree\')" style="position:relative;background:radial-gradient(circle at 15% 20%,#3d9b64,#1f5c3a 70%);color:#fff;border-radius:18px;padding:18px 16px;margin-bottom:16px;cursor:pointer;overflow:hidden;box-shadow:0 6px 20px rgba(31,92,58,.35);border:1px solid rgba(255,255,255,.15)">'
+    +'<span style="position:absolute;top:-14px;right:-6px;font-size:80px;opacity:.14;line-height:1">🌳</span>'
+    +'<span style="display:inline-block;background:#ffd166;color:#1a1a2e;font-size:10px;font-weight:800;padding:3px 9px;border-radius:8px;margin-bottom:8px">✨ JELAJAHI</span>'
+    +'<div style="font-weight:800;font-size:18px;position:relative;z-index:1">🌳 Pohon Kata</div>'
+    +'<div style="font-size:12px;opacity:.9;margin-top:3px;max-width:80%;position:relative;z-index:1">'+wtRoots.length+' keluarga kanji — tiap kanji nunjukin komponen penyusunnya, tap terus buat lacak sampai ke akarnya</div>'
+    +'<div style="margin-top:10px;display:inline-block;background:rgba(255,255,255,.18);padding:7px 14px;border-radius:10px;font-size:12px;font-weight:700;position:relative;z-index:1">Buka bagan ›</div>'
+    +'</div>';
   // ── FOKUS UTAMA: 3 latihan kanji terpenting, ditaruh paling atas & beda warna ──
   html+='<div style="font-size:11px;font-weight:800;color:var(--mist);letter-spacing:.5px;margin-bottom:6px">⭐ FOKUS UTAMA</div>';
   html+=banner('🈁', "On'yomi–Kun'yomi", oyp.done+'/'+oyp.total+' bacaan dikuasai ('+oyp.pct+'%)', 'startOyQuiz()', 'Latihan ▶', ['#5c4b8a','#7c63b8']);
@@ -7176,6 +7185,7 @@ function renderOverviewReco(){
   box.innerHTML=html;
   box.style.display='block';
 }
+
 
 function renderOverviewMenu(){
   renderOverviewReco();
@@ -10712,26 +10722,54 @@ function wtRenderRoots(filter){
   if(!box) return;
   var shown = 0;
   var html = roots.map(function(r,ri){
-    if(f && r.label.indexOf(f)<0 && !r.kanji.some(function(k){return k.indexOf(f)>=0;})) return '';
+    var kanjiMatch = r.kanji.filter(function(k){ return !f || k.indexOf(f)>=0; });
+    var labelMatch = !f || r.label.indexOf(f)>=0;
+    if(f && !labelMatch && !kanjiMatch.length) return '';
     shown++;
     var icon = r.type==='comp' ? '🧩' : (r.type==='twin' ? '⚔️' : '📎');
-    return '<div class="wt-root" style="background:white;border:1px solid var(--border);border-radius:12px;margin-bottom:8px;overflow:hidden">'
+    var displayKanji = (f && !labelMatch) ? kanjiMatch : r.kanji;
+    var bodyInner;
+    if(r.type==='other'){
+      // Bukan keluarga sungguhan (belum kebagian komponen) — jangan digambar sbg bagan (menyesatkan), cukup grid chip + filter.
+      bodyInner = '<div style="display:flex;flex-wrap:wrap;gap:6px;padding:4px 2px">'
+        + displayKanji.map(function(k){
+            return '<span class="wt-chip" data-kj="'+k+'" onclick="kjOpen(this.dataset.kj)" style="padding:6px 10px;border:1px solid var(--border);border-radius:8px;font-size:16px;font-family:\'Noto Serif JP\',serif;cursor:pointer;background:#fafafa">'+k+'</span>';
+          }).join('')
+        + '</div>'
+        + (f && !labelMatch ? '<div style="font-size:10px;color:var(--mist);margin-top:6px">menampilkan '+displayKanji.length+' dari '+r.kanji.length+' (sesuai filter)</div>' : '');
+    } else {
+      bodyInner = '<div style="text-align:center"><span class="wt-diag-root" style="background:#eaf5ee;color:#2d7d46" data-rootkey="'+r.key+'">'+icon+' '+r.label+'</span></div>'
+        + '<div class="wt-diag-children">'
+        + displayKanji.map(wtKanjiRow).join('')
+        + '</div>'
+        + '<div style="font-size:10px;color:var(--mist);text-align:center;margin-top:4px">tap kanji untuk lihat contoh kata &amp; komponen penyusunnya</div>';
+    }
+    return '<div class="wt-root" id="wt-root-'+r.key+'" data-rootkey="'+r.key+'" style="background:white;border:1px solid var(--border);border-radius:12px;margin-bottom:8px;overflow:hidden">'
       + '<div class="wt-root-head" onclick="wtToggleRoot(this)" style="padding:12px 14px;display:flex;align-items:center;gap:10px;cursor:pointer">'
       + '<span style="font-size:20px">'+icon+'</span>'
       + '<div style="flex:1;min-width:0"><div style="font-weight:800;font-size:15px;color:var(--ink)">'+r.label+'</div>'
       + '<div style="font-size:11px;color:var(--mist)">'+r.sub+' · '+r.kanji.length+' kanji</div></div>'
       + '<span class="wt-arrow" style="color:var(--mist);display:inline-block;transition:transform .2s">▸</span>'
       + '</div>'
-      + '<div class="wt-root-body" style="display:none;padding:2px 12px 14px">'
-      + '<div style="text-align:center"><span class="wt-diag-root" style="background:#eaf5ee;color:#2d7d46">'+icon+' '+r.label+'</span></div>'
-      + '<div class="wt-diag-children">'
-      + r.kanji.map(wtKanjiRow).join('')
-      + '</div>'
-      + '<div style="font-size:10px;color:var(--mist);text-align:center;margin-top:4px">tap kanji untuk lihat contoh kata</div>'
-      + '</div></div>';
+      + '<div class="wt-root-body" style="display:none;padding:2px 12px 14px">' + bodyInner + '</div></div>';
   }).join('');
   box.innerHTML = shown ? html : '<div style="text-align:center;color:var(--mist);padding:30px 0;font-size:13px">Tidak ditemukan.</div>';
 }
+
+// Loncat & buka root lain (dipakai dari breakdown "terdiri dari" di dalam kanji node)
+function wtJumpToRoot(rootKey){
+  var el = document.getElementById('wt-root-'+rootKey);
+  if(!el){
+    // root utk komponen ini belum ada di daftar (mis. cuma 1 kanji) — buka detail kanji-nya saja
+    kjOpen(rootKey);
+    return;
+  }
+  var head = el.querySelector('.wt-root-head');
+  var body = el.querySelector('.wt-root-body');
+  if(body.style.display!=='block') wtToggleRoot(head);
+  if(typeof el.scrollIntoView==='function') el.scrollIntoView({behavior:'smooth', block:'start'});
+}
+
 
 function wtToggleRoot(el){
   var body = el.nextElementSibling;
@@ -10739,6 +10777,21 @@ function wtToggleRoot(el){
   var open = body.style.display==='block';
   body.style.display = open?'none':'block';
   if(arrow) arrow.style.transform = open?'rotate(0deg)':'rotate(90deg)';
+}
+function _wtComponentsOf(k){
+  var mn = (typeof KANJI_MNEMONIC!=='undefined') ? KANJI_MNEMONIC[k] : null;
+  if(!mn) return [];
+  var parts = mn[0]||'';
+  var out = [];
+  parts.split('+').forEach(function(seg){
+    seg = seg.trim();
+    var m = seg.match(/^([\u4e00-\u9faf\u3040-\u30ff]{1,4})\s*(.*)$/);
+    if(!m || m[1]===k) return;
+    var arti = m[2]||'';
+    if(!arti && typeof KANJI_READ!=='undefined' && KANJI_READ[m[1]]) arti = KANJI_READ[m[1]][2]||'';
+    out.push({ch:m[1], arti:arti});
+  });
+  return out;
 }
 function wtToggleKanji(el){
   var wrap = el.parentElement;
@@ -10758,11 +10811,24 @@ function wtToggleKanji(el){
     }
     var wordsHtml = fam.length ? fam.join('') : '<div style="color:var(--mist);padding:2px 0">Belum ada contoh kata.</div>';
     var detailLink = '<div onclick="event.stopPropagation();kjOpen(\''+k+'\')" style="color:#2d7d46;font-weight:700;cursor:pointer;padding-bottom:4px;border-bottom:1px solid var(--border);margin-bottom:4px">📖 detail kanji ›</div>';
-    body.innerHTML = detailLink + wordsHtml;
+
+    var comps = _wtComponentsOf(k);
+    var compHtml = '';
+    if(comps.length){
+      compHtml = '<div style="margin-top:8px;padding-top:6px;border-top:1px dashed var(--border)">'
+        + '<div style="color:var(--mist);font-size:10px;font-weight:700;margin-bottom:4px">🧩 TERDIRI DARI</div>'
+        + comps.map(function(c){
+            return '<span onclick="event.stopPropagation();wtJumpToRoot(\''+c.ch+'\')" style="display:inline-block;padding:3px 8px;margin:2px 3px 0 0;border:1px solid #2d7d46;border-radius:8px;color:#2d7d46;font-weight:700;cursor:pointer;font-family:\'Noto Serif JP\',serif">'+c.ch+' <span style="font-weight:400;font-size:10px">'+c.arti+'</span></span>';
+          }).join('')
+        + '</div>';
+    }
+
+    body.innerHTML = detailLink + wordsHtml + compHtml;
     body.dataset.loaded='1';
   }
   body.style.display='block';
 }
+
 
 function wtSearch(){
   var el=document.getElementById('wt-search');
