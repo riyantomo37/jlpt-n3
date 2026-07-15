@@ -1338,6 +1338,18 @@ header:has(.user-menu.open) { z-index:1000; }
     <div class="section-title" style="margin:0">文法 Bunpo — Tata Bahasa</div>
   </div>
 
+  <div id="bm-progress-stat" style="font-size:12px;color:var(--mist);margin:-10px 0 12px 2px"></div>
+
+  <!-- Banner review SRS pola Bunpo -->
+  <div id="bm-review-banner" style="display:none;background:linear-gradient(135deg,#7a5cc4,#9b7fd4);color:#fff;border-radius:14px;padding:13px 16px;margin-bottom:14px;align-items:center;gap:12px;cursor:pointer;box-shadow:0 4px 14px rgba(122,92,196,.25)" onclick="startBunpoReview()">
+    <span style="font-size:22px">🔁</span>
+    <div style="flex:1;min-width:0">
+      <div id="bm-review-text" style="font-weight:800;font-size:14px">0 pola perlu direview</div>
+      <div style="font-size:11px;opacity:.8">Spaced repetition — sebelum lupa</div>
+    </div>
+    <span style="background:#ffd166;color:#1a1a2e;font-weight:800;font-size:12px;padding:8px 14px;border-radius:10px;white-space:nowrap">Review ▶</span>
+  </div>
+
   <!-- Pemilih cara belajar -->
   <div id="bm-mode-picker" style="display:flex;gap:10px;margin-bottom:18px">
     <button id="bm-tab-list" onclick="setBunpoMode('list')" style="flex:1;padding:12px;border-radius:12px;border:1px solid var(--border);background:white;color:var(--ink);cursor:pointer;font-weight:700;font-size:14px">📜 List Bunpou</button>
@@ -6155,7 +6167,7 @@ var BUNPO_DATA = {
 // BUNPŌ — Logic (menu stage, study, quiz via Gemini, progres)
 // ============================================================
 var STAGE_SIZE = 3;            // 3 pola per sesi
-var bunpoState = { stageIdx:0, patternIdx:0, patterns:[], quiz:[], quizIdx:0, score:0, single:false, singleId:null, answers:[] };
+var bunpoState = { stageIdx:0, patternIdx:0, patterns:[], quiz:[], quizIdx:0, score:0, single:false, singleId:null, answers:[], reviewMode:false };
 var bunpoViewMode = 'list';   // 'list' (fokus 1 pola) atau 'kilat' (sesi 3 pola)
 
 function setBunpoMode(mode){
@@ -6250,7 +6262,10 @@ function markBunpoLearned(ids){
   if(!bunpoLearned[currentJLPT]) bunpoLearned[currentJLPT]={};
   var changed=false;
   ids.forEach(function(id){
-    if(id && !bunpoLearned[currentJLPT][id]){ bunpoLearned[currentJLPT][id]=true; changed=true; }
+    if(id && !bunpoLearned[currentJLPT][id]){
+      bunpoLearned[currentJLPT][id]=true; changed=true;
+      try{ srsTouch({id:'bp_'+id, jp:id}, true); }catch(e){}
+    }
   });
   var unlockChanged = syncBunpoUnlock();
   if(changed || unlockChanged){
@@ -6258,6 +6273,35 @@ function markBunpoLearned(ids){
     if (typeof saveToFirestore === 'function') saveToFirestore();
   }
   return changed||unlockChanged;
+}
+
+// ── Review pola Bunpo berbasis SRS (jatuh tempo) ──
+function bunpoDueList(){
+  var data = BUNPO_DATA[currentJLPT] || [];
+  var learned = bunpoLearned[currentJLPT] || {};
+  var now = Date.now();
+  var due = [];
+  data.forEach(function(p){
+    if(!learned[p.id]) return;
+    var e = srsData[srsKey({id:'bp_'+p.id})];
+    if(e && e.due<=now) due.push(p);
+  });
+  return due;
+}
+function bunpoDueCount(){ return bunpoDueList().length; }
+function startBunpoReview(){
+  var due = bunpoDueList();
+  if(!due.length) return;
+  bunpoState.single = false;
+  bunpoState.reviewMode = true;
+  bunpoState.singleId = null;
+  bunpoState.stageIdx = -1;
+  bunpoState.patterns = due.slice(0, 6);
+  bunpoState.patternIdx = 0;
+  bunpoState.quiz = [];
+  bunpoState.quizIdx = 0;
+  bunpoState.score = 0;
+  startBunpoQuiz();
 }
 
 // bunpoProgress (jumlah stage kilat terbuka) = jumlah stage berurutan dari awal
@@ -6294,15 +6338,30 @@ function updateBunpoMenu(){
   var lw = document.getElementById('bm-list-wrap');
   var kw = document.getElementById('bm-kilat-wrap');
   var stages = bunpoStagesFor(currentJLPT);
+  var revBanner = document.getElementById('bm-review-banner');
+  var revText = document.getElementById('bm-review-text');
+  var statEl = document.getElementById('bm-progress-stat');
+  if (statEl){
+    var totalP = (BUNPO_DATA[currentJLPT]||[]).length;
+    var doneP = Object.keys(bunpoLearned[currentJLPT]||{}).length;
+    var pct = totalP? Math.round(doneP/totalP*100) : 0;
+    statEl.textContent = doneP+'/'+totalP+' pola dipelajari ('+pct+'%)';
+  }
   if (!stages.length){
     if (empty) empty.style.display = '';
     if (picker) picker.style.display = 'none';
     if (lw) lw.style.display = 'none';
     if (kw) kw.style.display = 'none';
+    if (revBanner) revBanner.style.display = 'none';
     return;
   }
   if (empty) empty.style.display = 'none';
   if (picker) picker.style.display = 'flex';
+  var due = bunpoDueCount();
+  if (revBanner){
+    revBanner.style.display = due>0 ? 'flex' : 'none';
+    if (revText) revText.textContent = due+' pola perlu direview';
+  }
   try{ if(syncBunpoUnlock()){ if(typeof save==='function') save(); if(typeof saveToFirestore==='function') saveToFirestore(); } }catch(e){}
   // terapkan mode aktif (default 'list')
   setBunpoMode(bunpoViewMode);
@@ -6601,6 +6660,23 @@ function finishBunpoQuiz(){
   var score = bunpoState.score;
   var passed = (score >= Math.ceil(total*0.6));
 
+  // === MODE REVIEW SRS (pola due): dua lapis penilaian ===
+  if (bunpoState.reviewMode){
+    document.getElementById('bq-progress').textContent = 'Selesai';
+    document.getElementById('bq-card').innerHTML =
+        '<div style="text-align:center">'
+      + '<div style="font-size:44px;margin-bottom:10px">'+(passed?'🎉':'💪')+'</div>'
+      + '<div style="font-weight:800;font-size:20px;color:'+color+';margin-bottom:6px">Skor: '+score+' / '+total+'</div>'
+      + '<div style="font-size:14px;color:var(--mist);margin-bottom:14px">'+(passed?'Bagus! Masih ingat pola-polanya.':'Beberapa pola mulai kabur.')+'</div>'
+      + '<div style="font-weight:700;color:var(--ink);margin-bottom:8px">Apakah kamu masih benar-benar hafal pola-pola di sesi ini?</div>'
+      + '<div style="display:flex;gap:8px">'
+      + '<button onclick="bunpoReviewAssess(false)" style="flex:1;padding:11px;border:1.5px solid #c0392b;border-radius:10px;background:rgba(192,57,43,.06);color:#c0392b;font-family:inherit;font-size:13px;font-weight:700;cursor:pointer">🙅 Belum Hafal</button>'
+      + '<button onclick="bunpoReviewAssess(true)" style="flex:1;padding:11px;border:none;border-radius:10px;background:var(--jade);color:#fff;font-family:inherit;font-size:13px;font-weight:700;cursor:pointer">💯 Hafal!</button>'
+      + '</div></div>';
+    document.getElementById('bq-actions').innerHTML = '';
+    return;
+  }
+
   // === MODE LIST (fokus 1 pola): tidak menyentuh progress sesi ===
   if (bunpoState.single){
     if (passed && bunpoState.singleId){
@@ -6648,6 +6724,21 @@ function finishBunpoQuiz(){
   actions += '<button onclick="startBunpoStage('+bunpoState.stageIdx+')" style="width:100%;padding:12px;border-radius:10px;border:1px solid var(--border);background:white;color:var(--ink);cursor:pointer;font-weight:600;margin-top:10px">Pelajari Lagi Sesi Ini</button>';
   actions += '<button onclick="gotoScreen(\'bunpomenu\')" style="width:100%;padding:12px;border-radius:10px;border:none;background:transparent;color:var(--mist);cursor:pointer;font-weight:600;margin-top:6px">Kembali ke Daftar Sesi</button>';
   document.getElementById('bq-actions').innerHTML = actions;
+}
+
+function bunpoReviewAssess(hafal){
+  (bunpoState.patterns||[]).forEach(function(p){
+    try{
+      srsTouch({id:'bp_'+p.id, jp:p.id}, hafal);
+      if(hafal){
+        todayCount++;
+        var _td=new Date().toDateString();
+        if(lastStudyDate!==_td){ var _yd=new Date(Date.now()-86400000).toDateString(); streak=(lastStudyDate===_yd)?streak+1:1; lastStudyDate=_td; }
+      }
+    }catch(e){}
+  });
+  save();
+  gotoScreen('bunpomenu');
 }
 
 // gotoScreen versi mentah (tanpa nav highlight khusus) untuk sub-screen bunpo
