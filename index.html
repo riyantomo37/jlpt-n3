@@ -1115,8 +1115,22 @@ header:has(.user-menu.open) { z-index:1000; }
   <button onclick="startWritePractice()">✍️ Latihan Tulis</button>
   <button onclick="startKalimat()">📖 Belajar Kalimat</button>
   <button onclick="startMnemonic()">🧩 Latihan Mnemonik</button>
+  <div style="border-top:1px solid var(--border);margin:4px 0"></div>
+  <button onclick="infoDataOpen()">ℹ️ Info Data</button>
 </div>
 <button id="backtotop" onclick="window.scrollTo({top:0,behavior:'smooth'})" title="Kembali ke atas">↑</button>
+
+<!-- ====== INFO DATA (cek cepat apakah update sudah masuk) ====== -->
+<div id="info-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:2700;align-items:center;justify-content:center;padding:14px" onclick="if(event.target===this)infoDataClose()">
+  <div style="background:white;border-radius:16px;padding:20px;width:min(94vw,380px);max-height:82vh;overflow-y:auto">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+      <div style="font-weight:800;font-size:16px;color:var(--ink)">ℹ️ Info Data</div>
+      <button onclick="infoDataClose()" style="border:none;background:none;font-size:20px;cursor:pointer;color:var(--mist)">✕</button>
+    </div>
+    <div id="info-data-body" style="font-size:13px;color:var(--ink);line-height:2"></div>
+    <div style="font-size:11px;color:var(--mist);margin-top:10px">Kalau angka di sini beda dari yang diharapkan, berarti file index.html belum ke-upload/ke-deploy dengan benar.</div>
+  </div>
+</div>
 
 <!-- ====== OVERVIEW ====== -->
 <div id="screen-overview" class="screen active">
@@ -11075,6 +11089,33 @@ function _wtQuizProceed(){
   }
 }
 function wtQuizNext(){ wtQuizShow(); }
+
+// ============================================================
+// ℹ️ INFO DATA: cek cepat jumlah data live (verifikasi deploy)
+// ============================================================
+function infoDataOpen(){
+  var body = document.getElementById('info-data-body');
+  function cnt(obj){ return obj ? Object.keys(obj).length : 0; }
+  var kanjiRootsCovered = 0;
+  try{
+    var covered = {};
+    Object.keys(KANJI_ROOTS||{}).forEach(function(c){ (KANJI_ROOTS[c]||[]).forEach(function(k){ covered[k]=true; }); });
+    kanjiRootsCovered = Object.keys(covered).length;
+  }catch(e){}
+  var rows = [
+    ['🧩 Cerita Mnemonic (KANJI_MNEMONIC)', cnt(typeof KANJI_MNEMONIC!=='undefined'?KANJI_MNEMONIC:null)],
+    ['📖 Kanji + bacaan on/kun (KANJI_READ)', cnt(typeof KANJI_READ!=='undefined'?KANJI_READ:null)],
+    ['🌳 Kelompok radikal (KANJI_ROOTS)', cnt(typeof KANJI_ROOTS!=='undefined'?KANJI_ROOTS:null)],
+    ['　└ kanji tercover kelompok', kanjiRootsCovered],
+    ['⚔️ Kelompok kanji kembar (TWIN_SETS)', (typeof TWIN_SETS!=='undefined'&&TWIN_SETS)?TWIN_SETS.length:0],
+  ];
+  body.innerHTML = rows.map(function(r){
+    return '<div style="display:flex;justify-content:space-between;border-bottom:1px solid var(--border);padding:4px 0"><span>'+r[0]+'</span><b style="font-family:\'DM Mono\',monospace">'+r[1]+'</b></div>';
+  }).join('');
+  document.getElementById('info-modal').style.display='flex';
+}
+function infoDataClose(){ document.getElementById('info-modal').style.display='none'; }
+
 
 // ============================================================
 // SRS — REVIEW BERKALA (spaced repetition ringan)
