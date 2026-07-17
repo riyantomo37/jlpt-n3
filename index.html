@@ -7258,16 +7258,16 @@ function renderOverviewMenu(){
   var sections=[
     { label:'📚 KOSAKATA & KANJI', items:[
       {scr:'flashmenu', emo:'📚', t:'Flashcard', d:'Hafal kosakata '+currentJLPT, c:color},
-      {scr:'kotoba', emo:'単語', t:'Daftar Kotoba', d:'Semua kata + centang arti & baca', c:'#00838f'},
-      {scr:'kanjimenu', emo:'漢字', t:'Baca Kanji', d:'Latihan baca kanji', c:'var(--gold)'},
+      {scr:'kotoba', emo:'単語', txt:true, t:'Daftar Kotoba', d:'Semua kata + centang arti & baca', c:'#00838f'},
+      {scr:'kanjimenu', emo:'漢字', txt:true, t:'Baca Kanji', d:'Latihan baca kanji', c:'var(--gold)'},
       {scr:'onyomenu', emo:'🈁', t:"On-Kun", d:'Latihan bacaan kanji', c:'#5c4b8a'},
       {scr:'wordtree', emo:'🌳', t:'Pohon Kata', d:'Jelajahi keluarga kanji & kata', c:'#2d7d46'},
     ]},
     { label:'📐 TATA BAHASA & RAGAM', items:[
-      {scr:'bunpomenu', emo:'文法', t:'Bunpo', d:'Belajar tata bahasa', c:'#7a5cc4', hide:isSSW},
-      {scr:'katsuyomenu', emo:'活用', t:'Konjugasi', d:'Bentuk kata kerja', c:'#0a7d6b'},
-      {scr:'dialectmenu', emo:'方言', t:'Dialek', d:'Ragam bahasa daerah', c:'#d98c00'},
-      {scr:'kazumenu', emo:'数', t:'Angka', d:'Tanggal · jam · counter', c:'#2e7dc0'},
+      {scr:'bunpomenu', emo:'文法', txt:true, t:'Bunpo', d:'Belajar tata bahasa', c:'#7a5cc4', hide:isSSW},
+      {scr:'katsuyomenu', emo:'活用', txt:true, t:'Konjugasi', d:'Bentuk kata kerja', c:'#0a7d6b'},
+      {scr:'dialectmenu', emo:'方言', txt:true, t:'Dialek', d:'Ragam bahasa daerah', c:'#d98c00'},
+      {scr:'kazumenu', emo:'数', txt:true, t:'Angka', d:'Tanggal · jam · counter', c:'#2e7dc0'},
       {scr:'onomenu', emo:'💬', t:'Onomatope', d:'Giongo & gitaigo + contoh', c:'#c2185b'},
     ]},
     { label:'🎯 UJI & PANTAU', items:[
@@ -7285,15 +7285,32 @@ function renderOverviewMenu(){
     var visibleItems=sec.items.filter(function(it){ return !it.hide; });
     if(!visibleItems.length) return;
     html+='<div style="font-size:11px;font-weight:800;color:var(--mist);letter-spacing:.5px;margin:14px 0 6px">'+sec.label+'</div>';
-    html+='<div style="display:grid;grid-template-columns:repeat(2,1fr);gap:12px">';
-    visibleItems.forEach(function(it){
+    html+='<div style="display:grid;grid-template-columns:repeat(2,1fr);gap:12px;align-items:stretch">';
+    var oddLast = visibleItems.length % 2 === 1;
+    visibleItems.forEach(function(it,i){
       var _oc = it.fn ? (it.fn+'()') : ('navTo(&apos;'+it.scr+'&apos;)');
       var delay = (cardIdx % 8) * 40;
-      html+='<div class="ov-menu-card" onclick="'+_oc+'" style="animation-delay:'+delay+'ms;background:white;border:1px solid var(--border);border-top:3px solid '+it.c+';border-radius:12px;padding:16px;cursor:pointer;transition:transform .15s">'
-        +'<div style="font-size:24px;margin-bottom:6px">'+it.emo+'</div>'
-        +'<div style="font-weight:700;font-size:14px;margin-bottom:2px">'+it.t+'</div>'
-        +'<div style="font-size:11px;color:var(--mist)">'+it.d+'</div>'
-        +'</div>';
+      var isWide = oddLast && (i === visibleItems.length-1);
+      // Badge ikon: bungkus emoji ATAU teks kanji dalam kotak rounded bertinta warna kartu,
+      // supaya keduanya konsisten terlihat sebagai "ikon", bukan teks polos nyasar.
+      var iconBadge = '<div style="width:40px;height:40px;min-width:40px;border-radius:11px;background:rgba(0,0,0,.05);color:'+it.c+';display:flex;align-items:center;justify-content:center;font-size:'+(it.txt?15:19)+'px;font-weight:800;flex-shrink:0">'+it.emo+'</div>';
+      if (isWide){
+        // Item ganjil terakhir: span full width, layout horizontal (ikon kiri, teks kanan)
+        // supaya tidak menyisakan kolom kosong di sebelahnya pada grid 2-kolom.
+        html+='<div class="ov-menu-card" onclick="'+_oc+'" style="animation-delay:'+delay+'ms;grid-column:1 / -1;display:flex;align-items:center;gap:12px;background:white;border:1px solid var(--border);border-top:3px solid '+it.c+';border-radius:12px;padding:14px 16px;cursor:pointer;transition:transform .15s">'
+          +iconBadge
+          +'<div style="min-width:0;flex:1">'
+            +'<div style="font-weight:700;font-size:14px;margin-bottom:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+it.t+'</div>'
+            +'<div style="font-size:11px;color:var(--mist);overflow:hidden;text-overflow:ellipsis;display:-webkit-box;-webkit-line-clamp:1;-webkit-box-orient:vertical">'+it.d+'</div>'
+          +'</div>'
+          +'</div>';
+      } else {
+        html+='<div class="ov-menu-card" onclick="'+_oc+'" style="animation-delay:'+delay+'ms;background:white;border:1px solid var(--border);border-top:3px solid '+it.c+';border-radius:12px;padding:14px;cursor:pointer;transition:transform .15s;display:flex;flex-direction:column;min-height:118px">'
+          +iconBadge
+          +'<div style="font-weight:700;font-size:14px;margin:10px 0 3px;overflow:hidden;text-overflow:ellipsis;display:-webkit-box;-webkit-line-clamp:1;-webkit-box-orient:vertical">'+it.t+'</div>'
+          +'<div style="font-size:11px;color:var(--mist);overflow:hidden;text-overflow:ellipsis;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;flex:1">'+it.d+'</div>'
+          +'</div>';
+      }
       cardIdx++;
     });
     html+='</div>';
