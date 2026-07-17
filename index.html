@@ -228,7 +228,8 @@ nav button.active {
   gap:10px;
   width:100%;
 }
-.flashcard.revealed .meaning-reveal { display:flex; }
+.flashcard.revealed .meaning-reveal { display:flex; animation:meaningReveal .3s cubic-bezier(.16,1,.3,1) both; }
+@keyframes meaningReveal { from{opacity:0;transform:translateY(6px)} to{opacity:1;transform:translateY(0)} }
 .flashcard.revealed .hint { display:none; }
 .flashcard .meaning-text { font-size:22px; font-weight:600; color:var(--ink); }
 .flashcard .meaning-romaji {
@@ -265,7 +266,7 @@ nav button.active {
   font-size:15px;
   font-weight:700;
   cursor:pointer;
-  transition:all .2s;
+  transition:transform .12s cubic-bezier(.16,1,.3,1),background .2s,border-color .2s;
   display:flex;
   align-items:center;
   justify-content:center;
@@ -281,7 +282,7 @@ nav button.active {
   font-size:15px;
   font-weight:700;
   cursor:pointer;
-  transition:all .2s;
+  transition:transform .12s cubic-bezier(.16,1,.3,1),background .2s,border-color .2s;
   display:flex;
   align-items:center;
   justify-content:center;
@@ -289,6 +290,8 @@ nav button.active {
 }
 .btn-no:hover { background:rgba(192,57,43,.15); }
 .btn-yes:hover { background:rgba(45,122,79,.15); }
+.btn-no:active { transform:scale(.95); background:rgba(192,57,43,.18); }
+.btn-yes:active { transform:scale(.95); background:rgba(45,122,79,.18); }
 .action-row.hidden { opacity:0; pointer-events:none; }
 
 .session-info {
@@ -328,9 +331,10 @@ nav button.active {
   font-weight:600;
   cursor:pointer;
   margin-right:8px;
-  transition:background .2s;
+  transition:background .2s,transform .12s cubic-bezier(.16,1,.3,1);
 }
 .btn-continue:hover { background:var(--indigo); }
+.btn-continue:active { transform:scale(.96); }
 .btn-back-home {
   padding:14px 24px;
   background:none;
@@ -340,7 +344,9 @@ nav button.active {
   font-size:14px;
   cursor:pointer;
   color:var(--mist);
+  transition:transform .12s cubic-bezier(.16,1,.3,1),border-color .2s;
 }
+.btn-back-home:active { transform:scale(.96); border-color:var(--mist); }
 
 /* ===== REVIEW SCREEN ===== */
 .filter-bar {
