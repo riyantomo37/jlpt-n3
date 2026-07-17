@@ -7300,14 +7300,14 @@ function renderOverviewMenu(){
         html+='<div class="ov-menu-card" onclick="'+_oc+'" style="animation-delay:'+delay+'ms;grid-column:1 / -1;display:flex;align-items:center;gap:12px;background:white;border:1px solid var(--border);border-top:3px solid '+it.c+';border-radius:12px;padding:14px 16px;cursor:pointer;transition:transform .15s">'
           +iconBadge
           +'<div style="min-width:0;flex:1">'
-            +'<div style="font-weight:700;font-size:14px;margin-bottom:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+it.t+'</div>'
+            +'<div style="font-weight:700;font-size:14px;line-height:1.25;margin-bottom:2px;overflow:hidden;text-overflow:ellipsis;display:-webkit-box;-webkit-line-clamp:1;-webkit-box-orient:vertical;word-break:break-word">'+it.t+'</div>'
             +'<div style="font-size:11px;color:var(--mist);overflow:hidden;text-overflow:ellipsis;display:-webkit-box;-webkit-line-clamp:1;-webkit-box-orient:vertical">'+it.d+'</div>'
           +'</div>'
           +'</div>';
       } else {
-        html+='<div class="ov-menu-card" onclick="'+_oc+'" style="animation-delay:'+delay+'ms;background:white;border:1px solid var(--border);border-top:3px solid '+it.c+';border-radius:12px;padding:14px;cursor:pointer;transition:transform .15s;display:flex;flex-direction:column;min-height:118px">'
+        html+='<div class="ov-menu-card" onclick="'+_oc+'" style="animation-delay:'+delay+'ms;background:white;border:1px solid var(--border);border-top:3px solid '+it.c+';border-radius:12px;padding:14px;cursor:pointer;transition:transform .15s;display:flex;flex-direction:column;min-height:130px">'
           +iconBadge
-          +'<div style="font-weight:700;font-size:14px;margin:10px 0 3px;overflow:hidden;text-overflow:ellipsis;display:-webkit-box;-webkit-line-clamp:1;-webkit-box-orient:vertical">'+it.t+'</div>'
+          +'<div style="font-weight:700;font-size:13.5px;line-height:1.25;margin:10px 0 3px;overflow:hidden;text-overflow:ellipsis;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;word-break:break-word">'+it.t+'</div>'
           +'<div style="font-size:11px;color:var(--mist);overflow:hidden;text-overflow:ellipsis;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;flex:1">'+it.d+'</div>'
           +'</div>';
       }
