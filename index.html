@@ -1229,7 +1229,7 @@ header:has(.user-menu.open) { z-index:1000; }
         ↩ Kartu sebelumnya
       </button>
     </div>
-    <button onclick="endSession()" style="width:100%;margin-top:10px;padding:10px;border:1.5px solid var(--border);border-radius:10px;background:white;color:var(--mist);font-family:inherit;font-size:12px;font-weight:700;cursor:pointer">✕ Akhiri Sesi</button>
+    <button onclick="endFlashSession()" style="width:100%;margin-top:10px;padding:10px;border:1.5px solid var(--border);border-radius:10px;background:white;color:var(--mist);font-family:inherit;font-size:12px;font-weight:700;cursor:pointer">✕ Akhiri Sesi</button>
   </div>
 
   <!-- Session complete -->
@@ -7693,7 +7693,7 @@ function updateUndoBtn() {
 }
 
 
-function endSession() {
+function endFlashSession() {
   document.getElementById('flash-active').style.display = 'none';
   document.getElementById('session-done-panel').style.display = 'block';
   document.getElementById('done-reviewed').textContent = sessionReviewed;
