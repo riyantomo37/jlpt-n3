@@ -3477,6 +3477,7 @@ async function buildBunpoContextQuestions(n){
     if(st>=0&&en>st) raw=raw.slice(st,en+1);
     var qs=JSON.parse(raw);
     if(Array.isArray(qs)&&qs.length){
+      qs = qs.filter(function(q){ return isCleanQuestion({question:q.q, choices:q.c, answer:q.a}); });
       return qs.slice(0,n).map(function(q,i){
         var qt=(q.q||'').split('\n').join('<br>').replace('（　）','<span class="blank">（　）</span>');
         return {id:'m3ai_'+i, question:qt, choices:(q.c||[]).map(function(c,ci){return String.fromCharCode(0xFF11+ci)+'. '+c;}), answer:q.a||0, exp:q.e||''};
@@ -3501,8 +3502,8 @@ async function aiVocabQuestions(prompt, n, idPrefix){
     if(st>=0&&en>st) raw=raw.slice(st,en+1);
     var qs=JSON.parse(raw);
     if(Array.isArray(qs)&&qs.length){
-      // Buang soal cacat (pilihan duplikat, bukan 4 pilihan, jawaban di luar range).
-      qs = qs.filter(function(q){ return isCleanQuestion({choices:q.c, answer:q.a}); });
+      // Buang soal cacat (pilihan duplikat, bukan 4 pilihan, jawaban di luar range, bocor Bahasa Indonesia/Inggris).
+      qs = qs.filter(function(q){ return isCleanQuestion({question:q.q, choices:q.c, answer:q.a}); });
       return qs.slice(0,n).map(function(q,i){
         var qt=String(q.q||'').split(String.fromCharCode(10)).join('<br>');
         return {id:idPrefix+i, question:qt, choices:(q.c||[]).map(function(c,ci){return String.fromCharCode(0xFF11+ci)+'. '+c;}), answer:q.a||0, exp:q.e||''};
@@ -3523,7 +3524,7 @@ async function buildIikaeQuestions(n){
     + 'ATURAN WAJIB:'+String.fromCharCode(10)
     + '1. Format soal: sebuah kalimat dengan satu kata/frasa digarisbawahi memakai <u>…</u>. Tugasnya memilih kata yang maknanya PALING DEKAT.'+String.fromCharCode(10)
     + '2. Soal "q" dan keempat pilihan "c" ditulis penuh kanji sesuai level '+currentJLPT+' (jangan melebihi level, jangan hiragana polos untuk kata yang lazim berkanji).'+String.fromCharCode(10)
-    + '3. Tiga pengecoh masuk akal & mirip makna/bentuk, hanya 1 jawaban benar.'+String.fromCharCode(10)
+    + '3. Tiga pengecoh masuk akal: utamakan kata dengan bacaan mirip (mis. beda 1 mora), kanji yang berbagi komponen/onyomi mirip, atau makna berdekatan tapi salah nuansa — JANGAN pilihan acak yang jelas-jelas salah. Hanya 1 jawaban benar.'+String.fromCharCode(10)
     + 'WAJIB MUTLAK: keempat pilihan harus BERBEDA (dilarang duplikat); jawaban yang ditandai harus benar-benar tepat secara makna.'+String.fromCharCode(10)
 
     + '4. Penjelasan "e" singkat 1 kalimat Bahasa Jepang.'+String.fromCharCode(10)
@@ -3536,17 +3537,16 @@ async function buildYouhouQuestions(n){
   var sample = (JLPT_DATA[currentJLPT]||[]).slice();
   shuffle(sample); sample = sample.slice(0,15).map(function(w){return w.jp;}).join('、');
   var prompt =
-      'Kamu guru JLPT '+currentJLPT+' ahli. Buat '+n+' soal pilihan ganda tipe 用法 (penggunaan kata yang benar). '
+      'Kamu guru JLPT '+currentJLPT+' ahli pembuat soal format resmi 問題５ 用法 (menguji apakah pelajar paham cara memakai sebuah kata dalam kalimat, BUKAN artinya). Buat '+n+' soal pilihan ganda tipe ini. '
     + levelLockText()
-    + (sample?('Gunakan kata-kata level '+currentJLPT+' berikut sebagai kata target: '+sample+'. '):'')
-    + 'ATURAN WAJIB:'+String.fromCharCode(10)
-    + '1. Tiap soal menargetkan SATU kata. Tampilkan kata target di awal "q", lalu 4 kalimat pilihan. Hanya 1 kalimat yang memakai kata itu secara benar & natural; 3 lainnya salah penggunaan namun tetap gramatikal.'+String.fromCharCode(10)
-    + '2. Soal "q" dan keempat pilihan "c" ditulis penuh kanji sesuai level '+currentJLPT+' (jangan melebihi level, jangan hiragana polos untuk kata yang lazim berkanji).'+String.fromCharCode(10)
-    + '3. Pengecoh dibuat realistis (kata dipakai di konteks yang salah jenis kata/maknanya), hanya 1 jawaban benar.'+String.fromCharCode(10)
-    + 'WAJIB MUTLAK: keempat pilihan harus BERBEDA (dilarang duplikat); jawaban yang ditandai harus benar-benar tepat secara makna.'+String.fromCharCode(10)
-
-    + '4. Penjelasan "e" singkat 1 kalimat Bahasa Jepang menjelaskan penggunaan yang benar.'+String.fromCharCode(10)
-    + 'Balas HANYA JSON array valid: [{"q":"次の言葉の使い方として最もよいものはどれですか。「○○」","c":["…","…","…","…"],"a":0,"e":"…"}]';
+    + (sample?('Gunakan kata-kata level '+currentJLPT+' berikut sebagai kata target (pilih kata yang punya makna cukup spesifik agar mudah dibedakan penggunaannya, hindari kata terlalu umum seperti partikel): '+sample+'. '):'')
+    + 'SEMUA isi soal (kalimat "q", keempat kalimat pilihan "c", penjelasan "e") HARUS dalam BAHASA JEPANG, DILARANG ada kata Bahasa Indonesia/Inggris tercampur. '+String.fromCharCode(10)
+    + 'FORMAT WAJIB tiap soal — ikuti persis: field "q" HANYA berisi kata target yang digarisbawahi memakai <u>…</u> (contoh: "<u>経験</u>"), TANPA kalimat instruksi tambahan (instruksi sudah ada di judul bagian). Field "c" berisi EMPAT KALIMAT LENGKAP berbeda konteks, masing-masing memakai kata target itu; HANYA SATU kalimat yang menggunakan kata itu secara benar & natural sesuai maknanya, TIGA lainnya memakai kata yang sama tapi di konteks/makna yang salah (tetap gramatikal, bukan kalimat rusak).'+String.fromCharCode(10)
+    + 'Contoh konkret (pola, jangan disalin persis): kata target "経験" → c:["この仕事には経験が必要です。","経験が雨で濡れました。","経験を食べました。","経験に乗って学校へ行きます。"], a:0 → hanya kalimat pertama yang memakai "経験" (pengalaman) secara benar; tiga lainnya memasang kata itu di konteks benda fisik yang salah.'+String.fromCharCode(10)
+    + 'Kanji ditulis penuh sesuai level '+currentJLPT+' (jangan melebihi level, jangan hiragana polos untuk kata yang lazim berkanji).'+String.fromCharCode(10)
+    + 'WAJIB MUTLAK: keempat pilihan harus BERBEDA (dilarang duplikat kalimat); jawaban yang ditandai harus benar-benar satu-satunya penggunaan yang tepat.'+String.fromCharCode(10)
+    + 'Penjelasan "e" singkat 1 kalimat Bahasa Jepang menjelaskan mengapa jawaban itu benar.'+String.fromCharCode(10)
+    + 'Balas HANYA JSON array valid: [{"q":"<u>経験</u>","c":["…","…","…","…"],"a":0,"e":"…"}]';
   return aiVocabQuestions(prompt, n, 'm5ai_');
 }
 
@@ -3764,7 +3764,12 @@ async function buildListeningSections(words) {
       var st=raw.indexOf('['),en=raw.lastIndexOf(']');
       if(st>=0&&en>st) raw=raw.slice(st,en+1);
       var arr=JSON.parse(raw);
-      if(Array.isArray(arr)) return arr.filter(function(it){return it&&it.s&&it.q&&it.c&&it.c.length===4;});
+      if(Array.isArray(arr)) return arr.filter(function(it){
+        if(!(it&&it.s&&it.q&&it.c&&it.c.length===4)) return false;
+        // skrip percakapan & soal wajib berbahasa Jepang (bukan bocor Indonesia).
+        if(!containsEnoughJapanese(it.s)) return false;
+        return isCleanQuestion({question:it.q, choices:it.c, answer:it.a});
+      });
     } catch(e){}
     return [];
   }
@@ -3866,7 +3871,23 @@ function isCleanQuestion(q) {
     if (uniq[norm[i]]) return false;                                  // pilihan duplikat
     uniq[norm[i]] = 1;
   }
+  // Bahasa: soal & keempat pilihan wajib mayoritas huruf Jepang (bukan bocor Indonesia/Inggris).
+  if (!containsEnoughJapanese(q.question || q.q || '')) return false;
+  for (var j=0;j<norm.length;j++){
+    if (!containsEnoughJapanese(norm[j])) return false;
+  }
   return true;
+}
+
+// Cek apakah sebuah string didominasi karakter Jepang (hiragana/katakana/kanji/full-width).
+// Dipakai untuk menyaring keluaran AI yang bocor ke Bahasa Indonesia/Inggris meski sudah
+// diinstruksikan berbahasa Jepang di prompt (instruksi saja kadang tidak cukup ditaati model).
+function containsEnoughJapanese(str){
+  str = String(str||'');
+  var stripped = str.replace(/[\s0-9\uFF10-\uFF19.,、。！？!?（）()「」『』%＋\-ー・]/g,'');
+  if (!stripped.length) return true; // string kosong/hanya simbol angka: jangan blokir (mis. blank slot 文の組み立て)
+  var jp = (stripped.match(/[\u3040-\u30ff\u3400-\u9fff\uff00-\uffef]/g) || []).length;
+  return (jp / stripped.length) >= 0.5;
 }
 
 
@@ -3988,6 +4009,11 @@ async function buildReadingSections(words) {
       if(st>=0&&en>st) raw=raw.slice(st,en+1);
       var data = JSON.parse(raw);
       if(!data.passage||!data.questions||!data.questions.length) return null;
+      if(!containsEnoughJapanese(data.passage)) return null; // bocor Indonesia/Inggris di teks bacaan
+      data.questions = data.questions.filter(function(q){
+        return isCleanQuestion({question:q.q, choices:q.choices, answer:q.answer});
+      });
+      if(!data.questions.length) return null;
       return data;
     } catch(e){ return null; }
   }
