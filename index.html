@@ -9239,7 +9239,7 @@ var KANJI_MNEMONIC={
 '重':['orang memikul','Memikul beban = BERAT.'],
 '習':['羽 sayap + 白 putih','Anak burung sayap putih BERLATIH terbang.'],
 '題':['是 + 頁 kepala','Isi kepala tentang soal = JUDUL/SOAL.'],
-'質':['斤斤 + 貝 uang','Menimbang mutu barang gadai = KUALITAS.'],
+'質':['斤 kapak + 斤 kapak + 貝 uang','Menimbang mutu barang gadai = KUALITAS.'],
 '貿':['卯 + 貝 uang','Uang lintas negara = PERDAGANGAN.'],
 '銀':['金 logam + 艮','Logam putih berkilau = PERAK/BANK.'],
 '鉄':['金 logam + 失','Logam yang mudah hilang berkarat = BESI.'],
@@ -12377,12 +12377,19 @@ function _wtBuildTree(){
   return roots;
 }
 function _wtComponentsOf(k){
-  var comps = (typeof KANJI_RADICALS!=='undefined') ? (KANJI_RADICALS[k]||[]) : [];
-  return comps.map(function(ch){
-    var arti = (typeof ROOT_LABELS!=='undefined' && ROOT_LABELS[ch]) ? ROOT_LABELS[ch]
-             : (typeof KANJI_READ!=='undefined' && KANJI_READ[ch]) ? KANJI_READ[ch][2] : '';
-    return {ch:ch, arti:arti};
+  var mn = (typeof KANJI_MNEMONIC!=='undefined') ? KANJI_MNEMONIC[k] : null;
+  if(!mn) return [];
+  var parts = mn[0]||'';
+  var out = [];
+  parts.split('+').forEach(function(seg){
+    seg = seg.trim();
+    var m = seg.match(/^([\u4e00-\u9faf\u3040-\u30ff]{1,4})\s*(.*)$/);
+    if(!m || m[1]===k) return;
+    var arti = m[2]||'';
+    if(!arti && typeof KANJI_READ!=='undefined' && KANJI_READ[m[1]]) arti = KANJI_READ[m[1]][2]||'';
+    out.push({ch:m[1], arti:arti});
   });
+  return out;
 }
 
 
