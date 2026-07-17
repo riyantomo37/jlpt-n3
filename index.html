@@ -84,7 +84,11 @@ nav button.active {
 
 /* ===== SCREENS ===== */
 .screen { display:none; padding:28px; max-width:900px; margin:0 auto; }
-.screen.active { display:block; }
+.screen.active { display:block; animation:screenFadeIn .32s cubic-bezier(.16,1,.3,1) both; }
+@keyframes screenFadeIn { from{opacity:0;transform:translateY(6px)} to{opacity:1;transform:translateY(0)} }
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration:.01ms !important; animation-iteration-count:1 !important; transition-duration:.01ms !important; scroll-behavior:auto !important; }
+}
 
 /* ===== OVERVIEW SCREEN ===== */
 .stats-grid {
@@ -379,8 +383,11 @@ nav button.active {
 .wt-diag-node{font-size:22px;font-weight:800;color:var(--ink);font-family:'Noto Serif JP',serif;background:white;border:1.5px solid var(--border);border-radius:10px;padding:6px 10px;cursor:pointer;white-space:nowrap}
 .wt-diag-node:active{background:rgba(45,125,70,.08);border-color:#2d7d46}
 @keyframes ovCardIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
-.ov-menu-card{animation:ovCardIn .4s ease both}
-.ov-menu-card:active{transform:scale(.97)}
+.ov-menu-card{animation:ovCardIn .45s cubic-bezier(.16,1,.3,1) both;box-shadow:0 1px 3px rgba(26,26,46,.05);transition:transform .15s cubic-bezier(.16,1,.3,1),box-shadow .2s ease}
+.ov-menu-card:active{transform:scale(.97);box-shadow:0 1px 2px rgba(26,26,46,.04)}
+@media (hover:hover) {
+  .ov-menu-card:hover{transform:translateY(-2px);box-shadow:0 8px 20px rgba(26,26,46,.09)}
+}
 #nav-learn-menu button{text-align:left;padding:11px 14px;border:none;background:none;border-radius:8px;font-family:'Noto Sans JP',sans-serif;font-size:13px;font-weight:500;cursor:pointer;color:var(--ink)}
 #nav-learn-menu button:active{background:rgba(26,26,46,.06)}
 #backtotop{position:fixed;right:16px;bottom:24px;z-index:999;width:44px;height:44px;border-radius:50%;border:none;background:var(--ink);color:#fff;font-size:20px;box-shadow:0 4px 14px rgba(0,0,0,.25);cursor:pointer;display:none}
@@ -7284,8 +7291,8 @@ function renderOverviewMenu(){
   sections.forEach(function(sec){
     var visibleItems=sec.items.filter(function(it){ return !it.hide; });
     if(!visibleItems.length) return;
-    html+='<div style="font-size:11px;font-weight:800;color:var(--mist);letter-spacing:.5px;margin:14px 0 6px">'+sec.label+'</div>';
-    html+='<div style="display:grid;grid-template-columns:repeat(2,1fr);gap:12px;align-items:stretch">';
+    html+='<div style="grid-column:1 / -1;font-size:11px;font-weight:800;color:var(--mist);letter-spacing:.5px;margin:14px 0 6px">'+sec.label+'</div>';
+    html+='<div style="grid-column:1 / -1;display:grid;grid-template-columns:repeat(2,1fr);gap:12px;align-items:stretch">';
     var oddLast = visibleItems.length % 2 === 1;
     visibleItems.forEach(function(it,i){
       var _oc = it.fn ? (it.fn+'()') : ('navTo(&apos;'+it.scr+'&apos;)');
