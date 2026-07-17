@@ -7503,7 +7503,7 @@ function shuffle(arr) {
 
 function showCard() {
   updateUndoBtn();
-  if (sessionIdx >= sessionQueue.length) { endSession(); return; }
+  if (sessionIdx >= sessionQueue.length) { endFlashSession(); return; }
   const w = sessionQueue[sessionIdx];
   revealed = false;
 
