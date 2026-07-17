@@ -378,6 +378,9 @@ nav button.active {
 .wt-diag-child::before{content:'';position:absolute;top:-14px;left:50%;width:2px;height:14px;background:var(--border)}
 .wt-diag-node{font-size:22px;font-weight:800;color:var(--ink);font-family:'Noto Serif JP',serif;background:white;border:1.5px solid var(--border);border-radius:10px;padding:6px 10px;cursor:pointer;white-space:nowrap}
 .wt-diag-node:active{background:rgba(45,125,70,.08);border-color:#2d7d46}
+@keyframes ovCardIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+.ov-menu-card{animation:ovCardIn .4s ease both}
+.ov-menu-card:active{transform:scale(.97)}
 #nav-learn-menu button{text-align:left;padding:11px 14px;border:none;background:none;border-radius:8px;font-family:'Noto Sans JP',sans-serif;font-size:13px;font-weight:500;cursor:pointer;color:var(--ink)}
 #nav-learn-menu button:active{background:rgba(26,26,46,.06)}
 #backtotop{position:fixed;right:16px;bottom:24px;z-index:999;width:44px;height:44px;border-radius:50%;border:none;background:var(--ink);color:#fff;font-size:20px;box-shadow:0 4px 14px rgba(0,0,0,.25);cursor:pointer;display:none}
@@ -1715,7 +1718,11 @@ header:has(.user-menu.open) { z-index:1000; }
   <div id="tq-done" style="display:none;text-align:center;background:white;border:1px solid var(--border);border-radius:16px;padding:26px">
     <div style="font-size:34px;margin-bottom:6px">🏁</div>
     <div id="tq-done-score" style="font-size:20px;font-weight:800;margin-bottom:12px"></div>
-    <button onclick="startTwinQuiz()" style="padding:12px 22px;border:none;border-radius:12px;background:var(--jade);color:#fff;font-family:inherit;font-size:14px;font-weight:700;cursor:pointer">🔄 Main Lagi</button>
+    <button onclick="startTwinQuiz()" style="padding:12px 22px;border:none;border-radius:12px;background:var(--jade);color:#fff;font-family:inherit;font-size:14px;font-weight:700;cursor:pointer;margin-bottom:10px">🔄 Main Lagi</button>
+    <div style="border-top:1px solid var(--border);margin:14px 0 12px;padding-top:14px">
+      <div style="font-size:11px;color:var(--mist);margin-bottom:8px">Lanjutkan belajar:</div>
+      <button onclick="navTo('wordtree')" style="width:100%;padding:11px;border:1.5px solid #2d7d46;border-radius:10px;background:rgba(45,125,70,.06);color:#2d7d46;font-family:inherit;font-size:13px;font-weight:700;cursor:pointer">🌳 Pohon Kata — lihat kenapa kanji-kanji tadi mirip ›</button>
+    </div>
   </div>
 </div>
 
@@ -1758,8 +1765,11 @@ header:has(.user-menu.open) { z-index:1000; }
   <div id="oy-done" style="display:none;text-align:center;background:white;border:1px solid var(--border);border-radius:16px;padding:26px">
     <div style="font-size:34px;margin-bottom:6px">🏁</div>
     <div id="oy-done-score" style="font-size:20px;font-weight:800;margin-bottom:12px"></div>
-    <button onclick="startOyQuiz()" style="padding:12px 22px;border:none;border-radius:12px;background:var(--jade);color:#fff;font-family:inherit;font-size:14px;font-weight:700;cursor:pointer">🔄 Main Lagi</button>
-  </div>
+    <button onclick="startOyQuiz()" style="padding:12px 22px;border:none;border-radius:12px;background:var(--jade);color:#fff;font-family:inherit;font-size:14px;font-weight:700;cursor:pointer;margin-bottom:10px">🔄 Main Lagi</button>
+    <div style="border-top:1px solid var(--border);margin:14px 0 12px;padding-top:14px">
+      <div style="font-size:11px;color:var(--mist);margin-bottom:8px">Lanjutkan belajar:</div>
+      <button onclick="startTwinQuiz()" style="width:100%;padding:11px;border:1.5px solid #c0532e;border-radius:10px;background:rgba(192,83,46,.06);color:#c0532e;font-family:inherit;font-size:13px;font-weight:700;cursor:pointer">⚔️ Kanji Kembar — kanji yg mirip sama yg baru kamu latih ›</button>
+    </div>
 </div>
 
 <!-- ====== POHON KATA (word tree: komponen → kanji → kosakata) ====== -->
@@ -1791,7 +1801,11 @@ header:has(.user-menu.open) { z-index:1000; }
   <div id="wtq-done" style="display:none;text-align:center;background:white;border:1px solid var(--border);border-radius:16px;padding:26px">
     <div style="font-size:34px;margin-bottom:6px">🌳</div>
     <div id="wtq-done-score" style="font-size:20px;font-weight:800;margin-bottom:12px"></div>
-    <button onclick="startWtQuiz()" style="padding:12px 22px;border:none;border-radius:12px;background:#2d7d46;color:#fff;font-family:inherit;font-size:14px;font-weight:700;cursor:pointer">🔄 Main Lagi</button>
+    <button onclick="startWtQuiz()" style="padding:12px 22px;border:none;border-radius:12px;background:#2d7d46;color:#fff;font-family:inherit;font-size:14px;font-weight:700;cursor:pointer;margin-bottom:10px">🔄 Main Lagi</button>
+    <div style="border-top:1px solid var(--border);margin:14px 0 12px;padding-top:14px">
+      <div style="font-size:11px;color:var(--mist);margin-bottom:8px">Lanjutkan belajar:</div>
+      <button onclick="startOyQuiz()" style="width:100%;padding:11px;border:1.5px solid #5c4b8a;border-radius:10px;background:rgba(92,75,138,.06);color:#5c4b8a;font-family:inherit;font-size:13px;font-weight:700;cursor:pointer">🈁 On-Kun — latih bacaan kanji yg baru dijelajahi ›</button>
+    </div>
   </div>
 </div>
 
@@ -4907,6 +4921,16 @@ async function saveToFirestore() {
 }
 
 // Debounced save — tidak spam Firestore setiap centang
+// Dipanggil tiap kali user berhasil "hafal" sesuatu di metode manapun — poin harian & streak konsisten di semua tempat.
+function _touchStreak(){
+  todayCount++;
+  var _td = new Date().toDateString();
+  if (lastStudyDate !== _td) {
+    var _yd = new Date(Date.now()-86400000).toDateString();
+    streak = (lastStudyDate === _yd) ? streak+1 : 1;
+    lastStudyDate = _td;
+  }
+}
 function save() {
   saveToLocal(); // selalu simpan lokal dulu (instant)
   try{ localStorage.setItem('n3_dirty','1'); }catch(e){} // tandai ada perubahan belum ke cloud
@@ -6786,9 +6810,7 @@ function bunpoReviewAssess(hafal){
     try{
       srsTouch({id:'bp_'+p.id, jp:p.id}, hafal);
       if(hafal){
-        todayCount++;
-        var _td=new Date().toDateString();
-        if(lastStudyDate!==_td){ var _yd=new Date(Date.now()-86400000).toDateString(); streak=(lastStudyDate===_yd)?streak+1:1; lastStudyDate=_td; }
+        _touchStreak();
       }
     }catch(e){}
   });
@@ -7207,35 +7229,53 @@ function renderOverviewMenu(){
   if(!grid) return;
   var color=JLPT_COLORS[currentJLPT]||'var(--red)';
   var isSSW=currentJLPT==='SSW';
-  var items=[
-    {scr:'flashmenu', emo:'📚', t:'Flashcard', d:'Hafal kosakata '+currentJLPT, c:color},
-    {scr:'kotoba', emo:'単語', t:'Daftar Kotoba', d:'Semua kata + centang arti & baca', c:'#00838f'},
-
-    {scr:'kanjimenu', emo:'漢字', t:'Baca Kanji', d:'Latihan baca kanji', c:'var(--gold)'},
-    {scr:'bunpomenu', emo:'文法', t:'Bunpo', d:'Belajar tata bahasa', c:'#7a5cc4', hide:isSSW},
-    {scr:'katsuyomenu', emo:'活用', t:'Konjugasi', d:'Bentuk kata kerja', c:'#0a7d6b'},
-    {scr:'dialectmenu', emo:'方言', t:'Dialek', d:'Ragam bahasa daerah', c:'#d98c00'},
-    {scr:'kazumenu', emo:'数', t:'Angka', d:'Tanggal · jam · counter', c:'#2e7dc0'},
-    {scr:'onomenu', emo:'💬', t:'Onomatope', d:'Giongo & gitaigo + contoh', c:'#c2185b'},
-    {scr:'onyomenu', emo:'🈁', t:"On-Kun", d:'Latihan bacaan kanji', c:'#5c4b8a'},
-    {scr:'wordtree', emo:'🌳', t:'Pohon Kata', d:'Jelajahi keluarga kanji & kata', c:'#2d7d46'},
-    {scr:'exam',      emo:'📝', t:'Ujian', d:'Simulasi soal JLPT', c:'var(--red)'},
-    {scr:'review',    emo:'📊', t:'Progress Hafalan', d:'Kotoba · Kanji · Bunpou · Ujian', c:'var(--jade)'},
-    {scr:'leaderboard',emo:'🏆', t:'Ranking', d:'Peringkat poin', c:'#d08700'},
-    {scr:'ai',        emo:'🤖', t:'Tanya Sensei', d:'Tanya grammar & arti', c:'var(--indigo)'}
+  var sections=[
+    { label:'📚 KOSAKATA & KANJI', items:[
+      {scr:'flashmenu', emo:'📚', t:'Flashcard', d:'Hafal kosakata '+currentJLPT, c:color},
+      {scr:'kotoba', emo:'単語', t:'Daftar Kotoba', d:'Semua kata + centang arti & baca', c:'#00838f'},
+      {scr:'kanjimenu', emo:'漢字', t:'Baca Kanji', d:'Latihan baca kanji', c:'var(--gold)'},
+      {scr:'onyomenu', emo:'🈁', t:"On-Kun", d:'Latihan bacaan kanji', c:'#5c4b8a'},
+      {scr:'wordtree', emo:'🌳', t:'Pohon Kata', d:'Jelajahi keluarga kanji & kata', c:'#2d7d46'},
+    ]},
+    { label:'📐 TATA BAHASA & RAGAM', items:[
+      {scr:'bunpomenu', emo:'文法', t:'Bunpo', d:'Belajar tata bahasa', c:'#7a5cc4', hide:isSSW},
+      {scr:'katsuyomenu', emo:'活用', t:'Konjugasi', d:'Bentuk kata kerja', c:'#0a7d6b'},
+      {scr:'dialectmenu', emo:'方言', t:'Dialek', d:'Ragam bahasa daerah', c:'#d98c00'},
+      {scr:'kazumenu', emo:'数', t:'Angka', d:'Tanggal · jam · counter', c:'#2e7dc0'},
+      {scr:'onomenu', emo:'💬', t:'Onomatope', d:'Giongo & gitaigo + contoh', c:'#c2185b'},
+    ]},
+    { label:'🎯 UJI & PANTAU', items:[
+      {scr:'exam', emo:'📝', t:'Ujian', d:'Simulasi soal JLPT', c:'var(--red)'},
+      {scr:'review', emo:'📊', t:'Progress Hafalan', d:'Kotoba · Kanji · Bunpou · Ujian', c:'var(--jade)'},
+      {scr:'leaderboard', emo:'🏆', t:'Ranking', d:'Peringkat poin', c:'#d08700'},
+    ]},
+    { label:'🛠️ BANTUAN', items:[
+      {scr:'ai', emo:'🤖', t:'Tanya Sensei', d:'Tanya grammar & arti', c:'var(--indigo)'},
+    ]},
   ];
   var html='';
-  items.forEach(function(it){
-    if(it.hide) return;
-    var _oc = it.fn ? (it.fn+'()') : ('navTo(&apos;'+it.scr+'&apos;)');
-    html+='<div onclick="'+_oc+'" style="background:white;border:1px solid var(--border);border-top:3px solid '+it.c+';border-radius:12px;padding:16px;cursor:pointer;transition:transform .15s" onmouseover="this.style.transform=&apos;translateY(-3px)&apos;" onmouseout="this.style.transform=&apos;&apos;">'
-      +'<div style="font-size:24px;margin-bottom:6px">'+it.emo+'</div>'
-      +'<div style="font-weight:700;font-size:14px;margin-bottom:2px">'+it.t+'</div>'
-      +'<div style="font-size:11px;color:var(--mist)">'+it.d+'</div>'
-      +'</div>';
+  var cardIdx=0;
+  sections.forEach(function(sec){
+    var visibleItems=sec.items.filter(function(it){ return !it.hide; });
+    if(!visibleItems.length) return;
+    html+='<div style="font-size:11px;font-weight:800;color:var(--mist);letter-spacing:.5px;margin:14px 0 6px">'+sec.label+'</div>';
+    html+='<div style="display:grid;grid-template-columns:repeat(2,1fr);gap:12px">';
+    visibleItems.forEach(function(it){
+      var _oc = it.fn ? (it.fn+'()') : ('navTo(&apos;'+it.scr+'&apos;)');
+      var delay = (cardIdx % 8) * 40;
+      html+='<div class="ov-menu-card" onclick="'+_oc+'" style="animation-delay:'+delay+'ms;background:white;border:1px solid var(--border);border-top:3px solid '+it.c+';border-radius:12px;padding:16px;cursor:pointer;transition:transform .15s">'
+        +'<div style="font-size:24px;margin-bottom:6px">'+it.emo+'</div>'
+        +'<div style="font-weight:700;font-size:14px;margin-bottom:2px">'+it.t+'</div>'
+        +'<div style="font-size:11px;color:var(--mist)">'+it.d+'</div>'
+        +'</div>';
+      cardIdx++;
+    });
+    html+='</div>';
   });
   grid.innerHTML=html;
+  grid.style.marginBottom='24px';
 }
+
 
 
 
@@ -8585,9 +8625,7 @@ function writeAssess(hafal){
     }catch(e){}
   }
   if(hafal){
-    todayCount++;
-    var _td=new Date().toDateString();
-    if(lastStudyDate!==_td){var _yd=new Date(Date.now()-86400000).toDateString();streak=(lastStudyDate===_yd)?streak+1:1;lastStudyDate=_td;}
+    _touchStreak();
   }
   save();
   var ar=document.getElementById('write-assess-row'); if(ar) ar.style.display='none';
@@ -8728,9 +8766,7 @@ function mnAssess(hafal){
     });
     if(hafal){
       st.hafalN++;
-      todayCount++;
-      var _td=new Date().toDateString();
-      if(lastStudyDate!==_td){var _yd=new Date(Date.now()-86400000).toDateString();streak=(lastStudyDate===_yd)?streak+1:1;lastStudyDate=_td;}
+      _touchStreak();
     }
     save();
   }catch(e){}
@@ -9157,9 +9193,7 @@ function kmAssess(hafal){
     if(hafal) kanjiReadMastered[fk]=true; else delete kanjiReadMastered[fk];
     if(hafal){
       kmState.hafalN++;
-      todayCount++;
-      var _td=new Date().toDateString();
-      if(lastStudyDate!==_td){var _yd=new Date(Date.now()-86400000).toDateString();streak=(lastStudyDate===_yd)?streak+1:1;lastStudyDate=_td;}
+      _touchStreak();
     }
     save();
   }catch(e){}
@@ -12143,9 +12177,7 @@ function tqAssess(hafal){
       var fk='tw_'+srsKey(_tqLW);
       if(hafal) kanjiReadMastered[fk]=true; else delete kanjiReadMastered[fk];
       if(hafal){
-        todayCount++;
-        var _td=new Date().toDateString();
-        if(lastStudyDate!==_td){var _yd=new Date(Date.now()-86400000).toDateString();streak=(lastStudyDate===_yd)?streak+1:1;lastStudyDate=_td;}
+        _touchStreak();
       }
       save();
     }catch(e){}
@@ -12281,9 +12313,7 @@ function oyAssess(hafal){
       var fk='oy_'+cur.kj+'_'+cur.type;
       if(hafal) kanjiReadMastered[fk]=true; else delete kanjiReadMastered[fk];
       if(hafal){
-        todayCount++;
-        var _td=new Date().toDateString();
-        if(lastStudyDate!==_td){ var _yd=new Date(Date.now()-86400000).toDateString(); streak=(lastStudyDate===_yd)?streak+1:1; lastStudyDate=_td; }
+        _touchStreak();
       }
       save();
     }catch(e){}
@@ -12593,9 +12623,7 @@ function wtQuizAssess(hafal){
       var card = {id:'wt_'+cur.root.key+'_'+cur.correct, jp:cur.correct};
       srsTouch(card, hafal);
       if(hafal){
-        todayCount++;
-        var _td = new Date().toDateString();
-        if(lastStudyDate!==_td){ var _yd=new Date(Date.now()-86400000).toDateString(); streak=(lastStudyDate===_yd)?streak+1:1; lastStudyDate=_td; }
+        _touchStreak();
       }
       save();
     }catch(e){}
