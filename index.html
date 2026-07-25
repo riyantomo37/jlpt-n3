@@ -12520,6 +12520,7 @@ function wtKanjiRow(k){
 }
 
 var _wtRootDataCache = {};
+var _wtLimit = 40;
 function _wtBuildBodyInner(r, displayKanji, filteredNote){
   var icon = r.type==='comp' ? '🧩' : (r.type==='twin' ? '⚔️' : '📎');
   if(r.type==='other'){
@@ -12536,25 +12537,28 @@ function _wtBuildBodyInner(r, displayKanji, filteredNote){
     + '</div>'
     + '<div style="font-size:10px;color:var(--mist);text-align:center;margin-top:4px">tap kanji untuk lihat contoh kata &amp; komponen penyusunnya</div>';
 }
+function wtLoadMore(){ _wtLimit+=40; wtRenderRoots(document.getElementById('wt-search')?document.getElementById('wt-search').value:''); }
 function wtRenderRoots(filter){
   var roots = _wtBuildTree();
   var f = (filter||'').trim();
   var box = document.getElementById('wt-list');
   if(!box) return;
-  var shown = 0;
+  var matched = [];
   _wtRootDataCache = {};
-  var html = roots.map(function(r,ri){
+  roots.forEach(function(r){
     var kanjiMatch = r.kanji.filter(function(k){ return !f || k.indexOf(f)>=0; });
     var labelMatch = !f || r.label.indexOf(f)>=0;
-    if(f && !labelMatch && !kanjiMatch.length) return '';
-    shown++;
-    var icon = r.type==='comp' ? '🧩' : (r.type==='twin' ? '⚔️' : '📎');
+    if(f && !labelMatch && !kanjiMatch.length) return;
     var displayKanji = (f && !labelMatch) ? kanjiMatch : r.kanji;
-    // Body (bagan kanji) BELUM dibangun di sini — kalau langsung dibangun buat semua root
-    // sekaligus (bisa ratusan kanji per root), total HTML tembus 1 juta+ karakter dan bikin
-    // browser HP nge-hang jadi layar putih. Body baru di-generate pas kartunya ditap (lazy),
-    // lewat wtToggleRoot() + _wtRootDataCache di bawah.
-    _wtRootDataCache[r.key] = { r:r, displayKanji:displayKanji, filteredNote:(f && !labelMatch) };
+    matched.push({r:r, displayKanji:displayKanji, filteredNote:(f && !labelMatch)});
+  });
+  // Jangan bangun SEMUA kartu (bisa 178+) sekaligus ke DOM — di HP ini yang bikin layar putih
+  // (elemen DOM kelewat banyak buat dikonstruksi browser sekali jalan). Batasi tampil per halaman,
+  // sisanya nunggu tombol "muat lebih banyak" ditap.
+  var toShow = matched.slice(0, _wtLimit);
+  var html = toShow.map(function(m){
+    var r=m.r, icon = r.type==='comp' ? '🧩' : (r.type==='twin' ? '⚔️' : '📎');
+    _wtRootDataCache[r.key] = m;
     return '<div class="wt-root" id="wt-root-'+r.key+'" data-rootkey="'+r.key+'" style="background:white;border:1px solid var(--border);border-radius:12px;margin-bottom:8px;overflow:hidden">'
       + '<div class="wt-root-head" onclick="wtToggleRoot(this)" style="padding:12px 14px;display:flex;align-items:center;gap:10px;cursor:pointer">'
       + '<span style="font-size:20px">'+icon+'</span>'
@@ -12564,16 +12568,22 @@ function wtRenderRoots(filter){
       + '</div>'
       + '<div class="wt-root-body" data-rootkey="'+r.key+'" data-built="0" style="display:none;padding:2px 12px 14px"></div></div>';
   }).join('');
-  box.innerHTML = shown ? html : '<div style="text-align:center;color:var(--mist);padding:30px 0;font-size:13px">Tidak ditemukan.</div>';
+  if(matched.length > toShow.length){
+    html += '<button onclick="wtLoadMore()" style="width:100%;padding:12px;border:1px dashed var(--border);background:white;border-radius:10px;color:var(--mist);cursor:pointer;font-family:inherit;font-size:13px;margin-bottom:8px">▼ Muat 40 keluarga berikutnya ('+(matched.length-toShow.length)+' tersisa)</button>';
+  }
+  box.innerHTML = matched.length ? html : '<div style="text-align:center;color:var(--mist);padding:30px 0;font-size:13px">Tidak ditemukan.</div>';
 }
 
 // Loncat & buka root lain (dipakai dari breakdown "terdiri dari" di dalam kanji node)
 function wtJumpToRoot(rootKey){
   var el = document.getElementById('wt-root-'+rootKey);
   if(!el){
-    // root utk komponen ini belum ada di daftar (mis. cuma 1 kanji) — buka detail kanji-nya saja
-    kjOpen(rootKey);
-    return;
+    // root-nya mungkin belum ke-render karena masih di halaman berikutnya (pagination) —
+    // muat semua dulu sebelum nyerah & buka detail kanji polos.
+    _wtLimit = 9999;
+    wtRenderRoots(document.getElementById('wt-search')?document.getElementById('wt-search').value:'');
+    el = document.getElementById('wt-root-'+rootKey);
+    if(!el){ kjOpen(rootKey); return; }
   }
   var head = el.querySelector('.wt-root-head');
   var body = el.querySelector('.wt-root-body');
@@ -12637,10 +12647,12 @@ function wtToggleKanji(el){
 
 function wtSearch(){
   var el=document.getElementById('wt-search');
+  _wtLimit=40;
   wtRenderRoots(el?el.value:'');
 }
 function updateWordTree(){
   WORD_TREE=null; // rebuild kalau data berubah antar sesi
+  _wtLimit=40;
   wtRenderRoots('');
 }
 
@@ -12918,7 +12930,7 @@ function importProgress(ev){
 // Hafalan ekstra disimpan di kanjiReadMastered: 'xa_'+id (arti), 'xb_'+id (baca)
 // agar ikut tersinkron ke cloud tanpa mengubah skema Firestore.
 // ============================================================
-var ktState={pos:'all',stat:'all',q:'',limit:300};
+var ktState={pos:'all',stat:'all',q:'',limit:60};
 var KT_POS_META={
   doushi:['K. Kerja','#c0392b'],meishi:['K. Benda','#2d5aa0'],keiyoushi:['K. Sifat','#0a7d6b'],
   fukushi:['Keterangan','#b8860b'],setsuzoku:['Konjungsi','#7a5cc4'],pola:['Pola','#c2185b'],
@@ -13077,10 +13089,10 @@ function ktUpdateCounts(){
     +'<br><span style="font-size:10px">100% = arti + baca + review SRS 3\u00d7 + Kanji Kembar + menulis + kalimat</span>';
 }
 function _ktActivate(btn){ if(!btn)return; btn.parentNode.querySelectorAll('button').forEach(function(b){b.classList.remove('active');}); btn.classList.add('active'); }
-function ktSetPos(p,btn){ ktState.pos=p; ktState.limit=300; _ktActivate(btn); renderKotobaList(); }
-function ktSetStat(s,btn){ ktState.stat=s; ktState.limit=300; _ktActivate(btn); renderKotobaList(); }
-function ktSearch(){ var el=document.getElementById('kt-search'); ktState.q=(el?el.value:'').trim().toLowerCase(); ktState.limit=300; renderKotobaList(); }
-function ktMore(){ ktState.limit+=300; renderKotobaList(); }
+function ktSetPos(p,btn){ ktState.pos=p; ktState.limit=60; _ktActivate(btn); renderKotobaList(); }
+function ktSetStat(s,btn){ ktState.stat=s; ktState.limit=60; _ktActivate(btn); renderKotobaList(); }
+function ktSearch(){ var el=document.getElementById('kt-search'); ktState.q=(el?el.value:'').trim().toLowerCase(); ktState.limit=60; renderKotobaList(); }
+function ktMore(){ ktState.limit+=60; renderKotobaList(); }
 function renderKotobaList(){
   var grid=document.getElementById('kt-grid'); if(!grid) return;
   var words=ktFiltered();
@@ -13089,7 +13101,7 @@ function renderKotobaList(){
   if(!words.length){ grid.innerHTML='<div style="text-align:center;padding:30px;color:var(--mist);grid-column:1/-1"><div style="font-size:28px">\ud83d\udd0d</div>Tidak ada kata yang cocok</div>'; return; }
   var shown=words.slice(0,ktState.limit);
   var html=shown.map(ktRowHtml).join('');
-  if(words.length>ktState.limit) html+='<button onclick="ktMore()" style="grid-column:1/-1;padding:12px;border:1px dashed var(--border);background:white;border-radius:10px;color:var(--mist);cursor:pointer;font-family:inherit">\u25bc Muat 300 berikutnya ('+(words.length-ktState.limit)+' tersisa)</button>';
+  if(words.length>ktState.limit) html+='<button onclick="ktMore()" style="grid-column:1/-1;padding:12px;border:1px dashed var(--border);background:white;border-radius:10px;color:var(--mist);cursor:pointer;font-family:inherit">\u25bc Muat 60 berikutnya ('+(words.length-ktState.limit)+' tersisa)</button>';
   grid.innerHTML=html;
 }
 async function renderKotobaTab(){
