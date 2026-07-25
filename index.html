@@ -12519,12 +12519,30 @@ function wtKanjiRow(k){
     + '</div>';
 }
 
+var _wtRootDataCache = {};
+function _wtBuildBodyInner(r, displayKanji, filteredNote){
+  var icon = r.type==='comp' ? '🧩' : (r.type==='twin' ? '⚔️' : '📎');
+  if(r.type==='other'){
+    return '<div style="display:flex;flex-wrap:wrap;gap:6px;padding:4px 2px">'
+      + displayKanji.map(function(k){
+          return '<span class="wt-chip" data-kj="'+k+'" onclick="kjOpen(this.dataset.kj)" style="padding:6px 10px;border:1px solid var(--border);border-radius:8px;font-size:16px;font-family:\'Noto Serif JP\',serif;cursor:pointer;background:#fafafa">'+k+'</span>';
+        }).join('')
+      + '</div>'
+      + (filteredNote ? '<div style="font-size:10px;color:var(--mist);margin-top:6px">menampilkan '+displayKanji.length+' dari '+r.kanji.length+' (sesuai filter)</div>' : '');
+  }
+  return '<div style="text-align:center"><span class="wt-diag-root" style="background:#eaf5ee;color:#2d7d46" data-rootkey="'+r.key+'">'+icon+' '+r.label+'</span></div>'
+    + '<div class="wt-diag-children">'
+    + displayKanji.map(wtKanjiRow).join('')
+    + '</div>'
+    + '<div style="font-size:10px;color:var(--mist);text-align:center;margin-top:4px">tap kanji untuk lihat contoh kata &amp; komponen penyusunnya</div>';
+}
 function wtRenderRoots(filter){
   var roots = _wtBuildTree();
   var f = (filter||'').trim();
   var box = document.getElementById('wt-list');
   if(!box) return;
   var shown = 0;
+  _wtRootDataCache = {};
   var html = roots.map(function(r,ri){
     var kanjiMatch = r.kanji.filter(function(k){ return !f || k.indexOf(f)>=0; });
     var labelMatch = !f || r.label.indexOf(f)>=0;
@@ -12532,22 +12550,11 @@ function wtRenderRoots(filter){
     shown++;
     var icon = r.type==='comp' ? '🧩' : (r.type==='twin' ? '⚔️' : '📎');
     var displayKanji = (f && !labelMatch) ? kanjiMatch : r.kanji;
-    var bodyInner;
-    if(r.type==='other'){
-      // Bukan keluarga sungguhan (belum kebagian komponen) — jangan digambar sbg bagan (menyesatkan), cukup grid chip + filter.
-      bodyInner = '<div style="display:flex;flex-wrap:wrap;gap:6px;padding:4px 2px">'
-        + displayKanji.map(function(k){
-            return '<span class="wt-chip" data-kj="'+k+'" onclick="kjOpen(this.dataset.kj)" style="padding:6px 10px;border:1px solid var(--border);border-radius:8px;font-size:16px;font-family:\'Noto Serif JP\',serif;cursor:pointer;background:#fafafa">'+k+'</span>';
-          }).join('')
-        + '</div>'
-        + (f && !labelMatch ? '<div style="font-size:10px;color:var(--mist);margin-top:6px">menampilkan '+displayKanji.length+' dari '+r.kanji.length+' (sesuai filter)</div>' : '');
-    } else {
-      bodyInner = '<div style="text-align:center"><span class="wt-diag-root" style="background:#eaf5ee;color:#2d7d46" data-rootkey="'+r.key+'">'+icon+' '+r.label+'</span></div>'
-        + '<div class="wt-diag-children">'
-        + displayKanji.map(wtKanjiRow).join('')
-        + '</div>'
-        + '<div style="font-size:10px;color:var(--mist);text-align:center;margin-top:4px">tap kanji untuk lihat contoh kata &amp; komponen penyusunnya</div>';
-    }
+    // Body (bagan kanji) BELUM dibangun di sini — kalau langsung dibangun buat semua root
+    // sekaligus (bisa ratusan kanji per root), total HTML tembus 1 juta+ karakter dan bikin
+    // browser HP nge-hang jadi layar putih. Body baru di-generate pas kartunya ditap (lazy),
+    // lewat wtToggleRoot() + _wtRootDataCache di bawah.
+    _wtRootDataCache[r.key] = { r:r, displayKanji:displayKanji, filteredNote:(f && !labelMatch) };
     return '<div class="wt-root" id="wt-root-'+r.key+'" data-rootkey="'+r.key+'" style="background:white;border:1px solid var(--border);border-radius:12px;margin-bottom:8px;overflow:hidden">'
       + '<div class="wt-root-head" onclick="wtToggleRoot(this)" style="padding:12px 14px;display:flex;align-items:center;gap:10px;cursor:pointer">'
       + '<span style="font-size:20px">'+icon+'</span>'
@@ -12555,7 +12562,7 @@ function wtRenderRoots(filter){
       + '<div style="font-size:11px;color:var(--mist)">'+r.sub+' · '+r.kanji.length+' kanji</div></div>'
       + '<span class="wt-arrow" style="color:var(--mist);display:inline-block;transition:transform .2s">▸</span>'
       + '</div>'
-      + '<div class="wt-root-body" style="display:none;padding:2px 12px 14px">' + bodyInner + '</div></div>';
+      + '<div class="wt-root-body" data-rootkey="'+r.key+'" data-built="0" style="display:none;padding:2px 12px 14px"></div></div>';
   }).join('');
   box.innerHTML = shown ? html : '<div style="text-align:center;color:var(--mist);padding:30px 0;font-size:13px">Tidak ditemukan.</div>';
 }
@@ -12579,6 +12586,14 @@ function wtToggleRoot(el){
   var body = el.nextElementSibling;
   var arrow = el.querySelector('.wt-arrow');
   var open = body.style.display==='block';
+  if(!open && body.dataset.built==='0'){
+    var key = body.dataset.rootkey;
+    var cached = _wtRootDataCache[key];
+    if(cached){
+      body.innerHTML = _wtBuildBodyInner(cached.r, cached.displayKanji, cached.filteredNote);
+      body.dataset.built = '1';
+    }
+  }
   body.style.display = open?'none':'block';
   if(arrow) arrow.style.transform = open?'rotate(0deg)':'rotate(90deg)';
 }
