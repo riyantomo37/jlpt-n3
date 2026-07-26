@@ -1115,16 +1115,16 @@ header:has(.user-menu.open) { z-index:1000; }
   <button onclick="navTo('ai')">🤖 Sensei</button>
 </nav>
 <div id="nav-learn-menu">
-  <button onclick="navTo('flashmenu')">📚 Flashcard</button>
-  <button onclick="navTo('kotoba')">📖 Daftar Kotoba</button>
-  <button onclick="navTo('kanjimenu')">✍️ Baca Kanji</button>
-  <button onclick="navTo('bunpomenu')">📐 Tata Bahasa</button>
-  <button onclick="navTo('katsuyomenu')">🔄 Konjugasi</button>
-  <button onclick="navTo('dialectmenu')">🗾 Dialek</button>
-  <button onclick="navTo('kazumenu')">🔢 Angka</button>
-  <button onclick="navTo('onomenu')">💬 Onomatope</button>
-  <button onclick="navTo('onyomenu')">🈁 On-Kun</button>
-  <button onclick="navTo('wordtree')">🌳 Pohon Kata</button>
+  <button onclick="closeNavLearn();gotoScreen('flashmenu')">📚 Flashcard</button>
+  <button onclick="closeNavLearn();gotoScreen('kotoba')">📖 Daftar Kotoba</button>
+  <button onclick="closeNavLearn();gotoScreen('kanjimenu')">✍️ Baca Kanji</button>
+  <button onclick="closeNavLearn();gotoScreen('bunpomenu')">📐 Tata Bahasa</button>
+  <button onclick="closeNavLearn();gotoScreen('katsuyomenu')">🔄 Konjugasi</button>
+  <button onclick="closeNavLearn();gotoScreen('dialectmenu')">🗾 Dialek</button>
+  <button onclick="closeNavLearn();gotoScreen('kazumenu')">🔢 Angka</button>
+  <button onclick="closeNavLearn();gotoScreen('onomenu')">💬 Onomatope</button>
+  <button onclick="closeNavLearn();gotoScreen('onyomenu')">🈁 On-Kun</button>
+  <button onclick="closeNavLearn();gotoScreen('wordtree')">🌳 Pohon Kata</button>
   <div style="border-top:1px solid var(--border);margin:4px 0"></div>
   <button onclick="startSrsReview()">🔁 Review SRS</button>
   <button onclick="startTwinQuiz()">⚔️ Kanji Kembar</button>
@@ -7273,10 +7273,10 @@ function renderOverviewMenu(){
   var sections=[
     { label:'📚 KOSAKATA & KANJI', items:[
       {scr:'flashmenu', emo:'📚', t:'Flashcard', d:'Hafal kosakata '+currentJLPT, c:color},
-      {scr:'kotoba', emo:'単語', txt:true, t:'Daftar Kotoba', d:'Semua kata + centang arti & baca', c:'#00838f'},
+      {scr:'kotoba', emo:'単語', txt:true, t:'Daftar Kotoba', d:'Semua kata + centang arti & baca', c:'#00838f', direct:true},
       {scr:'kanjimenu', emo:'漢字', txt:true, t:'Baca Kanji', d:'Latihan baca kanji', c:'var(--gold)'},
       {scr:'onyomenu', emo:'🈁', t:"On-Kun", d:'Latihan bacaan kanji', c:'#5c4b8a'},
-      {scr:'wordtree', emo:'🌳', t:'Pohon Kata', d:'Jelajahi keluarga kanji & kata', c:'#2d7d46'},
+      {scr:'wordtree', emo:'🌳', t:'Pohon Kata', d:'Jelajahi keluarga kanji & kata', c:'#2d7d46', direct:true},
     ]},
     { label:'📐 TATA BAHASA & RAGAM', items:[
       {scr:'bunpomenu', emo:'文法', txt:true, t:'Bunpo', d:'Belajar tata bahasa', c:'#7a5cc4', hide:isSSW},
@@ -7303,7 +7303,7 @@ function renderOverviewMenu(){
     html+='<div style="grid-column:1 / -1;display:grid;grid-template-columns:repeat(2,1fr);gap:12px;align-items:stretch">';
     var oddLast = visibleItems.length % 2 === 1;
     visibleItems.forEach(function(it,i){
-      var _oc = it.fn ? (it.fn+'()') : ('navTo(&apos;'+it.scr+'&apos;)');
+      var _oc = it.fn ? (it.fn+'()') : (it.direct ? ('gotoScreen(&apos;'+it.scr+'&apos;)') : ('navTo(&apos;'+it.scr+'&apos;)'));
       var delay = (cardIdx % 8) * 40;
       var isWide = oddLast && (i === visibleItems.length-1);
       // Badge ikon: bungkus emoji ATAU teks kanji dalam kotak rounded bertinta warna kartu,
