@@ -1084,7 +1084,7 @@ header:has(.user-menu.open) { z-index:1000; }
         <div class="user-avatar" id="user-avatar">?</div>
         <span class="user-name" id="user-name">...</span>
         <span class="sync-badge" id="sync-badge">● sync</span>
-        <span id="build-dot" title="Indikator update: warnanya ganti tiap ada versi baru dari Claude" style="display:inline-block;width:11px;height:11px;border-radius:50%;background:#c0392b;margin-left:6px;vertical-align:middle;border:2px solid white;box-shadow:0 0 0 1px rgba(0,0,0,.15)"></span>
+        <span id="build-dot" title="Indikator update: warnanya ganti tiap ada versi baru dari Claude" style="display:inline-block;width:11px;height:11px;border-radius:50%;background:#2d7d46;margin-left:6px;vertical-align:middle;border:2px solid white;box-shadow:0 0 0 1px rgba(0,0,0,.15)"></span>
       </div>
       <div class="user-menu" id="user-menu">
         <div style="padding:10px 14px 8px;border-bottom:1px solid var(--border);margin-bottom:4px">
@@ -12665,7 +12665,10 @@ function updateWordTree(){
 var wtState = {q:0, score:0, total:10, cur:null};
 
 function _wtMakeQuestion(){
-  var roots = _wtBuildTree().filter(function(r){ return r.kanji.length>=2; });
+  // "Kanji Lain" (type:'other') itu bucket sisa buat kanji yang belum kebagian komponen jelas —
+  // BUKAN keluarga beneran, jadi jangan dipakai jadi soal (nanti ngajarin hubungan palsu, mis.
+  // 半 & 食 dianggap "satu komponen" padahal cuma sama-sama masuk sisa).
+  var roots = _wtBuildTree().filter(function(r){ return r.type!=='other' && r.kanji.length>=2; });
   if(!roots.length) return null;
   var root = roots[Math.floor(Math.random()*roots.length)];
   var pool = root.kanji.slice();
