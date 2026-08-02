@@ -1084,12 +1084,21 @@ header:has(.user-menu.open) { z-index:1000; }
         <div class="user-avatar" id="user-avatar">?</div>
         <span class="user-name" id="user-name">...</span>
         <span class="sync-badge" id="sync-badge">● sync</span>
-        <span id="build-dot" title="Indikator update: warnanya ganti tiap ada versi baru dari Claude" style="display:inline-block;width:11px;height:11px;border-radius:50%;background:#2d7d46;margin-left:6px;vertical-align:middle;border:2px solid white;box-shadow:0 0 0 1px rgba(0,0,0,.15)"></span>
+        <span id="build-dot" title="Indikator update: warnanya ganti tiap ada versi baru dari Claude" style="display:inline-block;width:11px;height:11px;border-radius:50%;background:#c0392b;margin-left:6px;vertical-align:middle;border:2px solid white;box-shadow:0 0 0 1px rgba(0,0,0,.15)"></span>
       </div>
       <div class="user-menu" id="user-menu">
         <div style="padding:10px 14px 8px;border-bottom:1px solid var(--border);margin-bottom:4px">
           <div style="font-size:12px;font-weight:700" id="menu-name">...</div>
           <div style="font-size:11px;color:var(--mist)" id="menu-email">...</div>
+        </div>
+        <div style="display:flex;align-items:center;justify-content:space-between;padding:9px 14px;gap:10px">
+          <div style="min-width:0">
+            <div style="font-size:12.5px;font-weight:600;color:var(--ink)">🔒 Sembunyikan Progress</div>
+            <div style="font-size:10.5px;color:var(--mist);line-height:1.3">Progress kamu gak muncul di Ranking publik</div>
+          </div>
+          <button id="privacy-toggle" onclick="toggleProgressPrivacy()" aria-label="Sembunyikan progress dari publik" style="flex-shrink:0;width:42px;height:24px;border-radius:12px;border:none;background:var(--border);position:relative;cursor:pointer;transition:background .2s;padding:0">
+            <span id="privacy-toggle-knob" style="position:absolute;top:2px;left:2px;width:20px;height:20px;border-radius:50%;background:white;box-shadow:0 1px 3px rgba(0,0,0,.25);transition:transform .2s"></span>
+          </button>
         </div>
         <button class="user-menu-item" onclick="syncNow()">☁️ Sync Sekarang</button>
         <button class="user-menu-item danger" onclick="logout()">🚪 Keluar</button>
@@ -2604,6 +2613,7 @@ let todayDate = new Date().toDateString();
 let todayCount = 0;
 let streak = 0;
 let lastStudyDate = null;
+let progressPrivate = (function(){ try{ return localStorage.getItem('progressPrivate')==='1'; }catch(e){ return false; } })();
 
 // Flashcard session state
 let sessionQueue = [];
@@ -2635,6 +2645,7 @@ function logout() {
 }
 function toggleUserMenu() {
   document.getElementById('user-menu').classList.toggle('open');
+  _updatePrivacyToggleUI();
 }
 document.addEventListener('click', e => {
   const badge = document.getElementById('user-badge');
@@ -2649,6 +2660,7 @@ async function showUserPreview(uid){
   var users = window._lbUsers || [];
   var u = users.filter(function(x){return x.uid===uid;})[0];
   if(!u){ return; }
+  if(u.private && uid!==(currentUser&&currentUser.uid)){ return; }
   var color = JLPT_COLORS[currentJLPT] || 'var(--indigo)';
   var name = u.displayName || 'Pelajar';
   var av = u.photoURL
@@ -2789,14 +2801,18 @@ async function loadLeaderboard(level) {
     var mr=document.getElementById('lb-my-rank');
     if(mr) mr.textContent=myIdx>=0?'#'+(myIdx+1):'#-';
 
-    if(!users.length){
+    // User yang mengaktifkan "Sembunyikan Progress" tidak ditampilkan ke orang lain —
+    // tapi baris dirinya sendiri tetap muncul biar dia masih bisa lihat progress & ranknya sendiri.
+    var visibleUsers = users.filter(function(u){ return !u.private || u.uid===(currentUser&&currentUser.uid); });
+
+    if(!visibleUsers.length){
       listEl.innerHTML='<div style="text-align:center;padding:40px;color:var(--mist)"><div style="font-size:40px">🎌</div>Belum ada data</div>';
       return;
     }
 
     // Clean list rows
-    listEl.innerHTML=users.map(function(u,i){
-      var rank=i+1, isMe=u.uid===(currentUser&&currentUser.uid);
+    listEl.innerHTML=visibleUsers.map(function(u,i){
+      var rank=users.indexOf(u)+1, isMe=u.uid===(currentUser&&currentUser.uid);
       var tot=u.lvlMastered, pct=Math.round(tot/total*100);
       var lv=getLevel(tot);
       var icon=rank===1?'🥇':rank===2?'🥈':rank===3?'🥉':rank;
@@ -2846,8 +2862,9 @@ async function loadDashboardLeaderboard() {
     });
     users.sort(function(a,b){ return b._lm-a._lm; });
     window._lbUsers = users;
-    lbEl.innerHTML = users.slice(0,5).map(function(u,i){
-      var rank=i+1, isMe=u.uid===(currentUser&&currentUser.uid);
+    var visibleUsers = users.filter(function(u){ return !u.private || u.uid===(currentUser&&currentUser.uid); });
+    lbEl.innerHTML = visibleUsers.slice(0,5).map(function(u,i){
+      var rank=users.indexOf(u)+1, isMe=u.uid===(currentUser&&currentUser.uid);
       var tot=u._lm, pct=Math.round(((u._words||0)/total)*100);
       var icon=rank===1?'🥇':rank===2?'🥈':rank===3?'🥉':'#'+rank;
       var av=u.photoURL?'<img src="'+u.photoURL+'" style="width:100%;height:100%;object-fit:cover;border-radius:50%">'
@@ -4871,6 +4888,9 @@ async function loadFromFirestore() {
       if (data.methodStats) methodStats = data.methodStats;
       if (data.bunpoProgress) bunpoProgress = data.bunpoProgress;
       if (data.bunpoLearned)  bunpoLearned  = data.bunpoLearned;
+      progressPrivate = !!data.private;
+      try{ localStorage.setItem('progressPrivate', progressPrivate?'1':'0'); }catch(e){}
+      _updatePrivacyToggleUI();
       if (data.streak)            streak            = data.streak;
       if (data.lastStudyDate)     lastStudyDate     = data.lastStudyDate;
       if (data.todayDate === new Date().toDateString()) {
@@ -4941,6 +4961,7 @@ async function saveToFirestore() {
       }),
       bunpoProgress: bunpoProgress,
       bunpoLearned: bunpoLearned,
+      private: !!progressPrivate,
       lastSeen: firebase.firestore.FieldValue.serverTimestamp(),
     }, { merge: true });
     try{ localStorage.removeItem('n3_dirty'); }catch(e){}
@@ -4973,6 +4994,19 @@ function _touchStreak(){
     streak = (lastStudyDate === _yd) ? streak+1 : 1;
     lastStudyDate = _td;
   }
+}
+function _updatePrivacyToggleUI(){
+  var btn = document.getElementById('privacy-toggle');
+  var knob = document.getElementById('privacy-toggle-knob');
+  if(!btn||!knob) return;
+  btn.style.background = progressPrivate ? 'var(--jade)' : 'var(--border)';
+  knob.style.transform = progressPrivate ? 'translateX(18px)' : 'translateX(0)';
+}
+function toggleProgressPrivacy(){
+  progressPrivate = !progressPrivate;
+  try{ localStorage.setItem('progressPrivate', progressPrivate?'1':'0'); }catch(e){}
+  _updatePrivacyToggleUI();
+  save();
 }
 function save() {
   saveToLocal(); // selalu simpan lokal dulu (instant)
