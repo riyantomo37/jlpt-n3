@@ -1084,7 +1084,7 @@ header:has(.user-menu.open) { z-index:1000; }
         <div class="user-avatar" id="user-avatar">?</div>
         <span class="user-name" id="user-name">...</span>
         <span class="sync-badge" id="sync-badge">● sync</span>
-        <span id="build-dot" title="Indikator update: warnanya ganti tiap ada versi baru dari Claude" style="display:inline-block;width:11px;height:11px;border-radius:50%;background:#c0392b;margin-left:6px;vertical-align:middle;border:2px solid white;box-shadow:0 0 0 1px rgba(0,0,0,.15)"></span>
+        <span id="build-dot" title="Indikator update: warnanya ganti tiap ada versi baru dari Claude" style="display:inline-block;width:11px;height:11px;border-radius:50%;background:#2d7d46;margin-left:6px;vertical-align:middle;border:2px solid white;box-shadow:0 0 0 1px rgba(0,0,0,.15)"></span>
       </div>
       <div class="user-menu" id="user-menu">
         <div style="padding:10px 14px 8px;border-bottom:1px solid var(--border);margin-bottom:4px">
@@ -2799,7 +2799,7 @@ async function loadLeaderboard(level) {
     if(tu) tu.textContent=users.length;
     var myIdx=users.findIndex(function(u){return u.uid===(currentUser&&currentUser.uid);});
     var mr=document.getElementById('lb-my-rank');
-    if(mr) mr.textContent=myIdx>=0?'#'+(myIdx+1):'#-';
+    if(mr) mr.textContent=(myIdx>=0?'#'+(myIdx+1):'#-')+(progressPrivate?' 🔒':'');
 
     // User yang mengaktifkan "Sembunyikan Progress" tidak ditampilkan ke orang lain —
     // tapi baris dirinya sendiri tetap muncul biar dia masih bisa lihat progress & ranknya sendiri.
@@ -2827,6 +2827,7 @@ async function loadLeaderboard(level) {
         +'<div style="flex:1;min-width:0">'
         +'<div style="font-size:13px;font-weight:600;display:flex;align-items:center;gap:6px">'
         +(isMe?'<span style="font-size:9px;background:var(--gold);color:white;padding:1px 5px;border-radius:4px">KAMU</span>':'')
+        +(isMe&&u.private?'<span title="Progress kamu disembunyikan dari orang lain" style="font-size:10px">🔒</span>':'')
         +name
         +' <span class="level-badge '+lv.cls+'" style="font-size:10px;padding:1px 7px">Lv.'+lv.lv+'</span>'
         +'</div>'
@@ -2872,7 +2873,7 @@ async function loadDashboardLeaderboard() {
       return '<div onclick="showUserPreview(&apos;'+u.uid+'&apos;)" style="background:white;border:1px solid '+(isMe?'var(--gold)':'var(--border)')+';border-radius:10px;padding:10px 14px;display:flex;align-items:center;gap:10px;cursor:pointer">'
         +'<div style="font-size:18px;width:28px;text-align:center;flex-shrink:0">'+icon+'</div>'
         +'<div style="width:32px;height:32px;border-radius:50%;background:'+color+';display:flex;align-items:center;justify-content:center;color:white;flex-shrink:0;overflow:hidden">'+av+'</div>'
-        +'<div style="flex:1;min-width:0"><div style="font-size:13px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+(u.displayName||'Pelajar')+(isMe?' ⭐':'')+'</div>'
+        +'<div style="flex:1;min-width:0"><div style="font-size:13px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+(u.displayName||'Pelajar')+(isMe?' ⭐':'')+(isMe&&u.private?' 🔒':'')+'</div>'
         +'<div style="font-size:11px;color:var(--mist)">🔥 '+(u.streak||0)+' hari · '+pct+'%</div></div>'
         +'<div style="text-align:right;flex-shrink:0"><div style="font-family:DM Mono,monospace;font-size:18px;font-weight:700;color:'+color+'">'+tot+'</div>'
         +'<div style="font-size:10px;color:var(--mist)">poin</div></div></div>';
