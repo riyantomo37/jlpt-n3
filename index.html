@@ -1085,7 +1085,7 @@ header:has(.user-menu.open) { z-index:1000; }
         <span class="user-name" id="user-name">...</span>
         <span id="level-badge" onclick="event.stopPropagation();gotoScreen('levelreward')" title="Level & Reward" style="font-size:10px;font-weight:800;background:linear-gradient(135deg,var(--gold),#c98a1f);color:white;padding:2px 7px;border-radius:8px;cursor:pointer;letter-spacing:.3px">Lv.1</span>
         <span class="sync-badge" id="sync-badge">● sync</span>
-        <span id="build-dot" title="Indikator update: warnanya ganti tiap ada versi baru dari Claude" style="display:inline-block;width:11px;height:11px;border-radius:50%;background:#2d7d46;margin-left:6px;vertical-align:middle;border:2px solid white;box-shadow:0 0 0 1px rgba(0,0,0,.15)"></span>
+        <span id="build-dot" title="Indikator update: warnanya ganti tiap ada versi baru dari Claude" style="display:inline-block;width:11px;height:11px;border-radius:50%;background:#c0392b;margin-left:6px;vertical-align:middle;border:2px solid white;box-shadow:0 0 0 1px rgba(0,0,0,.15)"></span>
       </div>
       <div class="user-menu" id="user-menu">
         <div style="padding:10px 14px 8px;border-bottom:1px solid var(--border);margin-bottom:4px">
@@ -7318,6 +7318,7 @@ var BADGE_DEFS = [
   {id:'gradeA5',    cat:'Ujian', emo:'🎓', t:'5x Grade A',           d:'Dapat grade A di 5 latihan soal berbeda',           check:function(){ return (examHistory||[]).filter(function(e){return e.grade==='A';}).length>=5; }}
 ];
 function _bunpoCount(){ var c=0; Object.keys(bunpoLearned||{}).forEach(function(lv){ c+=Object.values(bunpoLearned[lv]||{}).filter(Boolean).length; }); return c; }
+var _badgesPushedThisSession = false;
 function checkBadges(){
   var newly = [];
   BADGE_DEFS.forEach(function(b){
@@ -7329,6 +7330,16 @@ function checkBadges(){
   if(newly.length){
     try{ localStorage.setItem('n3_badges', JSON.stringify(unlockedBadges)); }catch(e){}
     _showBadgeToast(newly);
+  }
+  // Dorong ke cloud kalau ada badge baru, ATAU sekali di awal tiap sesi (buat "nyusulin"
+  // badge yang sudah ke-unlock di HP dari sesi sebelumnya tapi belum pernah ke-sync ke cloud —
+  // itu bug lama yang bikin badge "ada di HP tapi gak muncul di leaderboard/preview").
+  if((newly.length || !_badgesPushedThisSession) && Object.keys(unlockedBadges).length){
+    _badgesPushedThisSession = true;
+    try{ localStorage.setItem('n3_dirty','1'); }catch(e){}
+    if (typeof currentUser!=='undefined' && currentUser && typeof saveToFirestore==='function') {
+      saveToFirestore();
+    }
   }
   _updateLevelBadgeUI();
   return newly;
