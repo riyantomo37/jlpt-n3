@@ -1085,7 +1085,7 @@ header:has(.user-menu.open) { z-index:1000; }
         <span class="user-name" id="user-name">...</span>
         <span id="level-badge" onclick="event.stopPropagation();gotoScreen('levelreward')" title="Level & Reward" style="font-size:10px;font-weight:800;background:linear-gradient(135deg,var(--gold),#c98a1f);color:white;padding:2px 7px;border-radius:8px;cursor:pointer;letter-spacing:.3px">Lv.1</span>
         <span class="sync-badge" id="sync-badge">● sync</span>
-        <span id="build-dot" title="Indikator update: warnanya ganti tiap ada versi baru dari Claude" style="display:inline-block;width:11px;height:11px;border-radius:50%;background:#c0392b;margin-left:6px;vertical-align:middle;border:2px solid white;box-shadow:0 0 0 1px rgba(0,0,0,.15)"></span>
+        <span id="build-dot" title="Indikator update: warnanya ganti tiap ada versi baru dari Claude" style="display:inline-block;width:11px;height:11px;border-radius:50%;background:#2d7d46;margin-left:6px;vertical-align:middle;border:2px solid white;box-shadow:0 0 0 1px rgba(0,0,0,.15)"></span>
       </div>
       <div class="user-menu" id="user-menu">
         <div style="padding:10px 14px 8px;border-bottom:1px solid var(--border);margin-bottom:4px">
@@ -1147,6 +1147,30 @@ header:has(.user-menu.open) { z-index:1000; }
   <button onclick="infoDataOpen()">ℹ️ Info Data</button>
 </div>
 <button id="backtotop" onclick="window.scrollTo({top:0,behavior:'smooth'})" title="Kembali ke atas">↑</button>
+
+<button id="checklist-fab" onclick="toggleChecklistPanel()" title="Checklist Hari Ini" style="position:fixed;right:16px;bottom:80px;z-index:999;width:50px;height:50px;border-radius:50%;border:none;background:var(--jade);color:#fff;font-size:21px;box-shadow:0 4px 14px rgba(0,0,0,.25);cursor:pointer;display:flex;align-items:center;justify-content:center">
+  ✅
+  <span id="checklist-fab-badge" style="position:absolute;top:-4px;right:-4px;background:var(--red);color:white;font-size:10px;font-weight:800;min-width:18px;height:18px;border-radius:9px;display:none;align-items:center;justify-content:center;padding:0 4px;font-family:'DM Mono',monospace">0/0</span>
+</button>
+
+<div id="checklist-panel" style="display:none;position:fixed;right:16px;bottom:140px;z-index:1000;width:min(88vw,340px);max-height:70vh;background:white;border-radius:16px;box-shadow:0 12px 40px rgba(0,0,0,.28);overflow:hidden;flex-direction:column">
+  <div style="background:linear-gradient(135deg,var(--ink),var(--indigo));color:white;padding:14px 16px;display:flex;align-items:center;justify-content:space-between">
+    <div>
+      <div style="font-size:14px;font-weight:800">✅ Checklist Hari Ini</div>
+      <div id="checklist-panel-sub" style="font-size:10.5px;opacity:.7">0 dari 0 selesai</div>
+    </div>
+    <button onclick="toggleChecklistPanel()" style="background:rgba(255,255,255,.15);border:none;color:white;width:26px;height:26px;border-radius:50%;cursor:pointer;font-size:14px">✕</button>
+  </div>
+  <div id="checklist-items" style="overflow-y:auto;padding:10px 12px;flex:1"></div>
+  <div style="padding:10px 12px;border-top:1px solid var(--border)">
+    <div id="checklist-preset-picker" style="display:none;flex-wrap:wrap;gap:6px;margin-bottom:8px;max-height:160px;overflow-y:auto"></div>
+    <div style="display:flex;gap:6px">
+      <input id="checklist-custom-input" type="text" placeholder="Tulis tugas sendiri..." style="flex:1;min-width:0;padding:9px 10px;border:1px solid var(--border);border-radius:8px;font-family:inherit;font-size:12.5px;box-sizing:border-box" onkeydown="if(event.key==='Enter')addCustomChecklistItem()">
+      <button onclick="addCustomChecklistItem()" style="padding:9px 12px;border:none;border-radius:8px;background:var(--ink);color:white;font-size:12.5px;font-weight:700;cursor:pointer">+</button>
+    </div>
+    <button onclick="togglePresetPicker()" style="width:100%;margin-top:7px;padding:8px;border:1px dashed var(--border);border-radius:8px;background:none;color:var(--mist);font-size:11.5px;cursor:pointer">📋 Pilih dari daftar tugas</button>
+  </div>
+</div>
 
 <!-- ====== INFO DATA (cek cepat apakah update sudah masuk) ====== -->
 <div id="info-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:2700;align-items:center;justify-content:center;padding:14px" onclick="if(event.target===this)infoDataClose()">
@@ -2630,6 +2654,20 @@ var bunpoProgress = {};  // {N5: jumlahStageSelesai, N4: ...}
 var bunpoLearned = {};   // {N5:{patternId:true,...}, ...} — pola yang sudah dipelajari (mode List)
 let kanjiReadMastered = {}; // separate progress for kanji reading
 let todayDate = new Date().toDateString();
+var dailyChecklist = (function(){ try{ return JSON.parse(localStorage.getItem('n3_checklist')||'null') || {date:'', items:[]}; }catch(e){ return {date:'', items:[]}; } })();
+var dailySnapshot = (function(){ try{ return JSON.parse(localStorage.getItem('n3_checklist_snap')||'null') || null; }catch(e){ return null; } })();
+var CHECKLIST_PRESETS = [
+  {emo:'📚', t:'Hafalkan 10 kata baru',            linkKey:'vocab10', target:10},
+  {emo:'🈴', t:'Latihan baca 5 kanji',              linkKey:'kanji5',  target:5},
+  {emo:'📐', t:'Pelajari 1 pola tata bahasa',       linkKey:'bunpo1',  target:1},
+  {emo:'🔁', t:'Selesaikan Review Harian (SRS)',    linkKey:'srs1',    target:5},
+  {emo:'📝', t:'Kerjakan 1 sesi latihan soal',      linkKey:'exam1',   target:1},
+  {emo:'🈁', t:'Kuis On-Kun 10 soal',               linkKey:'oy10',    target:10},
+  {emo:'🌳', t:'Jelajahi Pohon Kata',               linkKey:'wtq1',    target:1},
+  {emo:'⚔️', t:'Kuis Kanji Kembar',                 linkKey:'twin1',   target:1},
+  {emo:'✍️', t:'Latihan menulis kanji',             linkKey:'write1',  target:1},
+  {emo:'💬', t:'Kuis kalimat / mnemonik',           linkKey:'sent1',   target:1}
+];
 let todayCount = 0;
 let streak = 0;
 let lastStudyDate = null;
@@ -4926,6 +4964,7 @@ async function loadFromFirestore() {
       if (data.bunpoProgress) bunpoProgress = data.bunpoProgress;
       if (data.bunpoLearned)  bunpoLearned  = data.bunpoLearned;
       if (data.badges && typeof data.badges==='object') unlockedBadges = data.badges;
+      if (data.dailyChecklist && data.dailyChecklist.date===new Date().toDateString()) dailyChecklist = data.dailyChecklist;
       progressPrivate = !!data.private;
       try{ localStorage.setItem('progressPrivate', progressPrivate?'1':'0'); }catch(e){}
       _updatePrivacyToggleUI();
@@ -5001,6 +5040,7 @@ async function saveToFirestore() {
       bunpoLearned: bunpoLearned,
       private: !!progressPrivate,
       badges: unlockedBadges,
+      dailyChecklist: dailyChecklist,
       lastSeen: firebase.firestore.FieldValue.serverTimestamp(),
     }, { merge: true });
     try{ localStorage.removeItem('n3_dirty'); }catch(e){}
@@ -5053,6 +5093,7 @@ function save() {
   if (syncTimeout) clearTimeout(syncTimeout);
   syncTimeout = setTimeout(saveToFirestore, 1500); // sync ke cloud 1.5 detik kemudian
   try{ checkBadges(); }catch(e){}
+  try{ _autoCheckChecklist(); }catch(e){}
 }
 
 // Flush segera saat app di-background / tab ditutup (timer debounce bisa dibunuh OS di HP)
@@ -5089,6 +5130,8 @@ function saveToLocal() {
     localStorage.setItem('srsData',         JSON.stringify(srsData));
     localStorage.setItem('methodStats',     JSON.stringify(methodStats));
     localStorage.setItem('n3_badges',       JSON.stringify(unlockedBadges));
+    localStorage.setItem('n3_checklist',    JSON.stringify(dailyChecklist));
+    localStorage.setItem('n3_checklist_snap', JSON.stringify(dailySnapshot));
   } catch(e) {}
 }
 
@@ -5108,6 +5151,10 @@ function loadFromLocal() {
     if (bl) bunpoLearned = JSON.parse(bl);
     const bd = localStorage.getItem('n3_badges');
     if (bd) unlockedBadges = JSON.parse(bd);
+    const cl = localStorage.getItem('n3_checklist');
+    if (cl) { var clp = JSON.parse(cl); if (clp.date === new Date().toDateString()) dailyChecklist = clp; }
+    const cs = localStorage.getItem('n3_checklist_snap');
+    if (cs) { var csp = JSON.parse(cs); if (csp && csp.date === new Date().toDateString()) dailySnapshot = csp; }
   } catch(e) {}
 }
 
@@ -7284,6 +7331,7 @@ var BADGE_DEFS = [
   {id:'streak100',  cat:'Konsistensi', emo:'🔥', t:'100 Hari Beruntun',  d:'Belajar 100 hari berturut-turut — luar biasa!',     check:function(){ return streak>=100; }},
   {id:'nightowl',   cat:'Konsistensi', emo:'🌙', t:'Night Owl',          d:'Belajar tengah malam (00:00–04:00)',                check:function(){ var h=new Date().getHours(); return h>=0&&h<4; }},
   {id:'earlybird',  cat:'Konsistensi', emo:'🌅', t:'Early Bird',         d:'Belajar pagi buta (04:00–07:00)',                   check:function(){ var h=new Date().getHours(); return h>=4&&h<7; }},
+  {id:'checklist7', cat:'Konsistensi', emo:'✅', t:'Checklist Master',   d:'Selesaikan checklist harian sampai tuntas 7 kali',  check:function(){ return (methodStats.checklistPerfect||0)>=7; }},
   // ── Kosakata & Kanji N3 ──
   {id:'words50',    cat:'Kosakata & Kanji N3', emo:'📖', t:'50 Kata Dikuasai',   d:'Kuasai 50 kosakata/kanji/tata bahasa N3',   check:function(){ return masteredAll()>=50; }},
   {id:'words150',   cat:'Kosakata & Kanji N3', emo:'📚', t:'150 Kata Dikuasai',  d:'Kuasai 150 kosakata/kanji/tata bahasa N3',  check:function(){ return masteredAll()>=150; }},
@@ -7318,6 +7366,152 @@ var BADGE_DEFS = [
   {id:'gradeA5',    cat:'Ujian', emo:'🎓', t:'5x Grade A',           d:'Dapat grade A di 5 latihan soal berbeda',           check:function(){ return (examHistory||[]).filter(function(e){return e.grade==='A';}).length>=5; }}
 ];
 function _bunpoCount(){ var c=0; Object.keys(bunpoLearned||{}).forEach(function(lv){ c+=Object.values(bunpoLearned[lv]||{}).filter(Boolean).length; }); return c; }
+
+// ============================================================
+// ✅ CHECKLIST HARIAN — floating di semua layar, nyambung ke aktivitas nyata
+// (bukan cuma dicentang manual — begitu kamu benar-benar ngerjain sesuatu di
+// fitur manapun, item yang linked otomatis ke-centang sendiri)
+// ============================================================
+function _captureChecklistSnapshot(){
+  dailySnapshot = {
+    date: new Date().toDateString(),
+    vocabAll: masteredAll(),
+    kanjiRead: Object.values(kanjiReadMastered||{}).filter(Boolean).length,
+    bunpo: _bunpoCount(),
+    srsRev: (methodStats.srsRev||0),
+    examCount: (examHistory||[]).length,
+    oyQ: (methodStats.oyQ||0),
+    wtqQ: (methodStats.wtqQ||0),
+    twinQ: (methodStats.twinQ||0),
+    writeQ: (methodStats.writeQ||0),
+    sentQ: (methodStats.sentQ||0)+(methodStats.mnQ||0)
+  };
+  try{ localStorage.setItem('n3_checklist_snap', JSON.stringify(dailySnapshot)); }catch(e){}
+}
+function _ensureChecklistToday(){
+  var today = new Date().toDateString();
+  if(dailyChecklist.date !== today){
+    dailyChecklist = {date:today, items:[]};
+    try{ localStorage.setItem('n3_checklist', JSON.stringify(dailyChecklist)); }catch(e){}
+  }
+  if(!dailySnapshot || dailySnapshot.date !== today) _captureChecklistSnapshot();
+}
+function _checklistDelta(linkKey){
+  if(!dailySnapshot || dailySnapshot.date!==new Date().toDateString()) return 0;
+  var m=methodStats||{};
+  switch(linkKey){
+    case 'vocab10': return Math.max(0, masteredAll()-dailySnapshot.vocabAll);
+    case 'kanji5':  return Math.max(0, Object.values(kanjiReadMastered||{}).filter(Boolean).length-dailySnapshot.kanjiRead);
+    case 'bunpo1':  return Math.max(0, _bunpoCount()-dailySnapshot.bunpo);
+    case 'srs1':    return Math.max(0, (m.srsRev||0)-dailySnapshot.srsRev);
+    case 'exam1':   return Math.max(0, (examHistory||[]).length-dailySnapshot.examCount);
+    case 'oy10':    return Math.max(0, (m.oyQ||0)-dailySnapshot.oyQ);
+    case 'wtq1':    return Math.max(0, (m.wtqQ||0)-dailySnapshot.wtqQ);
+    case 'twin1':   return Math.max(0, (m.twinQ||0)-dailySnapshot.twinQ);
+    case 'write1':  return Math.max(0, (m.writeQ||0)-dailySnapshot.writeQ);
+    case 'sent1':   return Math.max(0, ((m.sentQ||0)+(m.mnQ||0))-dailySnapshot.sentQ);
+  }
+  return 0;
+}
+function _autoCheckChecklist(){
+  _ensureChecklistToday();
+  var changed=false;
+  dailyChecklist.items.forEach(function(it){
+    if(it.linkKey && !it.done && _checklistDelta(it.linkKey)>=it.target){ it.done=true; changed=true; }
+  });
+  if(changed){
+    try{ localStorage.setItem('n3_checklist', JSON.stringify(dailyChecklist)); }catch(e){}
+  }
+  if(dailyChecklist.items.length>0 && dailyChecklist.items.every(function(it){return it.done;}) && !dailyChecklist._perfectCounted){
+    dailyChecklist._perfectCounted = true;
+    methodStats.checklistPerfect = (methodStats.checklistPerfect||0)+1;
+    try{ localStorage.setItem('n3_checklist', JSON.stringify(dailyChecklist)); }catch(e){}
+  }
+  _updateChecklistBadge();
+  var panel=document.getElementById('checklist-panel');
+  if(panel && panel.style.display==='flex') renderChecklistPanel();
+}
+function _updateChecklistBadge(){
+  _ensureChecklistToday();
+  var badge = document.getElementById('checklist-fab-badge');
+  if(!badge) return;
+  var total = dailyChecklist.items.length, done = dailyChecklist.items.filter(function(it){return it.done;}).length;
+  if(!total){ badge.style.display='none'; return; }
+  badge.style.display='flex';
+  badge.textContent = done+'/'+total;
+  badge.style.background = (done===total)?'var(--jade)':'var(--red)';
+}
+function renderChecklistPanel(){
+  _ensureChecklistToday();
+  var box = document.getElementById('checklist-items');
+  if(!box) return;
+  box.innerHTML = dailyChecklist.items.length ? dailyChecklist.items.map(function(it){
+    return '<div style="display:flex;align-items:center;gap:9px;padding:9px 4px;border-bottom:1px solid var(--border)">'
+      +'<div onclick="toggleChecklistItem(&apos;'+it.id+'&apos;)" style="width:20px;height:20px;border-radius:6px;border:2px solid '+(it.done?'var(--jade)':'var(--border)')+';background:'+(it.done?'var(--jade)':'white')+';display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0;color:white;font-size:12px">'+(it.done?'✓':'')+'</div>'
+      +'<div style="flex:1;min-width:0;font-size:12.5px;'+(it.done?'color:var(--mist);text-decoration:line-through':'color:var(--ink)')+'">'+it.text+(it.linkKey?' <span style="font-size:9px;opacity:.55">🔗 otomatis</span>':'')+'</div>'
+      +'<button onclick="removeChecklistItem(&apos;'+it.id+'&apos;)" style="border:none;background:none;color:var(--mist);cursor:pointer;font-size:14px;padding:2px 4px;flex-shrink:0">✕</button>'
+      +'</div>';
+  }).join('') : '<div style="text-align:center;padding:24px 10px;color:var(--mist);font-size:12.5px">Belum ada tugas hari ini.<br>Tambah lewat kolom di bawah 👇</div>';
+  var done = dailyChecklist.items.filter(function(it){return it.done;}).length;
+  var sub = document.getElementById('checklist-panel-sub');
+  if(sub) sub.textContent = done+' dari '+dailyChecklist.items.length+' selesai';
+  _updateChecklistBadge();
+}
+function toggleChecklistPanel(){
+  var p = document.getElementById('checklist-panel');
+  if(!p) return;
+  var opening = p.style.display!=='flex';
+  p.style.display = opening?'flex':'none';
+  if(opening) renderChecklistPanel();
+}
+function togglePresetPicker(){
+  var box = document.getElementById('checklist-preset-picker');
+  if(!box) return;
+  var opening = box.style.display!=='flex';
+  if(opening){
+    var used = dailyChecklist.items.map(function(it){return it.text;});
+    var avail = CHECKLIST_PRESETS.filter(function(p){return used.indexOf(p.t)<0;});
+    box.innerHTML = avail.length ? avail.map(function(p){
+      return '<button onclick="addPresetChecklistItem(&apos;'+p.t.replace(/'/g,"\\'")+'&apos;)" style="padding:7px 10px;border:1px solid var(--border);border-radius:16px;background:white;font-size:11.5px;cursor:pointer;white-space:nowrap">'+p.emo+' '+p.t+'</button>';
+    }).join('') : '<div style="font-size:11px;color:var(--mist);padding:6px">Semua preset udah ditambahin ✅</div>';
+    box.style.display='flex';
+  } else box.style.display='none';
+}
+function addPresetChecklistItem(text){
+  var preset = CHECKLIST_PRESETS.filter(function(p){return p.t===text;})[0];
+  if(!preset) return;
+  _ensureChecklistToday();
+  if(dailyChecklist.items.some(function(it){return it.text===preset.t;})) return;
+  dailyChecklist.items.push({id:'ci_'+Date.now()+'_'+Math.floor(Math.random()*1000), text:preset.t, done:false, linkKey:preset.linkKey, target:preset.target});
+  _autoCheckChecklist();
+  togglePresetPicker();
+  renderChecklistPanel();
+  save();
+}
+function addCustomChecklistItem(){
+  var input = document.getElementById('checklist-custom-input');
+  var val = input ? input.value.trim() : '';
+  if(!val) return;
+  _ensureChecklistToday();
+  dailyChecklist.items.push({id:'ci_'+Date.now()+'_'+Math.floor(Math.random()*1000), text:val, done:false, manual:true});
+  if(input) input.value='';
+  renderChecklistPanel();
+  save();
+}
+function toggleChecklistItem(id){
+  _ensureChecklistToday();
+  var it = dailyChecklist.items.filter(function(x){return x.id===id;})[0];
+  if(!it) return;
+  it.done = !it.done;
+  renderChecklistPanel();
+  save();
+}
+function removeChecklistItem(id){
+  _ensureChecklistToday();
+  dailyChecklist.items = dailyChecklist.items.filter(function(x){return x.id!==id;});
+  renderChecklistPanel();
+  save();
+}
 var _badgesPushedThisSession = false;
 function checkBadges(){
   var newly = [];
@@ -13583,6 +13777,7 @@ function init() {
   updateOverview();
   setInterval(updateCountdown, 60000);
   try{ checkBadges(); }catch(e){}
+  try{ _ensureChecklistToday(); _autoCheckChecklist(); }catch(e){}
 }
 // ===== DATA 動詞活用 (Konjugasi) — 18 verba inti terkurasi, 100% akurat =====
 var KATSUYO_VERBS = [{"jp": "食べる", "rom": "たべる", "id": "makan", "g": "ichidan", "f": {"jisho": "食べる", "masu": "食べます", "nai": "食べない", "masen": "食べません", "ta": "食べた", "mashita": "食べました", "nakatta": "食べなかった", "te": "食べて", "kanou": "食べられる", "ukemi": "食べられる", "shieki": "食べさせる", "ikou": "食べよう", "meirei": "食べろ", "ba": "食べれば", "tara": "食べたら"}}, {"jp": "見る", "rom": "みる", "id": "melihat", "g": "ichidan", "f": {"jisho": "見る", "masu": "見ます", "nai": "見ない", "masen": "見ません", "ta": "見た", "mashita": "見ました", "nakatta": "見なかった", "te": "見て", "kanou": "見られる", "ukemi": "見られる", "shieki": "見させる", "ikou": "見よう", "meirei": "見ろ", "ba": "見れば", "tara": "見たら"}}, {"jp": "起きる", "rom": "おきる", "id": "bangun", "g": "ichidan", "f": {"jisho": "起きる", "masu": "起きます", "nai": "起きない", "masen": "起きません", "ta": "起きた", "mashita": "起きました", "nakatta": "起きなかった", "te": "起きて", "kanou": "起きられる", "ukemi": "起きられる", "shieki": "起きさせる", "ikou": "起きよう", "meirei": "起きろ", "ba": "起きれば", "tara": "起きたら"}}, {"jp": "教える", "rom": "おしえる", "id": "mengajar", "g": "ichidan", "f": {"jisho": "教える", "masu": "教えます", "nai": "教えない", "masen": "教えません", "ta": "教えた", "mashita": "教えました", "nakatta": "教えなかった", "te": "教えて", "kanou": "教えられる", "ukemi": "教えられる", "shieki": "教えさせる", "ikou": "教えよう", "meirei": "教えろ", "ba": "教えれば", "tara": "教えたら"}}, {"jp": "飲む", "rom": "のむ", "id": "minum", "g": "godan", "f": {"jisho": "飲む", "masu": "飲みます", "nai": "飲まない", "masen": "飲みません", "ta": "飲んだ", "mashita": "飲みました", "nakatta": "飲まなかった", "te": "飲んで", "kanou": "飲める", "ukemi": "飲まれる", "shieki": "飲ませる", "ikou": "飲もう", "meirei": "飲め", "ba": "飲めば", "tara": "飲んだら"}}, {"jp": "書く", "rom": "かく", "id": "menulis", "g": "godan", "f": {"jisho": "書く", "masu": "書きます", "nai": "書かない", "masen": "書きません", "ta": "書いた", "mashita": "書きました", "nakatta": "書かなかった", "te": "書いて", "kanou": "書ける", "ukemi": "書かれる", "shieki": "書かせる", "ikou": "書こう", "meirei": "書け", "ba": "書けば", "tara": "書いたら"}}, {"jp": "泳ぐ", "rom": "およぐ", "id": "berenang", "g": "godan", "f": {"jisho": "泳ぐ", "masu": "泳ぎます", "nai": "泳がない", "masen": "泳ぎません", "ta": "泳いだ", "mashita": "泳ぎました", "nakatta": "泳がなかった", "te": "泳いで", "kanou": "泳げる", "ukemi": "泳がれる", "shieki": "泳がせる", "ikou": "泳ごう", "meirei": "泳げ", "ba": "泳げば", "tara": "泳いだら"}}, {"jp": "話す", "rom": "はなす", "id": "berbicara", "g": "godan", "f": {"jisho": "話す", "masu": "話します", "nai": "話さない", "masen": "話しません", "ta": "話した", "mashita": "話しました", "nakatta": "話さなかった", "te": "話して", "kanou": "話せる", "ukemi": "話される", "shieki": "話させる", "ikou": "話そう", "meirei": "話せ", "ba": "話せば", "tara": "話したら"}}, {"jp": "待つ", "rom": "まつ", "id": "menunggu", "g": "godan", "f": {"jisho": "待つ", "masu": "待ちます", "nai": "待たない", "masen": "待ちません", "ta": "待った", "mashita": "待ちました", "nakatta": "待たなかった", "te": "待って", "kanou": "待てる", "ukemi": "待たれる", "shieki": "待たせる", "ikou": "待とう", "meirei": "待て", "ba": "待てば", "tara": "待ったら"}}, {"jp": "買う", "rom": "かう", "id": "membeli", "g": "godan", "f": {"jisho": "買う", "masu": "買います", "nai": "買わない", "masen": "買いません", "ta": "買った", "mashita": "買いました", "nakatta": "買わなかった", "te": "買って", "kanou": "買える", "ukemi": "買われる", "shieki": "買わせる", "ikou": "買おう", "meirei": "買え", "ba": "買えば", "tara": "買ったら"}}, {"jp": "帰る", "rom": "かえる", "id": "pulang", "g": "godan", "f": {"jisho": "帰る", "masu": "帰ります", "nai": "帰らない", "masen": "帰りません", "ta": "帰った", "mashita": "帰りました", "nakatta": "帰らなかった", "te": "帰って", "kanou": "帰れる", "ukemi": "帰られる", "shieki": "帰らせる", "ikou": "帰ろう", "meirei": "帰れ", "ba": "帰れば", "tara": "帰ったら"}}, {"jp": "作る", "rom": "つくる", "id": "membuat", "g": "godan", "f": {"jisho": "作る", "masu": "作ります", "nai": "作らない", "masen": "作りません", "ta": "作った", "mashita": "作りました", "nakatta": "作らなかった", "te": "作って", "kanou": "作れる", "ukemi": "作られる", "shieki": "作らせる", "ikou": "作ろう", "meirei": "作れ", "ba": "作れば", "tara": "作ったら"}}, {"jp": "死ぬ", "rom": "しぬ", "id": "mati", "g": "godan", "f": {"jisho": "死ぬ", "masu": "死にます", "nai": "死なない", "masen": "死にません", "ta": "死んだ", "mashita": "死にました", "nakatta": "死ななかった", "te": "死んで", "kanou": "死ねる", "ukemi": "死なれる", "shieki": "死なせる", "ikou": "死のう", "meirei": "死ね", "ba": "死ねば", "tara": "死んだら"}}, {"jp": "遊ぶ", "rom": "あそぶ", "id": "bermain", "g": "godan", "f": {"jisho": "遊ぶ", "masu": "遊びます", "nai": "遊ばない", "masen": "遊びません", "ta": "遊んだ", "mashita": "遊びました", "nakatta": "遊ばなかった", "te": "遊んで", "kanou": "遊べる", "ukemi": "遊ばれる", "shieki": "遊ばせる", "ikou": "遊ぼう", "meirei": "遊べ", "ba": "遊べば", "tara": "遊んだら"}}, {"jp": "立つ", "rom": "たつ", "id": "berdiri", "g": "godan", "f": {"jisho": "立つ", "masu": "立ちます", "nai": "立たない", "masen": "立ちません", "ta": "立った", "mashita": "立ちました", "nakatta": "立たなかった", "te": "立って", "kanou": "立てる", "ukemi": "立たれる", "shieki": "立たせる", "ikou": "立とう", "meirei": "立て", "ba": "立てば", "tara": "立ったら"}}, {"jp": "急ぐ", "rom": "いそぐ", "id": "bergegas", "g": "godan", "f": {"jisho": "急ぐ", "masu": "急ぎます", "nai": "急がない", "masen": "急ぎません", "ta": "急いだ", "mashita": "急ぎました", "nakatta": "急がなかった", "te": "急いで", "kanou": "急げる", "ukemi": "急がれる", "shieki": "急がせる", "ikou": "急ごう", "meirei": "急げ", "ba": "急げば", "tara": "急いだら"}}, {"jp": "する", "rom": "する", "id": "melakukan", "g": "irregular", "f": {"jisho": "する", "masu": "します", "nai": "しない", "masen": "しません", "ta": "した", "mashita": "しました", "nakatta": "しなかった", "te": "して", "kanou": "できる", "ukemi": "される", "shieki": "させる", "ikou": "しよう", "meirei": "しろ", "ba": "すれば", "tara": "したら"}}, {"jp": "来る", "rom": "くる", "id": "datang", "g": "irregular", "f": {"jisho": "来る", "masu": "来ます", "nai": "来ない", "masen": "来ません", "ta": "来た", "mashita": "来ました", "nakatta": "来なかった", "te": "来て", "kanou": "来られる", "ukemi": "来られる", "shieki": "来させる", "ikou": "来よう", "meirei": "来い", "ba": "来れば", "tara": "来たら"}}, {"jp": "行く", "rom": "いく", "id": "pergi", "g": "godan", "f": {"jisho": "行く", "masu": "行きます", "nai": "行かない", "masen": "行きません", "ta": "行った", "mashita": "行きました", "nakatta": "行かなかった", "te": "行って", "kanou": "行ける", "ukemi": "行かれる", "shieki": "行かせる", "ikou": "行こう", "meirei": "行け", "ba": "行けば", "tara": "行ったら"}}, {"jp": "読む", "rom": "よむ", "id": "membaca", "g": "godan", "f": {"jisho": "読む", "masu": "読みます", "nai": "読まない", "masen": "読みません", "ta": "読んだ", "mashita": "読みました", "nakatta": "読まなかった", "te": "読んで", "kanou": "読める", "ukemi": "読まれる", "shieki": "読ませる", "ikou": "読もう", "meirei": "読め", "ba": "読めば", "tara": "読んだら"}}, {"jp": "聞く", "rom": "きく", "id": "mendengar", "g": "godan", "f": {"jisho": "聞く", "masu": "聞きます", "nai": "聞かない", "masen": "聞きません", "ta": "聞いた", "mashita": "聞きました", "nakatta": "聞かなかった", "te": "聞いて", "kanou": "聞ける", "ukemi": "聞かれる", "shieki": "聞かせる", "ikou": "聞こう", "meirei": "聞け", "ba": "聞けば", "tara": "聞いたら"}}, {"jp": "会う", "rom": "あう", "id": "bertemu", "g": "godan", "f": {"jisho": "会う", "masu": "会います", "nai": "会わない", "masen": "会いません", "ta": "会った", "mashita": "会いました", "nakatta": "会わなかった", "te": "会って", "kanou": "会える", "ukemi": "会われる", "shieki": "会わせる", "ikou": "会おう", "meirei": "会え", "ba": "会えば", "tara": "会ったら"}}, {"jp": "持つ", "rom": "もつ", "id": "memegang", "g": "godan", "f": {"jisho": "持つ", "masu": "持ちます", "nai": "持たない", "masen": "持ちません", "ta": "持った", "mashita": "持ちました", "nakatta": "持たなかった", "te": "持って", "kanou": "持てる", "ukemi": "持たれる", "shieki": "持たせる", "ikou": "持とう", "meirei": "持て", "ba": "持てば", "tara": "持ったら"}}, {"jp": "働く", "rom": "はたらく", "id": "bekerja", "g": "godan", "f": {"jisho": "働く", "masu": "働きます", "nai": "働かない", "masen": "働きません", "ta": "働いた", "mashita": "働きました", "nakatta": "働かなかった", "te": "働いて", "kanou": "働ける", "ukemi": "働かれる", "shieki": "働かせる", "ikou": "働こう", "meirei": "働け", "ba": "働けば", "tara": "働いたら"}}, {"jp": "休む", "rom": "やすむ", "id": "beristirahat", "g": "godan", "f": {"jisho": "休む", "masu": "休みます", "nai": "休まない", "masen": "休みません", "ta": "休んだ", "mashita": "休みました", "nakatta": "休まなかった", "te": "休んで", "kanou": "休める", "ukemi": "休まれる", "shieki": "休ませる", "ikou": "休もう", "meirei": "休め", "ba": "休めば", "tara": "休んだら"}}, {"jp": "歌う", "rom": "うたう", "id": "bernyanyi", "g": "godan", "f": {"jisho": "歌う", "masu": "歌います", "nai": "歌わない", "masen": "歌いません", "ta": "歌った", "mashita": "歌いました", "nakatta": "歌わなかった", "te": "歌って", "kanou": "歌える", "ukemi": "歌われる", "shieki": "歌わせる", "ikou": "歌おう", "meirei": "歌え", "ba": "歌えば", "tara": "歌ったら"}}, {"jp": "寝る", "rom": "ねる", "id": "tidur", "g": "ichidan", "f": {"jisho": "寝る", "masu": "寝ます", "nai": "寝ない", "masen": "寝ません", "ta": "寝た", "mashita": "寝ました", "nakatta": "寝なかった", "te": "寝て", "kanou": "寝られる", "ukemi": "寝られる", "shieki": "寝させる", "ikou": "寝よう", "meirei": "寝ろ", "ba": "寝れば", "tara": "寝たら"}}, {"jp": "出る", "rom": "でる", "id": "keluar", "g": "ichidan", "f": {"jisho": "出る", "masu": "出ます", "nai": "出ない", "masen": "出ません", "ta": "出た", "mashita": "出ました", "nakatta": "出なかった", "te": "出て", "kanou": "出られる", "ukemi": "出られる", "shieki": "出させる", "ikou": "出よう", "meirei": "出ろ", "ba": "出れば", "tara": "出たら"}}, {"jp": "開ける", "rom": "あける", "id": "membuka", "g": "ichidan", "f": {"jisho": "開ける", "masu": "開けます", "nai": "開けない", "masen": "開けません", "ta": "開けた", "mashita": "開けました", "nakatta": "開けなかった", "te": "開けて", "kanou": "開けられる", "ukemi": "開けられる", "shieki": "開けさせる", "ikou": "開けよう", "meirei": "開けろ", "ba": "開ければ", "tara": "開けたら"}}, {"jp": "見せる", "rom": "みせる", "id": "memperlihatkan", "g": "ichidan", "f": {"jisho": "見せる", "masu": "見せます", "nai": "見せない", "masen": "見せません", "ta": "見せた", "mashita": "見せました", "nakatta": "見せなかった", "te": "見せて", "kanou": "見せられる", "ukemi": "見せられる", "shieki": "見せさせる", "ikou": "見せよう", "meirei": "見せろ", "ba": "見せれば", "tara": "見せたら"}}, {"jp": "勉強する", "rom": "べんきょうする", "id": "belajar", "g": "irregular", "f": {"jisho": "勉強する", "masu": "勉強します", "nai": "勉強しない", "masen": "勉強しません", "ta": "勉強した", "mashita": "勉強しました", "nakatta": "勉強しなかった", "te": "勉強して", "kanou": "勉強できる", "ukemi": "勉強される", "shieki": "勉強させる", "ikou": "勉強しよう", "meirei": "勉強しろ", "ba": "勉強すれば", "tara": "勉強したら"}}, {"jp": "運動する", "rom": "うんどうする", "id": "berolahraga", "g": "irregular", "f": {"jisho": "運動する", "masu": "運動します", "nai": "運動しない", "masen": "運動しません", "ta": "運動した", "mashita": "運動しました", "nakatta": "運動しなかった", "te": "運動して", "kanou": "運動できる", "ukemi": "運動される", "shieki": "運動させる", "ikou": "運動しよう", "meirei": "運動しろ", "ba": "運動すれば", "tara": "運動したら"}}, {"jp": "使う", "rom": "つかう", "id": "memakai", "g": "godan", "f": {"jisho": "使う", "masu": "使います", "nai": "使わない", "masen": "使いません", "ta": "使った", "mashita": "使いました", "nakatta": "使わなかった", "te": "使って", "kanou": "使える", "ukemi": "使われる", "shieki": "使わせる", "ikou": "使おう", "meirei": "使え", "ba": "使えば", "tara": "使ったら"}}, {"jp": "取る", "rom": "とる", "id": "mengambil", "g": "godan", "f": {"jisho": "取る", "masu": "取ります", "nai": "取らない", "masen": "取りません", "ta": "取った", "mashita": "取りました", "nakatta": "取らなかった", "te": "取って", "kanou": "取れる", "ukemi": "取られる", "shieki": "取らせる", "ikou": "取ろう", "meirei": "取れ", "ba": "取れば", "tara": "取ったら"}}, {"jp": "入る", "rom": "はいる", "id": "masuk", "g": "godan", "f": {"jisho": "入る", "masu": "入ります", "nai": "入らない", "masen": "入りません", "ta": "入った", "mashita": "入りました", "nakatta": "入らなかった", "te": "入って", "kanou": "入れる", "ukemi": "入られる", "shieki": "入らせる", "ikou": "入ろう", "meirei": "入れ", "ba": "入れば", "tara": "入ったら"}}, {"jp": "送る", "rom": "おくる", "id": "mengirim", "g": "godan", "f": {"jisho": "送る", "masu": "送ります", "nai": "送らない", "masen": "送りません", "ta": "送った", "mashita": "送りました", "nakatta": "送らなかった", "te": "送って", "kanou": "送れる", "ukemi": "送られる", "shieki": "送らせる", "ikou": "送ろう", "meirei": "送れ", "ba": "送れば", "tara": "送ったら"}}, {"jp": "走る", "rom": "はしる", "id": "berlari", "g": "godan", "f": {"jisho": "走る", "masu": "走ります", "nai": "走らない", "masen": "走りません", "ta": "走った", "mashita": "走りました", "nakatta": "走らなかった", "te": "走って", "kanou": "走れる", "ukemi": "走られる", "shieki": "走らせる", "ikou": "走ろう", "meirei": "走れ", "ba": "走れば", "tara": "走ったら"}}, {"jp": "知る", "rom": "しる", "id": "tahu", "g": "godan", "f": {"jisho": "知る", "masu": "知ります", "nai": "知らない", "masen": "知りません", "ta": "知った", "mashita": "知りました", "nakatta": "知らなかった", "te": "知って", "kanou": "知れる", "ukemi": "知られる", "shieki": "知らせる", "ikou": "知ろう", "meirei": "知れ", "ba": "知れば", "tara": "知ったら"}}, {"jp": "呼ぶ", "rom": "よぶ", "id": "memanggil", "g": "godan", "f": {"jisho": "呼ぶ", "masu": "呼びます", "nai": "呼ばない", "masen": "呼びません", "ta": "呼んだ", "mashita": "呼びました", "nakatta": "呼ばなかった", "te": "呼んで", "kanou": "呼べる", "ukemi": "呼ばれる", "shieki": "呼ばせる", "ikou": "呼ぼう", "meirei": "呼べ", "ba": "呼べば", "tara": "呼んだら"}}, {"jp": "運ぶ", "rom": "はこぶ", "id": "membawa", "g": "godan", "f": {"jisho": "運ぶ", "masu": "運びます", "nai": "運ばない", "masen": "運びません", "ta": "運んだ", "mashita": "運びました", "nakatta": "運ばなかった", "te": "運んで", "kanou": "運べる", "ukemi": "運ばれる", "shieki": "運ばせる", "ikou": "運ぼう", "meirei": "運べ", "ba": "運べば", "tara": "運んだら"}}, {"jp": "住む", "rom": "すむ", "id": "tinggal", "g": "godan", "f": {"jisho": "住む", "masu": "住みます", "nai": "住まない", "masen": "住みません", "ta": "住んだ", "mashita": "住みました", "nakatta": "住まなかった", "te": "住んで", "kanou": "住める", "ukemi": "住まれる", "shieki": "住ませる", "ikou": "住もう", "meirei": "住め", "ba": "住めば", "tara": "住んだら"}}, {"jp": "洗う", "rom": "あらう", "id": "mencuci", "g": "godan", "f": {"jisho": "洗う", "masu": "洗います", "nai": "洗わない", "masen": "洗いません", "ta": "洗った", "mashita": "洗いました", "nakatta": "洗わなかった", "te": "洗って", "kanou": "洗える", "ukemi": "洗われる", "shieki": "洗わせる", "ikou": "洗おう", "meirei": "洗え", "ba": "洗えば", "tara": "洗ったら"}}, {"jp": "歩く", "rom": "あるく", "id": "berjalan", "g": "godan", "f": {"jisho": "歩く", "masu": "歩きます", "nai": "歩かない", "masen": "歩きません", "ta": "歩いた", "mashita": "歩きました", "nakatta": "歩かなかった", "te": "歩いて", "kanou": "歩ける", "ukemi": "歩かれる", "shieki": "歩かせる", "ikou": "歩こう", "meirei": "歩け", "ba": "歩けば", "tara": "歩いたら"}}, {"jp": "探す", "rom": "さがす", "id": "mencari", "g": "godan", "f": {"jisho": "探す", "masu": "探します", "nai": "探さない", "masen": "探しません", "ta": "探した", "mashita": "探しました", "nakatta": "探さなかった", "te": "探して", "kanou": "探せる", "ukemi": "探される", "shieki": "探させる", "ikou": "探そう", "meirei": "探せ", "ba": "探せば", "tara": "探したら"}}, {"jp": "考える", "rom": "かんがえる", "id": "berpikir", "g": "ichidan", "f": {"jisho": "考える", "masu": "考えます", "nai": "考えない", "masen": "考えません", "ta": "考えた", "mashita": "考えました", "nakatta": "考えなかった", "te": "考えて", "kanou": "考えられる", "ukemi": "考えられる", "shieki": "考えさせる", "ikou": "考えよう", "meirei": "考えろ", "ba": "考えれば", "tara": "考えたら"}}, {"jp": "答える", "rom": "こたえる", "id": "menjawab", "g": "ichidan", "f": {"jisho": "答える", "masu": "答えます", "nai": "答えない", "masen": "答えません", "ta": "答えた", "mashita": "答えました", "nakatta": "答えなかった", "te": "答えて", "kanou": "答えられる", "ukemi": "答えられる", "shieki": "答えさせる", "ikou": "答えよう", "meirei": "答えろ", "ba": "答えれば", "tara": "答えたら"}}, {"jp": "始める", "rom": "はじめる", "id": "memulai", "g": "ichidan", "f": {"jisho": "始める", "masu": "始めます", "nai": "始めない", "masen": "始めません", "ta": "始めた", "mashita": "始めました", "nakatta": "始めなかった", "te": "始めて", "kanou": "始められる", "ukemi": "始められる", "shieki": "始めさせる", "ikou": "始めよう", "meirei": "始めろ", "ba": "始めれば", "tara": "始めたら"}}, {"jp": "続ける", "rom": "つづける", "id": "melanjutkan", "g": "ichidan", "f": {"jisho": "続ける", "masu": "続けます", "nai": "続けない", "masen": "続けません", "ta": "続けた", "mashita": "続けました", "nakatta": "続けなかった", "te": "続けて", "kanou": "続けられる", "ukemi": "続けられる", "shieki": "続けさせる", "ikou": "続けよう", "meirei": "続けろ", "ba": "続ければ", "tara": "続けたら"}}, {"jp": "調べる", "rom": "しらべる", "id": "memeriksa", "g": "ichidan", "f": {"jisho": "調べる", "masu": "調べます", "nai": "調べない", "masen": "調べません", "ta": "調べた", "mashita": "調べました", "nakatta": "調べなかった", "te": "調べて", "kanou": "調べられる", "ukemi": "調べられる", "shieki": "調べさせる", "ikou": "調べよう", "meirei": "調べろ", "ba": "調べれば", "tara": "調べたら"}}, {"jp": "覚える", "rom": "おぼえる", "id": "menghafal", "g": "ichidan", "f": {"jisho": "覚える", "masu": "覚えます", "nai": "覚えない", "masen": "覚えません", "ta": "覚えた", "mashita": "覚えました", "nakatta": "覚えなかった", "te": "覚えて", "kanou": "覚えられる", "ukemi": "覚えられる", "shieki": "覚えさせる", "ikou": "覚えよう", "meirei": "覚えろ", "ba": "覚えれば", "tara": "覚えたら"}}, {"jp": "電話する", "rom": "でんわする", "id": "menelepon", "g": "irregular", "f": {"jisho": "電話する", "masu": "電話します", "nai": "電話しない", "masen": "電話しません", "ta": "電話した", "mashita": "電話しました", "nakatta": "電話しなかった", "te": "電話して", "kanou": "電話できる", "ukemi": "電話される", "shieki": "電話させる", "ikou": "電話しよう", "meirei": "電話しろ", "ba": "電話すれば", "tara": "電話したら"}}, {"jp": "掃除する", "rom": "そうじする", "id": "membersihkan", "g": "irregular", "f": {"jisho": "掃除する", "masu": "掃除します", "nai": "掃除しない", "masen": "掃除しません", "ta": "掃除した", "mashita": "掃除しました", "nakatta": "掃除しなかった", "te": "掃除して", "kanou": "掃除できる", "ukemi": "掃除される", "shieki": "掃除させる", "ikou": "掃除しよう", "meirei": "掃除しろ", "ba": "掃除すれば", "tara": "掃除したら"}}, {"jp": "結婚する", "rom": "けっこんする", "id": "menikah", "g": "irregular", "f": {"jisho": "結婚する", "masu": "結婚します", "nai": "結婚しない", "masen": "結婚しません", "ta": "結婚した", "mashita": "結婚しました", "nakatta": "結婚しなかった", "te": "結婚して", "kanou": "結婚できる", "ukemi": "結婚される", "shieki": "結婚させる", "ikou": "結婚しよう", "meirei": "結婚しろ", "ba": "結婚すれば", "tara": "結婚したら"}}, {"jp": "座る", "rom": "すわる", "id": "duduk", "g": "godan", "f": {"jisho": "座る", "masu": "座ります", "nai": "座らない", "masen": "座りません", "ta": "座った", "mashita": "座りました", "nakatta": "座らなかった", "te": "座って", "kanou": "座れる", "ukemi": "座られる", "shieki": "座らせる", "ikou": "座ろう", "meirei": "座れ", "ba": "座れば", "tara": "座ったら"}}, {"jp": "切る", "rom": "きる", "id": "memotong", "g": "godan", "f": {"jisho": "切る", "masu": "切ります", "nai": "切らない", "masen": "切りません", "ta": "切った", "mashita": "切りました", "nakatta": "切らなかった", "te": "切って", "kanou": "切れる", "ukemi": "切られる", "shieki": "切らせる", "ikou": "切ろう", "meirei": "切れ", "ba": "切れば", "tara": "切ったら"}}, {"jp": "押す", "rom": "おす", "id": "mendorong", "g": "godan", "f": {"jisho": "押す", "masu": "押します", "nai": "押さない", "masen": "押しません", "ta": "押した", "mashita": "押しました", "nakatta": "押さなかった", "te": "押して", "kanou": "押せる", "ukemi": "押される", "shieki": "押させる", "ikou": "押そう", "meirei": "押せ", "ba": "押せば", "tara": "押したら"}}, {"jp": "引く", "rom": "ひく", "id": "menarik", "g": "godan", "f": {"jisho": "引く", "masu": "引きます", "nai": "引かない", "masen": "引きません", "ta": "引いた", "mashita": "引きました", "nakatta": "引かなかった", "te": "引いて", "kanou": "引ける", "ukemi": "引かれる", "shieki": "引かせる", "ikou": "引こう", "meirei": "引け", "ba": "引けば", "tara": "引いたら"}}, {"jp": "消す", "rom": "けす", "id": "menghapus/mematikan", "g": "godan", "f": {"jisho": "消す", "masu": "消します", "nai": "消さない", "masen": "消しません", "ta": "消した", "mashita": "消しました", "nakatta": "消さなかった", "te": "消して", "kanou": "消せる", "ukemi": "消される", "shieki": "消させる", "ikou": "消そう", "meirei": "消せ", "ba": "消せば", "tara": "消したら"}}, {"jp": "乗る", "rom": "のる", "id": "naik", "g": "godan", "f": {"jisho": "乗る", "masu": "乗ります", "nai": "乗らない", "masen": "乗りません", "ta": "乗った", "mashita": "乗りました", "nakatta": "乗らなかった", "te": "乗って", "kanou": "乗れる", "ukemi": "乗られる", "shieki": "乗らせる", "ikou": "乗ろう", "meirei": "乗れ", "ba": "乗れば", "tara": "乗ったら"}}, {"jp": "登る", "rom": "のぼる", "id": "mendaki", "g": "godan", "f": {"jisho": "登る", "masu": "登ります", "nai": "登らない", "masen": "登りません", "ta": "登った", "mashita": "登りました", "nakatta": "登らなかった", "te": "登って", "kanou": "登れる", "ukemi": "登られる", "shieki": "登らせる", "ikou": "登ろう", "meirei": "登れ", "ba": "登れば", "tara": "登ったら"}}, {"jp": "払う", "rom": "はらう", "id": "membayar", "g": "godan", "f": {"jisho": "払う", "masu": "払います", "nai": "払わない", "masen": "払いません", "ta": "払った", "mashita": "払いました", "nakatta": "払わなかった", "te": "払って", "kanou": "払える", "ukemi": "払われる", "shieki": "払わせる", "ikou": "払おう", "meirei": "払え", "ba": "払えば", "tara": "払ったら"}}, {"jp": "笑う", "rom": "わらう", "id": "tertawa", "g": "godan", "f": {"jisho": "笑う", "masu": "笑います", "nai": "笑わない", "masen": "笑いません", "ta": "笑った", "mashita": "笑いました", "nakatta": "笑わなかった", "te": "笑って", "kanou": "笑える", "ukemi": "笑われる", "shieki": "笑わせる", "ikou": "笑おう", "meirei": "笑え", "ba": "笑えば", "tara": "笑ったら"}}, {"jp": "泣く", "rom": "なく", "id": "menangis", "g": "godan", "f": {"jisho": "泣く", "masu": "泣きます", "nai": "泣かない", "masen": "泣きません", "ta": "泣いた", "mashita": "泣きました", "nakatta": "泣かなかった", "te": "泣いて", "kanou": "泣ける", "ukemi": "泣かれる", "shieki": "泣かせる", "ikou": "泣こう", "meirei": "泣け", "ba": "泣けば", "tara": "泣いたら"}}, {"jp": "置く", "rom": "おく", "id": "meletakkan", "g": "godan", "f": {"jisho": "置く", "masu": "置きます", "nai": "置かない", "masen": "置きません", "ta": "置いた", "mashita": "置きました", "nakatta": "置かなかった", "te": "置いて", "kanou": "置ける", "ukemi": "置かれる", "shieki": "置かせる", "ikou": "置こう", "meirei": "置け", "ba": "置けば", "tara": "置いたら"}}, {"jp": "思う", "rom": "おもう", "id": "berpikir/merasa", "g": "godan", "f": {"jisho": "思う", "masu": "思います", "nai": "思わない", "masen": "思いません", "ta": "思った", "mashita": "思いました", "nakatta": "思わなかった", "te": "思って", "kanou": "思える", "ukemi": "思われる", "shieki": "思わせる", "ikou": "思おう", "meirei": "思え", "ba": "思えば", "tara": "思ったら"}}, {"jp": "閉める", "rom": "しめる", "id": "menutup", "g": "ichidan", "f": {"jisho": "閉める", "masu": "閉めます", "nai": "閉めない", "masen": "閉めません", "ta": "閉めた", "mashita": "閉めました", "nakatta": "閉めなかった", "te": "閉めて", "kanou": "閉められる", "ukemi": "閉められる", "shieki": "閉めさせる", "ikou": "閉めよう", "meirei": "閉めろ", "ba": "閉めれば", "tara": "閉めたら"}}, {"jp": "集める", "rom": "あつめる", "id": "mengumpulkan", "g": "ichidan", "f": {"jisho": "集める", "masu": "集めます", "nai": "集めない", "masen": "集めません", "ta": "集めた", "mashita": "集めました", "nakatta": "集めなかった", "te": "集めて", "kanou": "集められる", "ukemi": "集められる", "shieki": "集めさせる", "ikou": "集めよう", "meirei": "集めろ", "ba": "集めれば", "tara": "集めたら"}}, {"jp": "捨てる", "rom": "すてる", "id": "membuang", "g": "ichidan", "f": {"jisho": "捨てる", "masu": "捨てます", "nai": "捨てない", "masen": "捨てません", "ta": "捨てた", "mashita": "捨てました", "nakatta": "捨てなかった", "te": "捨てて", "kanou": "捨てられる", "ukemi": "捨てられる", "shieki": "捨てさせる", "ikou": "捨てよう", "meirei": "捨てろ", "ba": "捨てれば", "tara": "捨てたら"}}, {"jp": "育てる", "rom": "そだてる", "id": "membesarkan", "g": "ichidan", "f": {"jisho": "育てる", "masu": "育てます", "nai": "育てない", "masen": "育てません", "ta": "育てた", "mashita": "育てました", "nakatta": "育てなかった", "te": "育てて", "kanou": "育てられる", "ukemi": "育てられる", "shieki": "育てさせる", "ikou": "育てよう", "meirei": "育てろ", "ba": "育てれば", "tara": "育てたら"}}, {"jp": "借りる", "rom": "かりる", "id": "meminjam", "g": "ichidan", "f": {"jisho": "借りる", "masu": "借ります", "nai": "借りない", "masen": "借りません", "ta": "借りた", "mashita": "借りました", "nakatta": "借りなかった", "te": "借りて", "kanou": "借りられる", "ukemi": "借りられる", "shieki": "借りさせる", "ikou": "借りよう", "meirei": "借りろ", "ba": "借りれば", "tara": "借りたら"}}, {"jp": "信じる", "rom": "しんじる", "id": "percaya", "g": "ichidan", "f": {"jisho": "信じる", "masu": "信じます", "nai": "信じない", "masen": "信じません", "ta": "信じた", "mashita": "信じました", "nakatta": "信じなかった", "te": "信じて", "kanou": "信じられる", "ukemi": "信じられる", "shieki": "信じさせる", "ikou": "信じよう", "meirei": "信じろ", "ba": "信じれば", "tara": "信じたら"}}, {"jp": "練習する", "rom": "れんしゅうする", "id": "berlatih", "g": "irregular", "f": {"jisho": "練習する", "masu": "練習します", "nai": "練習しない", "masen": "練習しません", "ta": "練習した", "mashita": "練習しました", "nakatta": "練習しなかった", "te": "練習して", "kanou": "練習できる", "ukemi": "練習される", "shieki": "練習させる", "ikou": "練習しよう", "meirei": "練習しろ", "ba": "練習すれば", "tara": "練習したら"}}, {"jp": "説明する", "rom": "せつめいする", "id": "menjelaskan", "g": "irregular", "f": {"jisho": "説明する", "masu": "説明します", "nai": "説明しない", "masen": "説明しません", "ta": "説明した", "mashita": "説明しました", "nakatta": "説明しなかった", "te": "説明して", "kanou": "説明できる", "ukemi": "説明される", "shieki": "説明させる", "ikou": "説明しよう", "meirei": "説明しろ", "ba": "説明すれば", "tara": "説明したら"}}, {"jp": "案内する", "rom": "あんないする", "id": "memandu", "g": "irregular", "f": {"jisho": "案内する", "masu": "案内します", "nai": "案内しない", "masen": "案内しません", "ta": "案内した", "mashita": "案内しました", "nakatta": "案内しなかった", "te": "案内して", "kanou": "案内できる", "ukemi": "案内される", "shieki": "案内させる", "ikou": "案内しよう", "meirei": "案内しろ", "ba": "案内すれば", "tara": "案内したら"}}, {"jp": "飛ぶ", "rom": "とぶ", "id": "terbang", "g": "godan", "f": {"jisho": "飛ぶ", "masu": "飛びます", "nai": "飛ばない", "masen": "飛びません", "ta": "飛んだ", "mashita": "飛びました", "nakatta": "飛ばなかった", "te": "飛んで", "kanou": "飛べる", "ukemi": "飛ばれる", "shieki": "飛ばせる", "ikou": "飛ぼう", "meirei": "飛べ", "ba": "飛べば", "tara": "飛んだら"}}, {"jp": "困る", "rom": "こまる", "id": "kerepotan", "g": "godan", "f": {"jisho": "困る", "masu": "困ります", "nai": "困らない", "masen": "困りません", "ta": "困った", "mashita": "困りました", "nakatta": "困らなかった", "te": "困って", "kanou": "困れる", "ukemi": "困られる", "shieki": "困らせる", "ikou": "困ろう", "meirei": "困れ", "ba": "困れば", "tara": "困ったら"}}, {"jp": "頑張る", "rom": "がんばる", "id": "berusaha", "g": "godan", "f": {"jisho": "頑張る", "masu": "頑張ります", "nai": "頑張らない", "masen": "頑張りません", "ta": "頑張った", "mashita": "頑張りました", "nakatta": "頑張らなかった", "te": "頑張って", "kanou": "頑張れる", "ukemi": "頑張られる", "shieki": "頑張らせる", "ikou": "頑張ろう", "meirei": "頑張れ", "ba": "頑張れば", "tara": "頑張ったら"}}, {"jp": "喜ぶ", "rom": "よろこぶ", "id": "bergembira", "g": "godan", "f": {"jisho": "喜ぶ", "masu": "喜びます", "nai": "喜ばない", "masen": "喜びません", "ta": "喜んだ", "mashita": "喜びました", "nakatta": "喜ばなかった", "te": "喜んで", "kanou": "喜べる", "ukemi": "喜ばれる", "shieki": "喜ばせる", "ikou": "喜ぼう", "meirei": "喜べ", "ba": "喜べば", "tara": "喜んだら"}}, {"jp": "怒る", "rom": "おこる", "id": "marah", "g": "godan", "f": {"jisho": "怒る", "masu": "怒ります", "nai": "怒らない", "masen": "怒りません", "ta": "怒った", "mashita": "怒りました", "nakatta": "怒らなかった", "te": "怒って", "kanou": "怒れる", "ukemi": "怒られる", "shieki": "怒らせる", "ikou": "怒ろう", "meirei": "怒れ", "ba": "怒れば", "tara": "怒ったら"}}, {"jp": "驚く", "rom": "おどろく", "id": "terkejut", "g": "godan", "f": {"jisho": "驚く", "masu": "驚きます", "nai": "驚かない", "masen": "驚きません", "ta": "驚いた", "mashita": "驚きました", "nakatta": "驚かなかった", "te": "驚いて", "kanou": "驚ける", "ukemi": "驚かれる", "shieki": "驚かせる", "ikou": "驚こう", "meirei": "驚け", "ba": "驚けば", "tara": "驚いたら"}}, {"jp": "手伝う", "rom": "てつだう", "id": "membantu", "g": "godan", "f": {"jisho": "手伝う", "masu": "手伝います", "nai": "手伝わない", "masen": "手伝いません", "ta": "手伝った", "mashita": "手伝いました", "nakatta": "手伝わなかった", "te": "手伝って", "kanou": "手伝える", "ukemi": "手伝われる", "shieki": "手伝わせる", "ikou": "手伝おう", "meirei": "手伝え", "ba": "手伝えば", "tara": "手伝ったら"}}, {"jp": "頼む", "rom": "たのむ", "id": "meminta", "g": "godan", "f": {"jisho": "頼む", "masu": "頼みます", "nai": "頼まない", "masen": "頼みません", "ta": "頼んだ", "mashita": "頼みました", "nakatta": "頼まなかった", "te": "頼んで", "kanou": "頼める", "ukemi": "頼まれる", "shieki": "頼ませる", "ikou": "頼もう", "meirei": "頼め", "ba": "頼めば", "tara": "頼んだら"}}, {"jp": "渡す", "rom": "わたす", "id": "menyerahkan", "g": "godan", "f": {"jisho": "渡す", "masu": "渡します", "nai": "渡さない", "masen": "渡しません", "ta": "渡した", "mashita": "渡しました", "nakatta": "渡さなかった", "te": "渡して", "kanou": "渡せる", "ukemi": "渡される", "shieki": "渡させる", "ikou": "渡そう", "meirei": "渡せ", "ba": "渡せば", "tara": "渡したら"}}, {"jp": "選ぶ", "rom": "えらぶ", "id": "memilih", "g": "godan", "f": {"jisho": "選ぶ", "masu": "選びます", "nai": "選ばない", "masen": "選びません", "ta": "選んだ", "mashita": "選びました", "nakatta": "選ばなかった", "te": "選んで", "kanou": "選べる", "ukemi": "選ばれる", "shieki": "選ばせる", "ikou": "選ぼう", "meirei": "選べ", "ba": "選べば", "tara": "選んだら"}}, {"jp": "咲く", "rom": "さく", "id": "mekar", "g": "godan", "f": {"jisho": "咲く", "masu": "咲きます", "nai": "咲かない", "masen": "咲きません", "ta": "咲いた", "mashita": "咲きました", "nakatta": "咲かなかった", "te": "咲いて", "kanou": "咲ける", "ukemi": "咲かれる", "shieki": "咲かせる", "ikou": "咲こう", "meirei": "咲け", "ba": "咲けば", "tara": "咲いたら"}}, {"jp": "登録する", "rom": "とうろくする", "id": "mendaftar", "g": "irregular", "f": {"jisho": "登録する", "masu": "登録します", "nai": "登録しない", "masen": "登録しません", "ta": "登録した", "mashita": "登録しました", "nakatta": "登録しなかった", "te": "登録して", "kanou": "登録できる", "ukemi": "登録される", "shieki": "登録させる", "ikou": "登録しよう", "meirei": "登録しろ", "ba": "登録すれば", "tara": "登録したら"}}, {"jp": "出かける", "rom": "でかける", "id": "pergi keluar", "g": "ichidan", "f": {"jisho": "出かける", "masu": "出かけます", "nai": "出かけない", "masen": "出かけません", "ta": "出かけた", "mashita": "出かけました", "nakatta": "出かけなかった", "te": "出かけて", "kanou": "出かけられる", "ukemi": "出かけられる", "shieki": "出かけさせる", "ikou": "出かけよう", "meirei": "出かけろ", "ba": "出かければ", "tara": "出かけたら"}}, {"jp": "疲れる", "rom": "つかれる", "id": "lelah", "g": "ichidan", "f": {"jisho": "疲れる", "masu": "疲れます", "nai": "疲れない", "masen": "疲れません", "ta": "疲れた", "mashita": "疲れました", "nakatta": "疲れなかった", "te": "疲れて", "kanou": "疲れられる", "ukemi": "疲れられる", "shieki": "疲れさせる", "ikou": "疲れよう", "meirei": "疲れろ", "ba": "疲れれば", "tara": "疲れたら"}}, {"jp": "忘れる", "rom": "わすれる", "id": "lupa", "g": "ichidan", "f": {"jisho": "忘れる", "masu": "忘れます", "nai": "忘れない", "masen": "忘れません", "ta": "忘れた", "mashita": "忘れました", "nakatta": "忘れなかった", "te": "忘れて", "kanou": "忘れられる", "ukemi": "忘れられる", "shieki": "忘れさせる", "ikou": "忘れよう", "meirei": "忘れろ", "ba": "忘れれば", "tara": "忘れたら"}}, {"jp": "迎える", "rom": "むかえる", "id": "menjemput", "g": "ichidan", "f": {"jisho": "迎える", "masu": "迎えます", "nai": "迎えない", "masen": "迎えません", "ta": "迎えた", "mashita": "迎えました", "nakatta": "迎えなかった", "te": "迎えて", "kanou": "迎えられる", "ukemi": "迎えられる", "shieki": "迎えさせる", "ikou": "迎えよう", "meirei": "迎えろ", "ba": "迎えれば", "tara": "迎えたら"}}, {"jp": "足りる", "rom": "たりる", "id": "cukup", "g": "ichidan", "f": {"jisho": "足りる", "masu": "足ります", "nai": "足りない", "masen": "足りません", "ta": "足りた", "mashita": "足りました", "nakatta": "足りなかった", "te": "足りて", "kanou": "足りられる", "ukemi": "足りられる", "shieki": "足りさせる", "ikou": "足りよう", "meirei": "足りろ", "ba": "足りれば", "tara": "足りたら"}}, {"jp": "捕まえる", "rom": "つかまえる", "id": "menangkap", "g": "ichidan", "f": {"jisho": "捕まえる", "masu": "捕まえます", "nai": "捕まえない", "masen": "捕まえません", "ta": "捕まえた", "mashita": "捕まえました", "nakatta": "捕まえなかった", "te": "捕まえて", "kanou": "捕まえられる", "ukemi": "捕まえられる", "shieki": "捕まえさせる", "ikou": "捕まえよう", "meirei": "捕まえろ", "ba": "捕まえれば", "tara": "捕まえたら"}}, {"jp": "上げる", "rom": "あげる", "id": "menaikkan", "g": "ichidan", "f": {"jisho": "上げる", "masu": "上げます", "nai": "上げない", "masen": "上げません", "ta": "上げた", "mashita": "上げました", "nakatta": "上げなかった", "te": "上げて", "kanou": "上げられる", "ukemi": "上げられる", "shieki": "上げさせる", "ikou": "上げよう", "meirei": "上げろ", "ba": "上げれば", "tara": "上げたら"}}, {"jp": "投げる", "rom": "なげる", "id": "melempar", "g": "ichidan", "f": {"jisho": "投げる", "masu": "投げます", "nai": "投げない", "masen": "投げません", "ta": "投げた", "mashita": "投げました", "nakatta": "投げなかった", "te": "投げて", "kanou": "投げられる", "ukemi": "投げられる", "shieki": "投げさせる", "ikou": "投げよう", "meirei": "投げろ", "ba": "投げれば", "tara": "投げたら"}}, {"jp": "予約する", "rom": "よやくする", "id": "memesan", "g": "irregular", "f": {"jisho": "予約する", "masu": "予約します", "nai": "予約しない", "masen": "予約しません", "ta": "予約した", "mashita": "予約しました", "nakatta": "予約しなかった", "te": "予約して", "kanou": "予約できる", "ukemi": "予約される", "shieki": "予約させる", "ikou": "予約しよう", "meirei": "予約しろ", "ba": "予約すれば", "tara": "予約したら"}}, {"jp": "卒業する", "rom": "そつぎょうする", "id": "lulus", "g": "irregular", "f": {"jisho": "卒業する", "masu": "卒業します", "nai": "卒業しない", "masen": "卒業しません", "ta": "卒業した", "mashita": "卒業しました", "nakatta": "卒業しなかった", "te": "卒業して", "kanou": "卒業できる", "ukemi": "卒業される", "shieki": "卒業させる", "ikou": "卒業しよう", "meirei": "卒業しろ", "ba": "卒業すれば", "tara": "卒業したら"}}, {"jp": "注文する", "rom": "ちゅうもんする", "id": "memesan", "g": "irregular", "f": {"jisho": "注文する", "masu": "注文します", "nai": "注文しない", "masen": "注文しません", "ta": "注文した", "mashita": "注文しました", "nakatta": "注文しなかった", "te": "注文して", "kanou": "注文できる", "ukemi": "注文される", "shieki": "注文させる", "ikou": "注文しよう", "meirei": "注文しろ", "ba": "注文すれば", "tara": "注文したら"}}, {"jp": "散歩する", "rom": "さんぽする", "id": "jalan-jalan", "g": "irregular", "f": {"jisho": "散歩する", "masu": "散歩します", "nai": "散歩しない", "masen": "散歩しません", "ta": "散歩した", "mashita": "散歩しました", "nakatta": "散歩しなかった", "te": "散歩して", "kanou": "散歩できる", "ukemi": "散歩される", "shieki": "散歩させる", "ikou": "散歩しよう", "meirei": "散歩しろ", "ba": "散歩すれば", "tara": "散歩したら"}}];
