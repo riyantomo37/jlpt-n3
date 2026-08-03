@@ -1085,7 +1085,7 @@ header:has(.user-menu.open) { z-index:1000; }
         <span class="user-name" id="user-name">...</span>
         <span id="level-badge" onclick="event.stopPropagation();gotoScreen('levelreward')" title="Level & Reward" style="font-size:10px;font-weight:800;background:linear-gradient(135deg,var(--gold),#c98a1f);color:white;padding:2px 7px;border-radius:8px;cursor:pointer;letter-spacing:.3px">Lv.1</span>
         <span class="sync-badge" id="sync-badge">● sync</span>
-        <span id="build-dot" title="Indikator update: warnanya ganti tiap ada versi baru dari Claude" style="display:inline-block;width:11px;height:11px;border-radius:50%;background:#c0392b;margin-left:6px;vertical-align:middle;border:2px solid white;box-shadow:0 0 0 1px rgba(0,0,0,.15)"></span>
+        <span id="build-dot" title="Indikator update: warnanya ganti tiap ada versi baru dari Claude" style="display:inline-block;width:11px;height:11px;border-radius:50%;background:#2d7d46;margin-left:6px;vertical-align:middle;border:2px solid white;box-shadow:0 0 0 1px rgba(0,0,0,.15)"></span>
       </div>
       <div class="user-menu" id="user-menu">
         <div style="padding:10px 14px 8px;border-bottom:1px solid var(--border);margin-bottom:4px">
@@ -1561,7 +1561,10 @@ header:has(.user-menu.open) { z-index:1000; }
     <div style="font-size:11px;opacity:.65;font-family:'DM Mono',monospace" id="lvl-xptext">0 / 40 XP</div>
   </div>
 
-  <div style="font-size:11px;font-weight:800;color:var(--mist);letter-spacing:.5px;margin:14px 0 8px">🏅 KOLEKSI BADGE</div>
+  <div style="display:flex;align-items:baseline;justify-content:space-between;margin:14px 0 8px">
+    <div style="font-size:11px;font-weight:800;color:var(--mist);letter-spacing:.5px">🏅 KOLEKSI BADGE</div>
+    <div id="badge-progress-sub" style="font-size:11px;color:var(--mist)">0 / 0 badge terkumpul</div>
+  </div>
   <div id="badge-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(100px,1fr));gap:10px"></div>
 </div>
 
@@ -2732,13 +2735,23 @@ async function showUserPreview(uid){
       +'<div style="height:100%;width:'+pct+'%;background:'+lc+';border-radius:3px"></div></div></div>';
   }).join('');
 
+  var uXp = computeXPFromData(u), uLvl = computeLevel(uXp);
+  var badgeIds = Object.keys(u.badges||{});
+  var badgeChips = badgeIds.length
+    ? BADGE_DEFS.filter(function(b){return badgeIds.indexOf(b.id)>=0;}).map(function(b){
+        return '<span title="'+b.t+'" style="font-size:18px">'+b.emo+'</span>';
+      }).join('')
+    : '<span style="font-size:11px;color:var(--mist)">Belum ada badge</span>';
+
   var html =
-    '<div style="display:flex;align-items:center;gap:14px;margin-bottom:18px">'
+    '<div style="display:flex;align-items:center;gap:14px;margin-bottom:12px">'
     + av
     + '<div style="min-width:0">'
-    + '<div style="font-size:18px;font-weight:700">'+name+'</div>'
-    + '<div style="font-size:12px;color:var(--mist)">🔥 '+(u.streak||0)+' hari streak</div>'
+    + '<div style="font-size:18px;font-weight:700;display:flex;align-items:center;gap:6px;flex-wrap:wrap">'+name
+    + ' <span style="font-size:10px;font-weight:800;background:linear-gradient(135deg,var(--gold),#c98a1f);color:white;padding:2px 7px;border-radius:7px">🎮 Lv.'+uLvl+'</span></div>'
+    + '<div style="font-size:12px;color:var(--mist)">🔥 '+(u.streak||0)+' hari streak · '+levelTitle(uLvl)+'</div>'
     + '</div></div>'
+    + '<div style="display:flex;flex-wrap:wrap;gap:6px;padding:10px;background:var(--paper,#faf8f3);border:1px solid var(--border);border-radius:10px;margin-bottom:16px">'+badgeChips+'</div>'
     + '<div style="font-size:11px;color:var(--mist);text-transform:uppercase;letter-spacing:1px;margin-bottom:8px">Progress '+(currentJLPT==='SSW'?'SSW':currentJLPT)+'</div>'
     + '<div style="display:flex;gap:6px;margin-bottom:8px">'
     + statBox(curWords,'Kata',color)
@@ -2833,6 +2846,9 @@ async function loadLeaderboard(level) {
       var rank=users.indexOf(u)+1, isMe=u.uid===(currentUser&&currentUser.uid);
       var tot=u.lvlMastered, pct=Math.round(tot/total*100);
       var lv=getLevel(tot);
+      var uXp = computeXPFromData(u);
+      var uLvl = computeLevel(uXp);
+      var badgeCount = Object.keys(u.badges||{}).length;
       var icon=rank===1?'🥇':rank===2?'🥈':rank===3?'🥉':rank;
       var name=u.displayName||'Pelajar';
       var lastSeen='';
@@ -2843,11 +2859,13 @@ async function loadLeaderboard(level) {
       return '<div onclick="showUserPreview(&apos;'+u.uid+'&apos;)" style="display:flex;align-items:center;gap:10px;padding:10px 14px;background:'+(isMe?'rgba(212,160,23,.08)':'white')+';border:1px solid '+(isMe?'var(--gold)':'var(--border)')+';border-radius:10px;cursor:pointer;transition:transform .12s" onmouseover="this.style.transform=&apos;scale(1.01)&apos;" onmouseout="this.style.transform=&apos;&apos;">'
         +'<div style="font-size:'+(rank<=3?'20px':'13px')+';font-weight:700;width:28px;text-align:center;flex-shrink:0;color:'+(rank<=3?'':'var(--mist)')+'">'+icon+'</div>'
         +'<div style="flex:1;min-width:0">'
-        +'<div style="font-size:13px;font-weight:600;display:flex;align-items:center;gap:6px">'
+        +'<div style="font-size:13px;font-weight:600;display:flex;align-items:center;gap:6px;flex-wrap:wrap">'
         +(isMe?'<span style="font-size:9px;background:var(--gold);color:white;padding:1px 5px;border-radius:4px">KAMU</span>':'')
         +(isMe&&u.private?'<span title="Progress kamu disembunyikan dari orang lain" style="font-size:10px">🔒</span>':'')
         +name
         +' <span class="level-badge '+lv.cls+'" style="font-size:10px;padding:1px 7px">Lv.'+lv.lv+'</span>'
+        +' <span title="Level akun (gabungan semua aktivitas)" style="font-size:9.5px;font-weight:800;background:linear-gradient(135deg,var(--gold),#c98a1f);color:white;padding:1px 6px;border-radius:6px">🎮 Lv.'+uLvl+'</span>'
+        +(badgeCount>0?' <span title="'+badgeCount+' badge terkumpul" style="font-size:9.5px;font-weight:700;color:var(--mist);background:rgba(0,0,0,.05);padding:1px 6px;border-radius:6px">🏅'+badgeCount+'</span>':'')
         +'</div>'
         +'<div style="font-size:11px;color:var(--mist);margin-top:1px">🔥 '+(u.streak||0)+' hari &nbsp;·&nbsp; '+pct+'% &nbsp;'+(lastSeen?'· '+lastSeen:'')+'</div>'
         +'</div>'
@@ -2891,7 +2909,7 @@ async function loadDashboardLeaderboard() {
       return '<div onclick="showUserPreview(&apos;'+u.uid+'&apos;)" style="background:white;border:1px solid '+(isMe?'var(--gold)':'var(--border)')+';border-radius:10px;padding:10px 14px;display:flex;align-items:center;gap:10px;cursor:pointer">'
         +'<div style="font-size:18px;width:28px;text-align:center;flex-shrink:0">'+icon+'</div>'
         +'<div style="width:32px;height:32px;border-radius:50%;background:'+color+';display:flex;align-items:center;justify-content:center;color:white;flex-shrink:0;overflow:hidden">'+av+'</div>'
-        +'<div style="flex:1;min-width:0"><div style="font-size:13px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+(u.displayName||'Pelajar')+(isMe?' ⭐':'')+(isMe&&u.private?' 🔒':'')+'</div>'
+        +'<div style="flex:1;min-width:0"><div style="font-size:13px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+(u.displayName||'Pelajar')+(isMe?' ⭐':'')+(isMe&&u.private?' 🔒':'')+(Object.keys(u.badges||{}).length>0?' 🏅'+Object.keys(u.badges||{}).length:'')+'</div>'
         +'<div style="font-size:11px;color:var(--mist)">🔥 '+(u.streak||0)+' hari · '+pct+'%</div></div>'
         +'<div style="text-align:right;flex-shrink:0"><div style="font-family:DM Mono,monospace;font-size:18px;font-weight:700;color:'+color+'">'+tot+'</div>'
         +'<div style="font-size:10px;color:var(--mist)">poin</div></div></div>';
@@ -7229,40 +7247,77 @@ function masteredAll() { return countMastered('kanji') + countMastered('vocab') 
 // 🏆 LEVEL & BADGE — dihitung langsung dari data yang sudah ada
 // (mastered N3, mastered level lain, bacaan kanji, tata bahasa, streak, riwayat ujian)
 // ============================================================
-function computeXP(){
-  var n3 = masteredAll();
+// computeXPFromData: generalized — bisa dipakai buat diri sendiri MAUPUN user lain
+// (leaderboard), karena cuma butuh object data mentah, bukan variabel global sesi ini.
+function computeXPFromData(d){
+  d = d || {};
+  var m = d.mastered || {};
+  var n3 = (Object.values(m.kanji||{}).filter(Boolean).length) + (Object.values(m.vocab||{}).filter(Boolean).length) + (Object.values(m.grammar||{}).filter(Boolean).length);
   var otherTotal = 0;
-  ['N5','N4','N2','N1','SSW'].forEach(function(lv){ otherTotal += Object.values(mastered[lv]||{}).filter(Boolean).length; });
-  var kanjiRead = Object.values(kanjiReadMastered||{}).filter(Boolean).length;
+  ['N5','N4','N2','N1','SSW'].forEach(function(lv){ otherTotal += Object.values(m[lv]||{}).filter(Boolean).length; });
+  var kanjiRead = Object.values(d.kanjiReadMastered||{}).filter(Boolean).length;
   var bunpoCount = 0;
-  Object.keys(bunpoLearned||{}).forEach(function(lv){ bunpoCount += Object.values(bunpoLearned[lv]||{}).filter(Boolean).length; });
-  var examPts = (examHistory||[]).reduce(function(s,e){ return s+(e.points||0); },0);
-  return Math.round(n3*3 + otherTotal*2 + kanjiRead*2 + bunpoCount*3 + Math.min(streak,60)*2 + examPts*0.5);
+  Object.keys(d.bunpoLearned||{}).forEach(function(lv){ bunpoCount += Object.values(d.bunpoLearned[lv]||{}).filter(Boolean).length; });
+  var examPts = (d.examHistory||[]).reduce(function(s,e){ return s+(e.points||0); },0);
+  var ms = d.methodStats||{};
+  var methodXP = (ms.srsRev||0)*1 + (ms.writeOk||0)*2 + (ms.mnOk||0)*2 + (ms.sentOk||0)*2 + (ms.twinOk||0)*2 + (ms.oyOk||0)*2 + (ms.wtqOk||0)*2;
+  return Math.round(n3*3 + otherTotal*2 + kanjiRead*2 + bunpoCount*3 + Math.min(d.streak||0,60)*2 + examPts*0.5 + methodXP);
+}
+function computeXP(){
+  return computeXPFromData({mastered:mastered, kanjiReadMastered:kanjiReadMastered, bunpoLearned:bunpoLearned, examHistory:examHistory, streak:streak, methodStats:methodStats});
 }
 function xpForLevel(lvl){ return Math.round(Math.pow(Math.max(0,lvl-1),2)*40); }
 function computeLevel(xp){ return Math.max(1, Math.floor(Math.sqrt(xp/40))+1); }
 function levelTitle(lvl){
-  if(lvl>=20) return '仙人 Legenda';
-  if(lvl>=15) return '達人 Ahli';
-  if(lvl>=10) return '熟練者 Mahir';
-  if(lvl>=5)  return '学生 Pelajar';
+  if(lvl>=30) return '仙人 Legenda';
+  if(lvl>=20) return '達人 Ahli';
+  if(lvl>=12) return '熟練者 Mahir';
+  if(lvl>=6)  return '学生 Pelajar';
   return '見習い Pemula';
 }
 var BADGE_DEFS = [
-  {id:'welcome',    emo:'🌱', t:'Mulai Belajar',        d:'Login pertama kali di app ini',                       check:function(){ return true; }},
-  {id:'streak3',    emo:'🔥', t:'3 Hari Beruntun',       d:'Belajar 3 hari berturut-turut',                       check:function(){ return streak>=3; }},
-  {id:'streak7',    emo:'🔥🔥', t:'7 Hari Beruntun',      d:'Belajar 7 hari berturut-turut',                       check:function(){ return streak>=7; }},
-  {id:'streak30',   emo:'🔥🔥🔥', t:'30 Hari Beruntun',   d:'Belajar 30 hari berturut-turut — konsisten banget!',  check:function(){ return streak>=30; }},
-  {id:'words50',    emo:'📖', t:'50 Kata Dikuasai',      d:'Kuasai 50 kosakata/kanji/tata bahasa N3',             check:function(){ return masteredAll()>=50; }},
-  {id:'words150',   emo:'📚', t:'150 Kata Dikuasai',     d:'Kuasai 150 kosakata/kanji/tata bahasa N3',            check:function(){ return masteredAll()>=150; }},
-  {id:'words300',   emo:'🈁', t:'300 Kata Dikuasai',     d:'Kuasai 300 kosakata/kanji/tata bahasa N3',            check:function(){ return masteredAll()>=300; }},
-  {id:'kanjiread50',emo:'🈴', t:'50 Bacaan Kanji',       d:'Kuasai 50 bacaan on\'yomi/kun\'yomi kanji',           check:function(){ return Object.values(kanjiReadMastered||{}).filter(Boolean).length>=50; }},
-  {id:'bunpo10',    emo:'📐', t:'10 Pola Tata Bahasa',   d:'Kuasai 10 pola tata bahasa',                          check:function(){ var c=0; Object.keys(bunpoLearned||{}).forEach(function(lv){c+=Object.values(bunpoLearned[lv]||{}).filter(Boolean).length;}); return c>=10; }},
-  {id:'perfect',    emo:'💯', t:'Nilai Sempurna',        d:'Dapat skor 100% di satu latihan soal',                check:function(){ return (examHistory||[]).some(function(e){return e.pct>=100;}); }},
-  {id:'mockpass',   emo:'✅', t:'Lulus Simulasi Ujian',  d:'Lulus simulasi ujian penuh (skor ≥85/180)',           check:function(){ return (examHistory||[]).some(function(e){return e.mockPassed===true;}); }},
-  {id:'exam10',     emo:'📝', t:'10x Latihan Soal',      d:'Kerjain 10 sesi latihan soal',                        check:function(){ return (examHistory||[]).length>=10; }},
-  {id:'nightowl',   emo:'🌙', t:'Night Owl',             d:'Belajar tengah malam (00:00–04:00)',                  check:function(){ var h=new Date().getHours(); return h>=0&&h<4; }}
+  // ── Konsistensi ──
+  {id:'welcome',    cat:'Konsistensi', emo:'🌱', t:'Mulai Belajar',     d:'Login pertama kali di app ini',                     check:function(){ return true; }},
+  {id:'streak3',    cat:'Konsistensi', emo:'🔥', t:'3 Hari Beruntun',    d:'Belajar 3 hari berturut-turut',                     check:function(){ return streak>=3; }},
+  {id:'streak7',    cat:'Konsistensi', emo:'🔥', t:'7 Hari Beruntun',    d:'Belajar 7 hari berturut-turut',                     check:function(){ return streak>=7; }},
+  {id:'streak30',   cat:'Konsistensi', emo:'🔥', t:'30 Hari Beruntun',   d:'Belajar 30 hari berturut-turut — konsisten banget!', check:function(){ return streak>=30; }},
+  {id:'streak100',  cat:'Konsistensi', emo:'🔥', t:'100 Hari Beruntun',  d:'Belajar 100 hari berturut-turut — luar biasa!',     check:function(){ return streak>=100; }},
+  {id:'nightowl',   cat:'Konsistensi', emo:'🌙', t:'Night Owl',          d:'Belajar tengah malam (00:00–04:00)',                check:function(){ var h=new Date().getHours(); return h>=0&&h<4; }},
+  {id:'earlybird',  cat:'Konsistensi', emo:'🌅', t:'Early Bird',         d:'Belajar pagi buta (04:00–07:00)',                   check:function(){ var h=new Date().getHours(); return h>=4&&h<7; }},
+  // ── Kosakata & Kanji N3 ──
+  {id:'words50',    cat:'Kosakata & Kanji N3', emo:'📖', t:'50 Kata Dikuasai',   d:'Kuasai 50 kosakata/kanji/tata bahasa N3',   check:function(){ return masteredAll()>=50; }},
+  {id:'words150',   cat:'Kosakata & Kanji N3', emo:'📚', t:'150 Kata Dikuasai',  d:'Kuasai 150 kosakata/kanji/tata bahasa N3',  check:function(){ return masteredAll()>=150; }},
+  {id:'words300',   cat:'Kosakata & Kanji N3', emo:'🈁', t:'300 Kata Dikuasai',  d:'Kuasai 300 kosakata/kanji/tata bahasa N3',  check:function(){ return masteredAll()>=300; }},
+  {id:'wordsall',   cat:'Kosakata & Kanji N3', emo:'👑', t:'Tuntas N3!',         d:'Kuasai SEMUA kosakata/kanji/tata bahasa N3', check:function(){ return masteredAll()>=totalAll(); }},
+  {id:'kanjiread50',cat:'Kosakata & Kanji N3', emo:'🈴', t:'50 Bacaan Kanji',    d:'Kuasai 50 bacaan on\'yomi/kun\'yomi kanji', check:function(){ return Object.values(kanjiReadMastered||{}).filter(Boolean).length>=50; }},
+  {id:'kanjiread150',cat:'Kosakata & Kanji N3',emo:'🈵', t:'150 Bacaan Kanji',   d:'Kuasai 150 bacaan on\'yomi/kun\'yomi kanji', check:function(){ return Object.values(kanjiReadMastered||{}).filter(Boolean).length>=150; }},
+  // ── Tata Bahasa ──
+  {id:'bunpo10',    cat:'Tata Bahasa', emo:'📐', t:'10 Pola Tata Bahasa', d:'Kuasai 10 pola tata bahasa',                       check:function(){ return _bunpoCount()>=10; }},
+  {id:'bunpo30',    cat:'Tata Bahasa', emo:'📏', t:'30 Pola Tata Bahasa', d:'Kuasai 30 pola tata bahasa',                       check:function(){ return _bunpoCount()>=30; }},
+  // ── Jelajah Level Lain ──
+  {id:'lvln5',      cat:'Jelajah Level', emo:'🌸', t:'Jelajah N5',       d:'Kuasai 30 item di level N5',                       check:function(){ return Object.values(mastered.N5||{}).filter(Boolean).length>=30; }},
+  {id:'lvln4',      cat:'Jelajah Level', emo:'🍁', t:'Jelajah N4',       d:'Kuasai 30 item di level N4',                       check:function(){ return Object.values(mastered.N4||{}).filter(Boolean).length>=30; }},
+  {id:'lvln2',      cat:'Jelajah Level', emo:'❄️', t:'Jelajah N2',       d:'Kuasai 20 item di level N2',                       check:function(){ return Object.values(mastered.N2||{}).filter(Boolean).length>=20; }},
+  {id:'lvln1',      cat:'Jelajah Level', emo:'🎋', t:'Jelajah N1',       d:'Kuasai 20 item di level N1',                       check:function(){ return Object.values(mastered.N1||{}).filter(Boolean).length>=20; }},
+  {id:'lvlssw',     cat:'Jelajah Level', emo:'🍜', t:'Jelajah SSW',      d:'Kuasai 20 item di level SSW',                      check:function(){ return Object.values(mastered.SSW||{}).filter(Boolean).length>=20; }},
+  {id:'polyglot',   cat:'Jelajah Level', emo:'🌍', t:'Poliglot',         d:'Punya progress di 4+ level JLPT berbeda',          check:function(){ var c=masteredAll()>0?1:0; ['N5','N4','N2','N1','SSW'].forEach(function(lv){ if(Object.values(mastered[lv]||{}).filter(Boolean).length>0) c++; }); return c>=4; }},
+  // ── Metode Latihan ──
+  {id:'srs50',      cat:'Metode Latihan', emo:'🔁', t:'50x Review SRS',      d:'Selesaikan 50 review SRS',                    check:function(){ return (methodStats.srsRev||0)>=50; }},
+  {id:'write30',    cat:'Metode Latihan', emo:'✍️', t:'30x Latihan Tulis',   d:'Berhasil 30x latihan menulis kanji',           check:function(){ return (methodStats.writeOk||0)>=30; }},
+  {id:'mn30',       cat:'Metode Latihan', emo:'🧩', t:'30x Kuis Mnemonik',   d:'Berhasil 30x kuis mnemonik',                   check:function(){ return (methodStats.mnOk||0)>=30; }},
+  {id:'sent30',     cat:'Metode Latihan', emo:'💬', t:'30x Kuis Kalimat',    d:'Berhasil 30x kuis kalimat',                    check:function(){ return (methodStats.sentOk||0)>=30; }},
+  {id:'twin30',     cat:'Metode Latihan', emo:'⚔️', t:'30x Kanji Kembar',    d:'Berhasil 30x kuis Kanji Kembar',                check:function(){ return (methodStats.twinOk||0)>=30; }},
+  {id:'oy30',       cat:'Metode Latihan', emo:'🈁', t:'30x Kuis On-Kun',     d:'Berhasil 30x kuis On\'yomi-Kun\'yomi',          check:function(){ return (methodStats.oyOk||0)>=30; }},
+  {id:'wtq30',      cat:'Metode Latihan', emo:'🌳', t:'30x Kuis Pohon Kata', d:'Berhasil 30x kuis Pohon Kata',                 check:function(){ return (methodStats.wtqOk||0)>=30; }},
+  {id:'allmethods', cat:'Metode Latihan', emo:'🎯', t:'Serba Bisa',          d:'Pernah coba SEMUA metode latihan minimal 1x',  check:function(){ var ms=methodStats||{}; return ['srsRev','writeOk','mnOk','sentOk','twinOk','oyOk','wtqOk'].every(function(k){return (ms[k]||0)>=1;}); }},
+  // ── Ujian ──
+  {id:'perfect',    cat:'Ujian', emo:'💯', t:'Nilai Sempurna',       d:'Dapat skor 100% di satu latihan soal',              check:function(){ return (examHistory||[]).some(function(e){return e.pct>=100;}); }},
+  {id:'mockpass',   cat:'Ujian', emo:'✅', t:'Lulus Simulasi Ujian', d:'Lulus simulasi ujian penuh (skor ≥85/180)',         check:function(){ return (examHistory||[]).some(function(e){return e.mockPassed===true;}); }},
+  {id:'exam10',     cat:'Ujian', emo:'📝', t:'10x Latihan Soal',     d:'Kerjain 10 sesi latihan soal',                      check:function(){ return (examHistory||[]).length>=10; }},
+  {id:'exam50',     cat:'Ujian', emo:'📝', t:'50x Latihan Soal',     d:'Kerjain 50 sesi latihan soal',                      check:function(){ return (examHistory||[]).length>=50; }},
+  {id:'gradeA5',    cat:'Ujian', emo:'🎓', t:'5x Grade A',           d:'Dapat grade A di 5 latihan soal berbeda',           check:function(){ return (examHistory||[]).filter(function(e){return e.grade==='A';}).length>=5; }}
 ];
+function _bunpoCount(){ var c=0; Object.keys(bunpoLearned||{}).forEach(function(lv){ c+=Object.values(bunpoLearned[lv]||{}).filter(Boolean).length; }); return c; }
 function checkBadges(){
   var newly = [];
   BADGE_DEFS.forEach(function(b){
@@ -7305,7 +7360,7 @@ function renderLevelScreen(){
   var xp = computeXP(), lvl = computeLevel(xp);
   var thisStart = xpForLevel(lvl), nextStart = xpForLevel(lvl+1);
   var pct = Math.max(0, Math.min(100, Math.round((xp-thisStart)/(nextStart-thisStart)*100)));
-  var emo = lvl>=20?'🧙':lvl>=15?'🥋':lvl>=10?'⚔️':lvl>=5?'📘':'🌱';
+  var emo = lvl>=30?'🧙':lvl>=20?'🥋':lvl>=12?'⚔️':lvl>=6?'📘':'🌱';
   var elE=document.getElementById('lvl-emoji'); if(elE) elE.textContent=emo;
   var elN=document.getElementById('lvl-number'); if(elN) elN.textContent='Level '+lvl;
   var elT=document.getElementById('lvl-title'); if(elT) elT.textContent=levelTitle(lvl);
@@ -7313,12 +7368,20 @@ function renderLevelScreen(){
   var elX=document.getElementById('lvl-xptext'); if(elX) elX.textContent=(xp-thisStart)+' / '+(nextStart-thisStart)+' XP menuju Level '+(lvl+1);
   var grid = document.getElementById('badge-grid');
   if(grid){
-    grid.innerHTML = BADGE_DEFS.map(function(b){
-      var got = !!unlockedBadges[b.id];
-      return '<div title="'+b.d+'" style="text-align:center;padding:14px 8px;border-radius:12px;border:1px solid '+(got?'var(--gold)':'var(--border)')+';background:'+(got?'linear-gradient(135deg,#fff9ec,#fef3d8)':'#f5f4f0')+';opacity:'+(got?'1':'.55')+'">'
-        +'<div style="font-size:26px;margin-bottom:5px;filter:'+(got?'none':'grayscale(1)')+'">'+(got?b.emo:'🔒')+'</div>'
-        +'<div style="font-size:10.5px;font-weight:700;color:var(--ink);line-height:1.25">'+b.t+'</div>'
-        +'</div>';
+    var gotCount = BADGE_DEFS.filter(function(b){return !!unlockedBadges[b.id];}).length;
+    var sub = document.getElementById('badge-progress-sub');
+    if(sub) sub.textContent = gotCount+' / '+BADGE_DEFS.length+' badge terkumpul';
+    var cats = []; BADGE_DEFS.forEach(function(b){ if(cats.indexOf(b.cat)<0) cats.push(b.cat); });
+    grid.innerHTML = cats.map(function(cat){
+      var items = BADGE_DEFS.filter(function(b){return b.cat===cat;});
+      return '<div style="grid-column:1/-1;font-size:11px;font-weight:800;color:var(--mist);letter-spacing:.4px;margin:10px 0 2px">'+cat.toUpperCase()+'</div>'
+        + items.map(function(b){
+            var got = !!unlockedBadges[b.id];
+            return '<div title="'+b.d+'" style="text-align:center;padding:14px 8px;border-radius:12px;border:1px solid '+(got?'var(--gold)':'var(--border)')+';background:'+(got?'linear-gradient(135deg,#fff9ec,#fef3d8)':'#f5f4f0')+';opacity:'+(got?'1':'.55')+'">'
+              +'<div style="font-size:26px;margin-bottom:5px;filter:'+(got?'none':'grayscale(1)')+'">'+(got?b.emo:'🔒')+'</div>'
+              +'<div style="font-size:10.5px;font-weight:700;color:var(--ink);line-height:1.25">'+b.t+'</div>'
+              +'</div>';
+          }).join('');
     }).join('');
   }
 }
@@ -12537,6 +12600,7 @@ function oyAnswer(btn){
   });
   st.q++;
   if(ok) st.score++;
+  _ms('oyQ'); if(ok) _ms('oyOk');
   save();
   var mn=(typeof KANJI_MNEMONIC!=='undefined')?KANJI_MNEMONIC[cur.kj]:null;
   var fb=(ok?'<span style="color:var(--jade);font-weight:800">✓ Benar!</span> ':'<span style="color:#c0392b;font-weight:800">✗ Jawaban: '+cur.correct+'</span> ')
@@ -12879,6 +12943,7 @@ function wtQuizAnswer(btn){
   });
   st.q++;
   if(ok) st.score++;
+  _ms('wtqQ'); if(ok) _ms('wtqOk');
   save();
   var rd = (typeof KANJI_READ!=='undefined') ? KANJI_READ[cur.correct] : null;
   var arti = rd ? rd[2] : '';
