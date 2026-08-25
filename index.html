@@ -9,7 +9,7 @@
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
 <style>
-@import url('https://fonts.googleapis.com/css2?family=Noto+Serif+JP:wght@400;700&family=Noto+Sans+JP:wght@300;400;500;700&family=DM+Mono:wght@400;500&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;500;700&family=DM+Mono:wght@400;500&display=swap');
 
 :root {
   --ink: #1a1a2e;
@@ -48,7 +48,7 @@ header {
   top:0;
   z-index:100;
 }
-.logo { font-family:'Noto Serif JP',serif; font-size:20px; letter-spacing:2px; }
+.logo { font-family:'Noto Sans JP',sans-serif; font-size:20px; letter-spacing:2px; }
 .logo span { color:var(--red); }
 .header-right { display:flex; align-items:center; gap:16px; }
 .countdown { text-align:right; }
@@ -142,7 +142,7 @@ nav button.active {
 .cat-card.douji::before { background:var(--red); }
 .cat-card.meishi::before { background:var(--indigo); }
 .cat-card.keiyoushi::before { background:var(--jade); }
-.cat-card .jp-label { font-family:'Noto Serif JP',serif; font-size:28px; opacity:.12; position:absolute; right:12px; top:8px; }
+.cat-card .jp-label { font-family:'Noto Sans JP',sans-serif; font-size:28px; opacity:.12; position:absolute; right:12px; top:8px; }
 .cat-card h3 { font-size:14px; font-weight:700; margin-bottom:4px; }
 .cat-card p { font-size:12px; color:var(--mist); margin-bottom:14px; }
 .cat-card .progress-info { display:flex; justify-content:space-between; font-size:11px; margin-bottom:5px; }
@@ -180,7 +180,7 @@ nav button.active {
   justify-content:space-between;
   margin-bottom:20px;
 }
-.flash-header h2 { font-family:'Noto Serif JP',serif; font-size:16px; }
+.flash-header h2 { font-family:'Noto Sans JP',sans-serif; font-size:16px; }
 .flash-progress-bar {
   background:rgba(26,26,46,.1);
   border-radius:4px;
@@ -218,7 +218,7 @@ nav button.active {
 }
 .flashcard:active { transform:scale(.98); }
 .flashcard .hint { font-size:11px; color:var(--mist); letter-spacing:2px; text-transform:uppercase; margin-bottom:20px; }
-.flashcard .word { font-family:'Noto Serif JP',serif; font-size:52px; font-weight:700; line-height:1.1; margin-bottom:12px; color:var(--ink); }
+.flashcard .word { font-family:'Noto Sans JP',sans-serif; font-size:52px; font-weight:700; line-height:1.1; margin-bottom:12px; color:var(--ink); }
 .flashcard .romaji { font-family:'DM Mono',monospace; font-size:18px; color:var(--mist); margin-bottom:0; }
 .flashcard.revealed .romaji { display:none; }
 .flashcard .meaning-reveal {
@@ -314,7 +314,7 @@ nav button.active {
   box-shadow:var(--shadow);
 }
 .session-done .trophy { font-size:64px; margin-bottom:16px; }
-.session-done h2 { font-family:'Noto Serif JP',serif; font-size:28px; margin-bottom:8px; }
+.session-done h2 { font-family:'Noto Sans JP',sans-serif; font-size:28px; margin-bottom:8px; }
 .session-done p { color:var(--mist); margin-bottom:24px; }
 .done-stats { display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:24px; }
 .done-stat { background:var(--cream); border-radius:10px; padding:14px; }
@@ -386,7 +386,7 @@ nav button.active {
 .wt-diag-children{display:flex;overflow-x:auto;justify-content:flex-start;padding:14px 8px 4px;border-top:2px solid var(--border);gap:4px;-webkit-overflow-scrolling:touch}
 .wt-diag-child{position:relative;flex:0 0 auto;padding:0 8px;display:flex;flex-direction:column;align-items:center}
 .wt-diag-child::before{content:'';position:absolute;top:-14px;left:50%;width:2px;height:14px;background:var(--border)}
-.wt-diag-node{font-size:22px;font-weight:800;color:var(--ink);font-family:'Noto Serif JP',serif;background:white;border:1.5px solid var(--border);border-radius:10px;padding:6px 10px;cursor:pointer;white-space:nowrap}
+.wt-diag-node{font-size:22px;font-weight:800;color:var(--ink);font-family:'Noto Sans JP',sans-serif;background:white;border:1.5px solid var(--border);border-radius:10px;padding:6px 10px;cursor:pointer;white-space:nowrap}
 .wt-diag-node:active{background:rgba(45,125,70,.08);border-color:#2d7d46}
 @keyframes ovCardIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
 .ov-menu-card{animation:ovCardIn .45s cubic-bezier(.16,1,.3,1) both;box-shadow:0 1px 3px rgba(26,26,46,.05);transition:transform .15s cubic-bezier(.16,1,.3,1),box-shadow .2s ease}
@@ -416,7 +416,7 @@ nav button.active {
   gap:10px;
 }
 .vocab-item.mastered { background:rgba(45,122,79,.05); border-color:rgba(45,122,79,.2); }
-.vocab-item .jp { font-family:'Noto Serif JP',serif; font-size:16px; flex:1; min-width:0; }
+.vocab-item .jp { font-family:'Noto Sans JP',sans-serif; font-size:16px; flex:1; min-width:0; }
 .vocab-item .id-meaning { font-size:11px; color:var(--mist); flex:1; min-width:0; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
 .vocab-item .status-dot { width:8px; height:8px; border-radius:50%; flex-shrink:0; }
 .status-dot.done { background:var(--jade); }
@@ -457,7 +457,7 @@ nav button.active {
 
 /* ===== MISC ===== */
 .section-title {
-  font-family:'Noto Serif JP',serif;
+  font-family:'Noto Sans JP',sans-serif;
   font-size:12px;
   letter-spacing:3px;
   text-transform:uppercase;
@@ -493,7 +493,7 @@ nav button.active {
   text-transform:uppercase;
 }
 .kread-kanji {
-  font-family:'Noto Serif JP',serif;
+  font-family:'Noto Sans JP',sans-serif;
   font-size:88px;
   font-weight:700;
   line-height:1;
@@ -565,7 +565,7 @@ nav button.active {
   border:1px solid var(--border);
   border-radius:8px;
   padding:6px 14px;
-  font-family:'Noto Serif JP',serif;
+  font-family:'Noto Sans JP',sans-serif;
   font-size:18px;
 }
 .kread-reading-pill.on { border-color:rgba(192,57,43,.4); color:var(--red); }
@@ -576,7 +576,7 @@ nav button.active {
   margin-top:4px;
 }
 .kread-example {
-  font-family:'Noto Serif JP',serif;
+  font-family:'Noto Sans JP',sans-serif;
   font-size:15px;
   margin-top:8px;
   color:var(--ink);
@@ -661,7 +661,7 @@ nav button.active {
 }
 .kanji-select-item:hover { border-color:var(--gold); transform:translateY(-2px); }
 .kanji-select-item.picked { border-color:var(--gold); background:rgba(212,160,23,.08); }
-.kanji-select-item .big-k { font-family:'Noto Serif JP',serif; font-size:28px; line-height:1; }
+.kanji-select-item .big-k { font-family:'Noto Sans JP',sans-serif; font-size:28px; line-height:1; }
 .kanji-select-item .small-k { font-size:10px; color:var(--mist); margin-top:4px; }
 .kanji-select-item .done-dot {
   position:absolute;
@@ -801,7 +801,7 @@ nav button.active {
   color:white; padding:16px 20px; margin-bottom:0;
   border-radius:12px 12px 0 0;
 }
-.exam-section-header h3 { font-family:'Noto Serif JP',serif; font-size:16px; margin-bottom:2px; }
+.exam-section-header h3 { font-family:'Noto Sans JP',sans-serif; font-size:16px; margin-bottom:2px; }
 .exam-section-header p  { font-size:12px; opacity:.6; }
 
 .mondai-block {
@@ -915,7 +915,7 @@ nav button.active {
   backdrop-filter:blur(10px);
 }
 .login-logo {
-  font-family:'Noto Serif JP',serif;
+  font-family:'Noto Sans JP',sans-serif;
   font-size:36px;
   color:white;
   margin-bottom:6px;
@@ -929,7 +929,7 @@ nav button.active {
   letter-spacing:1px;
 }
 .login-kanji-deco {
-  font-family:'Noto Serif JP',serif;
+  font-family:'Noto Sans JP',sans-serif;
   font-size:80px;
   opacity:0.07;
   color:white;
@@ -1342,7 +1342,7 @@ header:has(.user-menu.open) { z-index:1000; }
 <div id="screen-kanjiflash" class="screen">
   <div class="flash-header">
     <div>
-      <h2 id="kf-title" style="font-family:'Noto Serif JP',serif;font-size:17px">漢字 Kata Kerja</h2>
+      <h2 id="kf-title" style="font-family:'Noto Sans JP',sans-serif;font-size:17px">漢字 Kata Kerja</h2>
       <div style="font-size:12px;color:var(--mist);margin-top:2px" id="kf-subtitle">Belum hafal didahulukan</div>
     </div>
     <button onclick="exitKanjiFlash()" style="border:none;background:none;cursor:pointer;font-size:22px;color:var(--mist);padding:4px 8px;line-height:1">←</button>
@@ -1360,7 +1360,7 @@ header:has(.user-menu.open) { z-index:1000; }
         <div class="meaning-reveal">
           <div class="divider"></div>
           <!-- furigana besar -->
-          <div id="kf-furigana" style="font-family:'Noto Serif JP',serif;font-size:22px;color:var(--indigo);letter-spacing:2px">かんしゃする</div>
+          <div id="kf-furigana" style="font-family:'Noto Sans JP',sans-serif;font-size:22px;color:var(--indigo);letter-spacing:2px">かんしゃする</div>
           <!-- romaji kecil -->
           <div id="kf-romaji-back" style="font-family:'DM Mono',monospace;font-size:13px;color:var(--mist);margin-top:2px">kansha suru</div>
           <div id="kf-latin-back" style="font-family:'DM Mono',monospace;font-size:12px;color:var(--mist);margin-top:1px;letter-spacing:.5px"></div>
@@ -1552,7 +1552,7 @@ header:has(.user-menu.open) { z-index:1000; }
 <!-- ====== LEADERBOARD ====== -->
 <div id="screen-leaderboard" class="screen">
   <div style="background:linear-gradient(135deg,var(--ink),var(--indigo));border-radius:14px;padding:18px 20px;color:white;margin-bottom:14px">
-    <h2 style="font-family:'Noto Serif JP',serif;font-size:18px;margin-bottom:2px">🏆 Leaderboard</h2>
+    <h2 style="font-family:'Noto Sans JP',sans-serif;font-size:18px;margin-bottom:2px">🏆 Leaderboard</h2>
     <div style="font-size:12px;opacity:.6" id="lb-subtitle">Ranking N3</div>
     <div style="display:flex;gap:20px;margin-top:10px">
       <div><div style="font-family:'DM Mono',monospace;font-size:22px;color:var(--gold)" id="lb-total-users">-</div><div style="font-size:10px;opacity:.5;text-transform:uppercase">Pelajar</div></div>
@@ -1612,7 +1612,7 @@ header:has(.user-menu.open) { z-index:1000; }
       <button onclick="closeWriteModal()" style="border:none;background:none;font-size:20px;cursor:pointer">✕</button>
     </div>
     <div style="position:relative;width:100%;aspect-ratio:1;border:2px dashed var(--border);border-radius:12px;overflow:hidden;background:#fdfcf8">
-      <div id="write-ghost" style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-family:'Noto Serif JP',serif;font-size:200px;color:rgba(26,26,46,.09);pointer-events:none;user-select:none">語</div>
+      <div id="write-ghost" style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-family:'Noto Sans JP',sans-serif;font-size:200px;color:rgba(26,26,46,.09);pointer-events:none;user-select:none">語</div>
       <canvas id="write-canvas" style="position:absolute;inset:0;width:100%;height:100%;touch-action:none"></canvas>
     </div>
     <div style="display:flex;gap:8px;margin-top:10px">
@@ -1790,6 +1790,7 @@ header:has(.user-menu.open) { z-index:1000; }
   <div id="tq-card" style="background:white;border:1px solid var(--border);border-radius:16px;padding:28px 20px;text-align:center;margin-bottom:14px">
     <div id="tq-prompt" style="font-size:34px;font-weight:800;color:var(--ink);margin-bottom:6px">＿つ</div>
     <div id="tq-reading" style="font-family:'DM Mono',monospace;font-size:15px;color:var(--indigo);margin-bottom:2px">まつ</div>
+    <div id="tq-romaji" style="font-family:'DM Mono',monospace;font-size:12px;color:var(--mist);margin-bottom:2px;font-style:italic"></div>
     <div id="tq-arti" style="font-size:15px;color:var(--mist)">menunggu</div>
   </div>
   <div id="tq-choices" style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px"></div>
@@ -1836,7 +1837,7 @@ header:has(.user-menu.open) { z-index:1000; }
   </div>
   <div id="oy-card" style="background:white;border:1px solid var(--border);border-radius:16px;padding:28px 20px;text-align:center;margin-bottom:14px">
     <span id="oy-type-badge" style="display:inline-block;padding:3px 12px;border-radius:10px;font-size:11px;font-weight:700;color:#fff;background:#1a1a2e;margin-bottom:10px"></span>
-    <div id="oy-kanji" style="font-size:54px;font-weight:800;color:var(--ink);font-family:'Noto Serif JP',serif;margin-bottom:6px">待</div>
+    <div id="oy-kanji" style="font-size:54px;font-weight:800;color:var(--ink);font-family:'Noto Sans JP',sans-serif;margin-bottom:6px">待</div>
     <div id="oy-arti" style="font-size:14px;color:var(--mist)"></div>
   </div>
   <div id="oy-choices" style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px"></div>
@@ -1873,7 +1874,7 @@ header:has(.user-menu.open) { z-index:1000; }
   </div>
   <div id="wtq-card" style="background:white;border:1px solid var(--border);border-radius:16px;padding:26px 20px;text-align:center;margin-bottom:14px">
     <div style="font-size:12px;color:var(--mist);margin-bottom:8px">Kanji apa yang satu keluarga/komponen dengan ini?</div>
-    <div id="wtq-prompt" style="font-size:52px;font-weight:800;color:var(--ink);font-family:'Noto Serif JP',serif;margin-bottom:6px">待</div>
+    <div id="wtq-prompt" style="font-size:52px;font-weight:800;color:var(--ink);font-family:'Noto Sans JP',sans-serif;margin-bottom:6px">待</div>
     <div id="wtq-hint" style="font-size:11px;color:#2d7d46;font-weight:700"></div>
   </div>
   <div id="wtq-choices" style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px"></div>
@@ -2175,7 +2176,7 @@ header:has(.user-menu.open) { z-index:1000; }
     <div style="width:40px;height:4px;background:var(--border);border-radius:2px;margin:0 auto 20px"></div>
     <!-- Word header -->
     <div style="text-align:center;margin-bottom:20px">
-      <div id="wm-jp" style="font-family:'Noto Serif JP',serif;font-size:40px;font-weight:700;color:var(--ink);margin-bottom:4px"></div>
+      <div id="wm-jp" style="font-family:'Noto Sans JP',sans-serif;font-size:40px;font-weight:700;color:var(--ink);margin-bottom:4px"></div>
       <div id="wm-rom" style="font-family:'DM Mono',monospace;font-size:15px;color:var(--mist);margin-bottom:6px"></div>
       <div id="wm-id" style="font-size:16px;font-weight:600;color:var(--ink)"></div>
     </div>
@@ -6761,7 +6762,8 @@ async function startBunpoQuiz(){
     + '3. WAJIB TULIS DENGAN KANJI: gunakan penulisan kanji penuh untuk semua kata yang lazim ditulis kanji dan yang kanji-nya dipelajari di level '+lv+' atau di bawahnya (contoh: tulis 食べます bukan たべます, 飲みます bukan のみます, 学校 bukan がっこう, 時間 bukan じかん). Tujuannya membiasakan membaca kalimat ber-kanji penuh. Hanya pakai hiragana untuk partikel, okurigana, dan kata yang memang biasa ditulis hiragana.'+String.fromCharCode(10)
     + '4. BATAS LEVEL: gunakan hanya kosakata & kanji level '+lv+' atau di bawahnya pada kalimat soal. JANGAN pakai kanji/kosakata level di atas '+lv+' di dalam kalimat. (Kanji level atas hanya boleh muncul sebagai pengecoh di OPSI jawaban.)'+String.fromCharCode(10)
     + '5. JAWABAN HARUS KONSISTEN: opsi yang ditandai benar (indeks "jawab") HARUS persis menerapkan pola target dan menghasilkan kalimat yang benar. Penjelasan HARUS cocok dengan opsi benar itu. CONTOH KESALAHAN yang DILARANG: pola yang diuji ～てから tetapi opsi benar ditulis 食べたから (itu ～たから, beda pola) — yang benar adalah 食べてから. Pastikan bentuk pada opsi benar sesuai pola, dan "jawab" menunjuk ke opsi itu.'+String.fromCharCode(10)
-    + '6. PENGECOH (3 opsi salah): mirip & masuk akal (pola/partikel/bentuk berdekatan), bukan acak. Hanya 1 jawaban benar.'+String.fromCharCode(10)
+    + '6. PENGECOH (3 opsi salah) — ini bagian TERPENTING, kualitas soal ditentukan di sini: WAJIB pakai pola tata bahasa LAIN yang maknanya berdekatan/sering tertukar dengan pola target (mis. kalau target こと から, pengecoh bisa dari から biasa, ので, ため, おかげで, せいで, わけだ — pola nyata, BUKAN kata acak/tidak nyambung). Pembaca yang paham pola target tapi TIDAK paham nuansa pengecoh harus bisa salah pilih. JANGAN membuat pengecoh terlalu jauh/absurd sehingga jawaban jadi ketebak tanpa mikir.'+String.fromCharCode(10)
+    + '6b. VARIASI ANTAR SOAL: set 4 opsi (termasuk pengecoh) TIDAK BOLEH sama persis di lebih dari 1 soal dalam batch ini — tiap soal harus punya kombinasi pengecoh berbeda, supaya siswa tidak bisa hafal "opsi yang itu selalu benar" tanpa membaca kalimat.'+String.fromCharCode(10)
     + '7. RUMPANG WAJIB: setiap "q" HARUS mengandung tepat satu rumpang ditulis ___ (tiga underscore) di posisi pola/partikel yang diuji. Bagian yang menjadi JAWABAN BENAR WAJIB DIHAPUS dari kalimat dan DIGANTI dengan ___ — jangan pernah menampilkan jawaban benar di dalam teks soal. CONTOH BENAR: "コーヒー___紅茶___、何でも好きです。" (opsi: でも/だけ/しか/から, jawab=0). CONTOH SALAH (DILARANG, karena jawaban "でも" masih tampil): "コーヒーでも紅茶でも、何でも好きです。". Jika pola yang diuji berpasangan (mis. ～でも～でも), boleh ada dua ___. Sebelum output, cek tiap "q": pastikan string ___ ADA, dan teks opsi[jawab] TIDAK muncul utuh di dalam "q".'+String.fromCharCode(10)
     + '7b. HIGHLIGHT (opsional): boleh bungkus kata KONTEKS pendukung (BUKAN jawaban) dengan **dua bintang** untuk diwarnai. JANGAN pernah membungkus atau menuliskan jawaban benar.'+String.fromCharCode(10)
     + '8. DIALOG: jika soal berbentuk percakapan, format sebagai dialog antar baris memakai "A:" dan "B:" yang dipisah baris baru (\\n), JANGAN disambung jadi satu kalimat lurus.'+String.fromCharCode(10)
@@ -6780,8 +6782,9 @@ async function startBunpoQuiz(){
           {role:'system', content:'Kamu pembuat soal JLPT. Balas HANYA JSON valid, tanpa teks pembuka/penutup.'},
           {role:'user', content: prompt}
         ],
-        temperature:0.4,
-        max_tokens:3072
+        temperature:0.6,
+        max_tokens:5120,
+        thinkingBudget:1024
       })
     });
     var d = await res.json();
@@ -12781,6 +12784,8 @@ function tqShow(){
   document.getElementById('tq-score').textContent=st.score+'/'+st.q+' · soal '+(st.q+1)+' dari '+st.total;
   document.getElementById('tq-prompt').textContent=st.cur.prompt;
   document.getElementById('tq-reading').textContent=st.cur.reading;
+  var _tqRoma=''; try{ _tqRoma=toRomaji(st.cur.reading); }catch(e){}
+  document.getElementById('tq-romaji').textContent=_tqRoma;
   document.getElementById('tq-arti').textContent=st.cur.arti;
   document.getElementById('tq-feedback').innerHTML='';
   document.getElementById('tq-next').style.display='none';
@@ -12814,7 +12819,10 @@ function tqAnswer(btn){
   }catch(e){}
   save();
   // penjelasan: arti tiap kanji serumpun biar bedanya nempel
-  var expl=cur.set.w.map(function(w){return '<b>'+w[0]+'</b> '+w[3];}).join(' · ');
+  var expl=cur.set.w.map(function(w){
+    var wr=''; try{ wr=toRomaji(w[2]); }catch(e){}
+    return '<b>'+w[0]+'</b> '+(wr?'('+wr+') ':'')+w[3];
+  }).join(' · ');
   var mn=KANJI_MNEMONIC[cur.correct];
   if(mn) expl+='<br><span style="color:var(--indigo)">🧩 '+cur.correct+' = '+mn[0]+' — '+mn[1]+'</span>';
   var fb=(ok?'<span style="color:var(--jade);font-weight:800">✓ Benar!</span> ':'<span style="color:#c0392b;font-weight:800">✗ Jawaban: '+cur.correct+'</span> ')+'<br><span style="color:var(--mist)">'+expl+'</span>';
@@ -13091,9 +13099,19 @@ function wtKanjiRow(k){
   var rd = (typeof KANJI_READ!=='undefined')?KANJI_READ[k]:null;
   var onS = (rd&&rd[0]&&rd[0].length) ? rd[0][0] : '';
   var kunS = (rd&&rd[1]&&rd[1].length) ? rd[1][0] : '';
+  var arti = rd ? (rd[2]||'') : '';
+  var kanaS = onS+(onS&&kunS?'・':'')+kunS;
+  var romaS = '';
+  try{
+    var onR = onS ? toRomaji(onS) : '';
+    var kunR = kunS ? toRomaji(kunS) : '';
+    romaS = onR+(onR&&kunR?'・':'')+kunR;
+  }catch(e){}
   return '<div class="wt-diag-child">'
     + '<div class="wt-diag-node" data-kj="'+k+'" onclick="wtToggleKanji(this)">'+k+'</div>'
-    + '<div style="font-size:9px;color:var(--mist);margin-top:3px;text-align:center;max-width:74px;line-height:1.3">'+onS+(onS&&kunS?'・':'')+kunS+'</div>'
+    + '<div style="font-size:9px;color:var(--mist);margin-top:3px;text-align:center;max-width:74px;line-height:1.3">'+kanaS+'</div>'
+    + (romaS ? '<div style="font-size:9px;color:var(--jade);margin-top:1px;text-align:center;max-width:74px;line-height:1.2;font-family:\'DM Mono\',monospace">'+romaS+'</div>' : '')
+    + (arti ? '<div style="font-size:9px;color:var(--ink);opacity:.75;margin-top:1px;text-align:center;max-width:74px;line-height:1.2">'+arti+'</div>' : '')
     + '<div class="wt-word-body" style="display:none;margin-top:6px;width:130px;font-size:11px;background:#fafafa;border-radius:8px;padding:6px 8px"></div>'
     + '</div>';
 }
@@ -13105,7 +13123,7 @@ function _wtBuildBodyInner(r, displayKanji, filteredNote){
   if(r.type==='other'){
     return '<div style="display:flex;flex-wrap:wrap;gap:6px;padding:4px 2px">'
       + displayKanji.map(function(k){
-          return '<span class="wt-chip" data-kj="'+k+'" onclick="kjOpen(this.dataset.kj)" style="padding:6px 10px;border:1px solid var(--border);border-radius:8px;font-size:16px;font-family:\'Noto Serif JP\',serif;cursor:pointer;background:#fafafa">'+k+'</span>';
+          return '<span class="wt-chip" data-kj="'+k+'" onclick="kjOpen(this.dataset.kj)" style="padding:6px 10px;border:1px solid var(--border);border-radius:8px;font-size:16px;font-family:\'Noto Sans JP\',sans-serif;cursor:pointer;background:#fafafa">'+k+'</span>';
         }).join('')
       + '</div>'
       + (filteredNote ? '<div style="font-size:10px;color:var(--mist);margin-top:6px">menampilkan '+displayKanji.length+' dari '+r.kanji.length+' (sesuai filter)</div>' : '');
@@ -13212,7 +13230,7 @@ function wtToggleKanji(el){
       compHtml = '<div style="margin-top:8px;padding-top:6px;border-top:1px dashed var(--border)">'
         + '<div style="color:var(--mist);font-size:10px;font-weight:700;margin-bottom:4px">🧩 TERDIRI DARI</div>'
         + comps.map(function(c){
-            return '<span onclick="event.stopPropagation();wtJumpToRoot(\''+c.ch+'\')" style="display:inline-block;padding:3px 8px;margin:2px 3px 0 0;border:1px solid #2d7d46;border-radius:8px;color:#2d7d46;font-weight:700;cursor:pointer;font-family:\'Noto Serif JP\',serif">'+c.ch+' <span style="font-weight:400;font-size:10px">'+c.arti+'</span></span>';
+            return '<span onclick="event.stopPropagation();wtJumpToRoot(\''+c.ch+'\')" style="display:inline-block;padding:3px 8px;margin:2px 3px 0 0;border:1px solid #2d7d46;border-radius:8px;color:#2d7d46;font-weight:700;cursor:pointer;font-family:\'Noto Sans JP\',sans-serif">'+c.ch+' <span style="font-weight:400;font-size:10px">'+c.arti+'</span></span>';
           }).join('')
         + '</div>';
     }
@@ -13280,7 +13298,7 @@ function wtQuizShow(){
   document.getElementById('wtq-next').style.display = 'none';
   var box = document.getElementById('wtq-choices');
   box.innerHTML = q.choices.map(function(k){
-    return '<button class="wtq-choice" data-k="'+k+'" onclick="wtQuizAnswer(this)" style="padding:18px;border:2px solid var(--border);border-radius:14px;background:white;font-size:26px;font-family:\'Noto Serif JP\',serif;cursor:pointer">'+k+'</button>';
+    return '<button class="wtq-choice" data-k="'+k+'" onclick="wtQuizAnswer(this)" style="padding:18px;border:2px solid var(--border);border-radius:14px;background:white;font-size:26px;font-family:\'Noto Sans JP\',sans-serif;cursor:pointer">'+k+'</button>';
   }).join('');
   box.style.pointerEvents = 'auto';
 }
@@ -15100,7 +15118,7 @@ function renderOnoAccordion(){
           +'<span style="font-size:12px;color:var(--mist);flex:1">'+it.id+'</span>'
           +(isDone?'<span style="font-size:12px;color:'+color+'">✓</span>':'')
           +'</div>'
-          +'<div style="font-size:12px;color:#555;margin-top:4px;font-family:\'Noto Serif JP\',serif">'+it.ex+'</div>'
+          +'<div style="font-size:12px;color:#555;margin-top:4px;font-family:\'Noto Sans JP\',sans-serif">'+it.ex+'</div>'
           +'</div>';
       });
       html+='</div></div>';
