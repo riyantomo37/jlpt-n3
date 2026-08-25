@@ -75,9 +75,13 @@ export default {
           // Plafon tinggi supaya jawaban tidak terpotong. Model gemini-2.5-flash
           // mendukung hingga 65535; 8192 sudah sangat lega untuk app ini.
           maxOutputTokens: payload.max_tokens || 8192,
-          // PENTING: matikan "thinking". Pada gemini-2.5-flash, token thinking
-          // dihitung terhadap maxOutputTokens dan sering bikin jawaban kosong/terpotong.
-          thinkingConfig: { thinkingBudget: 0 },
+          // Default: matikan "thinking" (thinkingBudget:0) karena pada gemini-2.5-flash
+          // token thinking dihitung terhadap maxOutputTokens dan sering bikin jawaban
+          // kosong/terpotong kalau maxOutputTokens-nya pas-pasan.
+          // Untuk request yang butuh kreativitas lebih (mis. bikin soal tata bahasa/distraktor
+          // yang mengecoh), caller bisa kirim payload.thinkingBudget (dan max_tokens lebih besar
+          // supaya sisa token buat jawaban tetap cukup).
+          thinkingConfig: { thinkingBudget: typeof payload.thinkingBudget === "number" ? payload.thinkingBudget : 0 },
         },
       };
       if (systemParts.length) {
