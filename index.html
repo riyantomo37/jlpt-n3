@@ -1129,6 +1129,7 @@ header:has(.user-menu.open) { z-index:1000; }
   <button onclick="navTo('ai')">🤖 Sensei</button>
 </nav>
 <div id="nav-learn-menu">
+  <button onclick="closeNavLearn();gotoScreen('keiseimenu')" style="font-weight:800;color:#c0532e">🔊 Bunyi Kanji <span style="font-size:9px;background:#c0532e;color:#fff;padding:1px 6px;border-radius:6px;margin-left:4px;font-weight:800">BARU</span></button>
   <button onclick="closeNavLearn();gotoScreen('flashmenu')">📚 Flashcard</button>
   <button onclick="closeNavLearn();gotoScreen('kotoba')">📖 Daftar Kotoba</button>
   <button onclick="closeNavLearn();gotoScreen('kanjimenu')">✍️ Baca Kanji</button>
@@ -1782,6 +1783,52 @@ header:has(.user-menu.open) { z-index:1000; }
 </div>
 
 <!-- ====== KUIS KANJI KEMBAR ====== -->
+<!-- ====== 🔊 KEISEI MOJI: MENU EKSPLORASI ====== -->
+<div id="screen-keiseimenu" class="screen">
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
+    <div class="section-title" style="margin:0">🔊 Bunyi Kanji (形声)</div>
+    <span style="font-family:'DM Mono',monospace;font-size:10px;padding:3px 8px;border-radius:8px;font-weight:800;background:#c0532e;color:#fff">BARU</span>
+  </div>
+  <p style="font-size:13px;color:var(--mist);margin-bottom:16px">~80% kanji itu <b>形声文字</b>: gabungan komponen fonetik (nentuin BUNYI) + radikal makna. Kalau ketemu kanji baru yang punya komponen fonetik yang kamu kenal, kamu bisa nebak bacaannya duluan!</p>
+  <div onclick="startKeiseiQuiz()" style="background:linear-gradient(135deg,#c0532e,#e0703f);color:#fff;border-radius:12px;padding:16px;cursor:pointer;display:flex;align-items:center;gap:12px;margin-bottom:18px;box-shadow:0 6px 20px rgba(192,83,46,.3)">
+    <span style="font-size:28px">🔊</span>
+    <div style="flex:1">
+      <div style="font-weight:800;font-size:16px">Kuis Bunyi Kanji</div>
+      <div style="font-size:11px;opacity:.9">Contoh: 青(せい) → 晴・清・精・情・請・静 semua dibaca せい!</div>
+    </div>
+    <span style="font-size:18px">▶</span>
+  </div>
+  <div style="font-size:12px;color:var(--mist);margin-bottom:8px;font-weight:700">JELAJAHI KELUARGA FONETIK</div>
+  <div id="kmo-list"></div>
+</div>
+
+<!-- ====== 🔊 KEISEI MOJI: KUIS ====== -->
+<div id="screen-keiseiquiz" class="screen">
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+    <div class="section-title" style="margin:0">🔊 Kuis Bunyi Kanji</div>
+    <span id="kmo-score" style="font-family:'DM Mono',monospace;font-size:13px;font-weight:700;color:var(--mist)">0/0</span>
+  </div>
+  <div id="kmo-card" style="background:white;border:1px solid var(--border);border-radius:16px;padding:28px 20px;text-align:center;margin-bottom:14px">
+    <div id="kmo-prompt" style="font-size:52px;font-weight:800;color:var(--ink);margin-bottom:6px">情</div>
+    <div id="kmo-arti" style="font-size:14px;color:var(--mist);margin-bottom:10px">emosi</div>
+    <div style="font-size:12px;color:var(--mist);margin-bottom:4px">Kanji ini dibaca apa (on'yomi)?</div>
+    <div id="kmo-hint" style="font-size:11px;color:#c0532e;font-weight:700"></div>
+  </div>
+  <div id="kmo-choices" style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px"></div>
+  <button onclick="endSession()" style="width:100%;padding:10px;border:1.5px solid var(--border);border-radius:10px;background:white;color:var(--mist);font-family:inherit;font-size:12px;font-weight:700;cursor:pointer;margin-bottom:10px">✕ Akhiri Sesi</button>
+  <div id="kmo-feedback" style="min-height:44px;font-size:13px;text-align:center;margin-bottom:10px"></div>
+  <button id="kmo-next" onclick="kmoNext()" style="display:none;width:100%;padding:13px;border:none;border-radius:12px;background:var(--ink);color:#fff;font-family:inherit;font-size:14px;font-weight:700;cursor:pointer">Soal Berikutnya ▶</button>
+  <div id="kmo-done" style="display:none;text-align:center;background:white;border:1px solid var(--border);border-radius:16px;padding:26px">
+    <div style="font-size:34px;margin-bottom:6px">🏁</div>
+    <div id="kmo-done-score" style="font-size:20px;font-weight:800;margin-bottom:12px"></div>
+    <button onclick="startKeiseiQuiz()" style="padding:12px 22px;border:none;border-radius:12px;background:var(--jade);color:#fff;font-family:inherit;font-size:14px;font-weight:700;cursor:pointer;margin-bottom:10px">🔄 Main Lagi</button>
+    <div style="border-top:1px solid var(--border);margin:14px 0 12px;padding-top:14px">
+      <div style="font-size:11px;color:var(--mist);margin-bottom:8px">Lanjutkan belajar:</div>
+      <button onclick="navTo('keiseimenu')" style="width:100%;padding:11px;border:1.5px solid #c0532e;border-radius:10px;background:rgba(192,83,46,.06);color:#c0532e;font-family:inherit;font-size:13px;font-weight:700;cursor:pointer">🔊 Jelajahi keluarga fonetik lainnya ›</button>
+    </div>
+  </div>
+</div>
+
 <div id="screen-twinquiz" class="screen">
   <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
     <div class="section-title" style="margin:0">⚔️ Kanji Kembar</div>
@@ -7018,7 +7065,7 @@ function gotoScreen(name) {
   });
   var _lm=document.getElementById('nav-learn-menu');
   if(_lm) _lm.classList.remove('open');
-  var _learnScreens=['flashmenu','kotoba','kanjimenu','bunpomenu','katsuyomenu','dialectmenu','kazumenu','onomenu','onyomenu','wordtree'];
+  var _learnScreens=['flashmenu','kotoba','kanjimenu','bunpomenu','katsuyomenu','dialectmenu','kazumenu','onomenu','onyomenu','wordtree','keiseimenu'];
   var _lb=document.getElementById('nav-learn-btn');
   if(_lb) _lb.classList.toggle('active', _learnScreens.indexOf(name)>=0);
   if (name === 'overview') updateOverview();
@@ -7035,6 +7082,7 @@ function gotoScreen(name) {
   if (name === 'onomenu') updateOnoMenu();
   if (name === 'onyomenu') updateOyMenu();
   if (name === 'wordtree') updateWordTree();
+  if (name === 'keiseimenu') updateKeiseiMenu();
   if (name === 'exam') { showExamSection('exam-menu'); updateExamLevelBadge(); setExamMode('ai'); bankIndex=null; updateExamHistory(); }
 }
 
@@ -7656,6 +7704,12 @@ function _updateLevelBadgeUI(){
 // 📋 CHANGELOG — urutan terbaru di atas. Update array ini tiap ada fitur/fix baru.
 // ============================================================
 var CHANGELOG = [
+  {batch:'✨ Fitur Baru — 形声文字', items:[
+    '🔊 BARU: Bunyi Kanji (Keisei Moji) — fitur belajar kenapa banyak kanji dibaca mirip lewat komponen fonetik yang sama (青→晴・清・精・情・請・静 semua せい!), lengkap dengan kuis tebak bacaan. Beda dari Kanji Kembar (soal bentuk) — ini soal LOGIKA BUNYI, 10 keluarga fonetik, semua tervalidasi ke data bacaan asli',
+    'Font ganti dari Noto Serif JP (mincho, banyak sudut) ke Noto Sans JP (lebih plain/rounded) di seluruh app',
+    'Pohon Kata & Kanji Kembar sekarang nampilin romaji, bukan cuma bacaan kana',
+    'Soal AI Bunpo (tata bahasa) diperkuat: pengecoh (opsi salah) wajib dari pola nyata yang sering ketuker, gak boleh sama persis antar soal — biar gak ketebak asal tap'
+  ]},
   {batch:'🆕 Update Terbaru', items:[
     'Sistem Level & XP + 40+ badge pencapaian, nyakup SEMUA level JLPT (N5–N1, SSW), bukan cuma N3',
     'Badge & level ditampilkan di Ranking — sekarang bisa di-tap buat lihat penjelasan lengkap tiap badge',
@@ -7821,6 +7875,14 @@ function renderOverviewReco(){
   var oyp=oyProgress();
   var wtRoots=(typeof _wtBuildTree==='function')?_wtBuildTree().filter(function(r){return r.type!=='other';}):[];
   var html='';
+  // ── 🔊 Bunyi Kanji (Keisei Moji): fitur BARU, banner paling atas & paling mencolok ──
+  html+='<div onclick="navTo(\'keiseimenu\')" style="position:relative;background:radial-gradient(circle at 15% 20%,#e0703f,#8c2f0f 70%);color:#fff;border-radius:18px;padding:18px 16px;margin-bottom:16px;cursor:pointer;overflow:hidden;box-shadow:0 6px 20px rgba(140,47,15,.35);border:1px solid rgba(255,255,255,.15)">'
+    +'<span style="position:absolute;top:-14px;right:-6px;font-size:80px;opacity:.14;line-height:1">🔊</span>'
+    +'<span style="display:inline-block;background:#ffd166;color:#1a1a2e;font-size:10px;font-weight:800;padding:3px 9px;border-radius:8px;margin-bottom:8px">✨ FITUR BARU</span>'
+    +'<div style="font-weight:800;font-size:18px;position:relative;z-index:1">🔊 Bunyi Kanji (形声文字)</div>'
+    +'<div style="font-size:12px;opacity:.9;margin-top:3px;max-width:85%;position:relative;z-index:1">Kenapa 晴・清・精・情・請・静 semua dibaca せい? Kupas komponen fonetik biar bisa nebak bacaan kanji baru</div>'
+    +'<div style="margin-top:10px;display:inline-block;background:rgba(255,255,255,.18);padding:7px 14px;border-radius:10px;font-size:12px;font-weight:700;position:relative;z-index:1">Coba sekarang ›</div>'
+    +'</div>';
   // ── Pohon Kata: banner khusus paling atas, beda gaya dari yang lain ──
   html+='<div onclick="navTo(\'wordtree\')" style="position:relative;background:radial-gradient(circle at 15% 20%,#3d9b64,#1f5c3a 70%);color:#fff;border-radius:18px;padding:18px 16px;margin-bottom:16px;cursor:pointer;overflow:hidden;box-shadow:0 6px 20px rgba(31,92,58,.35);border:1px solid rgba(255,255,255,.15)">'
     +'<span style="position:absolute;top:-14px;right:-6px;font-size:80px;opacity:.14;line-height:1">🌳</span>'
@@ -7853,6 +7915,7 @@ function renderOverviewMenu(){
   var isSSW=currentJLPT==='SSW';
   var sections=[
     { label:'📚 KOSAKATA & KANJI', items:[
+      {scr:'keiseimenu', emo:'🔊', t:'Bunyi Kanji', d:'BARU! Tebak bunyi dari komponen fonetik', c:'#c0532e', direct:true},
       {scr:'flashmenu', emo:'📚', t:'Flashcard', d:'Hafal kosakata '+currentJLPT, c:color},
       {scr:'kotoba', emo:'単語', txt:true, t:'Daftar Kotoba', d:'Semua kata + centang arti & baca', c:'#00838f', direct:true},
       {scr:'kanjimenu', emo:'漢字', txt:true, t:'Baca Kanji', d:'Latihan baca kanji', c:'var(--gold)'},
@@ -12042,6 +12105,26 @@ var KANJI_ROOTS={"匕":["七", "傾", "切", "匂", "化", "北", "叱", "嘘", 
 var ROOT_LABELS={"匕":"sendok/pisau","卜":"ramalan","勹":"bungkus","冂":"pagar","山":"gunung","九":"sembilan","王":"raja","入":"masuk","亠":"tutup/atap","廴":"berjalan jauh","禾":"padi","舌":"lidah","子":"anak","爪":"cakar","人":"orang","乞":"minta","マ":"unsur ma","ヨ":"moncong babi","父":"ayah","⺅":"orang","士":"ksatria","寸":"ukuran/jengkal","弋":"tombak pendek","卩":"meterai/lutut","又":"tangan kanan","厂":"tebing","牛":"sapi","止":"berhenti","木":"pohon","白":"putih","立":"naik","氏":"marga","示":"menunjukkan","小":"sedikit","⺉":"pisau","歹":"tulang buruk","衣":"pakaian","西":"barat","田":"sawah","糸":"benang","幺":"benang halus","言":"berkata","彡":"bulu halus","攵":"memukul","囗":"pagar/kotak","至":"tiba","土":"tanah subur","矢":"anak panah","ユ":"unsur yu","廾":"dua tangan","目":"mata","韋":"kulit samak","聿":"kuas tulis","貝":"uang/kerang","禸":"jejak binatang","用":"urusan","⺾":"tumbuhan","勿":"jangan","頁":"halaman/kepala","力":"kekuatan","豕":"babi","羊":"domba","大":"besar","戈":"tombak","手":"tangan","音":"suara, bunyi","心":"hati","冖":"tudung","夂":"berjalan lambat","自":"diri sendiri","儿":"kaki manusia","⺌":"kecil","冫":"es","女":"perempuan","几":"meja kecil","刀":"pisau","⻂":"baju","巾":"kain","月":"bulan","宀":"atap","工":"kerajinan","免":"lolos","里":"desa","矛":"tombak","已":"sudah","爿":"kayu potongan","匚":"kotak terbuka","干":"kering","艮":"keras kepala","耳":"telinga","夕":"petang","欠":"celah","門":"gerbang","豆":"kacang","虍":"macan","米":"beras (mentah)","井":"sumur","斗":"takaran","也":"juga","方":"~ orang (sopan)","甘":"manis","臣":"menteri","辛":"pedas","⺡":"air","皿":"piring","尸":"jasad","⺲":"jaring","元":"awal","疋":"kaki/gulungan kain","穴":"lubang/gua","谷":"lembah","癶":"melangkah","文":"kalimat","身":"orang","酉":"anggur/ayam","⻌":"berjalan","首":"leher","鳥":"burung","广":"atap tebing","凵":"wadah","車":"mobil","水":"air","隶":"mengejar","⻏":"kota/wilayah","弓":"busur","長":"panjang","虫":"serangga","彳":"langkah kecil","殳":"senjata pemukul","皮":"kulit","走":"berlari","亡":"meninggal","⺖":"hati","生":"hidup","五":"lima","非":"kesalahan","青":"biru","母":"ibu","毋":"jangan","戸":"pintu (gaya jepang)","斤":"kapak","⺘":"tangan","比":"membandingkan","支":"mendukung","巛":"sungai","隹":"burung ekor pendek","⺹":"tua","啇":"akar dagang","牙":"gigi taring","雨":"hujan","⺭":"sesaji","麻":"rami","气":"uap","川":"sungai","火":"api","⺣":"api","犬":"anjing","⺨":"binatang","見":"melihat","釆":"membedakan","疒":"sakit","舛":"berselisih","石":"batu","竹":"bambu","屯":"berkemah","羽":"bulu/sayap","角":"sudut (meja","冊":"volume","辰":"waktu/naga","足":"kaki","金":"emas","⻖":"bukit","食":"makan","馬":"kuda","鬼":"hantu"};;;
 
 
+// ============================================================
+// 🔊 KEISEI MOJI (形声文字): kelompok kanji yang berbagi KOMPONEN FONETIK
+// (bukan cuma mirip bentuk kayak TWIN_SETS) — dibaca sama karena komponen
+// fonetik yang sama, walau radikal makna di sekitarnya beda-beda.
+// Tiap grup di-verifikasi ke data KANJI_READ (bukan tebakan), minimal 3 kanji
+// per grup yang beneran punya bacaan on'yomi identik.
+// ============================================================
+var KEISEI_SETS=[
+  {phon:'青', read:'せい', kanji:['青','情','晴','清','精','請','静'], arti:{'青':'biru','情':'emosi','晴':'menjadi cerah','清':'murni','精':'hantu','請':'bertanya','静':'tenang'}},
+  {phon:'可', read:'か', kanji:['可','何','歌','河','荷','過'], arti:{'可':'bisa','何':'apa','歌':'lagu','河':'sungai','荷':'bagasi','過':'kesalahan'}},
+  {phon:'交', read:'こう', kanji:['交','効','校','較','郊'], arti:{'交':'bercampur','効':'manfaat','校':'ujian','較':'membandingkan','郊':'pinggiran kota'}},
+  {phon:'古', read:'こ', kanji:['古','個','固','故','湖'], arti:{'古':'lama','個':'individu','固':'mengatur','故':'alasan','湖':'danau'}},
+  {phon:'反', read:'はん', kanji:['反','坂','版','飯'], arti:{'反':'anti-','坂':'lereng / tanjakan','版':'balok cetak','飯':'makanan'}},
+  {phon:'包', read:'ほう', kanji:['包','抱','飽'], arti:{'包':'membungkus','抱':'memeluk','飽':'kenyang'}},
+  {phon:'生', read:'せい', kanji:['生','性','星'], arti:{'生':'hidup','性':'alam/sifat','星':'bintang'}},
+  {phon:'尞', read:'りょう', kanji:['僚','料','療'], arti:{'僚':'pejabat','料':'biaya','療':'menyembuhkan'}},
+  {phon:'化', read:'か', kanji:['化','花','靴'], arti:{'化':'berubah','花':'bunga','靴':'sepatu'}},
+  {phon:'工', read:'こう', kanji:['功','攻','紅'], arti:{'功':'kehormatan','攻':'serangan','紅':'merah tua'}}
+];
+
 var TWIN_SETS=[
  {lv:4, g:['待','持','特'], w:[['待','＿つ','まつ','menunggu'],['持','＿つ','もつ','memegang, membawa'],['特','＿に','とくに','khususnya']]},
  {lv:4, g:['買','貸','借'], w:[['買','＿う','かう','membeli'],['貸','＿す','かす','meminjamkan'],['借','＿りる','かりる','meminjam']]},
@@ -12871,6 +12954,149 @@ function _tqProceed(){
   }
 }
 function tqNext(){ tqShow(); }
+
+// ============================================================
+// 🔊 KEISEI MOJI (形声文字): kuis tebak bunyi dari komponen fonetik.
+// Beda dari Kanji Kembar (bentuk mirip) — ini soal LOGIKA BUNYI: kalau kanji
+// mengandung komponen fonetik yang sama, biasanya dibaca sama walau radikal
+// makna di sekelilingnya beda-beda. Latihan ini nunjukin 1 kanji dari sebuah
+// keluarga fonetik lalu minta tebak bacaannya dari 4 pilihan.
+// ============================================================
+var kmoState = {q:0, score:0, total:10, cur:null};
+function _kmoPool(){
+  var num={'N5':5,'N4':4,'N3':3,'N2':3,'N1':3,'SSW':4}[currentJLPT]||4;
+  var pool = KEISEI_SETS.filter(function(f){
+    return f.kanji.some(function(k){ return _oyKanjiLevel(k) >= num; });
+  });
+  return pool.length ? pool : KEISEI_SETS;
+}
+function _kmoMakeQuestion(){
+  var fams = _kmoPool();
+  var fam = fams[Math.floor(Math.random()*fams.length)];
+  var promptK = fam.kanji[Math.floor(Math.random()*fam.kanji.length)];
+  var correct = fam.read;
+  var allK = Object.keys(KANJI_READ||{});
+  shuffle(allK);
+  var seen = {}; seen[correct.toLowerCase()]=true;
+  var distractPool = [];
+  for(var i=0;i<allK.length && distractPool.length<3;i++){
+    var k = allK[i];
+    if(fam.kanji.indexOf(k)>=0) continue;
+    var rd = KANJI_READ[k];
+    if(!rd || !rd[0] || !rd[0].length) continue;
+    var r = rd[0][0];
+    if(!r) continue;
+    var rl = r.toLowerCase();
+    if(seen[rl]) continue;
+    seen[rl]=true;
+    distractPool.push(r);
+  }
+  var choices = [correct].concat(distractPool);
+  shuffle(choices);
+  return {fam:fam, prompt:promptK, correct:correct, choices:choices};
+}
+function startKeiseiQuiz(){
+  kmoState = {q:0, score:0, total:10, cur:null};
+  gotoScreenRaw('keiseiquiz');
+  document.getElementById('kmo-done').style.display='none';
+  document.getElementById('kmo-card').style.display='block';
+  kmoQuizShow();
+}
+function kmoQuizShow(){
+  var st = kmoState;
+  var q = _kmoMakeQuestion();
+  st.cur = q;
+  document.getElementById('kmo-score').textContent = st.score+'/'+st.q+' · soal '+(st.q+1)+' dari '+st.total;
+  document.getElementById('kmo-prompt').textContent = q.prompt;
+  var arti = q.fam.arti && q.fam.arti[q.prompt] ? q.fam.arti[q.prompt] : '';
+  document.getElementById('kmo-arti').textContent = arti;
+  document.getElementById('kmo-hint').textContent = 'Komponen fonetik di kanji ini: '+q.fam.phon+' — kanji lain berkomponen sama biasanya dibaca serupa';
+  document.getElementById('kmo-feedback').innerHTML = '';
+  document.getElementById('kmo-next').style.display = 'none';
+  var box = document.getElementById('kmo-choices');
+  box.innerHTML = q.choices.map(function(r){
+    return '<button class="kmo-choice" data-r="'+r+'" onclick="kmoQuizAnswer(this)" style="padding:16px;border:2px solid var(--border);border-radius:14px;background:white;font-size:19px;font-family:\'DM Mono\',monospace;font-weight:700;cursor:pointer">'+r+'</button>';
+  }).join('');
+  box.style.pointerEvents = 'auto';
+}
+function kmoQuizAnswer(btn){
+  var st = kmoState, cur = st.cur;
+  var pick = btn.dataset.r;
+  var ok = pick === cur.correct;
+  document.getElementById('kmo-choices').style.pointerEvents = 'none';
+  document.querySelectorAll('.kmo-choice').forEach(function(b){
+    if(b.dataset.r===cur.correct){ b.style.borderColor='var(--jade)'; b.style.background='rgba(10,125,107,.1)'; }
+    else if(b===btn && !ok){ b.style.borderColor='#c0392b'; b.style.background='rgba(192,57,43,.08)'; }
+    else b.style.opacity='.45';
+  });
+  st.q++;
+  _ms('keiseiQ'); if(ok) _ms('keiseiOk');
+  if(ok) st.score++;
+  save();
+  var siblings = cur.fam.kanji.filter(function(k){ return k!==cur.prompt; }).slice(0,4).join('・');
+  var fb = (ok?'<span style="color:var(--jade);font-weight:800">✓ Benar!</span> ':'<span style="color:#c0392b;font-weight:800">✗ Jawaban: '+cur.correct+'</span> ')
+    + '<br><span style="color:var(--mist)">'+cur.prompt+' mengandung komponen fonetik <b>'+cur.fam.phon+'</b> → dibaca <b>'+cur.correct+'</b>, sama seperti '+siblings+'.</span>';
+  fb += '<div style="margin-top:10px;font-weight:700;color:var(--ink)">Apakah kamu benar-benar hafal pola bunyi ini?</div>'
+    + '<div style="display:flex;gap:8px;margin-top:6px">'
+    + '<button onclick="kmoQuizAssess(false)" style="flex:1;padding:10px;border:1.5px solid #c0392b;border-radius:10px;background:rgba(192,57,43,.06);color:#c0392b;font-family:inherit;font-size:13px;font-weight:700;cursor:pointer">🙅 Belum Hafal</button>'
+    + '<button onclick="kmoQuizAssess(true)" style="flex:1;padding:10px;border:none;border-radius:10px;background:var(--jade);color:#fff;font-family:inherit;font-size:13px;font-weight:700;cursor:pointer">💯 Hafal!</button>'
+    + '</div>';
+  document.getElementById('kmo-feedback').innerHTML = fb;
+  document.getElementById('kmo-score').textContent = st.score+'/'+st.q;
+}
+function kmoQuizAssess(hafal){
+  var st = kmoState, cur = st.cur;
+  if(cur){
+    try{
+      var card = {id:'kmo_'+cur.fam.phon+'_'+cur.prompt, jp:cur.prompt};
+      srsTouch(card, hafal);
+      var fk = 'kmo_'+cur.fam.phon+'_'+cur.prompt;
+      if(hafal){ kanjiReadMastered[fk]=true; _touchStreak(); } else delete kanjiReadMastered[fk];
+      save();
+    }catch(e){}
+  }
+  var fbEl = document.getElementById('kmo-feedback');
+  if(fbEl) fbEl.querySelectorAll('button').forEach(function(b){ b.disabled=true; b.style.opacity='.4'; });
+  _kmoQuizProceed();
+}
+function _kmoQuizProceed(){
+  var st = kmoState;
+  if(st.q >= st.total){
+    document.getElementById('kmo-next').style.display = 'none';
+    setTimeout(function(){
+      document.getElementById('kmo-done').style.display = 'block';
+      document.getElementById('km-done-score').textContent = 'Skor: '+st.score+' / '+st.total+(st.score===st.total?' — jago baca pola bunyi! 🎉':st.score>=7?' — bagus!':' — latihan lagi ya');
+    },700);
+  } else {
+    document.getElementById('kmo-next').style.display = 'block';
+  }
+}
+function kmoNext(){ kmoQuizShow(); }
+
+// ── Layar eksplorasi: daftar keluarga fonetik, expand buat lihat semua anggota ──
+function renderKeiseiList(){
+  var box = document.getElementById('kmo-list');
+  if(!box) return;
+  box.innerHTML = KEISEI_SETS.map(function(fam, idx){
+    var chips = fam.kanji.map(function(k){
+      var arti = (fam.arti && fam.arti[k]) || '';
+      return '<span onclick="event.stopPropagation();kjOpen(\''+k+'\')" style="display:inline-flex;flex-direction:column;align-items:center;padding:8px 10px;margin:3px;border:1px solid var(--border);border-radius:10px;background:#fafafa;cursor:pointer;min-width:52px">'
+        + '<span style="font-size:22px;font-weight:800">'+k+'</span>'
+        + '<span style="font-size:9px;color:var(--mist);margin-top:2px;text-align:center;max-width:60px;line-height:1.2">'+arti+'</span>'
+        + '</span>';
+    }).join('');
+    return '<div style="background:white;border:1px solid var(--border);border-radius:12px;margin-bottom:10px;padding:14px">'
+      + '<div style="display:flex;align-items:center;gap:10px;margin-bottom:8px">'
+      + '<span style="font-size:26px;font-weight:800;color:#c0532e">'+fam.phon+'</span>'
+      + '<div><div style="font-family:\'DM Mono\',monospace;font-size:15px;font-weight:700;color:var(--indigo)">'+fam.read+'</div>'
+      + '<div style="font-size:11px;color:var(--mist)">'+fam.kanji.length+' kanji berkomponen sama</div></div>'
+      + '</div>'
+      + '<div style="display:flex;flex-wrap:wrap">'+chips+'</div>'
+      + '</div>';
+  }).join('');
+}
+function updateKeiseiMenu(){ renderKeiseiList(); }
+
 
 // ============================================================
 // 音訓 ON'YOMI–KUN'YOMI: menu + latihan bacaan kanji
