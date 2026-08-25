@@ -7705,7 +7705,7 @@ function _updateLevelBadgeUI(){
 // ============================================================
 var CHANGELOG = [
   {batch:'✨ Fitur Baru — 形声文字', items:[
-    '🔊 BARU: Bunyi Kanji (Keisei Moji) — fitur belajar kenapa banyak kanji dibaca mirip lewat komponen fonetik yang sama (青→晴・清・精・情・請・静 semua せい!), lengkap dengan kuis tebak bacaan. Beda dari Kanji Kembar (soal bentuk) — ini soal LOGIKA BUNYI, 10 keluarga fonetik, semua tervalidasi ke data bacaan asli',
+    '🔊 BARU: Bunyi Kanji (Keisei Moji) — fitur belajar kenapa banyak kanji dibaca mirip lewat komponen fonetik yang sama (青→晴・清・精・情・請・静 semua せい!), lengkap dengan kuis tebak bacaan. Beda dari Kanji Kembar (soal bentuk) — ini soal LOGIKA BUNYI, 14 keluarga fonetik (56 kanji, N5–N3), dibangun dari dekomposisi kanji resmi & tervalidasi ke data bacaan asli',
     'Font ganti dari Noto Serif JP (mincho, banyak sudut) ke Noto Sans JP (lebih plain/rounded) di seluruh app',
     'Pohon Kata & Kanji Kembar sekarang nampilin romaji, bukan cuma bacaan kana',
     'Soal AI Bunpo (tata bahasa) diperkuat: pengecoh (opsi salah) wajib dari pola nyata yang sering ketuker, gak boleh sama persis antar soal — biar gak ketebak asal tap'
@@ -12113,16 +12113,20 @@ var ROOT_LABELS={"匕":"sendok/pisau","卜":"ramalan","勹":"bungkus","冂":"pag
 // per grup yang beneran punya bacaan on'yomi identik.
 // ============================================================
 var KEISEI_SETS=[
-  {phon:'青', read:'せい', kanji:['青','情','晴','清','精','請','静'], arti:{'青':'biru','情':'emosi','晴':'menjadi cerah','清':'murni','精':'hantu','請':'bertanya','静':'tenang'}},
-  {phon:'可', read:'か', kanji:['可','何','歌','河','荷','過'], arti:{'可':'bisa','何':'apa','歌':'lagu','河':'sungai','荷':'bagasi','過':'kesalahan'}},
-  {phon:'交', read:'こう', kanji:['交','効','校','較','郊'], arti:{'交':'bercampur','効':'manfaat','校':'ujian','較':'membandingkan','郊':'pinggiran kota'}},
-  {phon:'古', read:'こ', kanji:['古','個','固','故','湖'], arti:{'古':'lama','個':'individu','固':'mengatur','故':'alasan','湖':'danau'}},
-  {phon:'反', read:'はん', kanji:['反','坂','版','飯'], arti:{'反':'anti-','坂':'lereng / tanjakan','版':'balok cetak','飯':'makanan'}},
-  {phon:'包', read:'ほう', kanji:['包','抱','飽'], arti:{'包':'membungkus','抱':'memeluk','飽':'kenyang'}},
-  {phon:'生', read:'せい', kanji:['生','性','星'], arti:{'生':'hidup','性':'alam/sifat','星':'bintang'}},
-  {phon:'尞', read:'りょう', kanji:['僚','料','療'], arti:{'僚':'pejabat','料':'biaya','療':'menyembuhkan'}},
-  {phon:'化', read:'か', kanji:['化','花','靴'], arti:{'化':'berubah','花':'bunga','靴':'sepatu'}},
-  {phon:'工', read:'こう', kanji:['功','攻','紅'], arti:{'功':'kehormatan','攻':'serangan','紅':'merah tua'}}
+  {phon:'青', read:'せい', kanji:['青','情','晴','清','精','請','静'], arti:{'青':'biru','情':'emosi','晴':'menjadi cerah','清':'murni','精':'hantu','請':'bertanya','静':'tenang'}, note:''},
+  {phon:'可', read:'か', kanji:['可','何','歌','河','荷','過'], arti:{'可':'bisa','何':'apa','歌':'lagu','河':'sungai','荷':'bagasi','過':'kesalahan'}, note:''},
+  {phon:'交', read:'こう', kanji:['交','効','校','較','郊'], arti:{'交':'bercampur','効':'manfaat','校':'ujian','較':'membandingkan','郊':'pinggiran kota'}, note:''},
+  {phon:'工', read:'こう', kanji:['工','功','攻','紅','貢'], arti:{'工':'kerajinan','功':'kehormatan','攻':'serangan','紅':'merah tua','貢':'mendukung'}, note:''},
+  {phon:'古', read:'こ', kanji:['古','固','居','故','湖'], arti:{'古':'lama','固':'mengatur','居':'ada','故':'alasan','湖':'danau'}, note:''},
+  {phon:'反', read:'はん', kanji:['反','坂','版','飯'], arti:{'反':'anti-','坂':'lereng / tanjakan','版':'balok cetak','飯':'makanan'}, note:''},
+  {phon:'化', read:'か', kanji:['化','花','靴'], arti:{'化':'berubah','花':'bunga','靴':'sepatu'}, note:''},
+  {phon:'包', read:'ほう', kanji:['包','抱','飽'], arti:{'包':'membungkus','抱':'memeluk','飽':'kenyang'}, note:''},
+  {phon:'生', read:'せい', kanji:['生','性','星'], arti:{'生':'hidup','性':'alam/sifat','星':'bintang'}, note:''},
+  {phon:'亡', read:'ぼう', kanji:['忘','忙','望'], arti:{'忘':'melupakan','忙':'sibuk','望':'harapan'}, note:''},
+  {phon:'尞', read:'りょう', kanji:['僚','料','療'], arti:{'僚':'pejabat','料':'biaya','療':'menyembuhkan'}, note:'komponen ini bukan kanji Jepang yang berdiri sendiri, cuma dipakai sbg bagian dari kanji lain'},
+  {phon:'僉', read:'けん', kanji:['検','険','験'], arti:{'検':'memeriksa','険':'berbahaya, curam','験':'ujian, bukti'}, note:'komponen ini bukan kanji Jepang yang berdiri sendiri, cuma dipakai sbg bagian dari kanji lain'},
+  {phon:'占', read:'てん', kanji:['店','点','貼'], arti:{'店':'toko','点':'titik','貼':'menempel'}, note:'komponen ini bukan kanji Jepang yang berdiri sendiri, cuma dipakai sbg bagian dari kanji lain'},
+  {phon:'复', read:'ふく', kanji:['復','腹','複'], arti:{'復':'pulih, kembali','腹':'perut','複':'ganda, rangkap'}, note:'komponen ini bukan kanji Jepang yang berdiri sendiri, cuma dipakai sbg bagian dari kanji lain'}
 ];
 
 var TWIN_SETS=[
@@ -13091,6 +13095,7 @@ function renderKeiseiList(){
       + '<div><div style="font-family:\'DM Mono\',monospace;font-size:15px;font-weight:700;color:var(--indigo)">'+fam.read+'</div>'
       + '<div style="font-size:11px;color:var(--mist)">'+fam.kanji.length+' kanji berkomponen sama</div></div>'
       + '</div>'
+      + (fam.note ? '<div style="font-size:10px;color:#b08d3e;background:rgba(176,141,62,.08);border-radius:8px;padding:6px 8px;margin-bottom:8px">ℹ️ '+fam.note+'</div>' : '')
       + '<div style="display:flex;flex-wrap:wrap">'+chips+'</div>'
       + '</div>';
   }).join('');
