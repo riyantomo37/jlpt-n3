@@ -7705,7 +7705,7 @@ function _updateLevelBadgeUI(){
 // ============================================================
 var CHANGELOG = [
   {batch:'✨ Fitur Baru — 形声文字', items:[
-    '🔊 BARU: Bunyi Kanji (Keisei Moji) — fitur belajar kenapa banyak kanji dibaca mirip lewat komponen fonetik yang sama (青→晴・清・精・情・請・静 semua せい!), lengkap dengan kuis tebak bacaan + filter per level N5–N1. Beda dari Kanji Kembar (soal bentuk) — ini soal LOGIKA BUNYI, 70 keluarga fonetik (171 kanji), dibangun dari dekomposisi kanji resmi & tervalidasi ke data bacaan asli',
+    '🔊 BARU: Bunyi Kanji (Keisei Moji) — fitur belajar kenapa banyak kanji dibaca mirip lewat komponen fonetik yang sama (青→晴・清・精・情・請・静 semua せい!), lengkap dengan kuis tebak bacaan + filter per level N5–N1. Beda dari Kanji Kembar (soal bentuk) — ini soal LOGIKA BUNYI, 80 keluarga fonetik (190 kanji, ~90% dari plafon realistis 253 kanji berdasarkan estimasi cakupan), dibangun dari dekomposisi kanji resmi & tervalidasi ke data bacaan asli',
     'Font ganti dari Noto Serif JP (mincho, banyak sudut) ke Noto Sans JP (lebih plain/rounded) di seluruh app',
     'Pohon Kata & Kanji Kembar sekarang nampilin romaji, bukan cuma bacaan kana',
     'Soal AI Bunpo (tata bahasa) diperkuat: pengecoh (opsi salah) wajib dari pola nyata yang sering ketuker, gak boleh sama persis antar soal — biar gak ketebak asal tap'
@@ -12128,6 +12128,7 @@ var KEISEI_SETS=[
   {phon:'占',read:'てん',kanji:['店','点','貼'],arti:{'店':'toko','点':'titik','貼':'menempel'},lvl:{'店':'N5','点':'N5','貼':'N5'},note:'komponen ini bukan kanji Jepang yang berdiri sendiri, cuma dipakai sbg bagian dari kanji lain'},
   {phon:'复',read:'ふく',kanji:['復','腹','複'],arti:{'復':'pulih, kembali','腹':'perut','複':'ganda, rangkap'},lvl:{'復':'','腹':'','複':''},note:'komponen ini bukan kanji Jepang yang berdiri sendiri, cuma dipakai sbg bagian dari kanji lain'},
   {phon:'者',read:'ちょ',kanji:['箸','緒','著'],arti:{'箸':'sumpit','緒':'awal','著':'mencolok, mengarang'},lvl:{'箸':'N5','緒':'N5','著':''},note:''},
+  {phon:'我',read:'ぎ',kanji:['儀','義','議'],arti:{'儀':'upacara','義':'keadilan','議':'debat'},lvl:{'儀':'N3','義':'N4','議':'N4'},note:'bacaan 我 sendiri sudah bergeser dari versi aslinya, tapi seluruh anggota keluarga ini tetap konsisten'},
   {phon:'主',read:'ちゅう',kanji:['注','駐'],arti:{'注':'menuang, memperhatikan','駐':'penduduk'},lvl:{'注':'','駐':'N4'},note:''},
   {phon:'寺',read:'じ',kanji:['持','時'],arti:{'持':'memegang, membawa','時':'waktu'},lvl:{'持':'','時':'N5'},note:''},
   {phon:'召',read:'しょう',kanji:['招','紹'],arti:{'招':'mengundang','紹':'memperkenalkan'},lvl:{'招':'','紹':''},note:''},
@@ -12182,7 +12183,16 @@ var KEISEI_SETS=[
   {phon:'余',read:'じょ',kanji:['徐','除'],arti:{'徐':'secara bertahap','除':'kecuali'},lvl:{'徐':'N3','除':'N5'},note:''},
   {phon:'其',read:'き',kanji:['基','期'],arti:{'基':'dasar-dasar','期':'periode'},lvl:{'基':'N3','期':'N3'},note:'komponen ini bukan kanji Jepang yang berdiri sendiri, cuma dipakai sbg bagian dari kanji lain'},
   {phon:'竟',read:'けい',kanji:['境','鏡'],arti:{'境':'batas','鏡':'cermin'},lvl:{'境':'N3','鏡':'N5'},note:'komponen ini bukan kanji Jepang yang berdiri sendiri, cuma dipakai sbg bagian dari kanji lain'},
-  {phon:'啇',read:'てき',kanji:['敵','適'],arti:{'敵':'musuh','適':'langka'},lvl:{'敵':'N3','適':'N4'},note:'komponen ini bukan kanji Jepang yang berdiri sendiri, cuma dipakai sbg bagian dari kanji lain'}
+  {phon:'啇',read:'てき',kanji:['敵','適'],arti:{'敵':'musuh','適':'langka'},lvl:{'敵':'N3','適':'N4'},note:'komponen ini bukan kanji Jepang yang berdiri sendiri, cuma dipakai sbg bagian dari kanji lain'},
+  {phon:'布',read:'ふ',kanji:['布','怖'],arti:{'布':'kain','怖':'mengerikan'},lvl:{'布':'N5','怖':'N4'},note:''},
+  {phon:'喜',read:'き',kanji:['喜','嬉'],arti:{'喜':'bersukacita','嬉':'senang'},lvl:{'喜':'N4','嬉':'N4'},note:''},
+  {phon:'重',read:'どう',kanji:['働','動'],arti:{'働':'bekerja','動':'bergerak'},lvl:{'働':'','動':''},note:'bacaan 重 sendiri sudah bergeser dari versi aslinya, tapi seluruh anggota keluarga ini tetap konsisten'},
+  {phon:'保',read:'ほう',kanji:['保','褒'],arti:{'保':'melindungi','褒':'memuji'},lvl:{'保':'N3','褒':'N4'},note:''},
+  {phon:'平',read:'ひょう',kanji:['平','評'],arti:{'平':'damai','評':'mengevaluasi'},lvl:{'平':'N5','評':'N3'},note:''},
+  {phon:'敬',read:'けい',kanji:['敬','警'],arti:{'敬':'menghormati','警':'menasihati keras'},lvl:{'敬':'N3','警':'N5'},note:''},
+  {phon:'度',read:'と',kanji:['度','渡'],arti:{'度':'waktu','渡':'transit'},lvl:{'度':'N5','渡':'N5'},note:''},
+  {phon:'皆',read:'かい',kanji:['皆','階'],arti:{'皆':'semua','階':'lantai bangunan'},lvl:{'皆':'N5','階':'N5'},note:''},
+  {phon:'元',read:'がん',kanji:['元','頑'],arti:{'元':'awal','頑':'bodoh'},lvl:{'元':'N5','頑':'N4'},note:''}
 ];
 
 var TWIN_SETS=[
