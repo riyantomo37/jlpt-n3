@@ -1129,20 +1129,24 @@ header:has(.user-menu.open) { z-index:1000; }
   <button onclick="navTo('ai')">🤖 Sensei</button>
 </nav>
 <div id="nav-learn-menu">
+  <div style="font-size:10px;font-weight:800;color:var(--mist);letter-spacing:.5px;padding:6px 10px 2px">📚 KOSAKATA &amp; KANJI</div>
   <button onclick="closeNavLearn();gotoScreen('keiseimenu')" style="font-weight:800;color:#c0532e">🔊 Bunyi Kanji <span style="font-size:9px;background:#c0532e;color:#fff;padding:1px 6px;border-radius:6px;margin-left:4px;font-weight:800">BARU</span></button>
   <button onclick="closeNavLearn();gotoScreen('flashmenu')">📚 Flashcard</button>
   <button onclick="closeNavLearn();gotoScreen('kotoba')">📖 Daftar Kotoba</button>
   <button onclick="closeNavLearn();gotoScreen('kanjimenu')">✍️ Baca Kanji</button>
-  <button onclick="closeNavLearn();gotoScreen('bunpomenu')">📐 Tata Bahasa</button>
+  <button onclick="closeNavLearn();gotoScreen('onyomenu')">🈁 On-Kun</button>
+  <button onclick="closeNavLearn();gotoScreen('wordtree')">🌳 Pohon Kata</button>
+  <button onclick="startTwinQuiz()">⚔️ Kanji Kembar</button>
+  <div style="border-top:1px solid var(--border);margin:4px 0"></div>
+  <div style="font-size:10px;font-weight:800;color:var(--mist);letter-spacing:.5px;padding:6px 10px 2px">📐 TATA BAHASA &amp; RAGAM</div>
+  <button id="nav-bunpo-item" onclick="closeNavLearn();gotoScreen('bunpomenu')">📐 Tata Bahasa</button>
   <button onclick="closeNavLearn();gotoScreen('katsuyomenu')">🔄 Konjugasi</button>
   <button onclick="closeNavLearn();gotoScreen('dialectmenu')">🗾 Dialek</button>
   <button onclick="closeNavLearn();gotoScreen('kazumenu')">🔢 Angka</button>
   <button onclick="closeNavLearn();gotoScreen('onomenu')">💬 Onomatope</button>
-  <button onclick="closeNavLearn();gotoScreen('onyomenu')">🈁 On-Kun</button>
-  <button onclick="closeNavLearn();gotoScreen('wordtree')">🌳 Pohon Kata</button>
   <div style="border-top:1px solid var(--border);margin:4px 0"></div>
+  <div style="font-size:10px;font-weight:800;color:var(--mist);letter-spacing:.5px;padding:6px 10px 2px">🎯 LATIHAN &amp; KUIS</div>
   <button onclick="startSrsReview()">🔁 Review SRS</button>
-  <button onclick="startTwinQuiz()">⚔️ Kanji Kembar</button>
   <button onclick="startWritePractice()">✍️ Latihan Tulis</button>
   <button onclick="startKalimat()">📖 Belajar Kalimat</button>
   <button onclick="startMnemonic()">🧩 Latihan Mnemonik</button>
@@ -3738,8 +3742,11 @@ async function aiVocabQuestions(prompt, n, idPrefix){
 
 // 問題4 — 言い換え類義 (AI, level-lock, full kanji)
 async function buildIikaeQuestions(n){
-  var sample = (JLPT_DATA[currentJLPT]||[]).slice();
-  shuffle(sample); sample = sample.slice(0,15).map(function(w){return w.jp;}).join('、');
+  // posLevelWords() (bukan JLPT_DATA langsung) — JLPT_DATA gak punya key N3 (N3 di ALL_WORDS),
+  // jadi kalau langsung JLPT_DATA[currentJLPT] bakal kosong pas level N3. weightedWordSample
+  // biar kata yang udah dihafal lebih sering nongol di ujian (progress kerasa berpengaruh).
+  var pool = posLevelWords();
+  var sample = weightedWordSample(pool, Math.min(15, pool.length)).map(function(w){return w.jp;}).join('、');
   var prompt =
       'Kamu guru JLPT '+currentJLPT+' ahli. Buat '+n+' soal pilihan ganda tipe 言い換え類義 (sinonim/parafrase). '
     + levelLockText()
@@ -3757,8 +3764,8 @@ async function buildIikaeQuestions(n){
 
 // 問題5 — 用法 (AI, level-lock, full kanji)
 async function buildYouhouQuestions(n){
-  var sample = (JLPT_DATA[currentJLPT]||[]).slice();
-  shuffle(sample); sample = sample.slice(0,15).map(function(w){return w.jp;}).join('、');
+  var pool = posLevelWords();
+  var sample = weightedWordSample(pool, Math.min(15, pool.length)).map(function(w){return w.jp;}).join('、');
   var prompt =
       'Kamu guru JLPT '+currentJLPT+' ahli pembuat soal format resmi 問題５ 用法 (menguji apakah pelajar paham cara memakai sebuah kata dalam kalimat, BUKAN artinya). Buat '+n+' soal pilihan ganda tipe ini. '
     + levelLockText()
@@ -3857,8 +3864,10 @@ async function buildMojiVocabSections(words) {
   var m1qs;
   {
     var kanjiWords = words.filter(function(w){ return /[一-鿿]/.test(w.jp) && w.rom!==w.jp && (w.rom||'').length<14; });
-    shuffle(kanjiWords);
-    m1qs = kanjiWords.slice(0,8).map(function(w,i){
+    // Target soal dibobotkan ke kata yang udah dihafal (progress kerasa berpengaruh ke ujian),
+    // tapi pool distraktor tetap dari SELURUH kanjiWords biar pengecohnya tetap variatif.
+    var targets1 = weightedWordSample(kanjiWords, Math.min(8, kanjiWords.length));
+    m1qs = targets1.map(function(w,i){
       // distraktor: utamakan bacaan dgn panjang mirip & huruf awal sama (lebih sulit)
       var pool = kanjiWords.filter(function(x){return x.rom!==w.rom;});
       var near = pool.filter(function(x){ return Math.abs((x.rom||'').length-(w.rom||'').length)<=1 && (x.rom||'')[0]===(w.rom||'')[0]; });
@@ -3878,8 +3887,8 @@ async function buildMojiVocabSections(words) {
   var m2qs;
   {
     var kanjiW = words.filter(function(w){ return /[一-鿿]/.test(w.jp) && w.rom!==w.jp; });
-    shuffle(kanjiW);
-    m2qs = kanjiW.slice(0,6).map(function(w,i){
+    var targets2 = weightedWordSample(kanjiW, Math.min(6, kanjiW.length));
+    m2qs = targets2.map(function(w,i){
       // distraktor: kanji dgn panjang sama & berbagi minimal 1 karakter (lebih sulit)
       var pool = kanjiW.filter(function(x){return x.jp!==w.jp;});
       var near = pool.filter(function(x){
@@ -3902,8 +3911,8 @@ async function buildMojiVocabSections(words) {
   // 問題3 — 文脈規定 (generate dari pola bunpou level aktif via AI; fallback bila gagal)
   var m3qs = await buildBunpoContextQuestions(8);
   if (!m3qs || !m3qs.length) {
-    shuffle(words);
-    m3qs = words.slice(0,8).map(function(w,i){
+    var t3 = weightedWordSample(words, Math.min(8, words.length));
+    m3qs = t3.map(function(w,i){
       var wrong = words.filter(function(x){return x.jp!==w.jp;}); shuffle(wrong); wrong=wrong.slice(0,3);
       if(wrong.length<3) return null;
       var templates=['（　）を毎日使います。','（　）がとても好きです。','（　）に行きました。'];
@@ -3916,8 +3925,8 @@ async function buildMojiVocabSections(words) {
   // 問題4 — 言い換え類義 (AI, full kanji; fallback ringan bila gagal)
   var m4qs = await buildIikaeQuestions(4);
   if (!m4qs || !m4qs.length) {
-    shuffle(words);
-    m4qs = words.slice(0,4).map(function(w,i){
+    var t4 = weightedWordSample(words, Math.min(4, words.length));
+    m4qs = t4.map(function(w,i){
       var wrong = words.filter(function(x){return x.jp!==w.jp;}); shuffle(wrong); wrong=wrong.slice(0,3);
       if(wrong.length<3) return null;
       var ch=[w.jp,wrong[0].jp,wrong[1].jp,wrong[2].jp]; shuffle(ch);
@@ -3929,8 +3938,8 @@ async function buildMojiVocabSections(words) {
   // 問題5 — 用法 (AI, full kanji; fallback ringan bila gagal)
   var m5qs = await buildYouhouQuestions(4);
   if (!m5qs || !m5qs.length) {
-    shuffle(words);
-    m5qs = words.slice(0,4).map(function(w,i){
+    var t5 = weightedWordSample(words, Math.min(4, words.length));
+    m5qs = t5.map(function(w,i){
       var ch=[w.jp+'を使います。',w.jp+'が降っています。',w.jp+'を食べました。',w.jp+'に乗ります。'];
       var correctText = ch[0];
       shuffle(ch);
@@ -4124,8 +4133,7 @@ async function buildGrammarSections(words) {
 
   // ── Generator AI batch untuk 問題6 (文法形式; （　）） ──
   async function genM6(n, bi){
-    shuffle(words);
-    var sample = words.slice(0,12).map(function(w){ return w.jp+'='+w.id_; }).join('; ');
+    var sample = weightedWordSample(words, Math.min(12, words.length)).map(function(w){ return w.jp+'='+w.id_; }).join('; ');
     var prompt = 'Buatkan '+n+' soal JLPT '+currentJLPT+' bagian 文法 (tata bahasa). '
       +levelLockText()
       +'SEMUA isi soal (kalimat soal, 4 pilihan, penjelasan) HARUS dalam BAHASA JEPANG. '
@@ -4140,8 +4148,7 @@ async function buildGrammarSections(words) {
 
   // ── Generator AI batch untuk 問題7 (文の組み立て; ★） ──
   async function genM7(n, bi){
-    shuffle(words);
-    var sample = words.slice(0,12).map(function(w){ return w.jp; }).join('、');
+    var sample = weightedWordSample(words, Math.min(12, words.length)).map(function(w){ return w.jp; }).join('、');
     var prompt = 'Buatkan '+n+' soal JLPT '+currentJLPT+' tipe 文の組み立て (menyusun kalimat) format resmi 問題7. '
       +levelLockText()
       +'SEMUA dalam BAHASA JEPANG, penuh kanji sesuai level. '
@@ -4190,8 +4197,8 @@ async function buildGrammarSections(words) {
 
   // Fallback total bila semua gagal (tidak ada bank & AI gagal)
   if (!sections.length) {
-    shuffle(words);
-    var fb = words.slice(0,10).map(function(w,i){
+    var fbTargets = weightedWordSample(words, Math.min(10, words.length));
+    var fb = fbTargets.map(function(w,i){
       var wrong = words.filter(function(x){return x.jp!==w.jp;}); shuffle(wrong); wrong=wrong.slice(0,3);
       if(wrong.length<3) return null;
       var ch=[w.jp,wrong[0].jp,wrong[1].jp,wrong[2].jp]; shuffle(ch);
@@ -4213,8 +4220,7 @@ async function buildReadingSections(words) {
   var passNum = 0;
 
   async function genPassage(pi){
-    shuffle(words);
-    var sample = words.slice(0,8).map(function(w){ return w.jp; }).join('、');
+    var sample = weightedWordSample(words, Math.min(8, words.length)).map(function(w){ return w.jp; }).join('、');
     var prompt = 'Buatkan 1 teks pendek berbahasa Jepang (4-7 kalimat, level '+currentJLPT+') lalu '+qPerPassage+' soal pilihan ganda tentang isi teks itu. '
       +levelLockText()
       +'SEMUA isi (teks, pertanyaan, 4 pilihan, penjelasan) HARUS dalam BAHASA JEPANG. '
@@ -7978,28 +7984,47 @@ function renderOverviewReco(){
   }
   var oyp=oyProgress();
   var wtRoots=(typeof _wtBuildTree==='function')?_wtBuildTree().filter(function(r){return r.type!=='other';}):[];
+  var seenKeisei=false, seenWordtree=false;
+  try{ seenKeisei=!!localStorage.getItem('n3_seen_keiseimenu'); seenWordtree=!!localStorage.getItem('n3_seen_wordtree'); }catch(e){}
   var html='';
-  // ── 🔊 Bunyi Kanji (Keisei Moji): fitur BARU, banner paling atas & paling mencolok ──
-  html+='<div onclick="navTo(\'keiseimenu\')" style="position:relative;background:radial-gradient(circle at 15% 20%,#e0703f,#8c2f0f 70%);color:#fff;border-radius:18px;padding:18px 16px;margin-bottom:16px;cursor:pointer;overflow:hidden;box-shadow:0 6px 20px rgba(140,47,15,.35);border:1px solid rgba(255,255,255,.15)">'
-    +'<span style="position:absolute;top:-14px;right:-6px;font-size:80px;opacity:.14;line-height:1">🔊</span>'
-    +'<span style="display:inline-block;background:#ffd166;color:#1a1a2e;font-size:10px;font-weight:800;padding:3px 9px;border-radius:8px;margin-bottom:8px">✨ FITUR BARU</span>'
-    +'<div style="font-weight:800;font-size:18px;position:relative;z-index:1">🔊 Bunyi Kanji (形声文字)</div>'
-    +'<div style="font-size:12px;opacity:.9;margin-top:3px;max-width:85%;position:relative;z-index:1">Kenapa 晴・清・精・情・請・静 semua dibaca せい? Kupas komponen fonetik biar bisa nebak bacaan kanji baru</div>'
-    +'<div style="margin-top:10px;display:inline-block;background:rgba(255,255,255,.18);padding:7px 14px;border-radius:10px;font-size:12px;font-weight:700;position:relative;z-index:1">Coba sekarang ›</div>'
-    +'</div>';
-  // ── Pohon Kata: banner khusus paling atas, beda gaya dari yang lain ──
-  html+='<div onclick="navTo(\'wordtree\')" style="position:relative;background:radial-gradient(circle at 15% 20%,#3d9b64,#1f5c3a 70%);color:#fff;border-radius:18px;padding:18px 16px;margin-bottom:16px;cursor:pointer;overflow:hidden;box-shadow:0 6px 20px rgba(31,92,58,.35);border:1px solid rgba(255,255,255,.15)">'
-    +'<span style="position:absolute;top:-14px;right:-6px;font-size:80px;opacity:.14;line-height:1">🌳</span>'
-    +'<span style="display:inline-block;background:#ffd166;color:#1a1a2e;font-size:10px;font-weight:800;padding:3px 9px;border-radius:8px;margin-bottom:8px">✨ JELAJAHI</span>'
-    +'<div style="font-weight:800;font-size:18px;position:relative;z-index:1">🌳 Pohon Kata</div>'
-    +'<div style="font-size:12px;opacity:.9;margin-top:3px;max-width:80%;position:relative;z-index:1">'+wtRoots.length+' keluarga kanji — tiap kanji nunjukin komponen penyusunnya, tap terus buat lacak sampai ke akarnya</div>'
-    +'<div style="margin-top:10px;display:inline-block;background:rgba(255,255,255,.18);padding:7px 14px;border-radius:10px;font-size:12px;font-weight:700;position:relative;z-index:1">Buka bagan ›</div>'
-    +'</div>';
-  // ── FOKUS UTAMA: 3 latihan kanji terpenting, ditaruh paling atas & beda warna ──
-  html+='<div style="font-size:11px;font-weight:800;color:var(--mist);letter-spacing:.5px;margin-bottom:6px">⭐ FOKUS UTAMA</div>';
-  html+=banner('🈁', "On'yomi–Kun'yomi", oyp.done+'/'+oyp.total+' bacaan dikuasai ('+oyp.pct+'%)', 'startOyQuiz()', 'Latihan ▶', ['#5c4b8a','#7c63b8']);
-  html+=banner('⚔️','Kanji Kembar','Bedakan kanji mirip: 待↔持, 借↔貸','startTwinQuiz()','Kuis ▶', ['#c0532e','#e0703f']);
-  html+=banner('🧩','Latihan Mnemonik','Dari cerita radikal — tebak kanjinya','startMnemonic()','Tebak ▶', ['#0a7d6b','#14a08c']);
+  // ── 🔊 Bunyi Kanji: banner BESAR cuma buat yang belum pernah buka.
+  // Setelah dibuka sekali, collapse jadi baris kecil biar dashboard gak numpuk terus ──
+  if (!seenKeisei){
+    html+='<div onclick="navTo(\'keiseimenu\')" style="position:relative;background:radial-gradient(circle at 15% 20%,#e0703f,#8c2f0f 70%);color:#fff;border-radius:18px;padding:18px 16px;margin-bottom:16px;cursor:pointer;overflow:hidden;box-shadow:0 6px 20px rgba(140,47,15,.35);border:1px solid rgba(255,255,255,.15)">'
+      +'<span style="position:absolute;top:-14px;right:-6px;font-size:80px;opacity:.14;line-height:1">🔊</span>'
+      +'<span style="display:inline-block;background:#ffd166;color:#1a1a2e;font-size:10px;font-weight:800;padding:3px 9px;border-radius:8px;margin-bottom:8px">✨ FITUR BARU</span>'
+      +'<div style="font-weight:800;font-size:18px;position:relative;z-index:1">🔊 Bunyi Kanji (形声文字)</div>'
+      +'<div style="font-size:12px;opacity:.9;margin-top:3px;max-width:85%;position:relative;z-index:1">Kenapa 晴・清・精・情・請・静 semua dibaca せい? Kupas komponen fonetik biar bisa nebak bacaan kanji baru</div>'
+      +'<div style="margin-top:10px;display:inline-block;background:rgba(255,255,255,.18);padding:7px 14px;border-radius:10px;font-size:12px;font-weight:700;position:relative;z-index:1">Coba sekarang ›</div>'
+      +'</div>';
+  } else {
+    html+=banner('🔊','Bunyi Kanji','Tebak bunyi kanji dari komponen fonetik','navTo(&apos;keiseimenu&apos;)','Buka ▶', ['#c0532e','#e0703f']);
+  }
+  // ── Pohon Kata: sama, banner besar cuma sekali, abis itu compact ──
+  if (!seenWordtree){
+    html+='<div onclick="navTo(\'wordtree\')" style="position:relative;background:radial-gradient(circle at 15% 20%,#3d9b64,#1f5c3a 70%);color:#fff;border-radius:18px;padding:18px 16px;margin-bottom:16px;cursor:pointer;overflow:hidden;box-shadow:0 6px 20px rgba(31,92,58,.35);border:1px solid rgba(255,255,255,.15)">'
+      +'<span style="position:absolute;top:-14px;right:-6px;font-size:80px;opacity:.14;line-height:1">🌳</span>'
+      +'<span style="display:inline-block;background:#ffd166;color:#1a1a2e;font-size:10px;font-weight:800;padding:3px 9px;border-radius:8px;margin-bottom:8px">✨ JELAJAHI</span>'
+      +'<div style="font-weight:800;font-size:18px;position:relative;z-index:1">🌳 Pohon Kata</div>'
+      +'<div style="font-size:12px;opacity:.9;margin-top:3px;max-width:80%;position:relative;z-index:1">'+wtRoots.length+' keluarga kanji — tiap kanji nunjukin komponen penyusunnya, tap terus buat lacak sampai ke akarnya</div>'
+      +'<div style="margin-top:10px;display:inline-block;background:rgba(255,255,255,.18);padding:7px 14px;border-radius:10px;font-size:12px;font-weight:700;position:relative;z-index:1">Buka bagan ›</div>'
+      +'</div>';
+  } else {
+    html+=banner('🌳','Pohon Kata','Jelajahi keluarga komponen kanji','navTo(&apos;wordtree&apos;)','Buka ▶', ['#3d9b64','#1f5c3a']);
+  }
+  // ── FOKUS UTAMA: cuma tampilin latihan yang BENERAN masih ada progress tersisa.
+  // On'yomi-Kun'yomi disembunyiin kalau udah 100% — biar list ini beneran nyusut
+  // seiring progress, bukan daftar statis yang sama tiap hari ──
+  var fokusItems=[];
+  if (oyp.pct < 100){
+    fokusItems.push(banner('🈁', "On'yomi–Kun'yomi", oyp.done+'/'+oyp.total+' bacaan dikuasai ('+oyp.pct+'%)', 'startOyQuiz()', 'Latihan ▶', ['#5c4b8a','#7c63b8']));
+  }
+  fokusItems.push(banner('⚔️','Kanji Kembar','Bedakan kanji mirip: 待↔持, 借↔貸','startTwinQuiz()','Kuis ▶', ['#c0532e','#e0703f']));
+  fokusItems.push(banner('🧩','Latihan Mnemonik','Dari cerita radikal — tebak kanjinya','startMnemonic()','Tebak ▶', ['#0a7d6b','#14a08c']));
+  if (fokusItems.length){
+    html+='<div style="font-size:11px;font-weight:800;color:var(--mist);letter-spacing:.5px;margin-bottom:6px">⭐ FOKUS UTAMA'+(oyp.pct>=100?' (On-Kun udah tuntas! 🎉)':'')+'</div>';
+    html+=fokusItems.join('');
+  }
   html+='<div style="border-top:1px solid var(--border);margin:12px 0 10px"></div>';
   html+=banner('🔁', due>0?('Review Harian — '+due+' kata'):'Review Harian — beres ✓',
     'Ulang berkala tepat sebelum lupa', 'startSrsReview()', due>0?'Mulai ▶':'Cek');
@@ -8100,6 +8125,31 @@ var POS_OVERRIDE={'匂い':'meishi','お祝い':'meishi','お見舞い':'meishi'
 function wordDone(w){
   if(currentJLPT==='N3'){ var c=w.cat||'vocab'; return !!((mastered[c]||{})[w.id]); }
   return !!((mastered[currentJLPT]||{})[w.id]);
+}
+
+// Ambil sample kata buat soal ujian dengan BOBOT ke arah kata yang udah dipelajari
+// (bukan random murni dari seluruh pool level). Tujuannya: makin banyak progress
+// belajar, makin sering kata itu nongol di ujian — biar progress kerasa berpengaruh
+// ke hasil ujian, bukan cuma metrik terpisah. Tetap sisain porsi kata asing (unmastered)
+// biar ujian gak jadi "hafalan doang", masih ada tantangan wajar.
+// ratio = porsi dari kata SUDAH-hafal (default 0.65 = 65% mastered, 35% baru).
+function weightedWordSample(words, n, ratio){
+  ratio = (typeof ratio==='number') ? ratio : 0.65;
+  var doneW = words.filter(wordDone);
+  var newW  = words.filter(function(w){ return !wordDone(w); });
+  shuffle(doneW); shuffle(newW);
+  var wantDone = Math.round(n * ratio);
+  var wantNew  = n - wantDone;
+  var picked = doneW.slice(0, wantDone).concat(newW.slice(0, wantNew));
+  // Kalau salah satu kolam kurang (mis. user baru mulai, belum ada yg hafal),
+  // tambal dari kolam satunya biar tetap dapat n kata.
+  if (picked.length < n){
+    var restPool = doneW.slice(wantDone).concat(newW.slice(wantNew));
+    shuffle(restPool);
+    picked = picked.concat(restPool.slice(0, n - picked.length));
+  }
+  shuffle(picked);
+  return picked.slice(0, n);
 }
 
 function posOf(w){
@@ -13344,7 +13394,7 @@ function renderKeiseiList(){
 
   box.innerHTML = tabsHtml + countHtml + (listHtml || '<div style="text-align:center;padding:30px;color:var(--mist);font-size:13px">Belum ada keluarga fonetik dgn ≥2 kanji khusus level ini.</div>');
 }
-function updateKeiseiMenu(){ renderKeiseiList(); }
+function updateKeiseiMenu(){ try{ localStorage.setItem('n3_seen_keiseimenu','1'); }catch(e){} renderKeiseiList(); }
 
 
 // ============================================================
@@ -13723,6 +13773,7 @@ function wtSearch(){
   wtRenderRoots(el?el.value:'');
 }
 function updateWordTree(){
+  try{ localStorage.setItem('n3_seen_wordtree','1'); }catch(e){}
   WORD_TREE=null; // rebuild kalau data berubah antar sesi
   _wtLimit=40;
   wtRenderRoots('');
@@ -14449,10 +14500,11 @@ function switchJLPT(level){
 
 // SSW has no grammar — hide Bunpo tab. Also hide its dashboard category bars.
 function applyLevelTabVisibility(){
-  var navBtns=document.querySelectorAll('nav button');
-  // nav order: overview, flashmenu, kanjimenu, bunpomenu, review, leaderboard, exam, ai
-  var bunpoBtn=navBtns[3];
-  if(bunpoBtn) bunpoBtn.style.display = (currentJLPT==='SSW') ? 'none' : '';
+  // FIX: sebelumnya pake navBtns[3] (index tebak-tebakan) yang ternyata nunjuk ke
+  // tombol "🏆 Ranking", BUKAN Tata Bahasa — jadi SSW malah nyembunyiin Ranking,
+  // bukan Bunpo (SSW gak punya data bunpo). Sekarang target by id, gak rapuh lagi.
+  var bunpoItem=document.getElementById('nav-bunpo-item');
+  if(bunpoItem) bunpoItem.style.display = (currentJLPT==='SSW') ? 'none' : '';
 }
 
 function init() {
