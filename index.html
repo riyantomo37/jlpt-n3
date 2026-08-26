@@ -9380,7 +9380,8 @@ function _openWriteWord(w, practice){
   var nx=document.getElementById('write-next'); if(nx) nx.style.display='none';
   var ag=document.getElementById('write-again'); if(ag) ag.style.display='none';
   document.getElementById('write-modal').style.display='flex';
-  setTimeout(function(){ _writeInitCanvas(); writeClear(); },60);}
+  setTimeout(function(){ _writeInitCanvas(); writeClear(); },60);
+}
 function startWritePractice(){
   var pool=[];
   try{ pool=posLevelWords().filter(function(w){return /[一-鿿]/.test(w.jp||'');}); }catch(e){}
@@ -14333,6 +14334,7 @@ function refreshActiveScreen(){
   if(id==='overview')    updateOverview();
   else if(id==='flashmenu')  updateFlashMenu();
   else if(id==='kanjimenu')  updateKanjiMenu();
+  else if(id==='kotoba')     renderKotobaTab();
   else if(id==='bunpomenu')  updateBunpoMenu();
   else if(id==='katsuyomenu') updateKatsuyoMenu();
   else if(id==='katsuyoquiz') { gotoScreen('katsuyomenu'); }
@@ -14340,6 +14342,9 @@ function refreshActiveScreen(){
   else if(id==='dialectmenu') updateDialectMenu();
   else if(id==='kazumenu') updateKazuMenu();
   else if(id==='onomenu') updateOnoMenu();
+  else if(id==='onyomenu') updateOyMenu();
+  else if(id==='wordtree') updateWordTree();
+  else if(id==='keiseimenu') updateKeiseiMenu();
   else if(id==='exam')       { showExamSection('exam-menu'); updateExamLevelBadge(); setExamMode('ai'); bankIndex=null; updateExamHistory(); }
   else if(id==='review')     renderReview('all');
   else if(id==='leaderboard') loadLeaderboard(currentJLPT);
