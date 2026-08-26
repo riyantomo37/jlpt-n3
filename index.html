@@ -7705,7 +7705,7 @@ function _updateLevelBadgeUI(){
 // ============================================================
 var CHANGELOG = [
   {batch:'✨ Fitur Baru — 形声文字', items:[
-    '🔊 BARU: Bunyi Kanji (Keisei Moji) — fitur belajar kenapa banyak kanji dibaca mirip lewat komponen fonetik yang sama (青→晴・清・精・情・請・静 semua せい!), lengkap dengan kuis tebak bacaan. Beda dari Kanji Kembar (soal bentuk) — ini soal LOGIKA BUNYI, 14 keluarga fonetik (56 kanji, N5–N3), dibangun dari dekomposisi kanji resmi & tervalidasi ke data bacaan asli',
+    '🔊 BARU: Bunyi Kanji (Keisei Moji) — fitur belajar kenapa banyak kanji dibaca mirip lewat komponen fonetik yang sama (青→晴・清・精・情・請・静 semua せい!), lengkap dengan kuis tebak bacaan + filter per level N5–N1. Beda dari Kanji Kembar (soal bentuk) — ini soal LOGIKA BUNYI, 70 keluarga fonetik (171 kanji), dibangun dari dekomposisi kanji resmi & tervalidasi ke data bacaan asli',
     'Font ganti dari Noto Serif JP (mincho, banyak sudut) ke Noto Sans JP (lebih plain/rounded) di seluruh app',
     'Pohon Kata & Kanji Kembar sekarang nampilin romaji, bukan cuma bacaan kana',
     'Soal AI Bunpo (tata bahasa) diperkuat: pengecoh (opsi salah) wajib dari pola nyata yang sering ketuker, gak boleh sama persis antar soal — biar gak ketebak asal tap'
@@ -12113,20 +12113,76 @@ var ROOT_LABELS={"匕":"sendok/pisau","卜":"ramalan","勹":"bungkus","冂":"pag
 // per grup yang beneran punya bacaan on'yomi identik.
 // ============================================================
 var KEISEI_SETS=[
-  {phon:'青', read:'せい', kanji:['青','情','晴','清','精','請','静'], arti:{'青':'biru','情':'emosi','晴':'menjadi cerah','清':'murni','精':'hantu','請':'bertanya','静':'tenang'}, note:''},
-  {phon:'可', read:'か', kanji:['可','何','歌','河','荷','過'], arti:{'可':'bisa','何':'apa','歌':'lagu','河':'sungai','荷':'bagasi','過':'kesalahan'}, note:''},
-  {phon:'交', read:'こう', kanji:['交','効','校','較','郊'], arti:{'交':'bercampur','効':'manfaat','校':'ujian','較':'membandingkan','郊':'pinggiran kota'}, note:''},
-  {phon:'工', read:'こう', kanji:['工','功','攻','紅','貢'], arti:{'工':'kerajinan','功':'kehormatan','攻':'serangan','紅':'merah tua','貢':'mendukung'}, note:''},
-  {phon:'古', read:'こ', kanji:['古','固','居','故','湖'], arti:{'古':'lama','固':'mengatur','居':'ada','故':'alasan','湖':'danau'}, note:''},
-  {phon:'反', read:'はん', kanji:['反','坂','版','飯'], arti:{'反':'anti-','坂':'lereng / tanjakan','版':'balok cetak','飯':'makanan'}, note:''},
-  {phon:'化', read:'か', kanji:['化','花','靴'], arti:{'化':'berubah','花':'bunga','靴':'sepatu'}, note:''},
-  {phon:'包', read:'ほう', kanji:['包','抱','飽'], arti:{'包':'membungkus','抱':'memeluk','飽':'kenyang'}, note:''},
-  {phon:'生', read:'せい', kanji:['生','性','星'], arti:{'生':'hidup','性':'alam/sifat','星':'bintang'}, note:''},
-  {phon:'亡', read:'ぼう', kanji:['忘','忙','望'], arti:{'忘':'melupakan','忙':'sibuk','望':'harapan'}, note:''},
-  {phon:'尞', read:'りょう', kanji:['僚','料','療'], arti:{'僚':'pejabat','料':'biaya','療':'menyembuhkan'}, note:'komponen ini bukan kanji Jepang yang berdiri sendiri, cuma dipakai sbg bagian dari kanji lain'},
-  {phon:'僉', read:'けん', kanji:['検','険','験'], arti:{'検':'memeriksa','険':'berbahaya, curam','験':'ujian, bukti'}, note:'komponen ini bukan kanji Jepang yang berdiri sendiri, cuma dipakai sbg bagian dari kanji lain'},
-  {phon:'占', read:'てん', kanji:['店','点','貼'], arti:{'店':'toko','点':'titik','貼':'menempel'}, note:'komponen ini bukan kanji Jepang yang berdiri sendiri, cuma dipakai sbg bagian dari kanji lain'},
-  {phon:'复', read:'ふく', kanji:['復','腹','複'], arti:{'復':'pulih, kembali','腹':'perut','複':'ganda, rangkap'}, note:'komponen ini bukan kanji Jepang yang berdiri sendiri, cuma dipakai sbg bagian dari kanji lain'}
+  {phon:'青',read:'せい',kanji:['青','情','晴','清','精','請','静'],arti:{'青':'biru','情':'emosi','晴':'menjadi cerah','清':'murni','精':'hantu','請':'bertanya','静':'tenang'},lvl:{'青':'N5','情':'N3','晴':'N5','清':'N3','精':'N3','請':'N3','静':'N5'},note:''},
+  {phon:'可',read:'か',kanji:['可','何','歌','河','荷','過'],arti:{'可':'bisa','何':'apa','歌':'lagu','河':'sungai','荷':'bagasi','過':'kesalahan'},lvl:{'可':'N5','何':'N5','歌':'N5','河':'N5','荷':'N5','過':'N4'},note:''},
+  {phon:'交',read:'こう',kanji:['交','効','校','較','郊'],arti:{'交':'bercampur','効':'manfaat','校':'ujian','較':'membandingkan','郊':'pinggiran kota'},lvl:{'交':'N5','効':'N3','校':'N5','較':'N3','郊':'N4'},note:''},
+  {phon:'工',read:'こう',kanji:['工','功','攻','紅','貢'],arti:{'工':'kerajinan','功':'kehormatan','攻':'serangan','紅':'merah tua','貢':'mendukung'},lvl:{'工':'N4','功':'N3','攻':'N3','紅':'N5','貢':'N3'},note:''},
+  {phon:'古',read:'こ',kanji:['古','固','居','故','湖'],arti:{'古':'lama','固':'mengatur','居':'ada','故':'alasan','湖':'danau'},lvl:{'古':'N5','固':'N4','居':'N5','故':'N4','湖':'N4'},note:''},
+  {phon:'僉',read:'けん',kanji:['剣','検','険','験','鹸'],arti:{'剣':'pedang','検':'memeriksa','険':'berbahaya, curam','験':'ujian, bukti','鹸':'rasa asin'},lvl:{'剣':'N3','検':'','険':'','験':'','鹸':'N5'},note:'komponen ini bukan kanji Jepang yang berdiri sendiri, cuma dipakai sbg bagian dari kanji lain'},
+  {phon:'反',read:'はん',kanji:['反','坂','版','飯'],arti:{'反':'anti-','坂':'lereng / tanjakan','版':'balok cetak','飯':'makanan'},lvl:{'反':'N4','坂':'N4','版':'N3','飯':'N5'},note:''},
+  {phon:'化',read:'か',kanji:['化','花','靴'],arti:{'化':'berubah','花':'bunga','靴':'sepatu'},lvl:{'化':'N4','花':'N5','靴':'N5'},note:''},
+  {phon:'包',read:'ほう',kanji:['包','抱','飽'],arti:{'包':'membungkus','抱':'memeluk','飽':'kenyang'},lvl:{'包':'N4','抱':'N3','飽':'N3'},note:''},
+  {phon:'生',read:'せい',kanji:['生','性','星'],arti:{'生':'hidup','性':'alam/sifat','星':'bintang'},lvl:{'生':'N5','性':'N4','星':'N4'},note:''},
+  {phon:'亡',read:'ぼう',kanji:['忘','忙','望'],arti:{'忘':'melupakan','忙':'sibuk','望':'harapan'},lvl:{'忘':'N5','忙':'N5','望':'N3'},note:''},
+  {phon:'尞',read:'りょう',kanji:['僚','料','療'],arti:{'僚':'pejabat','料':'biaya','療':'menyembuhkan'},lvl:{'僚':'N3','料':'N5','療':'N3'},note:'komponen ini bukan kanji Jepang yang berdiri sendiri, cuma dipakai sbg bagian dari kanji lain'},
+  {phon:'占',read:'てん',kanji:['店','点','貼'],arti:{'店':'toko','点':'titik','貼':'menempel'},lvl:{'店':'N5','点':'N5','貼':'N5'},note:'komponen ini bukan kanji Jepang yang berdiri sendiri, cuma dipakai sbg bagian dari kanji lain'},
+  {phon:'复',read:'ふく',kanji:['復','腹','複'],arti:{'復':'pulih, kembali','腹':'perut','複':'ganda, rangkap'},lvl:{'復':'','腹':'','複':''},note:'komponen ini bukan kanji Jepang yang berdiri sendiri, cuma dipakai sbg bagian dari kanji lain'},
+  {phon:'者',read:'ちょ',kanji:['箸','緒','著'],arti:{'箸':'sumpit','緒':'awal','著':'mencolok, mengarang'},lvl:{'箸':'N5','緒':'N5','著':''},note:''},
+  {phon:'主',read:'ちゅう',kanji:['注','駐'],arti:{'注':'menuang, memperhatikan','駐':'penduduk'},lvl:{'注':'','駐':'N4'},note:''},
+  {phon:'寺',read:'じ',kanji:['持','時'],arti:{'持':'memegang, membawa','時':'waktu'},lvl:{'持':'','時':'N5'},note:''},
+  {phon:'召',read:'しょう',kanji:['招','紹'],arti:{'招':'mengundang','紹':'memperkenalkan'},lvl:{'招':'','紹':''},note:''},
+  {phon:'亲',read:'しん',kanji:['新','親'],arti:{'新':'baru','親':'orang tua, akrab'},lvl:{'新':'','親':''},note:'komponen ini bukan kanji Jepang yang berdiri sendiri, cuma dipakai sbg bagian dari kanji lain'},
+  {phon:'甬',read:'つう',kanji:['痛','通'],arti:{'痛':'sakit, nyeri','通':'lalu lintas'},lvl:{'痛':'','通':'N4'},note:'komponen ini bukan kanji Jepang yang berdiri sendiri, cuma dipakai sbg bagian dari kanji lain'},
+  {phon:'圣',read:'けい',kanji:['経','軽'],arti:{'経':'melalui, ekonomi','軽':'ringan'},lvl:{'経':'','軽':''},note:'komponen ini bukan kanji Jepang yang berdiri sendiri, cuma dipakai sbg bagian dari kanji lain'},
+  {phon:'戠',read:'しき',kanji:['織','識'],arti:{'織':'menenun, organisasi','識':'pengetahuan, kesadaran'},lvl:{'織':'','識':''},note:'komponen ini bukan kanji Jepang yang berdiri sendiri, cuma dipakai sbg bagian dari kanji lain'},
+  {phon:'代',read:'たい',kanji:['袋','貸'],arti:{'袋':'tas','貸':'meminjamkan'},lvl:{'袋':'N4','貸':''},note:''},
+  {phon:'才',read:'ざい',kanji:['材','財'],arti:{'材':'kayu','財':'properti'},lvl:{'材':'N3','財':'N5'},note:''},
+  {phon:'是',read:'だい',kanji:['提','題'],arti:{'提':'mengusulkan','題':'tema, judul, soal'},lvl:{'提':'N3','題':''},note:''},
+  {phon:'吾',read:'ご',kanji:['悟','語'],arti:{'悟':'memahami','語':'kata'},lvl:{'悟':'N3','語':'N5'},note:'komponen ini bukan kanji Jepang yang berdiri sendiri, cuma dipakai sbg bagian dari kanji lain'},
+  {phon:'䒑',read:'ぜん',kanji:['前','善'],arti:{'前':'depan/sebelum','善':'baik'},lvl:{'前':'N5','善':'N3'},note:'komponen ini bukan kanji Jepang yang berdiri sendiri, cuma dipakai sbg bagian dari kanji lain'},
+  {phon:'求',read:'きゅう',kanji:['救','球'],arti:{'救':'menyelamatkan','球':'bola'},lvl:{'救':'N3','球':'N3'},note:''},
+  {phon:'兑',read:'ぜい',kanji:['税','説'],arti:{'税':'pajak','説':'pendapat'},lvl:{'税':'N3','説':'N4'},note:'komponen ini bukan kanji Jepang yang berdiri sendiri, cuma dipakai sbg bagian dari kanji lain'},
+  {phon:'将',read:'しょう',kanji:['奨','醤'],arti:{'奨':'mendorong semangat','醤':'sejenis miso'},lvl:{'奨':'N3','醤':'N5'},note:''},
+  {phon:'云',read:'てん',kanji:['伝','転'],arti:{'伝':'menyampaikan','転':'berubah'},lvl:{'伝':'N4','転':'N5'},note:'komponen ini bukan kanji Jepang yang berdiri sendiri, cuma dipakai sbg bagian dari kanji lain'},
+  {phon:'禺',read:'ぐう',kanji:['偶','隅'],arti:{'偶':'secara tidak sengaja','隅':'sudut'},lvl:{'偶':'N3','隅':'N4'},note:'komponen ini bukan kanji Jepang yang berdiri sendiri, cuma dipakai sbg bagian dari kanji lain'},
+  {phon:'录',read:'ろく',kanji:['緑','録'],arti:{'緑':'hijau','録':'rekor'},lvl:{'緑':'N5','録':'N3'},note:'komponen ini bukan kanji Jepang yang berdiri sendiri, cuma dipakai sbg bagian dari kanji lain'},
+  {phon:'正',read:'しょう',kanji:['政','証'],arti:{'政':'pemerintah','証':'bukti'},lvl:{'政':'N4','証':'N3'},note:''},
+  {phon:'各',read:'かく',kanji:['客','格'],arti:{'客':'guest','格':'pangkat'},lvl:{'客':'N4','格':'N4'},note:'komponen ini bukan kanji Jepang yang berdiri sendiri, cuma dipakai sbg bagian dari kanji lain'},
+  {phon:'果',read:'か',kanji:['菓','課'],arti:{'菓':'buah','課':'bab'},lvl:{'菓':'N5','課':'N4'},note:''},
+  {phon:'台',read:'し',kanji:['始','飴'],arti:{'始':'memulai','飴':'permen'},lvl:{'始':'N5','飴':'N5'},note:''},
+  {phon:'丁',read:'ちょう',kanji:['町','頂'],arti:{'町':'kota','頂':'menerima'},lvl:{'町':'N5','頂':'N3'},note:''},
+  {phon:'氐',read:'てい',kanji:['低','抵'],arti:{'低':'lebih rendah','抵':'mencapai'},lvl:{'低':'N5','抵':'N4'},note:'komponen ini bukan kanji Jepang yang berdiri sendiri, cuma dipakai sbg bagian dari kanji lain'},
+  {phon:'殳',read:'せつ',kanji:['殺','設'],arti:{'殺':'membunuh','設':'mempersiapkan'},lvl:{'殺':'N3','設':'N3'},note:'komponen ini bukan kanji Jepang yang berdiri sendiri, cuma dipakai sbg bagian dari kanji lain'},
+  {phon:'帝',read:'てい',kanji:['締','諦'],arti:{'締':'mengikat','諦':'kebenaran'},lvl:{'締':'N5','諦':'N3'},note:'komponen ini bukan kanji Jepang yang berdiri sendiri, cuma dipakai sbg bagian dari kanji lain'},
+  {phon:'且',read:'そ',kanji:['祖','組'],arti:{'祖':'leluhur','組':'asosiasi'},lvl:{'祖':'N4','組':'N4'},note:'komponen ini bukan kanji Jepang yang berdiri sendiri, cuma dipakai sbg bagian dari kanji lain'},
+  {phon:'奇',read:'き',kanji:['寄','綺'],arti:{'寄':'mengumpulkan','綺':'indah'},lvl:{'寄':'N4','綺':'N5'},note:''},
+  {phon:'袁',read:'えん',kanji:['園','遠'],arti:{'園':'taman','遠':'jauh'},lvl:{'園':'N5','遠':'N5'},note:'komponen ini bukan kanji Jepang yang berdiri sendiri, cuma dipakai sbg bagian dari kanji lain'},
+  {phon:'冓',read:'こう',kanji:['構','講'],arti:{'構':'membangun','講':'kuliah'},lvl:{'構':'N5','講':'N4'},note:'komponen ini bukan kanji Jepang yang berdiri sendiri, cuma dipakai sbg bagian dari kanji lain'},
+  {phon:'直',read:'ち',kanji:['値','置'],arti:{'値':'harga','置':'meletakkan'},lvl:{'値':'N4','置':'N5'},note:''},
+  {phon:'曾',read:'ぞう',kanji:['憎','贈'],arti:{'憎':'benci','贈':'mengirim'},lvl:{'憎':'N3','贈':'N4'},note:'komponen ini bukan kanji Jepang yang berdiri sendiri, cuma dipakai sbg bagian dari kanji lain'},
+  {phon:'義',read:'ぎ',kanji:['儀','議'],arti:{'儀':'upacara','議':'debat'},lvl:{'儀':'N3','議':'N4'},note:''},
+  {phon:'取',read:'しゅ',kanji:['最','趣'],arti:{'最':'maksimal','趣':'minat'},lvl:{'最':'N4','趣':'N4'},note:''},
+  {phon:'苗',read:'びょう',kanji:['描','猫'],arti:{'描':'menulis','猫':'kucing'},lvl:{'描':'N3','猫':'N5'},note:'komponen ini bukan kanji Jepang yang berdiri sendiri, cuma dipakai sbg bagian dari kanji lain'},
+  {phon:'臤',read:'けん',kanji:['堅','賢'],arti:{'堅':'ketat','賢':'bijaksana'},lvl:{'堅':'N4','賢':'N3'},note:'komponen ini bukan kanji Jepang yang berdiri sendiri, cuma dipakai sbg bagian dari kanji lain'},
+  {phon:'意',read:'おく',kanji:['億','憶'],arti:{'億':'seratus juta','憶':'berpikir'},lvl:{'億':'N4','憶':'N3'},note:''},
+  {phon:'官',read:'かん',kanji:['管','館'],arti:{'管':'mengendalikan','館':'bangunan'},lvl:{'管':'N3','館':'N5'},note:''},
+  {phon:'央',read:'えい',kanji:['映','英'],arti:{'映':'memantulkan','英':'pahlawan'},lvl:{'映':'N5','英':'N5'},note:''},
+  {phon:'未',read:'み',kanji:['味','魅'],arti:{'味':'rasa','魅':'daya tarik'},lvl:{'味':'N5','魅':'N3'},note:''},
+  {phon:'宛',read:'わん',kanji:['碗','腕'],arti:{'碗':'mangkuk porselen','腕':'lengan'},lvl:{'碗':'N5','腕':'N4'},note:'komponen ini bukan kanji Jepang yang berdiri sendiri, cuma dipakai sbg bagian dari kanji lain'},
+  {phon:'令',read:'れい',kanji:['冷','零'],arti:{'冷':'sejuk','零':'nol'},lvl:{'冷':'N5','零':'N5'},note:''},
+  {phon:'甫',read:'ほ',kanji:['捕','補'],arti:{'捕':'menangkap','補':'tambahan'},lvl:{'捕':'N4','補':'N3'},note:'komponen ini bukan kanji Jepang yang berdiri sendiri, cuma dipakai sbg bagian dari kanji lain'},
+  {phon:'也',read:'ち',kanji:['地','池'],arti:{'地':'tanah','池':'kolam'},lvl:{'地':'N5','池':'N5'},note:'komponen ini bukan kanji Jepang yang berdiri sendiri, cuma dipakai sbg bagian dari kanji lain'},
+  {phon:'奴',read:'ど',kanji:['努','怒'],arti:{'努':'rajin','怒':'marah'},lvl:{'努':'N3','怒':'N4'},note:'komponen ini bukan kanji Jepang yang berdiri sendiri, cuma dipakai sbg bagian dari kanji lain'},
+  {phon:'乍',read:'さく',kanji:['作','昨'],arti:{'作':'membuat','昨':'kemarin'},lvl:{'作':'N5','昨':'N5'},note:'komponen ini bukan kanji Jepang yang berdiri sendiri, cuma dipakai sbg bagian dari kanji lain'},
+  {phon:'曼',read:'まん',kanji:['慢','漫'],arti:{'慢':'mengejek','漫':'kartun'},lvl:{'慢':'N3','漫':'N4'},note:'komponen ini bukan kanji Jepang yang berdiri sendiri, cuma dipakai sbg bagian dari kanji lain'},
+  {phon:'相',read:'そう',kanji:['想','箱'],arti:{'想':'berpikir','箱':'kotak'},lvl:{'想':'N3','箱':'N5'},note:''},
+  {phon:'建',read:'けん',kanji:['健','鍵'],arti:{'健':'kesehatan','鍵':'kunci'},lvl:{'健':'N3','鍵':'N5'},note:''},
+  {phon:'則',read:'そく',kanji:['側','測'],arti:{'側':'penyesalan','測':'rencana'},lvl:{'側':'N5','測':'N3'},note:''},
+  {phon:'术',read:'じゅつ',kanji:['術','述'],arti:{'術':'seni','述':'negara/menyatakan'},lvl:{'術':'N4','述':'N3'},note:'komponen ini bukan kanji Jepang yang berdiri sendiri, cuma dipakai sbg bagian dari kanji lain'},
+  {phon:'余',read:'じょ',kanji:['徐','除'],arti:{'徐':'secara bertahap','除':'kecuali'},lvl:{'徐':'N3','除':'N5'},note:''},
+  {phon:'其',read:'き',kanji:['基','期'],arti:{'基':'dasar-dasar','期':'periode'},lvl:{'基':'N3','期':'N3'},note:'komponen ini bukan kanji Jepang yang berdiri sendiri, cuma dipakai sbg bagian dari kanji lain'},
+  {phon:'竟',read:'けい',kanji:['境','鏡'],arti:{'境':'batas','鏡':'cermin'},lvl:{'境':'N3','鏡':'N5'},note:'komponen ini bukan kanji Jepang yang berdiri sendiri, cuma dipakai sbg bagian dari kanji lain'},
+  {phon:'啇',read:'てき',kanji:['敵','適'],arti:{'敵':'musuh','適':'langka'},lvl:{'敵':'N3','適':'N4'},note:'komponen ini bukan kanji Jepang yang berdiri sendiri, cuma dipakai sbg bagian dari kanji lain'}
 ];
 
 var TWIN_SETS=[
@@ -12968,16 +13024,18 @@ function tqNext(){ tqShow(); }
 // ============================================================
 var kmoState = {q:0, score:0, total:10, cur:null};
 function _kmoPool(){
-  var num={'N5':5,'N4':4,'N3':3,'N2':3,'N1':3,'SSW':4}[currentJLPT]||4;
+  var lvl = currentJLPT;
   var pool = KEISEI_SETS.filter(function(f){
-    return f.kanji.some(function(k){ return _oyKanjiLevel(k) >= num; });
+    return f.kanji.some(function(k){ return f.lvl && f.lvl[k]===lvl; });
   });
   return pool.length ? pool : KEISEI_SETS;
 }
 function _kmoMakeQuestion(){
   var fams = _kmoPool();
   var fam = fams[Math.floor(Math.random()*fams.length)];
-  var promptK = fam.kanji[Math.floor(Math.random()*fam.kanji.length)];
+  var lvlMatches = fam.kanji.filter(function(k){ return fam.lvl && fam.lvl[k]===currentJLPT; });
+  var promptPool = lvlMatches.length ? lvlMatches : fam.kanji;
+  var promptK = promptPool[Math.floor(Math.random()*promptPool.length)];
   var correct = fam.read;
   var allK = Object.keys(KANJI_READ||{});
   shuffle(allK);
@@ -13078,13 +13136,41 @@ function _kmoQuizProceed(){
 function kmoNext(){ kmoQuizShow(); }
 
 // ── Layar eksplorasi: daftar keluarga fonetik, expand buat lihat semua anggota ──
+var kmoLevelFilter = 'ALL';
+function kmoSetLevelFilter(lv){
+  kmoLevelFilter = lv;
+  renderKeiseiList();
+}
 function renderKeiseiList(){
   var box = document.getElementById('kmo-list');
   if(!box) return;
-  box.innerHTML = KEISEI_SETS.map(function(fam, idx){
+  var levels = ['ALL','N5','N4','N3','N2','N1'];
+  var tabsHtml = '<div style="display:flex;gap:6px;margin-bottom:14px;overflow-x:auto;padding-bottom:2px">'
+    + levels.map(function(lv){
+        var active = kmoLevelFilter===lv;
+        var label = lv==='ALL' ? 'Semua' : lv;
+        return '<button onclick="kmoSetLevelFilter(\''+lv+'\')" style="flex-shrink:0;padding:7px 14px;border-radius:20px;border:1.5px solid '+(active?'#c0532e':'var(--border)')+';background:'+(active?'#c0532e':'white')+';color:'+(active?'#fff':'var(--mist)')+';font-family:inherit;font-size:12px;font-weight:700;cursor:pointer">'+label+'</button>';
+      }).join('')
+    + '</div>';
+
+  var filtered = KEISEI_SETS.map(function(fam){
+    if(kmoLevelFilter==='ALL') return fam;
+    var matchKanji = fam.kanji.filter(function(k){ return (fam.lvl&&fam.lvl[k])===kmoLevelFilter; });
+    return matchKanji.length>=2 ? Object.assign({}, fam, {kanji:matchKanji, _filtered:true}) : null;
+  }).filter(Boolean);
+
+  var countHtml = '<div style="font-size:11px;color:var(--mist);margin-bottom:10px">'
+    + filtered.length+' keluarga fonetik'
+    + (kmoLevelFilter!=='ALL' ? ' berisi kanji '+kmoLevelFilter : ' (semua level)')
+    + '</div>';
+
+  var listHtml = filtered.map(function(fam){
     var chips = fam.kanji.map(function(k){
       var arti = (fam.arti && fam.arti[k]) || '';
-      return '<span onclick="event.stopPropagation();kjOpen(\''+k+'\')" style="display:inline-flex;flex-direction:column;align-items:center;padding:8px 10px;margin:3px;border:1px solid var(--border);border-radius:10px;background:#fafafa;cursor:pointer;min-width:52px">'
+      var lv = (fam.lvl && fam.lvl[k]) || '';
+      var lvColor = JLPT_COLORS && JLPT_COLORS[lv] ? JLPT_COLORS[lv] : '#999';
+      return '<span onclick="event.stopPropagation();kjOpen(\''+k+'\')" style="position:relative;display:inline-flex;flex-direction:column;align-items:center;padding:8px 10px;margin:3px;border:1px solid var(--border);border-radius:10px;background:#fafafa;cursor:pointer;min-width:52px">'
+        + (lv ? '<span style="position:absolute;top:-6px;right:-4px;font-size:8px;font-weight:800;padding:1px 4px;border-radius:6px;background:'+lvColor+';color:#fff">'+lv+'</span>' : '')
         + '<span style="font-size:22px;font-weight:800">'+k+'</span>'
         + '<span style="font-size:9px;color:var(--mist);margin-top:2px;text-align:center;max-width:60px;line-height:1.2">'+arti+'</span>'
         + '</span>';
@@ -13093,12 +13179,14 @@ function renderKeiseiList(){
       + '<div style="display:flex;align-items:center;gap:10px;margin-bottom:8px">'
       + '<span style="font-size:26px;font-weight:800;color:#c0532e">'+fam.phon+'</span>'
       + '<div><div style="font-family:\'DM Mono\',monospace;font-size:15px;font-weight:700;color:var(--indigo)">'+fam.read+'</div>'
-      + '<div style="font-size:11px;color:var(--mist)">'+fam.kanji.length+' kanji berkomponen sama</div></div>'
+      + '<div style="font-size:11px;color:var(--mist)">'+fam.kanji.length+' kanji'+(fam._filtered?' (dari grup lebih besar)':' berkomponen sama')+'</div></div>'
       + '</div>'
       + (fam.note ? '<div style="font-size:10px;color:#b08d3e;background:rgba(176,141,62,.08);border-radius:8px;padding:6px 8px;margin-bottom:8px">ℹ️ '+fam.note+'</div>' : '')
       + '<div style="display:flex;flex-wrap:wrap">'+chips+'</div>'
       + '</div>';
   }).join('');
+
+  box.innerHTML = tabsHtml + countHtml + (listHtml || '<div style="text-align:center;padding:30px;color:var(--mist);font-size:13px">Belum ada keluarga fonetik dgn ≥2 kanji khusus level ini.</div>');
 }
 function updateKeiseiMenu(){ renderKeiseiList(); }
 
