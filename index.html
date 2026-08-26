@@ -1484,7 +1484,7 @@ header:has(.user-menu.open) { z-index:1000; }
 <!-- ====== KATSUYO (動詞活用 / Konjugasi) ====== -->
 <div id="screen-katsuyomenu" class="screen">
   <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px">
-    <span id="km-level-badge" style="background:var(--red);color:white;padding:3px 12px;border-radius:20px;font-family:'DM Mono',monospace;font-size:12px;font-weight:700">N5</span>
+    <span id="km-level-badge-katsuyo" style="background:var(--red);color:white;padding:3px 12px;border-radius:20px;font-family:'DM Mono',monospace;font-size:12px;font-weight:700">N5</span>
     <div class="section-title" style="margin:0">活用 Konjugasi — Bentuk Kata Kerja</div>
   </div>
   <div style="font-size:13px;color:var(--mist);margin-bottom:14px">Pelajari semua bentuk kata kerja (lampau, sopan, bisa, pasif, kausatif, perintah, syarat, dll) dari 18 kata kerja inti.</div>
@@ -14435,7 +14435,7 @@ var katsuyoState = { mode:'table', cardFormIdx:0, flipped:false, view:'list', se
 
 function updateKatsuyoMenu(){
   var color = JLPT_COLORS[currentJLPT] || 'var(--red)';
-  var badge = document.getElementById('km-level-badge');
+  var badge = document.getElementById('km-level-badge-katsuyo');
   if(badge){ badge.textContent = currentJLPT==='SSW'?'SSW 食品':currentJLPT; badge.style.background=color; badge.title=levelName(); }
   katsuyoState.view='list'; katsuyoState.sel=null; katsuyoState.search='';
   setKatsuyoMode(katsuyoState.mode || 'table');
