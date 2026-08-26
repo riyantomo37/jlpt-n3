@@ -1657,6 +1657,7 @@ header:has(.user-menu.open) { z-index:1000; }
       <button onclick="writeToggleGhost()" style="flex:1;padding:10px;border:1.5px solid var(--border);border-radius:10px;background:white;font-family:inherit;font-size:13px;font-weight:700;cursor:pointer">👁 Contoh On/Off</button>
     </div>
     <div id="write-info" style="text-align:center;font-size:12.5px;color:var(--mist);margin-top:8px;min-height:16px"></div>
+    <div id="write-gate-hint" style="display:none;text-align:center;font-size:11.5px;color:#c0532e;background:rgba(192,83,46,.08);border-radius:8px;padding:6px 8px;margin-top:6px">✍️ Tulis dulu kanjinya di kotak sebelum menilai — jangan curang ke diri sendiri!</div>
     <div id="write-score-row" style="display:flex;gap:8px;margin-top:8px">
       <button onclick="writeScore(false)" style="flex:1;padding:11px;border:1.5px solid #c0392b;border-radius:10px;background:rgba(192,57,43,.06);color:#c0392b;font-family:inherit;font-size:13px;font-weight:700;cursor:pointer">✗ Tulisan Salah</button>
       <button onclick="writeScore(true)" style="flex:1;padding:11px;border:none;border-radius:10px;background:var(--indigo);color:#fff;font-family:inherit;font-size:13px;font-weight:700;cursor:pointer">✓ Tulisan Benar</button>
@@ -9379,8 +9380,7 @@ function _openWriteWord(w, practice){
   var nx=document.getElementById('write-next'); if(nx) nx.style.display='none';
   var ag=document.getElementById('write-again'); if(ag) ag.style.display='none';
   document.getElementById('write-modal').style.display='flex';
-  setTimeout(function(){ _writeInitCanvas(); writeClear(); },60);
-}
+  setTimeout(function(){ _writeInitCanvas(); writeClear(); },60);}
 function startWritePractice(){
   var pool=[];
   try{ pool=posLevelWords().filter(function(w){return /[一-鿿]/.test(w.jp||'');}); }catch(e){}
@@ -9451,16 +9451,48 @@ function _writeInitCanvas(){
   var ctx=cv.getContext('2d');
   ctx.scale(2,2); ctx.lineWidth=7; ctx.lineCap='round'; ctx.lineJoin='round'; ctx.strokeStyle='#1a1a2e';
   cv._ctx=ctx; cv._draw=false;
+  cv._strokeCount=0; cv._hasInk=false;
+  _writeUpdateGate();
   if(!cv._bound){
     cv._bound=true;
     var pos=function(e){ var rc=cv.getBoundingClientRect(); return [e.clientX-rc.left, e.clientY-rc.top]; };
-    cv.addEventListener('pointerdown',function(e){ e.preventDefault(); try{cv.setPointerCapture(e.pointerId);}catch(x){} cv._draw=true; var p=pos(e); cv._ctx.beginPath(); cv._ctx.moveTo(p[0],p[1]); });
+    cv.addEventListener('pointerdown',function(e){
+      e.preventDefault(); try{cv.setPointerCapture(e.pointerId);}catch(x){}
+      cv._draw=true; cv._strokeCount=(cv._strokeCount||0)+1; cv._hasInk=true;
+      var p=pos(e); cv._ctx.beginPath(); cv._ctx.moveTo(p[0],p[1]);
+      _writeUpdateGate();
+    });
     cv.addEventListener('pointermove',function(e){ if(!cv._draw)return; e.preventDefault(); var p=pos(e); cv._ctx.lineTo(p[0],p[1]); cv._ctx.stroke(); });
     cv.addEventListener('pointerup',function(){ cv._draw=false; });
     cv.addEventListener('pointercancel',function(){ cv._draw=false; });
   }
 }
-function writeClear(){ var cv=document.getElementById('write-canvas'); if(cv&&cv._ctx) cv._ctx.clearRect(0,0,cv.width,cv.height); }
+// Gerbang objektif: tombol nilai cuma aktif kalau beneran udah ada goresan di kanvas
+// (minimal 2 stroke — kanji paling sederhana pun >1 goresan). Sebelumnya bisa nilai
+// diri "benar/hafal" tanpa nulis apa-apa sama sekali, jadi gampang curang ke diri sendiri.
+var WRITE_MIN_STROKES = 2;
+function _writeUpdateGate(){
+  var cv=document.getElementById('write-canvas');
+  var n = cv ? (cv._strokeCount||0) : 0;
+  var ok = n >= WRITE_MIN_STROKES;
+  ['write-score-row'].forEach(function(id){
+    var row=document.getElementById(id);
+    if(!row) return;
+    row.querySelectorAll('button').forEach(function(b){
+      b.disabled = !ok;
+      b.style.opacity = ok ? '1' : '.4';
+      b.style.cursor = ok ? 'pointer' : 'not-allowed';
+    });
+  });
+  var hint=document.getElementById('write-gate-hint');
+  if(hint) hint.style.display = ok ? 'none' : 'block';
+}
+function writeClear(){
+  var cv=document.getElementById('write-canvas');
+  if(cv&&cv._ctx) cv._ctx.clearRect(0,0,cv.width,cv.height);
+  if(cv){ cv._strokeCount=0; cv._hasInk=false; }
+  _writeUpdateGate();
+}
 function writeToggleGhost(){ var g=document.getElementById('write-ghost'); g.style.opacity=(g.style.opacity==='0')?'1':'0'; }
 function closeWriteModal(){ document.getElementById('write-modal').style.display='none'; }
 
