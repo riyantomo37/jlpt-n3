@@ -2778,7 +2778,7 @@ var CHECKLIST_PRESETS = [
   {emo:'📚', t:'Hafalkan 10 kata baru',            linkKey:'vocab10', target:10},
   {emo:'🈴', t:'Latihan baca 5 kanji',              linkKey:'kanji5',  target:5},
   {emo:'📐', t:'Pelajari 1 pola tata bahasa',       linkKey:'bunpo1',  target:1},
-  {emo:'🔁', t:'Selesaikan Review Harian (SRS)',    linkKey:'srs1',    target:5},
+  {emo:'🔁', t:'Review 5 kata SRS',                 linkKey:'srs1',    target:5},
   {emo:'📝', t:'Kerjakan 1 sesi latihan soal',      linkKey:'exam1',   target:1},
   {emo:'🈁', t:'Kuis On-Kun 10 soal',               linkKey:'oy10',    target:10},
   {emo:'🌳', t:'Jelajahi Pohon Kata',               linkKey:'wtq1',    target:1},
@@ -4526,12 +4526,15 @@ function submitSection() {
 
     // Cek nilai minimum per section (syarat kedua). N4/N5 gabung 言語知識+読解 jadi 1 section.
     mockSectionFail = [];
+    var sectionBreakdown = [];
     if (currentJLPT === 'N4' || currentJLPT === 'N5'){
       var langRead = scaled.moji + scaled.bunpou + scaled.dokkai; // maks 135, setara resmi maks 120 min 38
       var langReadMin = Math.round(135 * 38/120);
       var chokaiMin = Math.round(45 * 19/60);
       if (langRead < langReadMin) mockSectionFail.push('言語知識・読解');
       if (scaled.chokai < chokaiMin) mockSectionFail.push('聴解');
+      sectionBreakdown.push({label:'言語知識・読解', score:Math.round(langRead), max:135, min:langReadMin, ok:langRead>=langReadMin});
+      sectionBreakdown.push({label:'聴解', score:Math.round(scaled.chokai), max:45, min:chokaiMin, ok:scaled.chokai>=chokaiMin});
     } else {
       var lang = scaled.moji + scaled.bunpou; // maks 90, setara resmi maks 60 min 19
       var langMin = Math.round(90 * 19/60);
@@ -4540,13 +4543,16 @@ function submitSection() {
       if (lang < langMin) mockSectionFail.push('言語知識');
       if (scaled.dokkai < dokkaiMin) mockSectionFail.push('読解');
       if (scaled.chokai < chokaiMin2) mockSectionFail.push('聴解');
+      sectionBreakdown.push({label:'言語知識（文字語彙・文法）', score:Math.round(lang), max:90, min:langMin, ok:lang>=langMin});
+      sectionBreakdown.push({label:'読解', score:Math.round(scaled.dokkai), max:45, min:dokkaiMin, ok:scaled.dokkai>=dokkaiMin});
+      sectionBreakdown.push({label:'聴解', score:Math.round(scaled.chokai), max:45, min:chokaiMin2, ok:scaled.chokai>=chokaiMin2});
     }
     mockPassed = totalOk && mockSectionFail.length===0;
     mockBig = bigAgg;
   }
 
   showExamSection('exam-result');
-  renderResult(correct, total, pct, mondaiScores, reviewHtml, isFullMock ? {score:mockScore180, passed:mockPassed, threshold:mockPassThreshold, sectionFail:mockSectionFail} : null);
+  renderResult(correct, total, pct, mondaiScores, reviewHtml, isFullMock ? {score:mockScore180, passed:mockPassed, threshold:mockPassThreshold, sectionFail:mockSectionFail, sections:sectionBreakdown} : null);
 
   // Calculate exam points
   var examPts = isFullMock ? mockScore180 : calcExamPoints(correct, total, currentJLPT);
@@ -4636,6 +4642,30 @@ function renderResult(correct, total, pct, mondaiScores, reviewHtml, mock) {
     document.getElementById('result-message').textContent=msgs[grade];
   }
 
+  // Breakdown skor per SECTION resmi JLPT (cuma buat Full Mock) — ini yang paling
+  // berharga buat evaluasi diri: nunjukin persis section mana yang kuat/lemah,
+  // bukan cuma total. Dulu dihitung tapi gak pernah ditampilin ke user.
+  var sectionHtml = '';
+  if (mock && mock.sections && mock.sections.length){
+    sectionHtml = '<div class="section-title" style="margin-bottom:8px">📈 Skor per Section JLPT (syarat kelulusan asli)</div>'
+      + mock.sections.map(function(s){
+          var pct2 = Math.round(s.score/s.max*100);
+          var barColor = s.ok ? 'var(--jade)' : 'var(--red)';
+          return '<div style="background:white;border:1px solid var(--border);border-radius:10px;padding:10px 12px;margin-bottom:8px">'
+            + '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">'
+            + '<span style="font-size:12.5px;font-weight:700">'+s.label+'</span>'
+            + '<span style="font-family:DM Mono,monospace;font-size:13px;font-weight:800;color:'+barColor+'">'+s.score+'/'+s.max+'</span>'
+            + '</div>'
+            + '<div style="height:7px;background:#eee;border-radius:4px;overflow:hidden;position:relative">'
+            + '<div style="height:100%;width:'+Math.min(100,pct2)+'%;background:'+barColor+'"></div>'
+            + '<div style="position:absolute;top:0;bottom:0;left:'+Math.min(100,Math.round(s.min/s.max*100))+'%;width:2px;background:#333"></div>'
+            + '</div>'
+            + '<div style="font-size:10.5px;color:var(--mist);margin-top:4px">'+(s.ok?'✅ Di atas minimum ('+s.min+')':'⚠️ Di bawah minimum ('+s.min+') — ini bikin GAGAL walau total tinggi')+'</div>'
+            + '</div>';
+        }).join('')
+      + '<div style="font-size:10px;color:var(--mist);text-align:center;margin:2px 0 12px">Garis hitam tipis di tiap bar = batas minimum kelulusan section itu</div>';
+  }
+
   // Per-mondai breakdown
   var breakdown='';
   Object.entries(mondaiScores).forEach(function(kv){
@@ -4650,7 +4680,7 @@ function renderResult(correct, total, pct, mondaiScores, reviewHtml, mock) {
       +'</div></div>';
   });
   document.getElementById('result-breakdown').innerHTML=
-    '<div class="section-title" style="margin-bottom:8px">📊 Per Bagian</div>'+breakdown;
+    sectionHtml + '<div class="section-title" style="margin-bottom:8px">📊 Per Bagian</div>'+breakdown;
 
   // Full review with explanations
   document.getElementById('result-review').innerHTML=
@@ -7587,7 +7617,7 @@ setTimeout(function(){
   try{ BADGE_DEFS = BADGE_DEFS.concat(_generateLevelBadges()); }catch(e){ console.error('generate level badges:', e); }
 }, 0);
 var BADGE_TO_PRESET = {
-  srs50:'Selesaikan Review Harian (SRS)', srs200:'Selesaikan Review Harian (SRS)',
+  srs50:'Review 5 kata SRS', srs200:'Review 5 kata SRS',
   write30:'Latihan menulis kanji',
   mn30:'Kuis kalimat / mnemonik', sent30:'Kuis kalimat / mnemonik',
   twin30:'Kuis Kanji Kembar',
@@ -7650,7 +7680,7 @@ function _ensureChecklistToday(){
   // sebelumnya kalau kosong, badge FAB disembunyiin total (display:none), jadi checklist
   // kerasa "invisible" & gampang kelupaan. Sekarang tiap hari otomatis mulai dengan isi.
   if(dailyChecklist.items.length===0 && typeof CHECKLIST_PRESETS!=='undefined'){
-    var starterPack = ['Hafalkan 10 kata baru','Latihan baca 5 kanji','Selesaikan Review Harian (SRS)','Pelajari 1 pola tata bahasa'];
+    var starterPack = ['Hafalkan 10 kata baru','Latihan baca 5 kanji','Review 5 kata SRS','Pelajari 1 pola tata bahasa'];
     starterPack.forEach(function(t){
       var preset = CHECKLIST_PRESETS.filter(function(p){return p.t===t;})[0];
       if(preset) dailyChecklist.items.push({id:'ci_'+Date.now()+'_'+Math.floor(Math.random()*1000)+'_'+dailyChecklist.items.length, text:preset.t, done:false, linkKey:preset.linkKey, target:preset.target});
@@ -7781,7 +7811,7 @@ function togglePresetPicker(){
 }
 function applyChecklistPack(){
   _ensureChecklistToday();
-  var pack = ['Hafalkan 10 kata baru','Latihan baca 5 kanji','Selesaikan Review Harian (SRS)','Pelajari 1 pola tata bahasa'];
+  var pack = ['Hafalkan 10 kata baru','Latihan baca 5 kanji','Review 5 kata SRS','Pelajari 1 pola tata bahasa'];
   var added = 0;
   pack.forEach(function(t){
     if(!dailyChecklist.items.some(function(it){return it.text===t;})){
