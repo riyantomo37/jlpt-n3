@@ -2058,7 +2058,7 @@ header:has(.user-menu.open) { z-index:1000; }
       <button class="exam-menu-btn" onclick="startExamSection('full')"
         style="background:linear-gradient(135deg,var(--ink),var(--indigo));color:white;border:none;border-radius:14px;padding:18px;flex-direction:column;align-items:flex-start;gap:3px">
         <span style="font-size:16px;font-weight:800">⚡ Full Mock Test</span>
-        <span style="font-size:11px;opacity:.85">4 sesi · 120 soal · 180 poin · lulus ≥85 (seperti JLPT asli)</span>
+        <span style="font-size:11px;opacity:.85">3 sesi · 120 soal · 180 poin · lulus sesuai standar level (total + minimum tiap section, seperti JLPT asli)</span>
       </button>
 
       <div style="font-size:12px;color:var(--mist);margin:6px 2px 0">Atau latihan per jenis (30 soal masing-masing):</div>
@@ -4464,11 +4464,17 @@ function submitSection() {
 
   var pct = total>0 ? Math.round(correct/total*100) : 0;
 
-  // ── Sistem poin 180/85 (Full Mock saja) ──
-  // 4 section besar (文字語彙/文法/読解/聴解) tiap-tiap di-skala ke 45 poin.
-  // Total maks 180, lulus ≥85.
+  // ── Sistem skor 180 (Full Mock saja) — meniru skema JLPT asli persis ──
+  // 4 kategori internal (文字語彙/文法/読解/聴解) tiap-tiap diskalakan ke 45 poin (total 180).
+  // JLPT asli py 2 syarat kelulusan SEKALIGUS (bukan cuma nilai total):
+  //  1. Nilai TOTAL >= batas lulus level ybs (beda tiap level, BUKAN 85 flat!)
+  //  2. Nilai tiap SECTION >= batas minimum section (kalau 1 section aja di bawah minimum,
+  //     GAGAL walau nilai total tinggi — ini yang sering bikin orang kaget pas ujian asli)
+  // N1/N2/N3 asli: 3 section (言語知識・読解・聴解), masing2 maks 60, minimum 19.
+  // N4/N5 asli:    2 section (言語知識+読解 gabung・聴解), maks 120+60, minimum 38+19.
+  var PASS_THRESHOLD_TOTAL = { N5:80, N4:90, N3:95, N2:90, N1:100 };
   var isFullMock = (lastSection === 'full');
-  var mockScore180 = null, mockPassed = null, mockBig = null;
+  var mockScore180 = null, mockPassed = null, mockBig = null, mockSectionFail = null, mockPassThreshold = null;
   if (isFullMock) {
     function bigSectionOf(id){
       id = String(id||'');
@@ -4486,18 +4492,39 @@ function submitSection() {
         if (examAnswers[q.id] === q.answer) bigAgg[key].c++;
       });
     });
-    var sum = 0;
+    var scaled = {};
     Object.keys(bigAgg).forEach(function(k){
       var a = bigAgg[k];
-      if (a.t > 0) sum += (a.c / a.t) * 45;
+      scaled[k] = a.t > 0 ? (a.c / a.t) * 45 : 0;
     });
+    var sum = scaled.moji + scaled.bunpou + scaled.dokkai + scaled.chokai;
     mockScore180 = Math.min(180, Math.round(sum));
-    mockPassed = (mockScore180 >= 85);
+    mockPassThreshold = PASS_THRESHOLD_TOTAL[currentJLPT] || 95;
+    var totalOk = (mockScore180 >= mockPassThreshold);
+
+    // Cek nilai minimum per section (syarat kedua). N4/N5 gabung 言語知識+読解 jadi 1 section.
+    mockSectionFail = [];
+    if (currentJLPT === 'N4' || currentJLPT === 'N5'){
+      var langRead = scaled.moji + scaled.bunpou + scaled.dokkai; // maks 135, setara resmi maks 120 min 38
+      var langReadMin = Math.round(135 * 38/120);
+      var chokaiMin = Math.round(45 * 19/60);
+      if (langRead < langReadMin) mockSectionFail.push('言語知識・読解');
+      if (scaled.chokai < chokaiMin) mockSectionFail.push('聴解');
+    } else {
+      var lang = scaled.moji + scaled.bunpou; // maks 90, setara resmi maks 60 min 19
+      var langMin = Math.round(90 * 19/60);
+      var dokkaiMin = Math.round(45 * 19/60);
+      var chokaiMin2 = Math.round(45 * 19/60);
+      if (lang < langMin) mockSectionFail.push('言語知識');
+      if (scaled.dokkai < dokkaiMin) mockSectionFail.push('読解');
+      if (scaled.chokai < chokaiMin2) mockSectionFail.push('聴解');
+    }
+    mockPassed = totalOk && mockSectionFail.length===0;
     mockBig = bigAgg;
   }
 
   showExamSection('exam-result');
-  renderResult(correct, total, pct, mondaiScores, reviewHtml, isFullMock ? {score:mockScore180, passed:mockPassed} : null);
+  renderResult(correct, total, pct, mondaiScores, reviewHtml, isFullMock ? {score:mockScore180, passed:mockPassed, threshold:mockPassThreshold, sectionFail:mockSectionFail} : null);
 
   // Calculate exam points
   var examPts = isFullMock ? mockScore180 : calcExamPoints(correct, total, currentJLPT);
@@ -4540,8 +4567,9 @@ function submitSection() {
 
   // Show earned points in result
   if (isFullMock) {
+    var sectFailTxt = (mockSectionFail && mockSectionFail.length) ? (' · gagal minimum: '+mockSectionFail.join('・')) : '';
     document.getElementById('result-exam-pts').textContent =
-      mockScore180 + '/180 点 · ' + (mockPassed ? '合格 ✅ (lulus ≥85)' : '不合格 ❌ (perlu ≥85)');
+      mockScore180 + '/180 点 · ' + (mockPassed ? '合格 ✅ (lulus, ≥'+mockPassThreshold+')' : ('不合格 ❌ (perlu ≥'+mockPassThreshold+')'+sectFailTxt));
   } else {
     document.getElementById('result-exam-pts').textContent = '+'+examPts+' poin dari ujian';
   }
@@ -4571,8 +4599,13 @@ function renderResult(correct, total, pct, mondaiScores, reviewHtml, mock) {
     gbm.textContent = mock.passed ? '合格 (lulus)' : '不合格';
     gbm.style.background = mock.passed ? '#2da050' : 'var(--red)';
     gbm.style.color='white';
+    var failNote = '';
+    if (!mock.passed && mock.sectionFail && mock.sectionFail.length){
+      failNote = ' Nilai total mungkin cukup, tapi section '+mock.sectionFail.join('・')+' di bawah minimum — di ujian asli ini GAGAL walau total tinggi (aturan JLPT beneran, bukan bug).';
+    }
     document.getElementById('result-message').textContent =
-      mock.passed ? 'おめでとう！Lulus standar JLPT (≥85/180)! 🎌' : 'Belum lulus — perlu minimal 85/180. 頑張って！';
+      mock.passed ? ('おめでとう！Lulus standar JLPT '+currentJLPT+' (≥'+mock.threshold+'/180, & semua section di atas minimum)! 🎌')
+                   : ('Belum lulus — perlu total ≥'+mock.threshold+'/180 DAN tiap section di atas nilai minimum.'+failNote+' 頑張って！');
   } else {
     document.getElementById('result-score').textContent = correct+'/'+total;
     document.getElementById('result-score').style.color = gc[grade];
@@ -7520,7 +7553,7 @@ var BADGE_DEFS = [
   {id:'allmethods30',cat:'Metode Latihan',emo:'🌟', t:'Master Semua Metode', d:'30x di SEMUA metode latihan — benar-benar serba bisa!', check:function(){ var ms=methodStats||{}; return ['srsRev','writeOk','mnOk','sentOk','twinOk','oyOk','wtqOk'].every(function(k){return (ms[k]||0)>=30;}); }},
   // ── Ujian ──
   {id:'perfect',    cat:'Ujian', emo:'💯', t:'Nilai Sempurna',       d:'Dapat skor 100% di satu latihan soal',              check:function(){ return (examHistory||[]).some(function(e){return e.pct>=100;}); }},
-  {id:'mockpass',   cat:'Ujian', emo:'✅', t:'Lulus Simulasi Ujian', d:'Lulus simulasi ujian penuh (skor ≥85/180)',         check:function(){ return (examHistory||[]).some(function(e){return e.mockPassed===true;}); }},
+  {id:'mockpass',   cat:'Ujian', emo:'✅', t:'Lulus Simulasi Ujian', d:'Lulus simulasi ujian penuh sesuai standar JLPT (total & minimum tiap section)',         check:function(){ return (examHistory||[]).some(function(e){return e.mockPassed===true;}); }},
   {id:'exam10',     cat:'Ujian', emo:'📝', t:'10x Latihan Soal',     d:'Kerjain 10 sesi latihan soal',                      check:function(){ return (examHistory||[]).length>=10; }},
   {id:'exam50',     cat:'Ujian', emo:'📝', t:'50x Latihan Soal',     d:'Kerjain 50 sesi latihan soal',                      check:function(){ return (examHistory||[]).length>=50; }},
   {id:'gradeA5',    cat:'Ujian', emo:'🎓', t:'5x Grade A',           d:'Dapat grade A di 5 latihan soal berbeda',           check:function(){ return (examHistory||[]).filter(function(e){return e.grade==='A';}).length>=5; }}
