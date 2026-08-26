@@ -3649,7 +3649,8 @@ async function buildBunpoContextQuestions(n){
       qs = qs.filter(function(q){ return isCleanQuestion({question:q.q, choices:q.c, answer:q.a}); });
       return qs.slice(0,n).map(function(q,i){
         var qt=(q.q||'').split('\n').join('<br>').replace('（　）','<span class="blank">（　）</span>');
-        return {id:'m3ai_'+i, question:qt, choices:(q.c||[]).map(function(c,ci){return String.fromCharCode(0xFF11+ci)+'. '+c;}), answer:q.a||0, exp:q.e||''};
+        var shuffled = shuffleChoicesAnswer(q.c||[], q.a||0);
+        return {id:'m3ai_'+i, question:qt, choices:shuffled.choices.map(function(c,ci){return String.fromCharCode(0xFF11+ci)+'. '+c;}), answer:shuffled.answer, exp:q.e||''};
       });
     }
   }catch(e){}
@@ -3657,6 +3658,19 @@ async function buildBunpoContextQuestions(n){
 }
 
 // Helper umum: panggil AI untuk soal 文字語彙 berbasis JSON array.
+// Acak posisi opsi jawaban + sesuaikan index jawaban benar.
+// PENTING: AI (Gemini) punya kecenderungan bias menaruh jawaban benar di posisi/pola
+// tertentu secara berulang (mis. sering di indeks 0). Kalau tidak diacak, siswa bisa
+// belajar pola posisi alih-alih memahami soal — bikin kuis terasa "ketebak" padahal
+// bukan soal jelek, tapi urutan opsinya gak fair. Semua soal AI WAJIB lewat sini.
+function shuffleChoicesAnswer(choices, answerIdx){
+  var idx = choices.map(function(_,i){ return i; });
+  shuffle(idx);
+  var newChoices = idx.map(function(i){ return choices[i]; });
+  var newAnswer = idx.indexOf(answerIdx);
+  return {choices:newChoices, answer:newAnswer};
+}
+
 async function aiVocabQuestions(prompt, n, idPrefix){
   try{
     var res = await fetch('/api/groq',{method:'POST',headers:{'Content-Type':'application/json'},
@@ -3675,7 +3689,9 @@ async function aiVocabQuestions(prompt, n, idPrefix){
       qs = qs.filter(function(q){ return isCleanQuestion({question:q.q, choices:q.c, answer:q.a}); });
       return qs.slice(0,n).map(function(q,i){
         var qt=String(q.q||'').split(String.fromCharCode(10)).join('<br>');
-        return {id:idPrefix+i, question:qt, choices:(q.c||[]).map(function(c,ci){return String.fromCharCode(0xFF11+ci)+'. '+c;}), answer:q.a||0, exp:q.e||''};
+        var rawChoices=(q.c||[]);
+        var shuffled = shuffleChoicesAnswer(rawChoices, q.a||0);
+        return {id:idPrefix+i, question:qt, choices:shuffled.choices.map(function(c,ci){return String.fromCharCode(0xFF11+ci)+'. '+c;}), answer:shuffled.answer, exp:q.e||''};
       });
     }
   }catch(e){}
@@ -3878,7 +3894,9 @@ async function buildMojiVocabSections(words) {
     shuffle(words);
     m5qs = words.slice(0,4).map(function(w,i){
       var ch=[w.jp+'を使います。',w.jp+'が降っています。',w.jp+'を食べました。',w.jp+'に乗ります。'];
-      return {id:'m5_'+i, question:'「<span class="underline">'+w.jp+'</span>」の正しい使い方はどれですか。', choices:ch.map(function(c,ci){return String.fromCharCode(0xFF11+ci)+'. '+c;}), answer:0, exp:'「'+w.jp+'」('+w.id_+')の正しい使い方です。'};
+      var correctText = ch[0];
+      shuffle(ch);
+      return {id:'m5_'+i, question:'「<span class="underline">'+w.jp+'</span>」の正しい使い方はどれですか。', choices:ch.map(function(c,ci){return String.fromCharCode(0xFF11+ci)+'. '+c;}), answer:ch.indexOf(correctText), exp:'「'+w.jp+'」('+w.id_+')の正しい使い方です。'};
     });
   }
   if (m5qs.length) sections.push({id:'mondai5',title:'問題５',num:5,instruction:'次の言葉の使い方として最もよいものを、１・２・３・４から一つえらんでください。',questions:m5qs});
@@ -3950,12 +3968,13 @@ async function buildListeningSections(words) {
   }
 
   var pool = items.slice(0, TARGET).map(function(item,i){
+    var shuffled = shuffleChoicesAnswer(item.c||[], item.a||0);
     return {
       id:'lst_'+i,
       script: item.s,
       question: item.q,
-      choices: (item.c||[]).map(function(c,ci){return String.fromCharCode(0xFF11+ci)+'. '+c;}),
-      answer: item.a,
+      choices: shuffled.choices.map(function(c,ci){return String.fromCharCode(0xFF11+ci)+'. '+c;}),
+      answer: shuffled.answer,
       exp: item.e,
       listening: true
     };
@@ -4191,7 +4210,8 @@ async function buildReadingSections(words) {
     var data = await genPassage(pi);
     if (!data) { if (sections.length) continue; else break; }
     var qs = data.questions.slice(0, qPerPassage).map(function(q,i){
-      return {id:'m8_p'+pi+'_'+i, question:q.q, choices:(q.choices||[]).slice(0,4), answer:q.answer||0, exp:q.exp||''};
+      var shuffled = shuffleChoicesAnswer((q.choices||[]).slice(0,4), q.answer||0);
+      return {id:'m8_p'+pi+'_'+i, question:q.q, choices:shuffled.choices, answer:shuffled.answer, exp:q.exp||''};
     });
     if (!qs.length) continue;
     passNum++;
@@ -6868,6 +6888,12 @@ async function startBunpoQuiz(){
       }
       // Buang soal yang tetap tak punya rumpang.
       if (!hasBlank) return null;
+      // Acak posisi opsi + sesuaikan index jawaban — AI sering bias naruh jawaban
+      // benar di posisi tertentu berulang kali, kalau gak diacak siswa bisa hafal
+      // pola posisi tanpa baca soal.
+      var shuffled = shuffleChoicesAnswer(q.opsi, q.jawab);
+      q.opsi = shuffled.choices;
+      q.jawab = shuffled.answer;
       return q;
     }).filter(function(q){ return !!q; });
     if (!bunpoState.quiz.length && !errMsg) errMsg = 'Format soal dari AI tidak sesuai.';
