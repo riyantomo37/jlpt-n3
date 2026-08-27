@@ -1204,6 +1204,10 @@ header:has(.user-menu.open) { z-index:1000; }
     <div style="font-size:11px;font-weight:800;color:var(--mist);letter-spacing:.4px;margin-bottom:8px">✅ RENCANA BELAJAR HARI INI</div>
     <div id="dcm-items"></div>
     <div id="dcm-progress-note" style="text-align:center;font-size:11px;color:var(--mist);margin-top:10px"></div>
+    <label style="display:flex;align-items:center;gap:8px;margin-top:12px;padding:4px;cursor:pointer">
+      <input type="checkbox" id="dcm-snooze-checkbox" style="width:16px;height:16px;flex-shrink:0">
+      <span style="font-size:11.5px;color:var(--mist)">Jangan tampilkan lagi hari ini</span>
+    </label>
     <button onclick="closeDailyChecklistModal()" style="width:100%;margin-top:16px;padding:13px;border:none;border-radius:12px;background:var(--jade);color:#fff;font-family:inherit;font-size:14px;font-weight:700;cursor:pointer">Ayo mulai belajar! 🚀</button>
     <button onclick="closeDailyChecklistModal()" style="width:100%;margin-top:6px;padding:9px;border:none;background:none;color:var(--mist);font-family:inherit;font-size:12px;cursor:pointer">Nanti dulu, lihat Dashboard</button>
   </div>
@@ -7224,7 +7228,7 @@ function gotoScreen(name) {
   var _learnScreens=['flashmenu','kotoba','kanjimenu','bunpomenu','katsuyomenu','dialectmenu','kazumenu','onomenu','onyomenu','wordtree','keiseimenu'];
   var _lb=document.getElementById('nav-learn-btn');
   if(_lb) _lb.classList.toggle('active', _learnScreens.indexOf(name)>=0);
-  if (name === 'overview') updateOverview();
+  if (name === 'overview') { updateOverview(); try{ maybeShowDailyChecklistModal(); }catch(e){} }
   if (name === 'flashmenu') updateFlashMenu();
   if (name === 'kanjimenu') updateKanjiMenu();
   if (name === 'kotoba') renderKotobaTab();
@@ -7732,14 +7736,39 @@ function _updateChecklistBadge(){
   badge.textContent = done+'/'+total;
   badge.style.background = (total>0 && done===total)?'var(--jade)':'var(--red)';
 }
+// Peta linkKey checklist -> aksi navigasi langsung. Dipakai tombol "Buka ▶" di
+// panel checklist & popup harian, biar user gak perlu nyari sendiri menunya.
+var CHECKLIST_LINK_ACTIONS = {
+  vocab10: function(){ navTo('flashmenu'); },
+  kanji5:  function(){ navTo('kanjimenu'); },
+  bunpo1:  function(){ navTo('bunpomenu'); },
+  srs1:    function(){ startSrsReview(); },
+  exam1:   function(){ navTo('exam'); },
+  oy10:    function(){ startOyQuiz(); },
+  wtq1:    function(){ navTo('wordtree'); },
+  twin1:   function(){ startTwinQuiz(); },
+  write1:  function(){ startWritePractice(); },
+  sent1:   function(){ startKalimat(); }
+};
+function openChecklistItemTarget(linkKey){
+  closeDailyChecklistModal();
+  var panel = document.getElementById('checklist-panel');
+  if(panel) panel.style.display='none';
+  var fn = CHECKLIST_LINK_ACTIONS[linkKey];
+  if(fn) fn();
+}
 function renderChecklistPanel(){
   _ensureChecklistToday();
   var box = document.getElementById('checklist-items');
   if(!box) return;
   box.innerHTML = dailyChecklist.items.length ? dailyChecklist.items.map(function(it){
+    var openBtn = (it.linkKey && !it.done && CHECKLIST_LINK_ACTIONS[it.linkKey])
+      ? '<button onclick="openChecklistItemTarget(&apos;'+it.linkKey+'&apos;)" style="border:1px solid var(--indigo);background:rgba(45,58,138,.06);color:var(--indigo);cursor:pointer;font-size:10.5px;font-weight:700;padding:4px 9px;border-radius:8px;flex-shrink:0;white-space:nowrap">Buka ▶</button>'
+      : '';
     return '<div style="display:flex;align-items:center;gap:9px;padding:9px 4px;border-bottom:1px solid var(--border)">'
       +'<div onclick="toggleChecklistItem(&apos;'+it.id+'&apos;)" style="width:20px;height:20px;border-radius:6px;border:2px solid '+(it.done?'var(--jade)':'var(--border)')+';background:'+(it.done?'var(--jade)':'white')+';display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0;color:white;font-size:12px">'+(it.done?'✓':'')+'</div>'
       +'<div style="flex:1;min-width:0;font-size:12.5px;'+(it.done?'color:var(--mist);text-decoration:line-through':'color:var(--ink)')+'">'+it.text+(it.linkKey?' <span style="font-size:9px;opacity:.55">🔗 otomatis</span>':'')+'</div>'
+      +openBtn
       +'<button onclick="removeChecklistItem(&apos;'+it.id+'&apos;)" style="border:none;background:none;color:var(--mist);cursor:pointer;font-size:14px;padding:2px 4px;flex-shrink:0">✕</button>'
       +'</div>';
   }).join('') : '<div style="text-align:center;padding:24px 10px;color:var(--mist);font-size:12.5px">Belum ada tugas hari ini.<br>Tambah lewat kolom di bawah 👇</div>';
@@ -7758,17 +7787,21 @@ function toggleChecklistPanel(){
 
 // ── Popup harian: muncul OTOMATIS sekali per hari pas app dibuka, nunjukin rencana
 // belajar hari ini langsung di depan mata (bukan nunggu ditemuin manual lewat FAB).
+// Muncul TIAP kali balik ke Dashboard (bukan cuma sekali di awal), KECUALI:
+//  - checklist hari ini udah 100% selesai (gak perlu diingetin lagi, positif bukan nge-gas), atau
+//  - user tap "jangan tampilkan lagi hari ini" (dihormati sampe besok)
 // Nadanya positif/ngajak, BUKAN nge-gas rasa bersalah — biar orang betah balik, bukan
 // ngerasa dikejar-kejar tiap buka app. ──
 function maybeShowDailyChecklistModal(){
   try{
     var today = new Date().toDateString();
-    if(localStorage.getItem('n3_checklist_modal_shown') === today) return; // udah ditampilin hari ini
     _ensureChecklistToday();
+    if(localStorage.getItem('n3_checklist_snooze') === today) return; // user minta jangan diganggu dulu hari ini
+    var allDone = dailyChecklist.items.length>0 && dailyChecklist.items.every(function(it){return it.done;});
+    if(allDone) return; // semua udah kelar, gak perlu diingetin lagi
     renderDailyChecklistModal();
     var m = document.getElementById('daily-checklist-modal');
     if(m) m.style.display='flex';
-    localStorage.setItem('n3_checklist_modal_shown', today);
   }catch(e){}
 }
 function renderDailyChecklistModal(){
@@ -7782,19 +7815,27 @@ function renderDailyChecklistModal(){
   var box = document.getElementById('dcm-items');
   if(box){
     box.innerHTML = dailyChecklist.items.length ? dailyChecklist.items.map(function(it){
-      return '<div onclick="toggleChecklistItem(&apos;'+it.id+'&apos;);renderDailyChecklistModal();" style="display:flex;align-items:center;gap:10px;padding:11px 10px;border-radius:10px;background:'+(it.done?'rgba(10,125,107,.07)':'#f7f6f2')+';margin-bottom:6px;cursor:pointer">'
-        +'<div style="width:22px;height:22px;border-radius:7px;border:2px solid '+(it.done?'var(--jade)':'var(--border)')+';background:'+(it.done?'var(--jade)':'white')+';display:flex;align-items:center;justify-content:center;color:white;font-size:13px;flex-shrink:0">'+(it.done?'✓':'')+'</div>'
-        +'<div style="flex:1;font-size:13px;'+(it.done?'color:var(--mist);text-decoration:line-through':'color:var(--ink)')+'">'+it.text+'</div>'
+      var openBtn = (it.linkKey && !it.done && CHECKLIST_LINK_ACTIONS[it.linkKey])
+        ? '<button onclick="event.stopPropagation();openChecklistItemTarget(&apos;'+it.linkKey+'&apos;)" style="border:1px solid var(--indigo);background:rgba(45,58,138,.06);color:var(--indigo);cursor:pointer;font-size:10.5px;font-weight:700;padding:5px 10px;border-radius:8px;flex-shrink:0;white-space:nowrap">Buka ▶</button>'
+        : '';
+      return '<div style="display:flex;align-items:center;gap:9px;padding:11px 10px;border-radius:10px;background:'+(it.done?'rgba(10,125,107,.07)':'#f7f6f2')+';margin-bottom:6px">'
+        +'<div onclick="toggleChecklistItem(&apos;'+it.id+'&apos;);renderDailyChecklistModal();" style="width:22px;height:22px;border-radius:7px;border:2px solid '+(it.done?'var(--jade)':'var(--border)')+';background:'+(it.done?'var(--jade)':'white')+';display:flex;align-items:center;justify-content:center;color:white;font-size:13px;flex-shrink:0;cursor:pointer">'+(it.done?'✓':'')+'</div>'
+        +'<div onclick="toggleChecklistItem(&apos;'+it.id+'&apos;);renderDailyChecklistModal();" style="flex:1;font-size:13px;cursor:pointer;'+(it.done?'color:var(--mist);text-decoration:line-through':'color:var(--ink)')+'">'+it.text+'</div>'
+        +openBtn
         +'</div>';
     }).join('') : '<div style="text-align:center;padding:16px;color:var(--mist);font-size:12px">Belum ada rencana — tap checklist ✅ di pojok bawah buat nambahin.</div>';
   }
   var done = dailyChecklist.items.filter(function(it){return it.done;}).length;
   var pn = document.getElementById('dcm-progress-note');
-  if(pn) pn.textContent = dailyChecklist.items.length ? (done+' dari '+dailyChecklist.items.length+' selesai — tap buat centang langsung dari sini') : '';
+  if(pn) pn.textContent = dailyChecklist.items.length ? (done+' dari '+dailyChecklist.items.length+' selesai — tap ▶ buat langsung ke fiturnya') : '';
 }
 function closeDailyChecklistModal(){
   var m = document.getElementById('daily-checklist-modal');
   if(m) m.style.display='none';
+  try{
+    var cb = document.getElementById('dcm-snooze-checkbox');
+    if(cb && cb.checked) localStorage.setItem('n3_checklist_snooze', new Date().toDateString());
+  }catch(e){}
 }
 function togglePresetPicker(){
   var box = document.getElementById('checklist-preset-picker');
