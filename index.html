@@ -9922,6 +9922,41 @@ function kjOpen(kj){
       fam.push('<div class="ki-word" data-wid="'+o.id+'" onclick="kdOpen(this.dataset.wid)" style="padding:6px 0;border-bottom:1px solid var(--border);cursor:pointer;font-size:13px"><b>'+oh+'</b> <span style="color:var(--mist)">（'+(o.rom||'')+'）</span> '+(o.id_||'')+'</div>');
     }
   }
+  // Fallback 1: kanji ini mungkin levelnya beda dari level yang lagi aktif (umum kejadian di
+  // layar Bunyi Kanji, yang nyampur kanji dari N5–N1 sekaligus) — posLevelWords() cuma nyari
+  // di pool level aktif doang jadi bisa nihil walau kanjinya beneran punya kata contoh.
+  // Coba lagi di pool N3 (ALL_WORDS, selalu tersedia — gak perlu nunggu di-load kayak level lain)
+  // ditambah level lain yang kebetulan udah ke-load sesi ini.
+  if(!fam.length){
+    var extraPools=[];
+    if(currentJLPT!=='N3' && typeof ALL_WORDS!=='undefined' && ALL_WORDS){
+      ['kanji','vocab','grammar'].forEach(function(c){(ALL_WORDS[c]||[]).forEach(function(w){extraPools.push(Object.assign({},w,{cat:c}));});});
+    }
+    ['N5','N4','N2','N1'].forEach(function(lv){
+      if(lv!==currentJLPT && typeof JLPT_DATA!=='undefined' && JLPT_DATA[lv] && JLPT_DATA[lv].length){
+        JLPT_DATA[lv].forEach(function(w){extraPools.push(Object.assign({},w));});
+      }
+    });
+    for(var ei=0; ei<extraPools.length && fam.length<8; ei++){
+      var eo=extraPools[ei];
+      var eh=(eo.jp||'').split(/[;；]/)[0];
+      if(eh.indexOf(kj)>=0 && eo.id!=null){
+        fam.push('<div class="ki-word" data-wid="'+eo.id+'" onclick="kdOpen(this.dataset.wid)" style="padding:6px 0;border-bottom:1px solid var(--border);cursor:pointer;font-size:13px"><b>'+eh+'</b> <span style="color:var(--mist)">（'+(eo.rom||'')+'）</span> '+(eo.id_||'')+'</div>');
+      }
+    }
+  }
+  // Fallback 2: masih nihil (kanji jarang/levelnya belum ke-load sama sekali) — pakai kata
+  // contoh yang udah divalidasi bacaannya di KEISEI_SETS.sample (gak bisa diklik ke detail
+  // kata karena bukan dari database utama, tapi bacaannya dijamin akurat).
+  if(!fam.length && typeof KEISEI_SETS!=='undefined'){
+    for(var fi=0; fi<KEISEI_SETS.length; fi++){
+      var s = KEISEI_SETS[fi].sample && KEISEI_SETS[fi].sample[kj];
+      if(s){
+        fam.push('<div style="padding:6px 0;border-bottom:1px solid var(--border);font-size:13px"><b>'+s.jp+'</b> <span style="color:var(--mist)">（'+s.rom+'）</span> '+s.arti+'</div>');
+        break;
+      }
+    }
+  }
   document.getElementById('kj-words').innerHTML=fam.length?fam.join(''):'<div style="font-size:12px;color:var(--mist)">Belum ada contoh kata.</div>';
 
   var tset=(typeof _twinKanjiSet==='function')?_twinKanjiSet():{};
