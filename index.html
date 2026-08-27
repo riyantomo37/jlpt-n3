@@ -9962,12 +9962,18 @@ function kjOpen(kj){
   var tset=(typeof _twinKanjiSet==='function')?_twinKanjiSet():{};
   var twinHtml='';
   if(tset[kj]){
-    var twins=[];
+    // Sebelumnya: gabung SEMUA grup yang ngandung kanji ini jadi satu daftar besar —
+    // kalau kanjinya kebetulan masuk 5 grup beda, hasilnya jadi 13+ kanji sekaligus,
+    // kebanyakan gak beneran mirip satu sama lain (cuma sama-sama pernah 1x dipasangin
+    // sama kj di grup lain). Sekarang ambil SATU grup paling kecil/fokus aja per kanji,
+    // biar perbandingannya tetap ketat & gampang dicerna (2-5 kanji, bukan belasan).
+    var bestGroup = null;
     try{
       _twinPool().forEach(function(t){
-        if(t.g.indexOf(kj)>=0) t.g.forEach(function(g){ if(g!==kj && twins.indexOf(g)<0) twins.push(g); });
+        if(t.g.indexOf(kj)>=0 && (!bestGroup || t.g.length<bestGroup.length)) bestGroup=t.g;
       });
     }catch(e){}
+    var twins = bestGroup ? bestGroup.filter(function(g){return g!==kj;}) : [];
     if(twins.length){
       twinHtml=twins.map(function(g){
         return '<span class="ki-word" data-kj="'+g+'" onclick="kjOpen(this.dataset.kj)" style="cursor:pointer;padding:4px 9px;border:1px solid #c0532e;border-radius:8px;color:#c0532e;font-weight:700;display:inline-block;margin:2px">'+g+'</span>';
