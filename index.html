@@ -9963,14 +9963,27 @@ function kjOpen(kj){
   var twinHtml='';
   if(tset[kj]){
     // Sebelumnya: gabung SEMUA grup yang ngandung kanji ini jadi satu daftar besar —
-    // kalau kanjinya kebetulan masuk 5 grup beda, hasilnya jadi 13+ kanji sekaligus,
-    // kebanyakan gak beneran mirip satu sama lain (cuma sama-sama pernah 1x dipasangin
-    // sama kj di grup lain). Sekarang ambil SATU grup paling kecil/fokus aja per kanji,
-    // biar perbandingannya tetap ketat & gampang dicerna (2-5 kanji, bukan belasan).
-    var bestGroup = null;
+    // hasilnya bisa 13+ kanji yang kebanyakan gak beneran mirip. Sempet dicoba "ambil grup
+    // terkecil", tapi kalau banyak grup ukurannya SAMA, itu asal ambil yang pertama ketemu
+    // (bisa kebetulan grup yang jelek/gak related — mis. 清 kena grup [績,抗,締] yang gak mirip
+    // sama sekali, padahal ada grup [情,請,精,清] yang jelas lebih related lewat 青).
+    // Sekarang: kalau kanji ini juga ada di KEISEI_SETS (data yang udah divalidasi ketat ke
+    // bacaan asli), PRIORITASKAN grup TWIN yang overlap paling banyak sama keluarga fonetiknya —
+    // itu sinyal kuat bahwa grup itu beneran nyambung (bukan cuma kebetulan mirip bentuk doang).
+    var keiseiFamily = null;
+    if(typeof KEISEI_SETS!=='undefined'){
+      for(var kfi=0; kfi<KEISEI_SETS.length; kfi++){
+        if(KEISEI_SETS[kfi].kanji.indexOf(kj)>=0){ keiseiFamily = KEISEI_SETS[kfi].kanji; break; }
+      }
+    }
+    var bestGroup = null, bestScore = -1;
     try{
       _twinPool().forEach(function(t){
-        if(t.g.indexOf(kj)>=0 && (!bestGroup || t.g.length<bestGroup.length)) bestGroup=t.g;
+        if(t.g.indexOf(kj)<0) return;
+        var overlap = keiseiFamily ? t.g.filter(function(g){return keiseiFamily.indexOf(g)>=0;}).length : 0;
+        // skor: overlap keisei (bobot besar) dikurangi ukuran grup (biar tetep condong ke grup kecil/fokus kalau overlap sama)
+        var score = overlap*100 - t.g.length;
+        if(score>bestScore){ bestScore=score; bestGroup=t.g; }
       });
     }catch(e){}
     var twins = bestGroup ? bestGroup.filter(function(g){return g!==kj;}) : [];
