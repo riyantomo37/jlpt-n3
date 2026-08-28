@@ -1104,7 +1104,7 @@ header:has(.user-menu.open) { z-index:1000; }
         <span class="user-name" id="user-name">...</span>
         <span id="level-badge" onclick="event.stopPropagation();gotoScreen('levelreward')" title="Level & Reward" style="font-size:10px;font-weight:800;background:linear-gradient(135deg,var(--gold),#c98a1f);color:white;padding:2px 7px;border-radius:8px;cursor:pointer;letter-spacing:.3px">Lv.1</span>
         <span class="sync-badge" id="sync-badge">● sync</span>
-        <span id="build-dot" title="Indikator update: warnanya ganti tiap ada versi baru dari Claude" style="display:inline-block;width:11px;height:11px;border-radius:50%;background:#2da050;margin-left:6px;vertical-align:middle;border:2px solid white;box-shadow:0 0 0 1px rgba(0,0,0,.15)"></span>
+        <span id="build-dot" title="Indikator update: warnanya ganti tiap ada versi baru dari Claude" style="display:inline-block;width:11px;height:11px;border-radius:50%;background:#c0392b;margin-left:6px;vertical-align:middle;border:2px solid white;box-shadow:0 0 0 1px rgba(0,0,0,.15)"></span>
         <!-- 🔴🟢 CLAUDE: WAJIB toggle warna build-dot di atas SETIAP kali file ini dikirim ulang —
              merah #c0392b <-> hijau #2da050 gantian. Ini satu-satunya cara Riyan verifikasi
              upload-nya beneran ke-deploy. JANGAN LUPA, cek baris ini di awal SETIAP delivery. -->
@@ -13678,6 +13678,9 @@ function renderKeiseiList(){
     var matchKanji = fam.kanji.filter(function(k){ return (fam.lvl&&fam.lvl[k])===kmoLevelFilter; });
     return matchKanji.length>=2 ? Object.assign({}, fam, {kanji:matchKanji, _filtered:true}) : null;
   }).filter(Boolean);
+  // Urutin berdasarkan BACAAN (あ→ん), bukan ukuran grup — biar gampang nyari "keluarga yang
+  // bacaannya X" dan pola bunyinya kerasa jelas pas discroll (bukan acak besar-kecil).
+  filtered.sort(function(a,b){ return a.read.localeCompare(b.read, 'ja'); });
 
   var countHtml = '<div style="font-size:11px;color:var(--mist);margin-bottom:10px">'
     + filtered.length+' keluarga fonetik'
