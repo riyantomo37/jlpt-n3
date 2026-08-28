@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+l<!DOCTYPE html>
 <html lang="id">
 <head>
 <meta charset="UTF-8">
@@ -1104,7 +1104,7 @@ header:has(.user-menu.open) { z-index:1000; }
         <span class="user-name" id="user-name">...</span>
         <span id="level-badge" onclick="event.stopPropagation();gotoScreen('levelreward')" title="Level & Reward" style="font-size:10px;font-weight:800;background:linear-gradient(135deg,var(--gold),#c98a1f);color:white;padding:2px 7px;border-radius:8px;cursor:pointer;letter-spacing:.3px">Lv.1</span>
         <span class="sync-badge" id="sync-badge">● sync</span>
-        <span id="build-dot" title="Indikator update: warnanya ganti tiap ada versi baru dari Claude" style="display:inline-block;width:11px;height:11px;border-radius:50%;background:#c0392b;margin-left:6px;vertical-align:middle;border:2px solid white;box-shadow:0 0 0 1px rgba(0,0,0,.15)"></span>
+        <span id="build-dot" title="Indikator update: warnanya ganti tiap ada versi baru dari Claude" style="display:inline-block;width:11px;height:11px;border-radius:50%;background:#2da050;margin-left:6px;vertical-align:middle;border:2px solid white;box-shadow:0 0 0 1px rgba(0,0,0,.15)"></span>
         <!-- 🔴🟢 CLAUDE: WAJIB toggle warna build-dot di atas SETIAP kali file ini dikirim ulang —
              merah #c0392b <-> hijau #2da050 gantian. Ini satu-satunya cara Riyan verifikasi
              upload-nya beneran ke-deploy. JANGAN LUPA, cek baris ini di awal SETIAP delivery. -->
@@ -1150,8 +1150,10 @@ header:has(.user-menu.open) { z-index:1000; }
   <button onclick="navTo('ai')">🤖 Sensei</button>
 </nav>
 <div id="nav-learn-menu">
+  <button onclick="closeNavLearn();gotoScreen('jalur')" style="font-weight:800;color:#2c7ac8">🎯 Jalur Belajar <span style="font-size:9px;background:#2c7ac8;color:#fff;padding:1px 6px;border-radius:6px;margin-left:4px;font-weight:800">BARU</span></button>
+  <div style="border-top:1px solid var(--border);margin:4px 0"></div>
   <div style="font-size:10px;font-weight:800;color:var(--mist);letter-spacing:.5px;padding:6px 10px 2px">📚 KOSAKATA &amp; KANJI</div>
-  <button onclick="closeNavLearn();gotoScreen('keiseimenu')" style="font-weight:800;color:#c0532e">🔊 Bunyi Kanji <span style="font-size:9px;background:#c0532e;color:#fff;padding:1px 6px;border-radius:6px;margin-left:4px;font-weight:800">BARU</span></button>
+  <button onclick="closeNavLearn();gotoScreen('keiseimenu')" style="font-weight:800;color:#c0532e">🔊 Bunyi Kanji</button>
   <button onclick="closeNavLearn();gotoScreen('flashmenu')">📚 Flashcard</button>
   <button onclick="closeNavLearn();gotoScreen('kotoba')">📖 Daftar Kotoba</button>
   <button onclick="closeNavLearn();gotoScreen('kanjimenu')">✍️ Baca Kanji</button>
@@ -1866,6 +1868,25 @@ header:has(.user-menu.open) { z-index:1000; }
 
 <!-- ====== KUIS KANJI KEMBAR ====== -->
 <!-- ====== 🔊 KEISEI MOJI: MENU EKSPLORASI ====== -->
+<!-- ====== JALUR BELAJAR: panduan urutan belajar yang efektif ====== -->
+<div id="screen-jalur" class="screen">
+  <div class="section-title" style="margin-bottom:6px">🎯 Jalur Belajar</div>
+  <p style="font-size:13px;color:var(--ink);margin-bottom:6px;line-height:1.6">Pernah ngerasa <b>tau kanjinya tapi lupa cara bacanya</b>? Atau <b>tau bacaannya tapi lupa artinya</b>? Atau <b>tau katanya tapi gak tau kanjinya</b>? Itu wajar banget — itu tandanya kanji, bacaan, dan arti masih kesimpen terpisah di kepala, belum nyambung jadi satu paket.</p>
+  <p style="font-size:13px;color:var(--mist);margin-bottom:18px;line-height:1.6">4 langkah ini didesain biar ketiganya nyambung, plus latihan dari <b>banyak arah</b> (bukan cuma satu arah "liat-kenal" doang).</p>
+
+  <div id="jalur-steps"></div>
+
+  <div style="background:white;border:1px solid var(--border);border-radius:14px;padding:14px 16px;margin-top:8px">
+    <div style="font-weight:800;font-size:13px;color:var(--ink);margin-bottom:6px">💡 Kenapa harus urut kayak gini?</div>
+    <div style="font-size:12px;color:var(--mist);line-height:1.6">
+      <b>1. Flashcard</b> ngenalin kata BARU sekaligus paket lengkap (kanji+bacaan+arti) — jangan hafalin kanji sendirian tanpa konteks kata.<br><br>
+      <b>2. Bunyi Kanji</b> ngajarin POLA bacaan (kanji berkomponen sama biasanya bunyinya mirip) — biar bisa NEBAK kanji baru, bukan hafalan buta satu-satu.<br><br>
+      <b>3. Latihan Tulis</b> maksa otak PRODUKSI aktif (nulis dari nol), bukan cuma ngenalin pas liat pilihan ganda.<br><br>
+      <b>4. Review SRS</b> ngulang tepat sebelum lupa — ini yang bikin nempel jangka panjang, bukan cuma inget sebentar terus ilang lagi.
+    </div>
+  </div>
+</div>
+
 <div id="screen-keiseimenu" class="screen">
   <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
     <div class="section-title" style="margin:0">🔊 Bunyi Kanji (形声)</div>
@@ -7246,10 +7267,11 @@ function gotoScreen(name) {
   });
   var _lm=document.getElementById('nav-learn-menu');
   if(_lm) _lm.classList.remove('open');
-  var _learnScreens=['flashmenu','kotoba','kanjimenu','bunpomenu','katsuyomenu','dialectmenu','kazumenu','onomenu','onyomenu','wordtree','keiseimenu'];
+  var _learnScreens=['jalur','flashmenu','kotoba','kanjimenu','bunpomenu','katsuyomenu','dialectmenu','kazumenu','onomenu','onyomenu','wordtree','keiseimenu'];
   var _lb=document.getElementById('nav-learn-btn');
   if(_lb) _lb.classList.toggle('active', _learnScreens.indexOf(name)>=0);
   if (name === 'overview') { updateOverview(); try{ maybeShowDailyChecklistModal(); }catch(e){} }
+  if (name === 'jalur') renderJalurBelajar();
   if (name === 'flashmenu') updateFlashMenu();
   if (name === 'kanjimenu') updateKanjiMenu();
   if (name === 'kotoba') renderKotobaTab();
@@ -8143,9 +8165,21 @@ function renderOverviewReco(){
   }
   var oyp=oyProgress();
   var wtRoots=(typeof _wtBuildTree==='function')?_wtBuildTree().filter(function(r){return r.type!=='other';}):[];
-  var seenKeisei=false, seenWordtree=false;
-  try{ seenKeisei=!!localStorage.getItem('n3_seen_keiseimenu'); seenWordtree=!!localStorage.getItem('n3_seen_wordtree'); }catch(e){}
+  var seenKeisei=false, seenWordtree=false, seenJalur=false;
+  try{ seenKeisei=!!localStorage.getItem('n3_seen_keiseimenu'); seenWordtree=!!localStorage.getItem('n3_seen_wordtree'); seenJalur=!!localStorage.getItem('n3_seen_jalur'); }catch(e){}
   var html='';
+  // ── 🎯 Jalur Belajar: fitur PALING baru, banner paling atas sekarang ──
+  if (!seenJalur){
+    html+='<div onclick="navTo(\'jalur\')" style="position:relative;background:radial-gradient(circle at 15% 20%,#5a9fe0,#1a4d8f 70%);color:#fff;border-radius:18px;padding:18px 16px;margin-bottom:16px;cursor:pointer;overflow:hidden;box-shadow:0 6px 20px rgba(26,77,143,.35);border:1px solid rgba(255,255,255,.15)">'
+      +'<span style="position:absolute;top:-14px;right:-6px;font-size:80px;opacity:.14;line-height:1">🎯</span>'
+      +'<span style="display:inline-block;background:#ffd166;color:#1a1a2e;font-size:10px;font-weight:800;padding:3px 9px;border-radius:8px;margin-bottom:8px">✨ FITUR BARU</span>'
+      +'<div style="font-weight:800;font-size:18px;position:relative;z-index:1">🎯 Jalur Belajar</div>'
+      +'<div style="font-size:12px;opacity:.9;margin-top:3px;max-width:85%;position:relative;z-index:1">Tau kanji tapi lupa bacanya? Tau bacaan tapi lupa arti? Ini 4 langkah biar semuanya nyambung</div>'
+      +'<div style="margin-top:10px;display:inline-block;background:rgba(255,255,255,.18);padding:7px 14px;border-radius:10px;font-size:12px;font-weight:700;position:relative;z-index:1">Lihat panduan ›</div>'
+      +'</div>';
+  } else {
+    html+=banner('🎯','Jalur Belajar','Panduan urutan belajar yang efektif','navTo(&apos;jalur&apos;)','Buka ▶', ['#2c7ac8','#5a9fe0']);
+  }
   // ── 🔊 Bunyi Kanji: banner BESAR cuma buat yang belum pernah buka.
   // Setelah dibuka sekali, collapse jadi baris kecil biar dashboard gak numpuk terus ──
   if (!seenKeisei){
@@ -13722,6 +13756,29 @@ function renderKeiseiList(){
 }
 function updateKeiseiMenu(){ try{ localStorage.setItem('n3_seen_keiseimenu','1'); }catch(e){} renderKeiseiList(); }
 
+function renderJalurBelajar(){
+  try{ localStorage.setItem('n3_seen_jalur','1'); }catch(e){}
+  var box = document.getElementById('jalur-steps');
+  if(!box) return;
+  var steps = [
+    {no:1, emo:'📚', title:'Flashcard', sub:'Kenalan kata baru — kanji + bacaan + arti sekaligus dalam 1 paket', action:"navTo('flashmenu')", cta:'Mulai Flashcard', color:['#2c7ac8','#5a9fe0']},
+    {no:2, emo:'🔊', title:'Bunyi Kanji', sub:'Pahami POLA bacaan biar bisa nebak kanji baru, bukan hafalan buta', action:"navTo('keiseimenu')", cta:'Jelajahi Pola Bunyi', color:['#c0532e','#e0703f']},
+    {no:3, emo:'✍️', title:'Latihan Tulis', sub:'Paksa produksi aktif — nulis dari nol, bukan cuma ngenalin pilihan ganda', action:'startWritePractice()', cta:'Mulai Menulis', color:['#0a7d6b','#14a08c']},
+    {no:4, emo:'🔁', title:'Review SRS', sub:'Ulang tepat sebelum lupa — kunci biar nempel jangka panjang', action:'startSrsReview()', cta:'Mulai Review', color:['#5c4b8a','#7c63b8']}
+  ];
+  box.innerHTML = steps.map(function(s){
+    return '<div style="position:relative;background:linear-gradient(135deg,'+s.color[0]+','+s.color[1]+');color:#fff;border-radius:16px;padding:16px;margin-bottom:12px;box-shadow:0 5px 16px rgba(0,0,0,.15)">'
+      + '<div style="display:flex;align-items:center;gap:12px;margin-bottom:8px">'
+      + '<div style="width:30px;height:30px;border-radius:50%;background:rgba(255,255,255,.22);display:flex;align-items:center;justify-content:center;font-weight:800;font-size:14px;flex-shrink:0">'+s.no+'</div>'
+      + '<div style="font-size:22px">'+s.emo+'</div>'
+      + '<div style="font-weight:800;font-size:16px">'+s.title+'</div>'
+      + '</div>'
+      + '<div style="font-size:12.5px;opacity:.92;line-height:1.5;margin-bottom:12px">'+s.sub+'</div>'
+      + '<button onclick="'+s.action+'" style="width:100%;padding:11px;border:none;border-radius:10px;background:rgba(255,255,255,.95);color:'+s.color[0]+';font-family:inherit;font-size:13px;font-weight:800;cursor:pointer">'+s.cta+' ▶</button>'
+      + '</div>';
+  }).join('');
+}
+
 
 // ============================================================
 // 音訓 ON'YOMI–KUN'YOMI: menu + latihan bacaan kanji
@@ -14742,6 +14799,7 @@ function refreshActiveScreen(){
   if(!active) return;
   var id=active.id.replace('screen-','');
   if(id==='overview')    updateOverview();
+  else if(id==='jalur')  renderJalurBelajar();
   else if(id==='flashmenu')  updateFlashMenu();
   else if(id==='kanjimenu')  updateKanjiMenu();
   else if(id==='kotoba')     renderKotobaTab();
