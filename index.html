@@ -1104,7 +1104,7 @@ header:has(.user-menu.open) { z-index:1000; }
         <span class="user-name" id="user-name">...</span>
         <span id="level-badge" onclick="event.stopPropagation();gotoScreen('levelreward')" title="Level & Reward" style="font-size:10px;font-weight:800;background:linear-gradient(135deg,var(--gold),#c98a1f);color:white;padding:2px 7px;border-radius:8px;cursor:pointer;letter-spacing:.3px">Lv.1</span>
         <span class="sync-badge" id="sync-badge">● sync</span>
-        <span id="build-dot" title="Indikator update: warnanya ganti tiap ada versi baru dari Claude" style="display:inline-block;width:11px;height:11px;border-radius:50%;background:#c0392b;margin-left:6px;vertical-align:middle;border:2px solid white;box-shadow:0 0 0 1px rgba(0,0,0,.15)"></span>
+        <span id="build-dot" title="Indikator update: warnanya ganti tiap ada versi baru dari Claude" style="display:inline-block;width:11px;height:11px;border-radius:50%;background:#2da050;margin-left:6px;vertical-align:middle;border:2px solid white;box-shadow:0 0 0 1px rgba(0,0,0,.15)"></span>
         <!-- 🔴🟢 CLAUDE: WAJIB toggle warna build-dot di atas SETIAP kali file ini dikirim ulang —
              merah #c0392b <-> hijau #2da050 gantian. Ini satu-satunya cara Riyan verifikasi
              upload-nya beneran ke-deploy. JANGAN LUPA, cek baris ini di awal SETIAP delivery. -->
@@ -1905,25 +1905,27 @@ header:has(.user-menu.open) { z-index:1000; }
 
 <div id="screen-custom" class="screen">
   <div class="section-title" style="margin-bottom:6px">⚙️ Custom Belajar</div>
-  <p style="font-size:13px;color:var(--mist);margin-bottom:18px;line-height:1.6">Atur level & materi yang mau di-skip — berlaku ke <b>semua menu</b> (Flashcard, Kalimat, semua soal ujian) sekaligus. Gak perlu atur satu-satu per menu.</p>
+  <p style="font-size:13px;color:var(--mist);margin-bottom:18px;line-height:1.6">Pilih kata yang mau kamu fokusin — berlaku ke <b>semua menu</b> (Flashcard, Kalimat, quick-practice ujian) sekaligus. Belum pilih apa-apa? Ya udah dipakai semua kata seperti biasa (normal).</p>
 
   <div style="font-size:12px;font-weight:800;color:var(--mist);letter-spacing:.4px;margin-bottom:8px">🎚️ LEVEL AKTIF</div>
   <div id="custom-level-pills" style="display:flex;gap:6px;margin-bottom:20px;flex-wrap:wrap"></div>
 
-  <div style="font-size:12px;font-weight:800;color:var(--mist);letter-spacing:.4px;margin-bottom:8px">🚫 SKIP JENIS KATA</div>
-  <p style="font-size:11.5px;color:var(--mist);margin-bottom:10px">Kata dari jenis yang di-skip gak akan dikeluarin di menu manapun (Flashcard, kuis, ujian, Kalimat).</p>
-  <div id="custom-pos-toggles" style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:20px"></div>
+  <div id="custom-status" style="background:white;border:1px solid var(--border);border-radius:12px;padding:14px;margin-bottom:16px"></div>
 
-  <div style="font-size:12px;font-weight:800;color:var(--mist);letter-spacing:.4px;margin-bottom:8px">🚫 SKIP KATEGORI (khusus N3)</div>
-  <p style="font-size:11.5px;color:var(--mist);margin-bottom:10px">N3 punya 3 kategori terpisah (漢字 kanji tunggal / 語彙 kosakata / 文法 pola tata bahasa) — bisa di-skip kalau mau fokus salah satu doang.</p>
-  <div id="custom-cat-toggles" style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:24px"></div>
+  <div id="custom-picked-chips" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:14px"></div>
 
-  <div id="custom-preview" style="background:white;border:1px solid var(--border);border-radius:12px;padding:14px;margin-bottom:16px"></div>
+  <div style="position:sticky;top:52px;background:var(--paper);padding:8px 0;z-index:5">
+    <input id="custom-search" type="text" placeholder="🔍 Cari kata (bahasa Jepang / romaji / arti)..." oninput="renderCustomWordList()" style="width:100%;padding:11px 14px;border:1.5px solid var(--border);border-radius:10px;font-family:inherit;font-size:14px;box-sizing:border-box">
+  </div>
 
-  <button onclick="resetCustomSkip()" style="width:100%;padding:12px;border:1.5px solid var(--border);border-radius:10px;background:white;color:var(--mist);font-family:inherit;font-size:13px;font-weight:700;cursor:pointer">🔄 Reset ke Default (gak skip apa-apa)</button>
+  <div id="custom-word-list" style="margin-top:8px"></div>
+  <button id="custom-loadmore" onclick="_customListLimit+=60;renderCustomWordList()" style="display:none;width:100%;padding:11px;border:1.5px solid var(--border);border-radius:10px;background:white;color:var(--mist);font-family:inherit;font-size:12.5px;font-weight:700;cursor:pointer;margin-top:8px">Tampilkan lebih banyak ▾</button>
+
+  <button onclick="resetCustomPick()" style="width:100%;padding:12px;border:1.5px solid var(--border);border-radius:10px;background:white;color:var(--mist);font-family:inherit;font-size:13px;font-weight:700;cursor:pointer;margin-top:20px">🔄 Kosongkan Pilihan (pakai semua kata lagi)</button>
 </div>
 
 <div id="screen-jalur" class="screen">
+
   <div class="section-title" style="margin-bottom:6px">🎯 Jalur Belajar</div>
   <p style="font-size:13px;color:var(--ink);margin-bottom:6px;line-height:1.6">Pernah ngerasa <b>tau kanjinya tapi lupa cara bacanya</b>? Atau <b>tau bacaannya tapi lupa artinya</b>? Atau <b>tau katanya tapi gak tau kanjinya</b>? Itu wajar banget — itu tandanya kanji, bacaan, dan arti masih kesimpen terpisah di kepala, belum nyambung jadi satu paket.</p>
   <p style="font-size:13px;color:var(--mist);margin-bottom:18px;line-height:1.6">4 langkah ini didesain biar ketiganya nyambung, plus latihan dari <b>banyak arah</b> (bukan cuma satu arah "liat-kenal" doang).</p>
@@ -3509,6 +3511,9 @@ function stopTimer() {
 //   Tahap 2: 聴解  (terpisah, searah)
 //   Timer total ~120 menit jalan terus; skor 180 (4 section × 45) di akhir.
 // ══════════════════════════════════════════════════
+// PENTING: fungsi ini SENGAJA gak lewat posLevelWords() — Full Mock Exam harus TETAP
+// komprehensif (gak kena Custom Pick) biar simulasinya beneran ngerefleksikan JLPT asli.
+// Kalau nanti mau nambah pool word buat mock, JANGAN diganti ke posLevelWords().
 function mockBuildWordPool() {
   var words = [];
   if (currentJLPT==='N3') {
@@ -3626,15 +3631,12 @@ async function startExamSection(sectionType) {
   var bar = document.getElementById('exam-loading-bar');
   bar.style.width = '10%';
 
-  // Get words for current level
-  var words = [];
-  if (currentJLPT==='N3') {
-    ['kanji','vocab','grammar'].forEach(function(c){
-      ALL_WORDS[c].forEach(function(w){ words.push(Object.assign({},w,{cat:c})); });
-    });
-  } else {
-    words = (JLPT_DATA[currentJLPT]||[]).map(function(w){ return Object.assign({},w); });
-  }
+  // Get words for current level — PAKAI posLevelWords() (bukan duplikat logic manual) biar
+  // Custom Pick (kalau user pilih kata spesifik) konsisten ngefek ke quick-practice ini.
+  // CATATAN PENTING: Full Mock Exam SENGAJA gak lewat sini (liat mockBuildWordPool() terpisah)
+  // — biar simulasi ujian penuh TETAP komprehensif kayak JLPT asli, gak ikut kefilter Custom
+  // Pick biar gak bikin rasa "siap ujian" yang palsu.
+  var words = posLevelWords();
 
   examAnswers = {};
   examSections = [];
@@ -5282,7 +5284,7 @@ async function loadFromFirestore() {
       if (data.dailyChecklist && data.dailyChecklist.date===new Date().toDateString()) dailyChecklist = data.dailyChecklist;
       var VALID_LVL = ['N5','N4','N3','N2','N1','SSW'];
       if (data.currentJLPT && VALID_LVL.indexOf(data.currentJLPT) >= 0) currentJLPT = data.currentJLPT;
-      if (data.customSkip) customSkip = {pos:data.customSkip.pos||[], cat:data.customSkip.cat||[]};
+      if (data.customPick) customPick = {ids:data.customPick.ids||[]};
       if (Array.isArray(data.kalimatBuatan)) kalimatBuatan = data.kalimatBuatan;
       progressPrivate = !!data.private;
       try{ localStorage.setItem('progressPrivate', progressPrivate?'1':'0'); }catch(e){}
@@ -5361,7 +5363,7 @@ async function saveToFirestore() {
       badges: unlockedBadges,
       dailyChecklist: dailyChecklist,
       currentJLPT: currentJLPT,
-      customSkip: customSkip,
+      customPick: customPick,
       kalimatBuatan: (kalimatBuatan||[]).slice(-60), // cap 60 biar gak nabrak limit dokumen 1MB
       lastSeen: firebase.firestore.FieldValue.serverTimestamp(),
     }, { merge: true });
@@ -5457,7 +5459,7 @@ function saveToLocal() {
     localStorage.setItem('n3_checklist',    JSON.stringify(dailyChecklist));
     localStorage.setItem('n3_checklist_snap', JSON.stringify(dailySnapshot));
     localStorage.setItem('n3_currentJLPT',  currentJLPT);
-    localStorage.setItem('n3_customSkip',   JSON.stringify(customSkip));
+    localStorage.setItem('n3_customPick',   JSON.stringify(customPick));
     localStorage.setItem('n3_kalimatBuatan', JSON.stringify(kalimatBuatan));
   } catch(e) {}
 }
@@ -5485,8 +5487,8 @@ function loadFromLocal() {
     if (cl) { var clp = JSON.parse(cl); if (clp.date === new Date().toDateString()) dailyChecklist = clp; }
     const cs = localStorage.getItem('n3_checklist_snap');
     if (cs) { var csp = JSON.parse(cs); if (csp && csp.date === new Date().toDateString()) dailySnapshot = csp; }
-    const csk = localStorage.getItem('n3_customSkip');
-    if (csk) { var cskp = JSON.parse(csk); if(cskp) customSkip = {pos:cskp.pos||[], cat:cskp.cat||[]}; }
+    const cpk = localStorage.getItem('n3_customPick');
+    if (cpk) { var cpkp = JSON.parse(cpk); if(cpkp) customPick = {ids:cpkp.ids||[]}; }
     const kb = localStorage.getItem('n3_kalimatBuatan');
     if (kb) { var kbp = JSON.parse(kb); if(Array.isArray(kbp)) kalimatBuatan = kbp; }
   } catch(e) {}
@@ -8438,36 +8440,41 @@ function posOf(w){
   return 'meishi';
 }
 
-// ── CUSTOM: preferensi skip materi, berlaku GLOBAL ke semua menu yang narik kata dari sini
-// (Flashcard, Kalimat, semua generator soal ujian, dll) — satu setting, ngefek ke mana-mana. ──
-var customSkip = { pos: [], cat: [] };
-function _saveCustomSkip(){
-  try{ localStorage.setItem('n3_customSkip', JSON.stringify(customSkip)); }catch(e){}
+// ── CUSTOM: pilih kata SATU-SATU (bukan skip per-kategori) — berlaku GLOBAL ke semua menu
+// yang narik kata dari sini (Flashcard, Kalimat, quick-practice ujian, dll). Mekanisme:
+// kalau customPick.ids kosong = pakai SEMUA kata (normal, default). Begitu user milih
+// minimal 1 kata, otomatis jadi ALLOWLIST — cuma kata yang dipilih itu doang yang dipakai.
+// Satu cara mikir doang, gak numpuk 2 sistem filter beda (lebih gampang dipahami). ──
+var customPick = { ids: [] };
+function _saveCustomPick(){
+  try{ localStorage.setItem('n3_customPick', JSON.stringify(customPick)); }catch(e){}
   try{ save(); }catch(e){}
 }
 function applyCustomSkip(words){
-  if(!customSkip || (!customSkip.pos.length && !customSkip.cat.length)) return words;
-  return words.filter(function(w){
-    if(customSkip.cat.length && w.cat && customSkip.cat.indexOf(w.cat)>=0) return false;
-    if(customSkip.pos.length && customSkip.pos.indexOf(posOf(w))>=0) return false;
-    return true;
-  });
+  if(!customPick || !customPick.ids || !customPick.ids.length) return words;
+  var idSet = {}; customPick.ids.forEach(function(id){ idSet[id]=true; });
+  return words.filter(function(w){ return idSet[w.id]; });
 }
 
-// Kata untuk level aktif (N3 dari ALL_WORDS, lainnya dari JLPT_DATA).
-function posLevelWords(){
-  var out;
+// Versi MENTAH (tanpa filter Custom Pick) — dipakai buat SRS review & "Tingkat Hafalan" dashboard,
+// biar kata yang UDAH terjadwal sebelumnya gak kejebak/ilang diam-diam kalau user ganti pilihan
+// belakangan, dan biar % mastery selalu ngukur terhadap SELURUH kurikulum (bukan cuma yg dipilih).
+function posLevelWordsRaw(){
   if(currentJLPT==='N3'){
-    out=[];
+    var out=[];
     if(typeof ALL_WORDS!=='undefined'&&ALL_WORDS){
       ['kanji','vocab','grammar'].forEach(function(c){(ALL_WORDS[c]||[]).forEach(function(w){out.push(Object.assign({},w,{cat:c}));});});
     }
-  } else {
-    out=(JLPT_DATA[currentJLPT]||[]).map(function(w){return Object.assign({},w);});
+    return out;
   }
+  return (JLPT_DATA[currentJLPT]||[]).map(function(w){return Object.assign({},w);});
+}
+// Kata untuk level aktif (N3 dari ALL_WORDS, lainnya dari JLPT_DATA) — DIPENGARUHI Custom Pick.
+function posLevelWords(){
+  var out = posLevelWordsRaw();
   var filtered = applyCustomSkip(out);
-  // Kalau kepilih skip yang bablas (sampai kosong semua), abaikan filter drpd nge-break
-  // seluruh app — lebih aman balikin unfiltered drpd nampilin "0 kata" di mana-mana.
+  // Kalau customPick.ids nyisa kata yang gak match apapun (mis. ganti level), abaikan filter
+  // drpd nge-break seluruh app — lebih aman balikin unfiltered drpd nampilin "0 kata" di mana-mana.
   return filtered.length ? filtered : out;
 }
 
@@ -9459,8 +9466,12 @@ function toggleExamHistory(){
 }
 
 // Hitung progress per jenis kata (品詞) untuk level aktif.
+// Hitung progress per jenis kata (品詞) untuk level aktif. SENGAJA pake posLevelWordsRaw()
+// (bukan posLevelWords) — biar "Tingkat Hafalan" di dashboard tetap ngukur progress terhadap
+// SELURUH kurikulum level, bukan cuma kata yang dipilih di Custom. Custom Pick itu buat
+// atur apa yang DILATIH sekarang, bukan buat ngubah definisi "100% mastery" jadi lebih gampang.
 function _posCounts(){
-  var words=(typeof posLevelWords==='function')?posLevelWords():[];
+  var words=(typeof posLevelWordsRaw==='function')?posLevelWordsRaw():[];
   var c={},d={};
   words.forEach(function(w){ var p=posOf(w); c[p]=(c[p]||0)+1; if(wordDone(w)) d[p]=(d[p]||0)+1; });
   return {count:c, done:d};
@@ -9471,10 +9482,12 @@ function renderProgressDashboard(){
   if(!host) return;
   var isSSW=currentJLPT==='SSW';
 
-  // ── Tingkat Hafalan gabungan (arti + baca + kematangan SRS) ──
+  // ── Tingkat Hafalan gabungan (arti + baca + kematangan SRS) ── SENGAJA posLevelWordsRaw()
+  // biar % ini selalu terhadap SELURUH kurikulum level (Custom Pick cuma ngatur latihan,
+  // bukan ngubah makna "100%")
   var _thHtml='';
   try{
-    var _pool=posLevelWords();
+    var _pool=posLevelWordsRaw();
     if(_pool.length){
       var _s=0,_full=0;
       _pool.forEach(function(w){ var sc=ktScore(w); _s+=sc; if(sc>=100)_full++; });
@@ -13872,8 +13885,10 @@ async function startKalimatBuat(){
     pool=posLevelWords();
   }catch(e){}
   if(!pool.length){ alert('Kosakata level ini belum termuat.'); gotoScreen('overview'); return; }
-  shuffle(pool);
-  var picks=pool.slice(0,8);
+  // weightedWordSample (bukan shuffle polos) — biar kata target lebih sering yang UDAH dikenal
+  // (65%), sisanya kata baru (35%). Kalau full random, kena kata yang beneran asing bikin tugas
+  // "buat kalimat" jadi berat sepihak & gak fair buat pemula.
+  var picks = (typeof weightedWordSample==='function') ? weightedWordSample(pool, Math.min(8,pool.length)) : (shuffle(pool), pool.slice(0,8));
   kbState={items:picks, idx:0, okN:0, savedThisSession:0};
   kbShow();
 }
@@ -13940,10 +13955,10 @@ function kbFinish(){
 }
 
 // ── ⚙️ CUSTOM: layar pengaturan skip materi, berlaku global ke semua menu ──
-var POS_LABELS = {meishi:'📦 Kata Benda', doushi:'🏃 Kata Kerja', keiyoushi:'🎨 Kata Sifat', fukushi:'⚡ Kata Keterangan', setsuzoku:'🔗 Kata Sambung', pola:'📐 Pola Tata Bahasa'};
-var CAT_LABELS = {kanji:'漢字 Kanji Tunggal', vocab:'語彙 Kosakata', grammar:'文法 Pola Tata Bahasa'};
+// ── ⚙️ CUSTOM: pemilih kata satu-satu (pengganti skip kategori lama, lebih presisi) ──
+var _customListLimit = 60;
 function renderCustomMenu(){
-  // level pills
+  _customListLimit = 60;
   var lvBox = document.getElementById('custom-level-pills');
   if(lvBox){
     var levels = ['N5','N4','N3','N2','N1','SSW'];
@@ -13953,56 +13968,68 @@ function renderCustomMenu(){
       return '<button onclick="switchJLPT(\''+lv+'\');renderCustomMenu();" style="padding:9px 16px;border-radius:20px;border:1.5px solid '+(active?color:'var(--border)')+';background:'+(active?color:'white')+';color:'+(active?'#fff':'var(--mist)')+';font-family:inherit;font-size:13px;font-weight:700;cursor:pointer">'+lv+'</button>';
     }).join('');
   }
-  // pos toggles
-  var posBox = document.getElementById('custom-pos-toggles');
-  if(posBox){
-    posBox.innerHTML = Object.keys(POS_LABELS).map(function(p){
-      var active = customSkip.pos.indexOf(p)>=0;
-      return '<button onclick="toggleCustomSkipPos(\''+p+'\')" style="padding:8px 13px;border-radius:10px;border:1.5px solid '+(active?'#c0392b':'var(--border)')+';background:'+(active?'rgba(192,57,43,.08)':'white')+';color:'+(active?'#c0392b':'var(--ink)')+';font-family:inherit;font-size:12px;font-weight:700;cursor:pointer">'+(active?'🚫 ':'')+POS_LABELS[p]+'</button>';
-    }).join('');
+  var statusBox = document.getElementById('custom-status');
+  if(statusBox){
+    var n = (customPick.ids||[]).length;
+    statusBox.innerHTML = n
+      ? '<div style="font-size:12px;color:var(--mist);margin-bottom:4px">Mode custom AKTIF — semua menu cuma pakai:</div><div style="font-family:\'DM Mono\',monospace;font-size:22px;font-weight:800;color:#8b5a2b">'+n+' kata</div>'
+      : '<div style="font-size:12px;color:var(--mist)">Belum ada kata dipilih — semua menu pakai <b>seluruh kosakata '+currentJLPT+'</b> seperti biasa.</div>';
   }
-  // cat toggles
-  var catBox = document.getElementById('custom-cat-toggles');
-  if(catBox){
-    catBox.innerHTML = Object.keys(CAT_LABELS).map(function(c){
-      var active = customSkip.cat.indexOf(c)>=0;
-      return '<button onclick="toggleCustomSkipCat(\''+c+'\')" style="padding:8px 13px;border-radius:10px;border:1.5px solid '+(active?'#c0392b':'var(--border)')+';background:'+(active?'rgba(192,57,43,.08)':'white')+';color:'+(active?'#c0392b':'var(--ink)')+';font-family:inherit;font-size:12px;font-weight:700;cursor:pointer">'+(active?'🚫 ':'')+CAT_LABELS[c]+'</button>';
-    }).join('');
-  }
-  // preview: berapa kata tersisa setelah filter
-  var prev = document.getElementById('custom-preview');
-  if(prev){
-    var total=0, after=0;
-    try{
-      var lvl='N3'===currentJLPT ? [] : []; // placeholder, dihitung di bawah
-      var full = (function(){
-        // hitung tanpa filter (raw) vs dgn filter, tanpa ganggu global customSkip
-        var save1=customSkip; customSkip={pos:[],cat:[]};
-        var raw = posLevelWords();
-        customSkip=save1;
-        return raw;
-      })();
-      total = full.length;
-      after = posLevelWords().length;
-    }catch(e){}
-    var pct = total? Math.round(after/total*100) : 100;
-    prev.innerHTML = '<div style="font-size:12px;color:var(--mist);margin-bottom:6px">Kata yang bakal dipakai di semua menu:</div>'
-      + '<div style="font-family:\'DM Mono\',monospace;font-size:20px;font-weight:800;color:var(--ink)">'+after+' <span style="font-size:13px;color:var(--mist);font-weight:400">/ '+total+' ('+pct+'%)</span></div>';
-  }
+  renderCustomPickedChips();
+  renderCustomWordList();
 }
-function toggleCustomSkipPos(p){
-  var i=customSkip.pos.indexOf(p);
-  if(i>=0) customSkip.pos.splice(i,1); else customSkip.pos.push(p);
-  _saveCustomSkip(); renderCustomMenu();
+function renderCustomPickedChips(){
+  var box = document.getElementById('custom-picked-chips');
+  if(!box) return;
+  var ids = customPick.ids||[];
+  if(!ids.length){ box.innerHTML=''; return; }
+  var pool = posLevelWordsRaw();
+  var byId = {}; pool.forEach(function(w){ byId[w.id]=w; });
+  box.innerHTML = ids.map(function(id){
+    var w = byId[id];
+    var label = w ? (w.jp||'').split(/[;；]/)[0] : id;
+    return '<span onclick="toggleCustomPickWord(\''+id+'\')" style="cursor:pointer;padding:5px 10px;border-radius:16px;background:#8b5a2b;color:#fff;font-size:12px;font-weight:700;display:inline-flex;align-items:center;gap:5px">'+label+' <span style="opacity:.8">✕</span></span>';
+  }).join('');
 }
-function toggleCustomSkipCat(c){
-  var i=customSkip.cat.indexOf(c);
-  if(i>=0) customSkip.cat.splice(i,1); else customSkip.cat.push(c);
-  _saveCustomSkip(); renderCustomMenu();
+function renderCustomWordList(){
+  var box = document.getElementById('custom-word-list');
+  if(!box) return;
+  var q = (document.getElementById('custom-search')||{}).value || '';
+  q = q.trim().toLowerCase();
+  var pool = posLevelWordsRaw();
+  var pickedSet = {}; (customPick.ids||[]).forEach(function(id){ pickedSet[id]=true; });
+  var filtered = pool.filter(function(w){
+    if(!q) return true;
+    var jp=(w.jp||'').toLowerCase(), rom=(w.rom||'').toLowerCase(), arti=(w.id_||'').toLowerCase();
+    return jp.indexOf(q)>=0 || rom.indexOf(q)>=0 || arti.indexOf(q)>=0;
+  });
+  var shown = filtered.slice(0, _customListLimit);
+  box.innerHTML = shown.map(function(w){
+    var picked = !!pickedSet[w.id];
+    var head=(w.jp||'').split(/[;；]/)[0];
+    return '<div onclick="toggleCustomPickWord(\''+w.id+'\')" style="display:flex;align-items:center;gap:10px;padding:10px 8px;border-bottom:1px solid var(--border);cursor:pointer">'
+      + '<div style="width:20px;height:20px;border-radius:6px;border:2px solid '+(picked?'#8b5a2b':'var(--border)')+';background:'+(picked?'#8b5a2b':'white')+';display:flex;align-items:center;justify-content:center;color:#fff;font-size:12px;flex-shrink:0">'+(picked?'✓':'')+'</div>'
+      + '<div style="flex:1;min-width:0">'
+      + '<span style="font-weight:700;font-size:15px">'+head+'</span>'
+      + '<span style="font-size:11px;color:var(--mist);margin-left:6px">'+(w.rom||'')+'</span>'
+      + '<div style="font-size:11px;color:var(--mist)">'+(w.id_||'')+'</div>'
+      + '</div>'
+      + '</div>';
+  }).join('') || '<div style="text-align:center;padding:24px;color:var(--mist);font-size:12.5px">Gak ketemu kata yang cocok.</div>';
+  var lm = document.getElementById('custom-loadmore');
+  if(lm) lm.style.display = filtered.length>_customListLimit ? 'block' : 'none';
 }
-function resetCustomSkip(){
-  customSkip = {pos:[], cat:[]};
-  _saveCustomSkip(); renderCustomMenu();
+function toggleCustomPickWord(id){
+  var ids = customPick.ids||[];
+  var i = ids.indexOf(id);
+  if(i>=0) ids.splice(i,1); else ids.push(id);
+  customPick.ids = ids;
+  _saveCustomPick();
+  renderCustomMenu();
+}
+function resetCustomPick(){
+  customPick = {ids:[]};
+  _saveCustomPick(); renderCustomMenu();
 }
 
 function renderJalurBelajar(){
@@ -14565,12 +14592,16 @@ function srsTouch(w,isHafal){
   }catch(err){}
 }
 function srsDueWords(){
-  var pool=posLevelWords().concat(typeof ktExtraWords==='function'? ktExtraWords():[]);
+  // SENGAJA pake posLevelWordsRaw() (bukan posLevelWords) — SRS harus kebal Custom Pick,
+  // biar kata yang udah dijadwal review gak kejebak/ilang diam-diam kalau pilihan diubah
+  // belakangan. Onboarding kata "fresh" tetap ngikut Custom Pick (biar gak nawarin kata
+  // yang sengaja gak dipilih user).
+  var pool=posLevelWordsRaw().concat(typeof ktExtraWords==='function'? ktExtraWords():[]);
   var now=Date.now(), due=[], fresh=[];
   pool.forEach(function(w){
     var e=srsData[srsKey(w)];
     if(e){ if(e.due<=now) due.push(w); }
-    else if(ktArtiDone(w)) fresh.push(w);        // sudah hafal tapi belum terjadwal → onboarding bertahap
+    else if(ktArtiDone(w) && applyCustomSkip([w]).length) fresh.push(w); // sudah hafal tapi belum terjadwal → onboarding bertahap (tetap hormatin pilihan utk yg BARU)
   });
   shuffle(due); shuffle(fresh);
   return due.concat(fresh.slice(0, Math.max(0, 20-due.length)));
