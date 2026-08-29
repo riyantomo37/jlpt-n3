@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+l<!DOCTYPE html>
 <html lang="id">
 <head>
 <meta charset="UTF-8">
@@ -1104,7 +1104,7 @@ header:has(.user-menu.open) { z-index:1000; }
         <span class="user-name" id="user-name">...</span>
         <span id="level-badge" onclick="event.stopPropagation();gotoScreen('levelreward')" title="Level & Reward" style="font-size:10px;font-weight:800;background:linear-gradient(135deg,var(--gold),#c98a1f);color:white;padding:2px 7px;border-radius:8px;cursor:pointer;letter-spacing:.3px">Lv.1</span>
         <span class="sync-badge" id="sync-badge">● sync</span>
-        <span id="build-dot" title="Indikator update: warnanya ganti tiap ada versi baru dari Claude" style="display:inline-block;width:11px;height:11px;border-radius:50%;background:#2da050;margin-left:6px;vertical-align:middle;border:2px solid white;box-shadow:0 0 0 1px rgba(0,0,0,.15)"></span>
+        <span id="build-dot" title="Indikator update: warnanya ganti tiap ada versi baru dari Claude" style="display:inline-block;width:11px;height:11px;border-radius:50%;background:#c0392b;margin-left:6px;vertical-align:middle;border:2px solid white;box-shadow:0 0 0 1px rgba(0,0,0,.15)"></span>
         <!-- 🔴🟢 CLAUDE: WAJIB toggle warna build-dot di atas SETIAP kali file ini dikirim ulang —
              merah #c0392b <-> hijau #2da050 gantian. Ini satu-satunya cara Riyan verifikasi
              upload-nya beneran ke-deploy. JANGAN LUPA, cek baris ini di awal SETIAP delivery. -->
@@ -1150,7 +1150,8 @@ header:has(.user-menu.open) { z-index:1000; }
   <button onclick="navTo('ai')">🤖 Sensei</button>
 </nav>
 <div id="nav-learn-menu">
-  <button onclick="closeNavLearn();gotoScreen('jalur')" style="font-weight:800;color:#2c7ac8">🎯 Jalur Belajar <span style="font-size:9px;background:#2c7ac8;color:#fff;padding:1px 6px;border-radius:6px;margin-left:4px;font-weight:800">BARU</span></button>
+  <button onclick="closeNavLearn();gotoScreen('jalur')" style="font-weight:800;color:#2c7ac8">🎯 Jalur Belajar</button>
+  <button onclick="closeNavLearn();gotoScreen('custom')" style="font-weight:800;color:#8b5a2b">⚙️ Custom Belajar <span style="font-size:9px;background:#8b5a2b;color:#fff;padding:1px 6px;border-radius:6px;margin-left:4px;font-weight:800">BARU</span></button>
   <div style="border-top:1px solid var(--border);margin:4px 0"></div>
   <div style="font-size:10px;font-weight:800;color:var(--mist);letter-spacing:.5px;padding:6px 10px 2px">📚 KOSAKATA &amp; KANJI</div>
   <button onclick="closeNavLearn();gotoScreen('keiseimenu')" style="font-weight:800;color:#c0532e">🔊 Bunyi Kanji</button>
@@ -1172,6 +1173,7 @@ header:has(.user-menu.open) { z-index:1000; }
   <button onclick="startSrsReview()">🔁 Review SRS</button>
   <button onclick="startWritePractice()">✍️ Latihan Tulis</button>
   <button onclick="startKalimat()">📖 Belajar Kalimat</button>
+  <button onclick="startKalimatBuat()">✍️ Kalimatku (buat sendiri)</button>
   <button onclick="startMnemonic()">🧩 Latihan Mnemonik</button>
   <div style="border-top:1px solid var(--border);margin:4px 0"></div>
   <button onclick="infoDataOpen()">ℹ️ Info Data</button>
@@ -1830,6 +1832,11 @@ header:has(.user-menu.open) { z-index:1000; }
     <div class="section-title" style="margin:0">📖 Belajar Kalimat</div>
     <span id="km-pos" style="font-family:'DM Mono',monospace;font-size:13px;font-weight:700;color:var(--mist)"></span>
   </div>
+  <div onclick="startKalimatBuat()" style="display:flex;align-items:center;gap:10px;background:linear-gradient(135deg,#0a7d6b,#14a08c);color:#fff;border-radius:12px;padding:11px 14px;margin-bottom:14px;cursor:pointer">
+    <span style="font-size:18px">✍️</span>
+    <span style="flex:1;font-size:12px;font-weight:700">Udah lancar baca? Coba <u>buat kalimat sendiri</u> — kalimatmu jadi bahan soal ujian nanti</span>
+    <span style="font-size:14px">›</span>
+  </div>
   <div id="km-loading" style="display:none;text-align:center;padding:44px 16px;background:white;border:1px solid var(--border);border-radius:16px">
     <div style="font-size:30px;margin-bottom:8px">⏳</div>
     <div style="font-size:13px;color:var(--mist)">Sensei sedang membuat kalimat untukmu...</div>
@@ -1869,6 +1876,53 @@ header:has(.user-menu.open) { z-index:1000; }
 <!-- ====== KUIS KANJI KEMBAR ====== -->
 <!-- ====== 🔊 KEISEI MOJI: MENU EKSPLORASI ====== -->
 <!-- ====== JALUR BELAJAR: panduan urutan belajar yang efektif ====== -->
+<!-- ====== CUSTOM: pilih level + skip materi tertentu, berlaku ke SEMUA menu ====== -->
+<!-- ====== ✍️ BUAT KALIMATMU SENDIRI: mode produktif, hasil kesimpen jadi referensi soal ====== -->
+<div id="screen-kalimatbuat" class="screen">
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+    <div class="section-title" style="margin:0">✍️ Buat Kalimatmu</div>
+    <span id="kb-progress" style="font-family:'DM Mono',monospace;font-size:13px;font-weight:700;color:var(--mist)">1/8</span>
+  </div>
+  <div id="kb-card" style="background:white;border:1px solid var(--border);border-radius:16px;padding:22px 18px;margin-bottom:16px">
+    <div style="font-size:11px;color:var(--mist);margin-bottom:6px;text-align:center">Buat 1 kalimat bahasa Jepang pakai kata ini:</div>
+    <div id="kb-target" style="font-size:36px;font-weight:800;text-align:center;color:var(--ink);margin-bottom:4px">食べる</div>
+    <div id="kb-target-arti" style="font-size:13px;color:var(--mist);text-align:center;margin-bottom:16px">(taberu) makan</div>
+    <div id="kb-input-row" style="display:flex;flex-direction:column;gap:10px">
+      <textarea id="kb-input" placeholder="Tulis kalimat bahasa Jepang di sini..." style="width:100%;min-height:70px;padding:12px;border:1.5px solid var(--border);border-radius:10px;font-family:'Noto Sans JP',sans-serif;font-size:16px;resize:vertical;box-sizing:border-box"></textarea>
+      <button onclick="kbSubmit()" style="width:100%;padding:12px;border:none;border-radius:10px;background:var(--ink);color:#fff;font-family:inherit;font-size:14px;font-weight:700;cursor:pointer">Cek Kalimat ✓</button>
+    </div>
+    <div id="kb-verdict" style="margin-top:14px;text-align:center;font-size:13px"></div>
+  </div>
+  <button onclick="endSession()" style="width:100%;padding:10px;border:1.5px solid var(--border);border-radius:10px;background:white;color:var(--mist);font-family:inherit;font-size:12px;font-weight:700;cursor:pointer;margin-bottom:10px">✕ Akhiri Sesi</button>
+  <button id="kb-next" onclick="kbNext()" style="display:none;width:100%;padding:13px;border:none;border-radius:12px;background:var(--jade);color:#fff;font-family:inherit;font-size:14px;font-weight:700;cursor:pointer">Kalimat Berikutnya ▶</button>
+  <div id="kb-done" style="display:none;text-align:center;background:white;border:1px solid var(--border);border-radius:16px;padding:26px">
+    <div style="font-size:34px;margin-bottom:6px">🏁</div>
+    <div id="kb-done-score" style="font-size:18px;font-weight:800;margin-bottom:6px"></div>
+    <div id="kb-done-saved" style="font-size:12px;color:var(--mist);margin-bottom:14px;line-height:1.5"></div>
+    <button onclick="startKalimatBuat()" style="padding:12px 22px;border:none;border-radius:12px;background:var(--jade);color:#fff;font-family:inherit;font-size:14px;font-weight:700;cursor:pointer">🔄 Lagi</button>
+  </div>
+</div>
+
+<div id="screen-custom" class="screen">
+  <div class="section-title" style="margin-bottom:6px">⚙️ Custom Belajar</div>
+  <p style="font-size:13px;color:var(--mist);margin-bottom:18px;line-height:1.6">Atur level & materi yang mau di-skip — berlaku ke <b>semua menu</b> (Flashcard, Kalimat, semua soal ujian) sekaligus. Gak perlu atur satu-satu per menu.</p>
+
+  <div style="font-size:12px;font-weight:800;color:var(--mist);letter-spacing:.4px;margin-bottom:8px">🎚️ LEVEL AKTIF</div>
+  <div id="custom-level-pills" style="display:flex;gap:6px;margin-bottom:20px;flex-wrap:wrap"></div>
+
+  <div style="font-size:12px;font-weight:800;color:var(--mist);letter-spacing:.4px;margin-bottom:8px">🚫 SKIP JENIS KATA</div>
+  <p style="font-size:11.5px;color:var(--mist);margin-bottom:10px">Kata dari jenis yang di-skip gak akan dikeluarin di menu manapun (Flashcard, kuis, ujian, Kalimat).</p>
+  <div id="custom-pos-toggles" style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:20px"></div>
+
+  <div style="font-size:12px;font-weight:800;color:var(--mist);letter-spacing:.4px;margin-bottom:8px">🚫 SKIP KATEGORI (khusus N3)</div>
+  <p style="font-size:11.5px;color:var(--mist);margin-bottom:10px">N3 punya 3 kategori terpisah (漢字 kanji tunggal / 語彙 kosakata / 文法 pola tata bahasa) — bisa di-skip kalau mau fokus salah satu doang.</p>
+  <div id="custom-cat-toggles" style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:24px"></div>
+
+  <div id="custom-preview" style="background:white;border:1px solid var(--border);border-radius:12px;padding:14px;margin-bottom:16px"></div>
+
+  <button onclick="resetCustomSkip()" style="width:100%;padding:12px;border:1.5px solid var(--border);border-radius:10px;background:white;color:var(--mist);font-family:inherit;font-size:13px;font-weight:700;cursor:pointer">🔄 Reset ke Default (gak skip apa-apa)</button>
+</div>
+
 <div id="screen-jalur" class="screen">
   <div class="section-title" style="margin-bottom:6px">🎯 Jalur Belajar</div>
   <p style="font-size:13px;color:var(--ink);margin-bottom:6px;line-height:1.6">Pernah ngerasa <b>tau kanjinya tapi lupa cara bacanya</b>? Atau <b>tau bacaannya tapi lupa artinya</b>? Atau <b>tau katanya tapi gak tau kanjinya</b>? Itu wajar banget — itu tandanya kanji, bacaan, dan arti masih kesimpen terpisah di kepala, belum nyambung jadi satu paket.</p>
@@ -3724,10 +3778,22 @@ async function buildBunpoContextQuestions(n){
   shuffle(pats);
   var pick = pats.slice(0, Math.min(12, pats.length));
   var patternList = pick.map(function(p){ return p.pattern+' ('+p.arti+')'; }).join(', ');
+  // Referensi kalimat karangan sendiri (fitur "Kalimatku") — dipakai sbg contoh GAYA di level
+  // tinggi (N3/N2/N1) biar soal AI kerasa lebih ngena ke gaya kalimat yang beneran user tulis,
+  // bukan cuma random generate tanpa konteks. Cuma dipake kalau ada minimal 3 kalimat tersimpan.
+  var refSentenceBlock = '';
+  if(['N3','N2','N1'].indexOf(currentJLPT)>=0 && Array.isArray(kalimatBuatan) && kalimatBuatan.length>=3){
+    var refPool = kalimatBuatan.filter(function(k){ return k.level===currentJLPT; });
+    if(refPool.length<3) refPool = kalimatBuatan.slice();
+    shuffle(refPool);
+    var refSample = refPool.slice(0,3).map(function(k){ return k.jp; }).join(' / ');
+    refSentenceBlock = 'Sebagai referensi GAYA kalimat (bukan buat ditiru persis), ini contoh kalimat yang pernah user tulis sendiri: '+refSample+'. ';
+  }
   var prompt =
       'Kamu guru bahasa Jepang ahli pembuat soal JLPT '+currentJLPT+'. Buat '+n+' soal pilihan ganda 文脈規定/文法 berkualitas tinggi. '
     + levelLockText()
     + 'Soal menguji pola/kosakata berikut (boleh campur, pilih yang natural): '+patternList+'. '
+    + refSentenceBlock
     + 'ATURAN WAJIB:'+String.fromCharCode(10)
     + '1. Tiap kalimat 100% benar tata bahasa & maknanya natural, nyambung dengan konteks. JANGAN tempel kata ke frame yang tak cocok.'+String.fromCharCode(10)
     + '2. Tiap "q" mengandung tepat satu rumpang ditulis （　）. Jawaban benar adalah pola/kata yang paling tepat untuk konteks itu.'+String.fromCharCode(10)
@@ -5216,6 +5282,8 @@ async function loadFromFirestore() {
       if (data.dailyChecklist && data.dailyChecklist.date===new Date().toDateString()) dailyChecklist = data.dailyChecklist;
       var VALID_LVL = ['N5','N4','N3','N2','N1','SSW'];
       if (data.currentJLPT && VALID_LVL.indexOf(data.currentJLPT) >= 0) currentJLPT = data.currentJLPT;
+      if (data.customSkip) customSkip = {pos:data.customSkip.pos||[], cat:data.customSkip.cat||[]};
+      if (Array.isArray(data.kalimatBuatan)) kalimatBuatan = data.kalimatBuatan;
       progressPrivate = !!data.private;
       try{ localStorage.setItem('progressPrivate', progressPrivate?'1':'0'); }catch(e){}
       _updatePrivacyToggleUI();
@@ -5293,6 +5361,8 @@ async function saveToFirestore() {
       badges: unlockedBadges,
       dailyChecklist: dailyChecklist,
       currentJLPT: currentJLPT,
+      customSkip: customSkip,
+      kalimatBuatan: (kalimatBuatan||[]).slice(-60), // cap 60 biar gak nabrak limit dokumen 1MB
       lastSeen: firebase.firestore.FieldValue.serverTimestamp(),
     }, { merge: true });
     try{ localStorage.removeItem('n3_dirty'); }catch(e){}
@@ -5371,6 +5441,8 @@ async function syncNow() {
 // ============================================================
 // LOCAL STORAGE fallback
 // ============================================================
+var kalimatBuatan = []; // kalimat hasil karangan sendiri yg lolos cek gramatikal — jadi bahan referensi soal AI
+
 function saveToLocal() {
   try {
     localStorage.setItem('n3_mastered',   JSON.stringify(mastered));
@@ -5385,6 +5457,8 @@ function saveToLocal() {
     localStorage.setItem('n3_checklist',    JSON.stringify(dailyChecklist));
     localStorage.setItem('n3_checklist_snap', JSON.stringify(dailySnapshot));
     localStorage.setItem('n3_currentJLPT',  currentJLPT);
+    localStorage.setItem('n3_customSkip',   JSON.stringify(customSkip));
+    localStorage.setItem('n3_kalimatBuatan', JSON.stringify(kalimatBuatan));
   } catch(e) {}
 }
 
@@ -5411,6 +5485,10 @@ function loadFromLocal() {
     if (cl) { var clp = JSON.parse(cl); if (clp.date === new Date().toDateString()) dailyChecklist = clp; }
     const cs = localStorage.getItem('n3_checklist_snap');
     if (cs) { var csp = JSON.parse(cs); if (csp && csp.date === new Date().toDateString()) dailySnapshot = csp; }
+    const csk = localStorage.getItem('n3_customSkip');
+    if (csk) { var cskp = JSON.parse(csk); if(cskp) customSkip = {pos:cskp.pos||[], cat:cskp.cat||[]}; }
+    const kb = localStorage.getItem('n3_kalimatBuatan');
+    if (kb) { var kbp = JSON.parse(kb); if(Array.isArray(kbp)) kalimatBuatan = kbp; }
   } catch(e) {}
 }
 
@@ -7267,10 +7345,11 @@ function gotoScreen(name) {
   });
   var _lm=document.getElementById('nav-learn-menu');
   if(_lm) _lm.classList.remove('open');
-  var _learnScreens=['jalur','flashmenu','kotoba','kanjimenu','bunpomenu','katsuyomenu','dialectmenu','kazumenu','onomenu','onyomenu','wordtree','keiseimenu'];
+  var _learnScreens=['custom','jalur','flashmenu','kotoba','kanjimenu','bunpomenu','katsuyomenu','dialectmenu','kazumenu','onomenu','onyomenu','wordtree','keiseimenu'];
   var _lb=document.getElementById('nav-learn-btn');
   if(_lb) _lb.classList.toggle('active', _learnScreens.indexOf(name)>=0);
   if (name === 'overview') { updateOverview(); try{ maybeShowDailyChecklistModal(); }catch(e){} }
+  if (name === 'custom') renderCustomMenu();
   if (name === 'jalur') renderJalurBelajar();
   if (name === 'flashmenu') updateFlashMenu();
   if (name === 'kanjimenu') updateKanjiMenu();
@@ -8359,16 +8438,37 @@ function posOf(w){
   return 'meishi';
 }
 
+// ── CUSTOM: preferensi skip materi, berlaku GLOBAL ke semua menu yang narik kata dari sini
+// (Flashcard, Kalimat, semua generator soal ujian, dll) — satu setting, ngefek ke mana-mana. ──
+var customSkip = { pos: [], cat: [] };
+function _saveCustomSkip(){
+  try{ localStorage.setItem('n3_customSkip', JSON.stringify(customSkip)); }catch(e){}
+  try{ save(); }catch(e){}
+}
+function applyCustomSkip(words){
+  if(!customSkip || (!customSkip.pos.length && !customSkip.cat.length)) return words;
+  return words.filter(function(w){
+    if(customSkip.cat.length && w.cat && customSkip.cat.indexOf(w.cat)>=0) return false;
+    if(customSkip.pos.length && customSkip.pos.indexOf(posOf(w))>=0) return false;
+    return true;
+  });
+}
+
 // Kata untuk level aktif (N3 dari ALL_WORDS, lainnya dari JLPT_DATA).
 function posLevelWords(){
+  var out;
   if(currentJLPT==='N3'){
-    var out=[];
+    out=[];
     if(typeof ALL_WORDS!=='undefined'&&ALL_WORDS){
       ['kanji','vocab','grammar'].forEach(function(c){(ALL_WORDS[c]||[]).forEach(function(w){out.push(Object.assign({},w,{cat:c}));});});
     }
-    return out;
+  } else {
+    out=(JLPT_DATA[currentJLPT]||[]).map(function(w){return Object.assign({},w);});
   }
-  return (JLPT_DATA[currentJLPT]||[]).map(function(w){return Object.assign({},w);});
+  var filtered = applyCustomSkip(out);
+  // Kalau kepilih skip yang bablas (sampai kosong semua), abaikan filter drpd nge-break
+  // seluruh app — lebih aman balikin unfiltered drpd nampilin "0 kata" di mana-mana.
+  return filtered.length ? filtered : out;
 }
 
 // Mulai sesi belajar terfilter berdasarkan jenis kata (reuse mesin sesi yang ada).
@@ -13756,6 +13856,155 @@ function renderKeiseiList(){
 }
 function updateKeiseiMenu(){ try{ localStorage.setItem('n3_seen_keiseimenu','1'); }catch(e){} renderKeiseiList(); }
 
+// ── ✍️ BUAT KALIMATMU SENDIRI: mode produktif — user ngarang kalimat sendiri, AI cuma
+// cek benar/salah gramatikal (simpel, sesuai keputusan). Kalimat yang LOLOS kesimpen ke
+// kalimatBuatan[] dan dipakai sbg referensi gaya buat generator soal AI di level tinggi
+// (lihat pemakaiannya di buildBunpoContextQuestions). ──
+var kbState = {items:[], idx:0, okN:0, savedThisSession:0};
+async function startKalimatBuat(){
+  gotoScreenRaw('kalimatbuat');
+  document.getElementById('kb-done').style.display='none';
+  document.getElementById('kb-card').style.display='block';
+  document.getElementById('kb-next').style.display='none';
+  var pool=[];
+  try{
+    if(currentJLPT!=='N3' && !kotobaLoaded(currentJLPT)) await loadKotoba(currentJLPT);
+    pool=posLevelWords();
+  }catch(e){}
+  if(!pool.length){ alert('Kosakata level ini belum termuat.'); gotoScreen('overview'); return; }
+  shuffle(pool);
+  var picks=pool.slice(0,8);
+  kbState={items:picks, idx:0, okN:0, savedThisSession:0};
+  kbShow();
+}
+function kbShow(){
+  var st=kbState;
+  if(st.idx>=st.items.length){ kbFinish(); return; }
+  var w=st.items[st.idx];
+  document.getElementById('kb-progress').textContent=(st.idx+1)+' / '+st.items.length;
+  document.getElementById('kb-target').textContent=(w.jp||'').split(/[;；]/)[0];
+  document.getElementById('kb-target-arti').textContent=(w.rom?'('+w.rom+') ':'')+(w.id_||'');
+  document.getElementById('kb-input').value='';
+  document.getElementById('kb-verdict').innerHTML='';
+  document.getElementById('kb-input-row').style.display='flex';
+  document.getElementById('kb-next').style.display='none';
+}
+async function kbSubmit(){
+  var st=kbState, w=st.items[st.idx];
+  var sentence=(document.getElementById('kb-input').value||'').trim();
+  if(!sentence) return;
+  var target=(w.jp||'').split(/[;；]/)[0];
+  document.getElementById('kb-verdict').innerHTML='<span style="color:var(--mist)">Mengecek...</span>';
+  var prompt='Kalimat bahasa Jepang berikut HARUS memakai kata "'+target+'" (boleh dikonjugasikan kalau kata kerja/sifat) dan gramatikal benar secara keseluruhan:\n"'+sentence+'"\n'
+    +'Balas HANYA JSON: {"ok":true/false,"reason":"alasan singkat dalam Bahasa Indonesia kalau ok:false, string kosong kalau ok:true"}';
+  var ok=false, reason='';
+  try{
+    var res=await fetch('/api/groq',{method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({temperature:0.3,max_tokens:200,
+        messages:[
+          {role:'system',content:'あなたは日本語教師です。出力は有効なJSONのみ。'},
+          {role:'user',content:prompt}
+        ]})});
+    var d=await res.json();
+    var raw=(d.choices && d.choices[0] && d.choices[0].message && d.choices[0].message.content || '{}').replace(/```json|```/g,'').trim();
+    var s1=raw.indexOf('{'), e1=raw.lastIndexOf('}');
+    if(s1>=0&&e1>s1) raw=raw.slice(s1,e1+1);
+    var parsed=JSON.parse(raw);
+    ok=!!parsed.ok; reason=parsed.reason||'';
+  }catch(e){
+    document.getElementById('kb-verdict').innerHTML='<span style="color:#c0392b">Gagal cek (koneksi/AI). Coba lagi.</span>';
+    return;
+  }
+  document.getElementById('kb-input-row').style.display='none';
+  document.getElementById('kb-next').style.display='block';
+  if(ok){
+    st.okN++;
+    kalimatBuatan.push({jp:sentence, word:target, level:currentJLPT, ts:Date.now()});
+    if(kalimatBuatan.length>200) kalimatBuatan=kalimatBuatan.slice(-200);
+    st.savedThisSession++;
+    _ms('kalimatBuatQ'); _ms('kalimatBuatOk');
+    save();
+    document.getElementById('kb-verdict').innerHTML='<div style="color:var(--jade);font-weight:800">✓ Bagus! Gramatikal benar.</div><div style="font-size:11px;color:var(--mist);margin-top:4px">Kalimat ini kesimpen jadi referensi buat soal ujian nanti 📚</div>';
+  } else {
+    _ms('kalimatBuatQ');
+    document.getElementById('kb-verdict').innerHTML='<div style="color:#c0392b;font-weight:800">✗ Belum tepat</div><div style="font-size:12px;color:var(--mist);margin-top:4px">'+(reason||'Coba cek lagi tata bahasanya.')+'</div>';
+  }
+}
+function kbNext(){ kbState.idx++; kbShow(); }
+function kbFinish(){
+  document.getElementById('kb-card').style.display='none';
+  document.getElementById('kb-next').style.display='none';
+  document.getElementById('kb-done').style.display='block';
+  document.getElementById('kb-done-score').textContent=kbState.okN+' dari '+kbState.items.length+' kalimat benar';
+  document.getElementById('kb-done-saved').textContent=kbState.savedThisSession+' kalimat baru kesimpen sesi ini · total tersimpan: '+kalimatBuatan.length+' kalimat';
+}
+
+// ── ⚙️ CUSTOM: layar pengaturan skip materi, berlaku global ke semua menu ──
+var POS_LABELS = {meishi:'📦 Kata Benda', doushi:'🏃 Kata Kerja', keiyoushi:'🎨 Kata Sifat', fukushi:'⚡ Kata Keterangan', setsuzoku:'🔗 Kata Sambung', pola:'📐 Pola Tata Bahasa'};
+var CAT_LABELS = {kanji:'漢字 Kanji Tunggal', vocab:'語彙 Kosakata', grammar:'文法 Pola Tata Bahasa'};
+function renderCustomMenu(){
+  // level pills
+  var lvBox = document.getElementById('custom-level-pills');
+  if(lvBox){
+    var levels = ['N5','N4','N3','N2','N1','SSW'];
+    lvBox.innerHTML = levels.map(function(lv){
+      var active = currentJLPT===lv;
+      var color = JLPT_COLORS[lv]||'var(--red)';
+      return '<button onclick="switchJLPT(\''+lv+'\');renderCustomMenu();" style="padding:9px 16px;border-radius:20px;border:1.5px solid '+(active?color:'var(--border)')+';background:'+(active?color:'white')+';color:'+(active?'#fff':'var(--mist)')+';font-family:inherit;font-size:13px;font-weight:700;cursor:pointer">'+lv+'</button>';
+    }).join('');
+  }
+  // pos toggles
+  var posBox = document.getElementById('custom-pos-toggles');
+  if(posBox){
+    posBox.innerHTML = Object.keys(POS_LABELS).map(function(p){
+      var active = customSkip.pos.indexOf(p)>=0;
+      return '<button onclick="toggleCustomSkipPos(\''+p+'\')" style="padding:8px 13px;border-radius:10px;border:1.5px solid '+(active?'#c0392b':'var(--border)')+';background:'+(active?'rgba(192,57,43,.08)':'white')+';color:'+(active?'#c0392b':'var(--ink)')+';font-family:inherit;font-size:12px;font-weight:700;cursor:pointer">'+(active?'🚫 ':'')+POS_LABELS[p]+'</button>';
+    }).join('');
+  }
+  // cat toggles
+  var catBox = document.getElementById('custom-cat-toggles');
+  if(catBox){
+    catBox.innerHTML = Object.keys(CAT_LABELS).map(function(c){
+      var active = customSkip.cat.indexOf(c)>=0;
+      return '<button onclick="toggleCustomSkipCat(\''+c+'\')" style="padding:8px 13px;border-radius:10px;border:1.5px solid '+(active?'#c0392b':'var(--border)')+';background:'+(active?'rgba(192,57,43,.08)':'white')+';color:'+(active?'#c0392b':'var(--ink)')+';font-family:inherit;font-size:12px;font-weight:700;cursor:pointer">'+(active?'🚫 ':'')+CAT_LABELS[c]+'</button>';
+    }).join('');
+  }
+  // preview: berapa kata tersisa setelah filter
+  var prev = document.getElementById('custom-preview');
+  if(prev){
+    var total=0, after=0;
+    try{
+      var lvl='N3'===currentJLPT ? [] : []; // placeholder, dihitung di bawah
+      var full = (function(){
+        // hitung tanpa filter (raw) vs dgn filter, tanpa ganggu global customSkip
+        var save1=customSkip; customSkip={pos:[],cat:[]};
+        var raw = posLevelWords();
+        customSkip=save1;
+        return raw;
+      })();
+      total = full.length;
+      after = posLevelWords().length;
+    }catch(e){}
+    var pct = total? Math.round(after/total*100) : 100;
+    prev.innerHTML = '<div style="font-size:12px;color:var(--mist);margin-bottom:6px">Kata yang bakal dipakai di semua menu:</div>'
+      + '<div style="font-family:\'DM Mono\',monospace;font-size:20px;font-weight:800;color:var(--ink)">'+after+' <span style="font-size:13px;color:var(--mist);font-weight:400">/ '+total+' ('+pct+'%)</span></div>';
+  }
+}
+function toggleCustomSkipPos(p){
+  var i=customSkip.pos.indexOf(p);
+  if(i>=0) customSkip.pos.splice(i,1); else customSkip.pos.push(p);
+  _saveCustomSkip(); renderCustomMenu();
+}
+function toggleCustomSkipCat(c){
+  var i=customSkip.cat.indexOf(c);
+  if(i>=0) customSkip.cat.splice(i,1); else customSkip.cat.push(c);
+  _saveCustomSkip(); renderCustomMenu();
+}
+function resetCustomSkip(){
+  customSkip = {pos:[], cat:[]};
+  _saveCustomSkip(); renderCustomMenu();
+}
+
 function renderJalurBelajar(){
   try{ localStorage.setItem('n3_seen_jalur','1'); }catch(e){}
   var box = document.getElementById('jalur-steps');
@@ -14799,6 +15048,7 @@ function refreshActiveScreen(){
   if(!active) return;
   var id=active.id.replace('screen-','');
   if(id==='overview')    updateOverview();
+  else if(id==='custom') renderCustomMenu();
   else if(id==='jalur')  renderJalurBelajar();
   else if(id==='flashmenu')  updateFlashMenu();
   else if(id==='kanjimenu')  updateKanjiMenu();
