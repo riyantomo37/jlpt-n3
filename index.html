@@ -1104,7 +1104,7 @@ header:has(.user-menu.open) { z-index:1000; }
         <span class="user-name" id="user-name">...</span>
         <span id="level-badge" onclick="event.stopPropagation();gotoScreen('levelreward')" title="Level & Reward" style="font-size:10px;font-weight:800;background:linear-gradient(135deg,var(--gold),#c98a1f);color:white;padding:2px 7px;border-radius:8px;cursor:pointer;letter-spacing:.3px">Lv.1</span>
         <span class="sync-badge" id="sync-badge">● sync</span>
-        <span id="build-dot" title="Indikator update: warnanya ganti tiap ada versi baru dari Claude" style="display:inline-block;width:11px;height:11px;border-radius:50%;background:#2da050;margin-left:6px;vertical-align:middle;border:2px solid white;box-shadow:0 0 0 1px rgba(0,0,0,.15)"></span>
+        <span id="build-dot" title="Indikator update: warnanya ganti tiap ada versi baru dari Claude" style="display:inline-block;width:11px;height:11px;border-radius:50%;background:#c0392b;margin-left:6px;vertical-align:middle;border:2px solid white;box-shadow:0 0 0 1px rgba(0,0,0,.15)"></span>
         <!-- 🔴🟢 CLAUDE: WAJIB toggle warna build-dot di atas SETIAP kali file ini dikirim ulang —
              merah #c0392b <-> hijau #2da050 gantian. Ini satu-satunya cara Riyan verifikasi
              upload-nya beneran ke-deploy. JANGAN LUPA, cek baris ini di awal SETIAP delivery. -->
@@ -1568,9 +1568,10 @@ header:has(.user-menu.open) { z-index:1000; }
 
 <!-- ====== KATSUYO (動詞活用 / Konjugasi) ====== -->
 <div id="screen-katsuyomenu" class="screen">
-  <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px">
+  <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px;flex-wrap:wrap">
     <span id="km-level-badge-katsuyo" style="background:var(--red);color:white;padding:3px 12px;border-radius:20px;font-family:'DM Mono',monospace;font-size:12px;font-weight:700">N5</span>
-    <div class="section-title" style="margin:0">活用 Konjugasi — Bentuk Kata Kerja</div>
+    <div class="section-title" style="margin:0;flex:1;min-width:150px">活用 Konjugasi — Bentuk Kata Kerja</div>
+    <span id="katsuyo-progress-badge" style="font-family:'DM Mono',monospace;font-size:11px;padding:4px 10px;border-radius:8px;font-weight:800;background:#7a5cc4;color:#fff">0%</span>
   </div>
   <div style="font-size:13px;color:var(--mist);margin-bottom:14px">Pelajari semua bentuk kata kerja (lampau, sopan, bisa, pasif, kausatif, perintah, syarat, dll) dari 18 kata kerja inti.</div>
   <div style="display:flex;gap:10px;margin-bottom:18px;flex-wrap:wrap">
@@ -1946,7 +1947,7 @@ header:has(.user-menu.open) { z-index:1000; }
 <div id="screen-keiseimenu" class="screen">
   <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
     <div class="section-title" style="margin:0">🔊 Bunyi Kanji (形声)</div>
-    <span style="font-family:'DM Mono',monospace;font-size:10px;padding:3px 8px;border-radius:8px;font-weight:800;background:#c0532e;color:#fff">BARU</span>
+    <span id="kmo-progress-badge" style="font-family:'DM Mono',monospace;font-size:11px;padding:4px 10px;border-radius:8px;font-weight:800;background:#c0532e;color:#fff">0%</span>
   </div>
   <p style="font-size:13px;color:var(--ink);margin-bottom:6px;line-height:1.6">Pernah kepikiran kenapa <b>晴・清・精・情・請・静</b> semua dibaca <b>せい</b>? Bukan kebetulan — keenamnya punya bagian yang sama (<b>青</b>), dan bagian itu yang nentuin bunyinya, bukan artinya.</p>
   <p style="font-size:13px;color:var(--mist);margin-bottom:16px;line-height:1.6">Istilahnya <b>形声文字 (keisei moji)</b>: kanji = <b>komponen fonetik</b> (nentuin cara baca) + <b>radikal makna</b> (nentuin arti). ~80% kanji Jepang kerja kayak gini. Begitu ngeh polanya, ketemu kanji baru pun kamu bisa nebak duluan cara bacanya sebelum buka kamus.</p>
@@ -2064,7 +2065,10 @@ header:has(.user-menu.open) { z-index:1000; }
 
 <!-- ====== POHON KATA (word tree: komponen → kanji → kosakata) ====== -->
 <div id="screen-wordtree" class="screen">
-  <div class="section-title" style="margin-bottom:6px">🌳 Pohon Kata</div>
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
+    <div class="section-title" style="margin:0">🌳 Pohon Kata</div>
+    <span id="wt-progress-badge" style="font-family:'DM Mono',monospace;font-size:11px;padding:4px 10px;border-radius:8px;font-weight:800;background:#2d7d46;color:#fff">0%</span>
+  </div>
   <div style="font-size:12px;color:var(--mist);line-height:1.5;margin-bottom:12px">
     Kanji dikelompokkan berdasarkan komponen/radikal yang sama. Tap kelompok untuk buka kanji-nya, tap kanji untuk lihat contoh kata.
   </div>
@@ -13867,7 +13871,25 @@ function renderKeiseiList(){
 
   box.innerHTML = tabsHtml + countHtml + (listHtml || '<div style="text-align:center;padding:30px;color:var(--mist);font-size:13px">Belum ada keluarga fonetik dgn ≥2 kanji khusus level ini.</div>');
 }
-function updateKeiseiMenu(){ try{ localStorage.setItem('n3_seen_keiseimenu','1'); }catch(e){} renderKeiseiList(); }
+function keiseiProgress(){
+  var total=0, done=0;
+  if(typeof KEISEI_SETS!=='undefined'){
+    KEISEI_SETS.forEach(function(fam){
+      fam.kanji.forEach(function(k){
+        total++;
+        if(kanjiReadMastered['kmo_'+fam.phon+'_'+k]) done++;
+      });
+    });
+  }
+  return {done:done, total:total, pct: total?Math.round(done/total*100):0};
+}
+function updateKeiseiMenu(){
+  try{ localStorage.setItem('n3_seen_keiseimenu','1'); }catch(e){}
+  var p = keiseiProgress();
+  var badge = document.getElementById('kmo-progress-badge');
+  if(badge){ badge.textContent = p.done+'/'+p.total+' ('+p.pct+'%)'; }
+  renderKeiseiList();
+}
 
 // ── ✍️ BUAT KALIMATMU SENDIRI: mode produktif — user ngarang kalimat sendiri, AI cuma
 // cek benar/salah gramatikal (simpel, sesuai keputusan). Kalimat yang LOLOS kesimpen ke
@@ -14431,11 +14453,28 @@ function wtSearch(){
   _wtLimit=40;
   wtRenderRoots(el?el.value:'');
 }
+function wordTreeProgress(){
+  var roots = _wtBuildTree();
+  var total=0, done=0;
+  var seen={};
+  roots.forEach(function(r){
+    r.kanji.forEach(function(k){
+      if(seen[r.key+'_'+k]) return; // hindari double count kalau kanji nongol di >1 grup sejenis
+      seen[r.key+'_'+k]=true;
+      total++;
+      if(kanjiReadMastered['wt_'+r.key+'_'+k]) done++;
+    });
+  });
+  return {done:done, total:total, pct: total?Math.round(done/total*100):0};
+}
 function updateWordTree(){
   try{ localStorage.setItem('n3_seen_wordtree','1'); }catch(e){}
   WORD_TREE=null; // rebuild kalau data berubah antar sesi
   _wtLimit=40;
   wtRenderRoots('');
+  var p = wordTreeProgress();
+  var badge = document.getElementById('wt-progress-badge');
+  if(badge) badge.textContent = p.done+'/'+p.total+' ('+p.pct+'%)';
 }
 
 // ============================================================
@@ -14519,9 +14558,8 @@ function wtQuizAssess(hafal){
     try{
       var card = {id:'wt_'+cur.root.key+'_'+cur.correct, jp:cur.correct};
       srsTouch(card, hafal);
-      if(hafal){
-        _touchStreak();
-      }
+      var fk = 'wt_'+cur.root.key+'_'+cur.correct;
+      if(hafal){ kanjiReadMastered[fk]=true; _touchStreak(); } else delete kanjiReadMastered[fk];
       save();
     }catch(e){}
   }
@@ -15311,12 +15349,29 @@ function conjugateAll(jp){
 // ===== TAB 動詞活用 (Konjugasi Kata Kerja) — Tahap 1: Tabel + Kartu =====
 var katsuyoState = { mode:'table', cardFormIdx:0, flipped:false, view:'list', sel:null, search:'', grp:'all' };
 
+function katsuyoProgress(){
+  var total = KATSUYO_VERBS.length, done=0;
+  KATSUYO_VERBS.forEach(function(v){ if(kanjiReadMastered['katsuyo_'+v.jp]) done++; });
+  return {done:done, total:total, pct: total?Math.round(done/total*100):0};
+}
+function toggleKatsuyoMastered(jp){
+  var mk='katsuyo_'+jp;
+  if(kanjiReadMastered[mk]) delete kanjiReadMastered[mk]; else { kanjiReadMastered[mk]=true; _touchStreak(); }
+  save();
+  katsuyoRenderActive();
+  var p = katsuyoProgress();
+  var badge = document.getElementById('katsuyo-progress-badge');
+  if(badge) badge.textContent = p.done+'/'+p.total+' ('+p.pct+'%)';
+}
 function updateKatsuyoMenu(){
   var color = JLPT_COLORS[currentJLPT] || 'var(--red)';
   var badge = document.getElementById('km-level-badge-katsuyo');
   if(badge){ badge.textContent = currentJLPT==='SSW'?'SSW 食品':currentJLPT; badge.style.background=color; badge.title=levelName(); }
   katsuyoState.view='list'; katsuyoState.sel=null; katsuyoState.search='';
   setKatsuyoMode(katsuyoState.mode || 'table');
+  var p = katsuyoProgress();
+  var pbadge = document.getElementById('katsuyo-progress-badge');
+  if(pbadge) pbadge.textContent = p.done+'/'+p.total+' ('+p.pct+'%)';
 }
 
 function setKatsuyoMode(m){
@@ -15416,11 +15471,15 @@ function renderKatsuyoList(host){
     html += '<div style="display:flex;flex-direction:column;gap:6px">';
     arr.forEach(function(it){
       var v=it.v;
-      html += '<div onclick="katsuyoOpenVerb('+it.i+')" '
-        + 'style="display:flex;align-items:center;gap:12px;background:white;border:1px solid var(--border);border-radius:10px;padding:10px 14px;cursor:pointer">'
+      var mk='katsuyo_'+v.jp;
+      var isMastered=!!kanjiReadMastered[mk];
+      html += '<div style="display:flex;align-items:center;gap:12px;background:white;border:1px solid var(--border);border-radius:10px;padding:10px 14px">'
+        + '<span onclick="event.stopPropagation();toggleKatsuyoMastered(\''+v.jp+'\')" style="width:20px;height:20px;border-radius:6px;border:2px solid '+(isMastered?'#7a5cc4':'var(--border)')+';background:'+(isMastered?'#7a5cc4':'white')+';display:flex;align-items:center;justify-content:center;color:#fff;font-size:12px;flex-shrink:0;cursor:pointer">'+(isMastered?'✓':'')+'</span>'
+        + '<div onclick="katsuyoOpenVerb('+it.i+')" style="flex:1;display:flex;align-items:center;gap:12px;cursor:pointer;min-width:0">'
         + '<span style="font-size:17px;font-weight:800;color:var(--ink);flex-shrink:0">'+v.jp+'</span>'
         + '<span style="font-size:12px;color:var(--mist);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+(v.id||v.rom||'')+'</span>'
         + '<span style="margin-left:auto;color:var(--mist);flex-shrink:0">›</span>'
+        + '</div>'
         + '</div>';
     });
     html += '</div>';
