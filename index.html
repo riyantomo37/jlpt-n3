@@ -1104,7 +1104,7 @@ header:has(.user-menu.open) { z-index:1000; }
         <span class="user-name" id="user-name">...</span>
         <span id="level-badge" onclick="event.stopPropagation();gotoScreen('levelreward')" title="Level & Reward" style="font-size:10px;font-weight:800;background:linear-gradient(135deg,var(--gold),#c98a1f);color:white;padding:2px 7px;border-radius:8px;cursor:pointer;letter-spacing:.3px">Lv.1</span>
         <span class="sync-badge" id="sync-badge">● sync</span>
-        <span id="build-dot" title="Indikator update: warnanya ganti tiap ada versi baru dari Claude" style="display:inline-block;width:11px;height:11px;border-radius:50%;background:#c0392b;margin-left:6px;vertical-align:middle;border:2px solid white;box-shadow:0 0 0 1px rgba(0,0,0,.15)"></span>
+        <span id="build-dot" title="Indikator update: warnanya ganti tiap ada versi baru dari Claude" style="display:inline-block;width:11px;height:11px;border-radius:50%;background:#2da050;margin-left:6px;vertical-align:middle;border:2px solid white;box-shadow:0 0 0 1px rgba(0,0,0,.15)"></span>
         <!-- 🔴🟢 CLAUDE: WAJIB toggle warna build-dot di atas SETIAP kali file ini dikirim ulang —
              merah #c0392b <-> hijau #2da050 gantian. Ini satu-satunya cara Riyan verifikasi
              upload-nya beneran ke-deploy. JANGAN LUPA, cek baris ini di awal SETIAP delivery. -->
@@ -8228,6 +8228,26 @@ function renderOverviewProgCards(){
     +'</div>'
     +'<div style="font-size:11px;color:var(--mist);margin-top:8px">ujian '+currentJLPT+' selesai</div>'
     +'</div>';
+  // ── Menu belajar lainnya — sesuai permintaan, SEMUA menu belajar tanpa terkecuali
+  // ditampilin progress-nya di sini juga, gak cuma 4 yang lama. ──
+  if(!isSSW){
+    var kp=keiseiProgress(currentJLPT);
+    cards+=_progCard('🔊','Bunyi Kanji',kp.done,kp.total,'#c0532e','keiseimenu',null);
+    var wp=(typeof wordTreeProgress==='function')?wordTreeProgress():{done:0,total:0};
+    cards+=_progCard('🌳','Pohon Kata',wp.done,wp.total,'#2d7d46','wordtree',null);
+    var oyp=(typeof oyProgress==='function')?oyProgress():{done:0,total:0};
+    cards+=_progCard('🈁',"On'yomi-Kun'yomi",oyp.done,oyp.total,'#5c4b8a','onyomenu',null);
+  }
+  // Konjugasi, Dialek, Angka, Onomatope: kontennya FIX (gak berubah tiap ganti level),
+  // makanya angkanya bakal sama aja walau pindah-pindah pil N5/N4/dst di atas — itu normal.
+  var katp=(typeof katsuyoProgress==='function')?katsuyoProgress():{done:0,total:0};
+  cards+=_progCard('活用','Konjugasi',katp.done,katp.total,'#7a5cc4','katsuyomenu',null);
+  var dip=dialectProgress();
+  cards+=_progCard('🗾','Dialek',dip.done,dip.total,'#c0392b','dialectmenu',null);
+  var kzp=kazuProgress();
+  cards+=_progCard('🔢','Angka',kzp.done,kzp.total,'#2c7ac8','kazumenu',null);
+  var onp=onoProgress();
+  cards+=_progCard('💬','Onomatope',onp.done,onp.total,'#0a7d6b','onomenu',null);
   cards+='</div>';
   host.innerHTML=cards;
 }
@@ -13871,14 +13891,49 @@ function renderKeiseiList(){
 
   box.innerHTML = tabsHtml + countHtml + (listHtml || '<div style="text-align:center;padding:30px;color:var(--mist);font-size:13px">Belum ada keluarga fonetik dgn ≥2 kanji khusus level ini.</div>');
 }
-function keiseiProgress(){
+function keiseiProgress(levelFilter){
   var total=0, done=0;
   if(typeof KEISEI_SETS!=='undefined'){
     KEISEI_SETS.forEach(function(fam){
       fam.kanji.forEach(function(k){
+        if(levelFilter && levelFilter!=='ALL' && (fam.lvl&&fam.lvl[k])!==levelFilter) return;
         total++;
         if(kanjiReadMastered['kmo_'+fam.phon+'_'+k]) done++;
       });
+    });
+  }
+  return {done:done, total:total, pct: total?Math.round(done/total*100):0};
+}
+function dialectProgress(){
+  var total=0, done=0;
+  if(typeof DIALECT_DATA!=='undefined'){
+    Object.keys(DIALECT_DATA).forEach(function(k){
+      if(k==='kanto') return; // baseline standar, bukan yg "dihafalin"
+      var items=(DIALECT_DATA[k].items||[]);
+      total+=items.length;
+      done+=Math.min(Object.keys(mastered['dia_'+k]||{}).length, items.length);
+    });
+  }
+  return {done:done, total:total, pct: total?Math.round(done/total*100):0};
+}
+function kazuProgress(){
+  var total=0, done=0;
+  if(typeof KAZU_ORDER!=='undefined'){
+    KAZU_ORDER.forEach(function(k){
+      var items=(KAZU_DATA[k]||[]);
+      total+=items.length;
+      done+=Math.min(Object.keys(mastered['kazu_'+k]||{}).length, items.length);
+    });
+  }
+  return {done:done, total:total, pct: total?Math.round(done/total*100):0};
+}
+function onoProgress(){
+  var total=0, done=0;
+  if(typeof ONO_ORDER!=='undefined'){
+    ONO_ORDER.forEach(function(k){
+      var items=(ONO_DATA[k]||[]);
+      total+=items.length;
+      done+=Math.min(Object.keys(mastered['ono_'+k]||{}).length, items.length);
     });
   }
   return {done:done, total:total, pct: total?Math.round(done/total*100):0};
