@@ -1104,7 +1104,7 @@ header:has(.user-menu.open) { z-index:1000; }
         <span class="user-name" id="user-name">...</span>
         <span id="level-badge" onclick="event.stopPropagation();gotoScreen('levelreward')" title="Level & Reward" style="font-size:10px;font-weight:800;background:linear-gradient(135deg,var(--gold),#c98a1f);color:white;padding:2px 7px;border-radius:8px;cursor:pointer;letter-spacing:.3px">Lv.1</span>
         <span class="sync-badge" id="sync-badge">● sync</span>
-        <span id="build-dot" title="Indikator update: warnanya ganti tiap ada versi baru dari Claude" style="display:inline-block;width:11px;height:11px;border-radius:50%;background:#2da050;margin-left:6px;vertical-align:middle;border:2px solid white;box-shadow:0 0 0 1px rgba(0,0,0,.15)"></span>
+        <span id="build-dot" title="Indikator update: warnanya ganti tiap ada versi baru dari Claude" style="display:inline-block;width:11px;height:11px;border-radius:50%;background:#c0392b;margin-left:6px;vertical-align:middle;border:2px solid white;box-shadow:0 0 0 1px rgba(0,0,0,.15)"></span>
         <!-- 🔴🟢 CLAUDE: WAJIB toggle warna build-dot di atas SETIAP kali file ini dikirim ulang —
              merah #c0392b <-> hijau #2da050 gantian. Ini satu-satunya cara Riyan verifikasi
              upload-nya beneran ke-deploy. JANGAN LUPA, cek baris ini di awal SETIAP delivery. -->
@@ -8180,7 +8180,7 @@ function updateOverview() {
   if(lnEl){ lnEl.textContent = currentJLPT==='SSW'?'SSW Pengolahan Makanan':currentJLPT; lnEl.style.color=color; }
   var total = getCurrentTotal();
   var done  = getCurrentMastered();
-  renderOverviewProgCards();
+  renderOverviewProgSummary();
   document.getElementById('ov-streak').textContent = streak + '🔥';
   document.getElementById('ov-today').textContent  = todayCount;
 
@@ -8208,9 +8208,48 @@ function updateOverview() {
 }
 
 // Grid kartu Progress Hafalan untuk dashboard (sama seperti tab Progress).
-function renderOverviewProgCards(){
+// Gabungan SEMUA progress menu belajar jadi satu persentase — dipake buat ringkasan simpel
+// di Dashboard. Kotoba/Kanji/Ujian selalu ikut; sisanya nyesuain level (SSW skip yg gak relevan).
+function overallLevelProgress(){
+  var isSSW=currentJLPT==='SSW';
+  var td=0, ta=0;
+  function add(p){ if(p && p.total){ td+=p.done; ta+=p.total; } }
+  add(_countKotoba());
+  add(_countKanji());
+  if(!isSSW){
+    var totPat=(BUNPO_DATA[currentJLPT]||[]).length;
+    var bunpoDone=Math.min((bunpoProgress[currentJLPT]||0)*(typeof STAGE_SIZE!=='undefined'?STAGE_SIZE:3), totPat);
+    add({done:bunpoDone, total:totPat});
+    add(keiseiProgress(currentJLPT));
+    add(typeof wordTreeProgress==='function'?wordTreeProgress():null);
+    add(typeof oyProgress==='function'?oyProgress():null);
+  }
+  add(typeof katsuyoProgress==='function'?katsuyoProgress():null);
+  add(dialectProgress());
+  add(kazuProgress());
+  add(onoProgress());
+  return {done:td, total:ta, pct: ta?Math.round(td/ta*100):0};
+}
+// Ringkasan simpel di Dashboard: satu angka persen gabungan + tombol ke detail lengkap
+// (detail 11 kartu-nya pindah ke tab Progress, biar Dashboard gak penuh).
+function renderOverviewProgSummary(){
   var host=document.getElementById('ov-prog-cards');
   if(!host) return;
+  var p=overallLevelProgress();
+  var color=JLPT_COLORS[currentJLPT]||'var(--red)';
+  host.innerHTML = '<div onclick="gotoScreen(\'review\')" style="background:white;border:1px solid var(--border);border-radius:14px;padding:16px;box-shadow:var(--shadow);cursor:pointer">'
+    + '<div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:8px">'
+    + '<span style="font-size:13px;font-weight:800;color:var(--ink)">📊 Progress '+currentJLPT+'</span>'
+    + '<span style="font-family:\'DM Mono\',monospace;font-size:26px;font-weight:800;color:'+color+'">'+p.pct+'%</span>'
+    + '</div>'
+    + '<div style="background:#eee;border-radius:5px;height:8px;overflow:hidden;margin-bottom:10px"><div style="height:100%;width:'+p.pct+'%;background:'+color+'"></div></div>'
+    + '<div style="font-size:11px;color:var(--mist);margin-bottom:12px">'+p.done+' dari '+p.total+' total (gabungan semua menu belajar level ini)</div>'
+    + '<div style="width:100%;padding:11px;border:none;border-radius:10px;background:'+color+';color:#fff;font-family:inherit;font-size:13px;font-weight:800;text-align:center">▶ Mulai Progress</div>'
+    + '</div>';
+}
+// Builder HTML 11-kartu progress detail — return string (reusable, gak nimpa DOM langsung)
+// biar bisa dipake di Dashboard (dulu) DAN tab Progress tanpa duplikasi kode.
+function _buildAllProgCardsHtml(){
   var isSSW=currentJLPT==='SSW';
   var ko=_countKotoba();
   var ka=_countKanji();
@@ -8228,8 +8267,7 @@ function renderOverviewProgCards(){
     +'</div>'
     +'<div style="font-size:11px;color:var(--mist);margin-top:8px">ujian '+currentJLPT+' selesai</div>'
     +'</div>';
-  // ── Menu belajar lainnya — sesuai permintaan, SEMUA menu belajar tanpa terkecuali
-  // ditampilin progress-nya di sini juga, gak cuma 4 yang lama. ──
+  // ── Menu belajar lainnya — SEMUA menu belajar tanpa terkecuali ditampilin progress-nya. ──
   if(!isSSW){
     var kp=keiseiProgress(currentJLPT);
     cards+=_progCard('🔊','Bunyi Kanji',kp.done,kp.total,'#c0532e','keiseimenu',null);
@@ -8249,7 +8287,12 @@ function renderOverviewProgCards(){
   var onp=onoProgress();
   cards+=_progCard('💬','Onomatope',onp.done,onp.total,'#0a7d6b','onomenu',null);
   cards+='</div>';
-  host.innerHTML=cards;
+  return cards;
+}
+function renderOverviewProgCards(targetId){
+  var host=document.getElementById(targetId||'ov-prog-cards');
+  if(!host) return;
+  host.innerHTML=_buildAllProgCardsHtml();
 }
 
 // Menu cards on the dashboard — clickable shortcuts to every tab, level-aware.
@@ -9526,25 +9569,9 @@ function renderProgressDashboard(){
     }
   }catch(e){}
 
-  var ko=_countKotoba();
-  var ka=_countKanji();
-  var totPat=(BUNPO_DATA[currentJLPT]||[]).length;
-  var bunpoDone=Math.min((bunpoProgress[currentJLPT]||0)*STAGE_SIZE, totPat);
-
-  // ── Kartu ringkas, bisa diklik ──
-  var cards='<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px">';
-  cards+=_progCard('📦','Kotoba',ko.done,ko.total,'var(--indigo)','flashmenu','kotoba');
-  cards+=_progCard('漢字','Kanji',ka.done,ka.total,'var(--gold)','kanjimenu','kanji');
-  if(!isSSW) cards+=_progCard('文法','Bunpou',bunpoDone,totPat,'#7a5cc4','bunpomenu','bunpou');
-  var exN=(examHistory||[]).filter(function(e){return e.level===currentJLPT;}).length;
-  cards+='<div onclick="gotoScreen(\'exam\')" style="background:white;border:1px solid var(--border);border-left:3px solid var(--red);border-radius:12px;padding:13px 14px;box-shadow:var(--shadow);cursor:pointer;transition:transform .12s" onmouseover="this.style.transform=\'translateY(-2px)\'" onmouseout="this.style.transform=\'\'">'
-    +'<div style="display:flex;justify-content:space-between;align-items:baseline">'
-    +'<span style="font-size:13px;font-weight:700;color:var(--ink)">📝 Ujian</span>'
-    +'<span style="font-family:\'DM Mono\',monospace;font-size:18px;color:var(--red);font-weight:700">'+exN+'</span>'
-    +'</div>'
-    +'<div style="font-size:11px;color:var(--mist);margin-top:8px">ujian '+currentJLPT+' selesai</div>'
-    +'</div>';
-  cards+='</div>';
+  // ── Kartu progress SEMUA menu belajar (11 kartu, gak cuma 4) — detail lengkap pindah
+  // ke sini dari Dashboard, biar Dashboard tetap ringkas cuma nampilin 1 angka gabungan. ──
+  var cards=_buildAllProgCardsHtml()+'<div style="margin-bottom:14px"></div>';
 
   // ── Riwayat ujian → DROPDOWN (tertutup default) ──
   var hist=(examHistory||[]).slice().sort(function(a,b){return (b.ts||'').localeCompare(a.ts||'');});
