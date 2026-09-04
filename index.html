@@ -1104,7 +1104,7 @@ header:has(.user-menu.open) { z-index:1000; }
         <span class="user-name" id="user-name">...</span>
         <span id="level-badge" onclick="event.stopPropagation();gotoScreen('levelreward')" title="Level & Reward" style="font-size:10px;font-weight:800;background:linear-gradient(135deg,var(--gold),#c98a1f);color:white;padding:2px 7px;border-radius:8px;cursor:pointer;letter-spacing:.3px">Lv.1</span>
         <span class="sync-badge" id="sync-badge">● sync</span>
-        <span id="build-dot" title="Indikator update: warnanya ganti tiap ada versi baru dari Claude" style="display:inline-block;width:11px;height:11px;border-radius:50%;background:#c0392b;margin-left:6px;vertical-align:middle;border:2px solid white;box-shadow:0 0 0 1px rgba(0,0,0,.15)"></span>
+        <span id="build-dot" title="Indikator update: warnanya ganti tiap ada versi baru dari Claude" style="display:inline-block;width:11px;height:11px;border-radius:50%;background:#2da050;margin-left:6px;vertical-align:middle;border:2px solid white;box-shadow:0 0 0 1px rgba(0,0,0,.15)"></span>
         <!-- 🔴🟢 CLAUDE: WAJIB toggle warna build-dot di atas SETIAP kali file ini dikirim ulang —
              merah #c0392b <-> hijau #2da050 gantian. Ini satu-satunya cara Riyan verifikasi
              upload-nya beneran ke-deploy. JANGAN LUPA, cek baris ini di awal SETIAP delivery. -->
@@ -13598,6 +13598,11 @@ function _twinKanjiSet(){
   return s;
 }
 function _twinPool(){
+  // lv di TWIN_SETS ikut konvensi angka JLPT (lv:5=N5 paling dasar, lv:3=N3 lebih rumit) —
+  // udah diverifikasi manual ke kanji aslinya (lv:5 isinya 右/石/白/午/牛/本 dasar banget;
+  // lv:3 isinya 未/複/識/職 yg jelas lebih rumit). Logic >=num ini udah BENER: makin gampang
+  // levelnya (N5=5), makin ketat filternya (cuma dapet yg lv:5). N3/N2/N1 dapet pool sama
+  // (semua 689) krn data emang cuma dibikin sampai granularitas N3, belum ada lv:1/lv:2.
   var num={'N5':5,'N4':4,'N3':3,'N2':3,'N1':3,'SSW':4}[currentJLPT]||4;
   var pool=TWIN_SETS.filter(function(t){return (t.lv||4)>=num;});
   return pool.length?pool:TWIN_SETS;
