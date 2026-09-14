@@ -1104,7 +1104,7 @@ header:has(.user-menu.open) { z-index:1000; }
         <span class="user-name" id="user-name">...</span>
         <span id="level-badge" onclick="event.stopPropagation();gotoScreen('levelreward')" title="Level & Reward" style="font-size:10px;font-weight:800;background:linear-gradient(135deg,var(--gold),#c98a1f);color:white;padding:2px 7px;border-radius:8px;cursor:pointer;letter-spacing:.3px">Lv.1</span>
         <span class="sync-badge" id="sync-badge">● sync</span>
-        <span id="build-dot" title="Indikator update: warnanya ganti tiap ada versi baru dari Claude" style="display:inline-block;width:11px;height:11px;border-radius:50%;background:#c0392b;margin-left:6px;vertical-align:middle;border:2px solid white;box-shadow:0 0 0 1px rgba(0,0,0,.15)"></span>
+        <span id="build-dot" title="Indikator update: warnanya ganti tiap ada versi baru dari Claude" style="display:inline-block;width:11px;height:11px;border-radius:50%;background:#2da050;margin-left:6px;vertical-align:middle;border:2px solid white;box-shadow:0 0 0 1px rgba(0,0,0,.15)"></span>
         <!-- 🔴🟢 CLAUDE: WAJIB toggle warna build-dot di atas SETIAP kali file ini dikirim ulang —
              merah #c0392b <-> hijau #2da050 gantian. Ini satu-satunya cara Riyan verifikasi
              upload-nya beneran ke-deploy. JANGAN LUPA, cek baris ini di awal SETIAP delivery. -->
@@ -9193,8 +9193,12 @@ function startKanjiFlashBunpo(){
   var words=bunpoKanjiCards();
   var unmastered=words.filter(function(w){return !_kfBunpoDone(w);});
   var done=words.filter(function(w){return _kfBunpoDone(w);});
-  shuffle(unmastered); shuffle(done);
-  kfQueue=unmastered.concat(done).slice(0,SESSION_SIZE);
+  var pool;
+  if(kfFilterMode==='belum') pool = unmastered.slice();
+  else if(kfFilterMode==='sudah') pool = done.slice();
+  else pool = unmastered.concat(done);
+  pool = orderPoolByMode(pool, function(w){ return w.rom || ''; });
+  kfQueue=pool.slice(0,SESSION_SIZE);
   kfIdx=0;
   document.getElementById('kf-title').textContent=(currentJLPT!=='N3'?currentJLPT+' — ':'')+'文法 Pola (ber-kanji)';
   document.getElementById('kf-subtitle').textContent=unmastered.length+' belum · '+done.length+' sudah';
@@ -9203,6 +9207,7 @@ function startKanjiFlashBunpo(){
   document.querySelectorAll('nav button').forEach(function(b){b.classList.remove('active');});
   document.getElementById('kf-done-panel').style.display='none';
   document.getElementById('kf-active').style.display='block';
+  try{ renderKfSettingsBarGeneric('startKanjiFlashBunpo()'); }catch(e){}
   if(!kfQueue.length) document.getElementById('kf-subtitle').textContent='Tidak ada pola ber-kanji di '+currentJLPT;
   showKanjiCard();
 }
@@ -9212,8 +9217,12 @@ function startKanjiFlashPos(pos){
   var words=kanjiPosWords(pos);
   var unmastered=words.filter(function(w){return !_kfReadDonePos(w);});
   var done=words.filter(function(w){return _kfReadDonePos(w);});
-  shuffle(unmastered); shuffle(done);
-  kfQueue=unmastered.concat(done).slice(0,SESSION_SIZE);
+  var pool;
+  if(kfFilterMode==='belum') pool = unmastered.slice();
+  else if(kfFilterMode==='sudah') pool = done.slice();
+  else pool = unmastered.concat(done);
+  pool = orderPoolByMode(pool, function(w){ return w.rom || ''; });
+  kfQueue=pool.slice(0,SESSION_SIZE);
   kfIdx=0;
   var titles={meishi:'名詞 Kata Benda',doushi:'動詞 Kata Kerja',keiyoushi:'形容詞 Kata Sifat',fukushi:'副詞 Keterangan',setsuzoku:'接続詞 Kata Sambung',pola:'表現 Pola'};
   document.getElementById('kf-title').textContent=(currentJLPT!=='N3'?currentJLPT+' — ':'')+(titles[pos]||pos);
@@ -9223,8 +9232,19 @@ function startKanjiFlashPos(pos){
   document.querySelectorAll('nav button').forEach(function(b){b.classList.remove('active');});
   document.getElementById('kf-done-panel').style.display='none';
   document.getElementById('kf-active').style.display='block';
+  try{ renderKfSettingsBarGeneric("startKanjiFlashPos('"+pos+"')"); }catch(e){}
   if(!kfQueue.length) document.getElementById('kf-subtitle').textContent='Tidak ada kanji jenis ini di '+currentJLPT;
   showKanjiCard();
+}
+// Versi generik settings bar (urutan+filter) yang bisa dipake fungsi manapun yg pake
+// screen-kanjiflash + kf-settings-bar, tinggal kasih tau cara "restart" sesi yg lagi aktif.
+function renderKfSettingsBarGeneric(restartCall){
+  var el = document.getElementById('kf-settings-bar');
+  if(!el) return;
+  function ob(mode,label){ var a=studyOrderMode===mode; return '<button onclick="setStudyOrderMode(\''+mode+'\');'+restartCall+'" style="padding:5px 10px;border-radius:12px;border:1.5px solid '+(a?'var(--ink)':'var(--border)')+';background:'+(a?'var(--ink)':'white')+';color:'+(a?'#fff':'var(--mist)')+';font-family:inherit;font-size:10.5px;font-weight:700;cursor:pointer">'+label+'</button>'; }
+  function fb(mode,label){ var a=kfFilterMode===mode; return '<button onclick="setKfFilterMode(\''+mode+'\');'+restartCall+'" style="padding:5px 10px;border-radius:12px;border:1.5px solid '+(a?'#8b5a2b':'var(--border)')+';background:'+(a?'#8b5a2b':'white')+';color:'+(a?'#fff':'var(--mist)')+';font-family:inherit;font-size:10.5px;font-weight:700;cursor:pointer">'+label+'</button>'; }
+  el.innerHTML = '<div style="display:flex;gap:5px;flex-wrap:wrap;margin-bottom:6px">'+ob('acak','🔀 Acak')+ob('urut','🔤 Urut あ→わ')+'</div>'
+    + '<div style="display:flex;gap:5px;flex-wrap:wrap">'+fb('semua','Semua')+fb('belum','Belum hafal')+fb('sudah','Sudah hafal')+'</div>';
 }
 
 // Render kartu jenis kata (baca kanji) di kanjimenu.
