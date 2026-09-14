@@ -1104,7 +1104,7 @@ header:has(.user-menu.open) { z-index:1000; }
         <span class="user-name" id="user-name">...</span>
         <span id="level-badge" onclick="event.stopPropagation();gotoScreen('levelreward')" title="Level & Reward" style="font-size:10px;font-weight:800;background:linear-gradient(135deg,var(--gold),#c98a1f);color:white;padding:2px 7px;border-radius:8px;cursor:pointer;letter-spacing:.3px">Lv.1</span>
         <span class="sync-badge" id="sync-badge">● sync</span>
-        <span id="build-dot" title="Indikator update: warnanya ganti tiap ada versi baru dari Claude" style="display:inline-block;width:11px;height:11px;border-radius:50%;background:#2da050;margin-left:6px;vertical-align:middle;border:2px solid white;box-shadow:0 0 0 1px rgba(0,0,0,.15)"></span>
+        <span id="build-dot" title="Indikator update: warnanya ganti tiap ada versi baru dari Claude" style="display:inline-block;width:11px;height:11px;border-radius:50%;background:#c0392b;margin-left:6px;vertical-align:middle;border:2px solid white;box-shadow:0 0 0 1px rgba(0,0,0,.15)"></span>
         <!-- 🔴🟢 CLAUDE: WAJIB toggle warna build-dot di atas SETIAP kali file ini dikirim ulang —
              merah #c0392b <-> hijau #2da050 gantian. Ini satu-satunya cara Riyan verifikasi
              upload-nya beneran ke-deploy. JANGAN LUPA, cek baris ini di awal SETIAP delivery. -->
@@ -1151,6 +1151,7 @@ header:has(.user-menu.open) { z-index:1000; }
 </nav>
 <div id="nav-learn-menu">
   <button onclick="closeNavLearn();gotoScreen('jalur')" style="font-weight:800;color:#2c7ac8">🎯 Jalur Belajar</button>
+  <button onclick="closeNavLearn();gotoScreen('katema')" style="font-weight:800;color:#2c7ac8">📖 Kalimat per Tema <span style="font-size:9px;background:#2c7ac8;color:#fff;padding:1px 6px;border-radius:6px;margin-left:4px;font-weight:800">BARU</span></button>
   <button onclick="closeNavLearn();gotoScreen('custom')" style="font-weight:800;color:#8b5a2b">⚙️ Custom Belajar <span style="font-size:9px;background:#8b5a2b;color:#fff;padding:1px 6px;border-radius:6px;margin-left:4px;font-weight:800">BARU</span></button>
   <div style="border-top:1px solid var(--border);margin:4px 0"></div>
   <div style="font-size:10px;font-weight:800;color:var(--mist);letter-spacing:.5px;padding:6px 10px 2px">📚 KOSAKATA &amp; KANJI</div>
@@ -1636,6 +1637,19 @@ header:has(.user-menu.open) { z-index:1000; }
   </div>
   <div style="font-size:13px;color:var(--mist);margin-bottom:14px">Giongo (tiruan bunyi) & gitaigo (tiruan keadaan) — wajib N3 ke atas, sering keluar di ujian & percakapan. Tiap kata ada contoh kalimatnya.</div>
   <div id="ono-body"></div>
+</div>
+
+<!-- ====== 📖 KALIMAT PER TEMA: kotoba dikelompokin per tema, tiap tema ada kalimat gabungan
+     + tiap kata (kalau ada) ada kalimat individualnya sendiri. Sementara baru N5. ====== -->
+<div id="screen-katema" class="screen">
+  <div style="display:flex;align-items:center;gap:10px;margin-bottom:6px">
+    <span style="font-size:22px">📖</span>
+    <div class="section-title" style="margin:0;flex:1">Kalimat per Tema</div>
+    <span style="font-family:'DM Mono',monospace;font-size:10px;padding:3px 9px;border-radius:8px;font-weight:800;background:#2c7ac8;color:#fff">N5</span>
+  </div>
+  <p style="font-size:13px;color:var(--mist);margin-bottom:16px;line-height:1.6">Kotoba dikelompokin per tema, dikasih 1 kalimat gabungan buat tiap tema + kalimat sendiri per kata (kalau ada). Menghafal lewat konteks kalimat biasanya lebih nempel drpd kata lepas.</p>
+  <div id="katema-loading" style="display:none;text-align:center;padding:40px;color:var(--mist)">⏳ Memuat...</div>
+  <div id="katema-list"></div>
 </div>
 
 <!-- ====== LEADERBOARD ====== -->
@@ -7364,12 +7378,13 @@ function gotoScreen(name) {
   });
   var _lm=document.getElementById('nav-learn-menu');
   if(_lm) _lm.classList.remove('open');
-  var _learnScreens=['custom','jalur','flashmenu','kotoba','kanjimenu','bunpomenu','katsuyomenu','dialectmenu','kazumenu','onomenu','onyomenu','wordtree','keiseimenu'];
+  var _learnScreens=['custom','jalur','flashmenu','kotoba','kanjimenu','bunpomenu','katsuyomenu','dialectmenu','kazumenu','onomenu','onyomenu','wordtree','keiseimenu','katema'];
   var _lb=document.getElementById('nav-learn-btn');
   if(_lb) _lb.classList.toggle('active', _learnScreens.indexOf(name)>=0);
   if (name === 'overview') { updateOverview(); try{ maybeShowDailyChecklistModal(); }catch(e){} }
   if (name === 'custom') renderCustomMenu();
   if (name === 'jalur') renderJalurBelajar();
+  if (name === 'katema') updateKatema();
   if (name === 'flashmenu') updateFlashMenu();
   if (name === 'kanjimenu') updateKanjiMenu();
   if (name === 'kotoba') renderKotobaTab();
@@ -16791,6 +16806,114 @@ function startKazuFlash(k){
   showCard();
 }
 
+
+// ============================================================
+// 📖 KALIMAT PER TEMA — kotoba dikelompokin per tema, tiap tema ada 1 kalimat
+// gabungan + tiap kata (kalau ada) ada kalimat sendiri. Data dimuat on-demand
+// dari bank/Kotoba/tema_n5.json, di-cache di localStorage.
+// ============================================================
+var KATEMA_DATA = null;
+var KATEMA_VER = 'v1';
+var _katemaLoading = null;
+function katemaLoaded(){ return Array.isArray(KATEMA_DATA) && KATEMA_DATA.length>0; }
+async function loadKatema(){
+  if(katemaLoaded()) return true;
+  if(_katemaLoading) return _katemaLoading;
+  _katemaLoading = (async function(){
+    var ck = 'katema_n5_'+KATEMA_VER;
+    try{
+      var c = localStorage.getItem(ck);
+      if(c){ KATEMA_DATA = JSON.parse(c); return true; }
+    }catch(e){}
+    try{
+      var res = await fetch('bank/Kotoba/tema_n5.json');
+      if(!res.ok) throw new Error('HTTP '+res.status);
+      var data = await res.json();
+      if(!Array.isArray(data)||!data.length) throw new Error('data kosong');
+      KATEMA_DATA = data;
+      try{ localStorage.setItem(ck, JSON.stringify(data)); }catch(e){}
+      return true;
+    }catch(e){
+      console.error('loadKatema gagal:', e);
+      return false;
+    }
+  })();
+  var ok = await _katemaLoading;
+  _katemaLoading = null;
+  return ok;
+}
+var katemaOpenTheme = null; // id tema yg lagi dibuka, null = semua ketutup
+function katemaThemeProgress(theme){
+  var total=theme.kata.length, done=0;
+  theme.kata.forEach(function(w){ if(mastered['katema_'+w.jp]) done++; });
+  return {done:done, total:total, pct: total?Math.round(done/total*100):0};
+}
+async function updateKatema(){
+  var loadingEl = document.getElementById('katema-loading');
+  var listEl = document.getElementById('katema-list');
+  if(!katemaLoaded()){
+    if(loadingEl) loadingEl.style.display='block';
+    if(listEl) listEl.innerHTML='';
+    var ok = await loadKatema();
+    if(loadingEl) loadingEl.style.display='none';
+    if(!ok){ if(listEl) listEl.innerHTML='<div style="text-align:center;padding:30px;color:var(--mist);font-size:12.5px">Gagal memuat data. Cek koneksi lalu coba lagi.</div>'; return; }
+  }
+  renderKatemaList();
+}
+function renderKatemaList(){
+  var host = document.getElementById('katema-list');
+  if(!host || !katemaLoaded()) return;
+  host.innerHTML = KATEMA_DATA.map(function(t){
+    var p = katemaThemeProgress(t);
+    var open = katemaOpenTheme === t.id;
+    var kt = t.kalimat_tema;
+    var body = '';
+    if(open){
+      body += '<div style="background:#fbf6ec;border-radius:10px;padding:12px;margin:10px 0">'
+        + '<div style="font-size:16px;line-height:1.7;margin-bottom:4px">'+kt.jp+'</div>'
+        + '<div style="font-size:11.5px;color:#8b6b1f;margin-bottom:4px">'+kt.rom+'</div>'
+        + '<div style="font-size:12.5px;color:var(--mist)">'+kt.id+'</div>'
+        + '</div>';
+      body += t.kata.map(function(w){
+        var done = !!mastered['katema_'+w.jp];
+        var kalimatHtml = '';
+        if(w.kalimat){
+          kalimatHtml = '<div style="margin-top:5px;padding-top:5px;border-top:1px dashed var(--border)">'
+            + '<div style="font-size:13.5px;line-height:1.6">'+w.kalimat.jp+'</div>'
+            + '<div style="font-size:10.5px;color:#8b6b1f">'+w.kalimat.rom+'</div>'
+            + '<div style="font-size:11.5px;color:var(--mist)">'+w.kalimat.id+'</div>'
+            + '</div>';
+        } else {
+          kalimatHtml = '<div style="margin-top:5px;padding-top:5px;border-top:1px dashed var(--border);font-size:11px;color:#c0a880">(kalimat individual belum dibuat utk kata ini)</div>';
+        }
+        return '<div style="padding:10px 4px;border-bottom:1px solid var(--border)">'
+          + '<div onclick="toggleKatemaMastered(\''+w.jp.replace(/'/g,"\\'")+'\')" style="display:flex;align-items:center;gap:10px;cursor:pointer">'
+          + '<div style="width:18px;height:18px;border-radius:5px;border:2px solid '+(done?'#2c7ac8':'var(--border)')+';background:'+(done?'#2c7ac8':'white')+';display:flex;align-items:center;justify-content:center;color:#fff;font-size:11px;flex-shrink:0">'+(done?'✓':'')+'</div>'
+          + '<span style="font-weight:700;font-size:15px">'+w.jp+'</span>'
+          + '<span style="font-size:11px;color:var(--mist)">'+w.rom+'</span>'
+          + '<span style="font-size:11px;color:var(--mist);margin-left:auto">'+w.arti+'</span>'
+          + '</div>'
+          + kalimatHtml
+          + '</div>';
+      }).join('');
+    }
+    return '<div style="background:white;border:1px solid var(--border);border-radius:14px;margin-bottom:10px;overflow:hidden">'
+      + '<div onclick="katemaOpenTheme=(katemaOpenTheme===\''+t.id+'\'?null:\''+t.id+'\');renderKatemaList();" style="display:flex;align-items:center;gap:10px;padding:14px;cursor:pointer">'
+      + '<span style="font-size:22px">'+t.emoji+'</span>'
+      + '<div style="flex:1"><div style="font-weight:800;font-size:14px">'+t.title+'</div>'
+      + '<div style="font-size:11px;color:var(--mist)">'+p.done+'/'+p.total+' kata hafal ('+p.pct+'%)</div></div>'
+      + '<span style="color:var(--mist);font-size:13px">'+(open?'▲':'▼')+'</span>'
+      + '</div>'
+      + (open?('<div style="padding:0 14px 14px">'+body+'</div>'):'')
+      + '</div>';
+  }).join('');
+}
+function toggleKatemaMastered(jp){
+  var mk = 'katema_'+jp;
+  if(mastered[mk]) delete mastered[mk]; else { mastered[mk]=true; _touchStreak(); }
+  save();
+  renderKatemaList();
+}
 
 // Jangan panggil init() di sini — dipanggil oleh onAuthStateChanged setelah login
 </script>
