@@ -60,16 +60,16 @@ nav {
   background:white;
   border-bottom:1px solid var(--border);
   display:flex;
-  padding:0 28px;
-  gap:4px;
+  padding:0 8px;
+  gap:0px;
   overflow-x:auto;
 }
 nav button {
-  padding:12px 20px;
+  padding:12px 10px;
   border:none;
   background:none;
   font-family:'Noto Sans JP',sans-serif;
-  font-size:13px;
+  font-size:12px;
   font-weight:500;
   color:var(--mist);
   cursor:pointer;
@@ -1104,7 +1104,7 @@ header:has(.user-menu.open) { z-index:1000; }
         <span class="user-name" id="user-name">...</span>
         <span id="level-badge" onclick="event.stopPropagation();gotoScreen('levelreward')" title="Level & Reward" style="font-size:10px;font-weight:800;background:linear-gradient(135deg,var(--gold),#c98a1f);color:white;padding:2px 7px;border-radius:8px;cursor:pointer;letter-spacing:.3px">Lv.1</span>
         <span class="sync-badge" id="sync-badge">● sync</span>
-        <span id="build-dot" title="Indikator update: warnanya ganti tiap ada versi baru dari Claude" style="display:inline-block;width:11px;height:11px;border-radius:50%;background:#c0392b;margin-left:6px;vertical-align:middle;border:2px solid white;box-shadow:0 0 0 1px rgba(0,0,0,.15)"></span>
+        <span id="build-dot" title="Indikator update: warnanya ganti tiap ada versi baru dari Claude" style="display:inline-block;width:11px;height:11px;border-radius:50%;background:#2d7a4f;margin-left:6px;vertical-align:middle;border:2px solid white;box-shadow:0 0 0 1px rgba(0,0,0,.15)"></span>
         <!-- 🔴🟢 CLAUDE: WAJIB toggle warna build-dot di atas SETIAP kali file ini dikirim ulang —
              merah #c0392b <-> hijau #2da050 gantian. Ini satu-satunya cara Riyan verifikasi
              upload-nya beneran ke-deploy. JANGAN LUPA, cek baris ini di awal SETIAP delivery. -->
@@ -1145,6 +1145,7 @@ header:has(.user-menu.open) { z-index:1000; }
   <button class="active" onclick="navTo('overview')">🏠 Dashboard</button>
   <button id="nav-learn-btn" onclick="toggleNavLearn(event)">📚 Belajar ▾</button>
   <button onclick="navTo('exam')">📝 Ujian</button>
+  <button onclick="navTo('mphome')">🎮 Kuis Bareng</button>
   <button onclick="navTo('review')">📊 Progress</button>
   <button onclick="navTo('leaderboard')">🏆 Ranking</button>
   <button onclick="navTo('ai')">🤖 Sensei</button>
@@ -2229,7 +2230,8 @@ header:has(.user-menu.open) { z-index:1000; }
     <div style="font-size:11px;color:var(--mist);font-weight:700;letter-spacing:1px;margin-bottom:8px">KODE SESI</div>
     <div id="mp-lobby-code" style="font-family:'DM Mono',monospace;font-size:36px;font-weight:800;letter-spacing:4px;color:var(--red);margin-bottom:10px">------</div>
     <div id="mp-lobby-meta" style="font-size:12px;color:var(--mist);margin-bottom:14px"></div>
-    <button id="mp-copy-btn" onclick="mpCopyCode()" style="padding:10px 20px;border:1.5px solid var(--border);border-radius:10px;background:white;font-family:inherit;font-weight:700;cursor:pointer;font-size:13px">📋 Salin Kode</button>
+    <button id="mp-copy-btn" onclick="mpCopyCode()" style="padding:10px 16px;border:1.5px solid var(--border);border-radius:10px;background:white;font-family:inherit;font-weight:700;cursor:pointer;font-size:13px">📋 Salin Kode</button>
+    <button id="mp-share-btn" onclick="mpShareLink()" style="padding:10px 16px;border:none;border-radius:10px;background:var(--jade);color:white;font-family:inherit;font-weight:700;cursor:pointer;font-size:13px;margin-left:8px">🔗 Bagikan Link</button>
   </div>
   <div style="font-size:12px;font-weight:700;color:var(--mist);margin-bottom:8px">PEMAIN GABUNG (live)</div>
   <div id="mp-lobby-players"></div>
@@ -9009,6 +9011,37 @@ function mpCopyCode(){
     navigator.clipboard.writeText(code);
     var b=document.getElementById('mp-copy-btn'); if(b){var t=b.textContent; b.textContent='Disalin ✓'; setTimeout(function(){b.textContent=t;},1500);}
   }catch(e){ alert('Kode sesi: '+code); }
+}
+
+function mpJoinUrl(code){
+  return location.origin + location.pathname + '?join=' + code;
+}
+
+async function mpShareLink(){
+  var code=mpState.code; if(!code) return;
+  var url = mpJoinUrl(code);
+  var text = 'Gabung kuis JLPT bareng aku! Kode: '+code;
+  if(navigator.share){
+    try{ await navigator.share({ title:'Kuis Bareng JLPT', text:text, url:url }); return; }catch(e){ /* user cancel atau gagal → fallback di bawah */ }
+  }
+  try{
+    await navigator.clipboard.writeText(url);
+    var b=document.getElementById('mp-share-btn'); if(b){var t=b.textContent; b.textContent='Link disalin ✓'; setTimeout(function(){b.textContent=t;},1800);}
+  }catch(e){ alert('Link sesi:\n'+url); }
+}
+
+function mpCheckJoinLink(){
+  if(window._mpJoinLinkChecked) return;
+  window._mpJoinLinkChecked=true;
+  try{
+    var params = new URLSearchParams(window.location.search);
+    var code = params.get('join');
+    if(!code) return;
+    code = code.trim().toUpperCase();
+    mpGoJoin();
+    var codeEl=document.getElementById('mp-join-code'); if(codeEl) codeEl.value=code;
+    var nameEl=document.getElementById('mp-join-name'); if(nameEl) setTimeout(function(){ nameEl.focus(); }, 300);
+  }catch(e){}
 }
 
 async function mpCloseSession(){
@@ -16114,6 +16147,7 @@ function init() {
   // (diukur langsung, bukan angka nebak) biar dia nempel di BAWAH header, bukan numpuk.
   try{ _fixStickyOffsets(); }catch(e){}
   window.addEventListener('resize', function(){ try{ _fixStickyOffsets(); }catch(e){} });
+  try{ mpCheckJoinLink(); }catch(e){}
 }
 function _fixStickyOffsets(){
   var hdr = document.querySelector('header');
