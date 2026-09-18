@@ -8949,6 +8949,16 @@ var MP_POWERUP_DEFS = {
 };
 
 function mpEsc(s){ return String(s==null?'':s).replace(/[&<>"']/g, function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];}); }
+function mpQuestionTextHTML(q){
+  // Kalau ada tebakan kata yang diuji (dari mpGuessUnderline), garis-bawahi biar jelas
+  var text=(q&&q.q)||'';
+  if(q && q.underline && text.indexOf(q.underline)>=0){
+    var idx=text.indexOf(q.underline);
+    var before=text.slice(0,idx), target=text.slice(idx,idx+q.underline.length), after=text.slice(idx+q.underline.length);
+    return mpEsc(before)+'<u style="text-decoration-thickness:2.5px;text-underline-offset:3px">'+mpEsc(target)+'</u>'+mpEsc(after);
+  }
+  return mpEsc(text);
+}
 function mpShuffleCopy(arr){ var a=arr.slice(); shuffle(a); return a; }
 function mpSourceLabel(sources){
   var map={bank:'Bank Soal', kotoba:'Kotoba', kanji:'Kanji', bunpou:'Bunpou', keisei:'Bunyi Kanji', konjugasi:'Konjugasi'};
@@ -9148,6 +9158,72 @@ function mpKanjiQuestions(words, count, dir){
   return out;
 }
 
+// ── Heuristik nebak kata yang diuji di soal 漢字読み/表記 (data aslinya gak nyimpen
+// tanda garis bawah dari kertas ujian) — pakai KANJI_READ yang udah ada buat cocokin
+// bacaan kanji vs pilihan jawaban, biar bisa di-highlight walau gak 100% pasti. ──
+function _mpKataToHira(s){
+  return s.replace(/[\u30a1-\u30f6]/g, function(c){ return String.fromCharCode(c.charCodeAt(0)-0x60); });
+}
+function _mpReadingCandidates(word){
+  if(typeof KANJI_READ==='undefined') return [];
+  var perChar=[];
+  for(var i=0;i<word.length;i++){
+    var ch=word[i];
+    var rd=KANJI_READ[ch];
+    if(!rd){ perChar.push(null); continue; }
+    var opts=[];
+    (rd[0]||[]).forEach(function(o){ opts.push(_mpKataToHira(o)); });
+    (rd[1]||[]).forEach(function(o){ opts.push(o); });
+    perChar.push(opts.length?opts:null);
+  }
+  if(perChar.some(function(o){ return !o; })) return [];
+  var combos=[''];
+  for(var ci=0; ci<perChar.length; ci++){
+    var next=[];
+    for(var a=0;a<combos.length && next.length<300;a++){
+      for(var b=0;b<perChar[ci].length && next.length<300;b++){ next.push(combos[a]+perChar[ci][b]); }
+    }
+    combos=next;
+  }
+  return combos;
+}
+function mpGuessUnderline(sentence, answerText, mode){
+  // mode 'kanji2reading': answerText = bacaan hiragana → cari substring KANJI di sentence (問題1 漢字読み)
+  // mode 'reading2kanji': answerText = kata kanji → cari substring HIRAGANA di sentence (問題2 表記)
+  try{
+    if(!sentence || !answerText) return null;
+    if(mode==='kanji2reading'){
+      var runs=sentence.match(/[\u4e00-\u9fff]+/g);
+      if(!runs || !runs.length) return null;
+      if(runs.length===1) return runs[0];
+      var best=null, bestScore=-1;
+      runs.forEach(function(run){
+        var combos=_mpReadingCandidates(run);
+        var score;
+        if(combos.indexOf(answerText)>=0) score=100;
+        else { score=10-Math.abs(answerText.length-run.length*2); if(combos.some(function(c){return c[0]===answerText[0];})) score+=5; }
+        if(score>bestScore){ bestScore=score; best=run; }
+      });
+      return bestScore>0 ? best : null;
+    } else {
+      var hruns=sentence.match(/[\u3041-\u3096]+/g);
+      if(!hruns || !hruns.length) return null;
+      hruns=hruns.filter(function(r){ return r.length>=2; }); // buang partikel 1 huruf (は/が/を dst)
+      if(!hruns.length) return null;
+      if(hruns.length===1) return hruns[0];
+      var candidates=_mpReadingCandidates(answerText);
+      var best2=null, bestScore2=-1;
+      hruns.forEach(function(run){
+        var score2;
+        if(candidates.indexOf(run)>=0) score2=100;
+        else { score2=10-Math.abs(run.length-answerText.length*2); if(candidates.some(function(c){return c[0]===run[0];})) score2+=5; }
+        if(score2>bestScore2){ bestScore2=score2; best2=run; }
+      });
+      return bestScore2>0 ? best2 : null;
+    }
+  }catch(e){ return null; }
+}
+
 async function mpBankQuestions(level, count){
   if(count<=0) return [];
   try{
@@ -9165,9 +9241,23 @@ async function mpBankQuestions(level, count){
         var data=await r.json();
         (data.sections||[]).forEach(function(sec){
           var secPassage=sec.passage||null;
+          // Teks bacaan sering cuma nempel di soal PERTAMA dari satu passage_id (soal ke-2/3
+          // dst di passage yang sama field .passage-nya null) — kumpulin dulu per passage_id
+          // biar semua soal turunannya tetap bawa teksnya walau udah kepisah pas di-shuffle.
+          var passageMap={};
+          (sec.questions||[]).forEach(function(q){
+            if(q.passage_id && q.passage) passageMap[q.passage_id]=q.passage;
+          });
           (sec.questions||[]).forEach(function(q){
             if(!q.choices||q.choices.length<2||typeof q.answer!=='number') return;
-            pool.push({ q:q.q, choices:q.choices, answer:q.answer, section:sec.name||'', passage:q.passage||secPassage||null });
+            var passage = q.passage || (q.passage_id && passageMap[q.passage_id]) || secPassage || null;
+            var underline=null;
+            if(q.section==='漢字読み') underline=mpGuessUnderline(q.q, q.choices[q.answer], 'kanji2reading');
+            // Catatan: arah 表記 (mondai2, hiragana→kanji) sengaja TIDAK di-underline —
+            // jawabannya sering ada okurigana (mis. 降りましょう) yang bikin heuristik pencocokan
+            // meleset jauh (partikel ikut kesedot jadi satu run hiragana). Mending gak ada
+            // underline sama sekali daripada nunjukkin kata yang salah.
+            pool.push({ q:q.q, choices:q.choices, answer:q.answer, section:sec.name||'', passage:passage, underline:underline });
           });
         });
       }catch(e){}
@@ -9755,7 +9845,7 @@ function mpRenderPlay(){
   var html='';
   if(q.section) html+='<div style="font-size:11px;color:var(--red);font-weight:700;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px">'+mpEsc(q.section)+'</div>';
   if(q.passage) html+='<div style="background:var(--paper);border:1px solid var(--border);border-radius:10px;padding:14px;margin-bottom:14px;font-size:14px;line-height:1.9;white-space:pre-wrap">'+mpEsc(q.passage)+'</div>';
-  html+='<div style="font-size:15px;font-weight:600;line-height:1.7;margin-bottom:14px;white-space:pre-wrap">'+mpEsc(q.q)+'</div>';
+  html+='<div style="font-size:15px;font-weight:600;line-height:1.7;margin-bottom:14px;white-space:pre-wrap">'+mpQuestionTextHTML(q)+'</div>';
   html+='<div id="mp-play-choices">';
   (q.choices||[]).forEach(function(c,idx){
     html+='<div onclick="mpAnswer('+idx+')" style="display:flex;gap:10px;align-items:flex-start;padding:12px 14px;margin-bottom:8px;border:2px solid var(--border);border-radius:10px;cursor:pointer;background:white;transition:all .12s">'
@@ -10018,7 +10108,7 @@ function mpFinalizeAnswer(choiceIdx){
   if(!Array.isArray(mpState.answerLog)) mpState.answerLog=[];
   mpState.answerLog.push({
     q:q.q, choices:q.choices, answer:q.answer, chosen:choiceIdx, correct:isCorrect,
-    section:q.section||'', passage:q.passage||null, gained:gained
+    section:q.section||'', passage:q.passage||null, underline:q.underline||null, gained:gained
   });
   mpState.idx++; mpState.answered=mpState.idx;
   var fb=document.getElementById('mp-play-feedback');
@@ -10145,7 +10235,7 @@ function mpOpenHistoryDetail(idx){
       return '<div style="background:white;border:1px solid var(--border);border-radius:12px;padding:14px;margin-bottom:10px">'
         + (a.section?('<div style="font-size:10px;color:var(--red);font-weight:700;text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px">'+mpEsc(a.section)+'</div>'):'')
         + (a.passage?('<div style="background:var(--paper);border:1px solid var(--border);border-radius:8px;padding:10px;margin-bottom:8px;font-size:13px;white-space:pre-wrap">'+mpEsc(a.passage)+'</div>'):'')
-        + '<div style="font-weight:600;font-size:14px;margin-bottom:8px;white-space:pre-wrap">'+(i+1)+'. '+mpEsc(a.q)+'</div>'
+        + '<div style="font-weight:600;font-size:14px;margin-bottom:8px;white-space:pre-wrap">'+(i+1)+'. '+mpQuestionTextHTML(a)+'</div>'
         + (a.choices||[]).map(function(c,ci){
             var isAns=ci===a.answer, isChosen=ci===a.chosen;
             var bg='white', bc='var(--border)', extra='';
@@ -10182,7 +10272,7 @@ function mpExportHistoryPDF(){
     return '<div style="margin-bottom:16px;page-break-inside:avoid">'
       + (a.section?('<div style="font-size:10px;color:#c0392b;font-weight:700;text-transform:uppercase;margin-bottom:4px">'+mpEsc(a.section)+'</div>'):'')
       + (a.passage?('<div style="background:#f5f0e8;border:1px solid #ddd;border-radius:6px;padding:8px;margin-bottom:6px;font-size:13px;white-space:pre-wrap">'+mpEsc(a.passage)+'</div>'):'')
-      + '<div style="font-weight:600;margin-bottom:6px;white-space:pre-wrap">'+(i+1)+'. '+mpEsc(a.q)+'</div>'
+      + '<div style="font-weight:600;margin-bottom:6px;white-space:pre-wrap">'+(i+1)+'. '+mpQuestionTextHTML(a)+'</div>'
       + choicesHtml
       + (timedOut?'<div style="margin-top:4px;font-size:11px;color:#888">⏰ Tidak dijawab (waktu habis)</div>':'')
       + '</div>';
