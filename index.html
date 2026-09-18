@@ -1104,7 +1104,7 @@ header:has(.user-menu.open) { z-index:1000; }
         <span class="user-name" id="user-name">...</span>
         <span id="level-badge" onclick="event.stopPropagation();gotoScreen('levelreward')" title="Level & Reward" style="font-size:10px;font-weight:800;background:linear-gradient(135deg,var(--gold),#c98a1f);color:white;padding:2px 7px;border-radius:8px;cursor:pointer;letter-spacing:.3px">Lv.1</span>
         <span class="sync-badge" id="sync-badge">● sync</span>
-        <span id="build-dot" title="Indikator update: warnanya ganti tiap ada versi baru dari Claude" style="display:inline-block;width:11px;height:11px;border-radius:50%;background:#c0392b;margin-left:6px;vertical-align:middle;border:2px solid white;box-shadow:0 0 0 1px rgba(0,0,0,.15)"></span>
+        <span id="build-dot" title="Indikator update: warnanya ganti tiap ada versi baru dari Claude" style="display:inline-block;width:11px;height:11px;border-radius:50%;background:#2d7a4f;margin-left:6px;vertical-align:middle;border:2px solid white;box-shadow:0 0 0 1px rgba(0,0,0,.15)"></span>
         <!-- 🔴🟢 CLAUDE: WAJIB toggle warna build-dot di atas SETIAP kali file ini dikirim ulang —
              merah #c0392b <-> hijau #2da050 gantian. Ini satu-satunya cara Riyan verifikasi
              upload-nya beneran ke-deploy. JANGAN LUPA, cek baris ini di awal SETIAP delivery. -->
@@ -2252,9 +2252,29 @@ header:has(.user-menu.open) { z-index:1000; }
     <button id="mp-copy-btn" onclick="mpCopyCode()" style="padding:10px 16px;border:1.5px solid var(--border);border-radius:10px;background:white;font-family:inherit;font-weight:700;cursor:pointer;font-size:13px">📋 Salin Kode</button>
     <button id="mp-share-btn" onclick="mpShareLink()" style="padding:10px 16px;border:none;border-radius:10px;background:var(--jade);color:white;font-family:inherit;font-weight:700;cursor:pointer;font-size:13px;margin-left:8px">🔗 Bagikan Link</button>
   </div>
-  <div style="font-size:12px;font-weight:700;color:var(--mist);margin-bottom:8px">PEMAIN GABUNG (live)</div>
+  <div id="mp-lobby-status" style="text-align:center;font-size:12px;font-weight:700;color:var(--jade);margin-bottom:10px;display:none"></div>
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+    <span style="font-size:12px;font-weight:700;color:var(--mist)">PEMAIN (live)</span>
+    <span id="mp-lobby-count" style="font-size:11px;color:var(--mist)"></span>
+  </div>
   <div id="mp-lobby-players"></div>
-  <button onclick="mpCloseSession()" style="width:100%;margin-top:16px;padding:12px;border:none;border-radius:10px;background:var(--ink);color:white;cursor:pointer;font-weight:700">Tutup Sesi</button>
+  <button id="mp-start-btn" onclick="mpStartExam()" style="width:100%;margin-top:16px;padding:14px;border:none;border-radius:10px;background:var(--jade);color:white;cursor:pointer;font-weight:700;font-size:14px">🚀 Mulai Sesi</button>
+  <button onclick="mpCloseSession()" style="width:100%;margin-top:8px;padding:12px;border:none;border-radius:10px;background:var(--ink);color:white;cursor:pointer;font-weight:700">Tutup Sesi</button>
+</div>
+
+<div id="screen-mpwaiting" class="screen">
+  <div class="section-title" style="margin-bottom:14px">⏳ Ruang Tunggu</div>
+  <div style="background:white;border:1px solid var(--border);border-radius:14px;padding:22px;text-align:center;margin-bottom:16px">
+    <div style="font-size:11px;color:var(--mist);font-weight:700;letter-spacing:1px;margin-bottom:8px">KODE SESI</div>
+    <div id="mp-wait-code" style="font-family:'DM Mono',monospace;font-size:30px;font-weight:800;letter-spacing:4px;color:var(--red);margin-bottom:10px">------</div>
+    <div style="font-size:13px;color:var(--mist)">Menunggu host memulai sesi…</div>
+  </div>
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+    <span style="font-size:12px;font-weight:700;color:var(--mist)">PEMAIN GABUNG (live)</span>
+    <span id="mp-wait-count" style="font-size:11px;color:var(--mist)"></span>
+  </div>
+  <div id="mp-wait-players"></div>
+  <button onclick="mpLeaveWaiting()" style="width:100%;margin-top:16px;padding:12px;border:none;border-radius:10px;background:transparent;color:var(--mist);cursor:pointer;font-weight:600">← Batal Gabung</button>
 </div>
 
 <div id="screen-mpjoin" class="screen">
@@ -2284,6 +2304,8 @@ header:has(.user-menu.open) { z-index:1000; }
       <div id="mp-examtimer-bar" style="height:100%;width:100%;background:var(--jade);transition:width .3s linear,background .3s"></div>
     </div>
   </div>
+  <button id="mp-rank-badge" onclick="mpToggleLiveBoard()" style="width:100%;margin-bottom:10px;padding:8px;border:1.5px solid var(--border);border-radius:10px;background:white;font-family:inherit;font-size:12px;font-weight:700;color:var(--ink);cursor:pointer">🏆 Peringkat: --</button>
+  <div id="mp-liveboard-panel" style="display:none;background:white;border:1.5px solid var(--jade);border-radius:10px;padding:10px;margin-bottom:10px;max-height:220px;overflow-y:auto"></div>
   <div id="mp-powerup-bar" style="display:flex;gap:6px;margin-bottom:10px"></div>
   <div id="mp-attack-panel" style="display:none;background:white;border:1.5px solid var(--red);border-radius:10px;padding:10px;margin-bottom:10px"></div>
   <div id="mp-play-content" style="background:white;border:1px solid var(--border);border-radius:12px;padding:16px"></div>
@@ -7496,11 +7518,21 @@ function gotoScreen(name) {
   if (typeof stopAudio === 'function') stopAudio();
   var _mpPrev=document.querySelector('.screen.active');
   var _mpPrevName=_mpPrev?_mpPrev.id.replace('screen-',''):null;
-  if(_mpPrevName==='mphostlobby' && name!=='mphostlobby' && typeof mpLeaveLobby==='function') mpLeaveLobby();
+  if(_mpPrevName==='mphostlobby' && name!=='mphostlobby' && typeof mpState!=='undefined'){
+    if(typeof mpLeaveLobby==='function') mpLeaveLobby();
+    if(typeof mpLeaveSessionDoc==='function') mpLeaveSessionDoc();
+  }
+  if(_mpPrevName==='mpwaiting' && name!=='mpwaiting' && typeof mpState!=='undefined'){
+    if(typeof mpLeaveLobby==='function') mpLeaveLobby();
+    if(typeof mpLeaveSessionDoc==='function') mpLeaveSessionDoc();
+    if(name!=='mpplay' && typeof mpHeartbeatStop==='function') mpHeartbeatStop();
+  }
   if(_mpPrevName==='mpresult' && name!=='mpresult' && typeof mpState!=='undefined' && mpState.unsubResult){ try{mpState.unsubResult();}catch(e){} mpState.unsubResult=null; }
   if(_mpPrevName==='mpplay' && name!=='mpplay' && typeof mpState!=='undefined'){
     if(mpState.unsubSelf){ try{mpState.unsubSelf();}catch(e){} mpState.unsubSelf=null; }
+    if(mpState.unsubLiveBoard){ try{mpState.unsubLiveBoard();}catch(e){} mpState.unsubLiveBoard=null; }
     if(mpState.examTimerInterval){ clearInterval(mpState.examTimerInterval); mpState.examTimerInterval=null; }
+    if(typeof mpHeartbeatStop==='function') mpHeartbeatStop();
   }
   document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
   document.getElementById('screen-' + name).classList.add('active');
@@ -8852,9 +8884,9 @@ function shuffle(arr) {
 // ══════════════════════════════════════════════════════════════════
 var mpState = { code:null, isHost:false, playerId:null, playerName:null,
   questions:[], idx:0, score:0, correct:0, streak:0, answered:0,
-  unsubLobby:null, unsubResult:null, unsubSelf:null, level:null, _qStart:0,
+  unsubLobby:null, unsubResult:null, unsubSelf:null, unsubSessionDoc:null, unsubLiveBoard:null, heartbeatInterval:null, level:null, _qStart:0,
   powerups:{ff:0,boost:0,shield:0,atk:0,freeze:0}, shieldActive:false, boostActive:false,
-  _lastAttackSeen:0, _usedFF:false, examDurationSec:180, examEndAt:0, examTimeLeft:180, examTimerInterval:null, _examOver:false };
+  _lastAttackSeen:0, _usedFF:false, examDurationSec:180, examEndAt:0, examTimeLeft:180, examTimerInterval:null, _examOver:false, _liveRows:[] };
 var MP_LEVELS = ['N5','N4','N3','N2','N1'];
 var MP_POWERUP_DEFS = {
   ff:   {emo:'🎯', label:'50:50'},
@@ -9044,15 +9076,18 @@ async function mpCreateSession(){
       questions: questions,
       count: questions.length,
       examDurationSec: examDurationSec,
-      status: 'open',
+      status: 'lobby',
       createdAt: firebase.firestore.FieldValue.serverTimestamp(),
       expiresAt: new Date(Date.now()+24*3600*1000)
     });
     mpState.code=code; mpState.isHost=true; mpState.level=level; mpState.questions=questions; mpState.examDurationSec=examDurationSec;
     var codeEl=document.getElementById('mp-lobby-code'); if(codeEl) codeEl.textContent=code;
     var metaEl=document.getElementById('mp-lobby-meta'); if(metaEl) metaEl.textContent=level+' · '+questions.length+' soal · ⏱️'+Math.round(examDurationSec/60)+' menit · '+mpSourceLabel(source);
+    var startBtn=document.getElementById('mp-start-btn'); if(startBtn){ startBtn.style.display=''; startBtn.disabled=false; startBtn.textContent='🚀 Mulai Sesi'; }
+    var stEl=document.getElementById('mp-lobby-status'); if(stEl) stEl.style.display='none';
     gotoScreen('mphostlobby');
-    mpListenLobby(code);
+    mpListenPlayerList(code,'lobby');
+    mpListenSessionDoc(code,'host');
   }catch(e){
     alert('Gagal membuat sesi: '+(e&&e.message||e));
   }finally{
@@ -9061,31 +9096,105 @@ async function mpCreateSession(){
   }
 }
 
-function mpListenLobby(code){
+async function mpStartExam(){
+  if(!mpState.code || !mpState.isHost) return;
+  if(!confirm('Mulai sesi sekarang? Pemain yang belum gabung tidak akan bisa gabung lagi setelah ini.')) return;
+  var startBtn=document.getElementById('mp-start-btn');
+  if(startBtn){ startBtn.disabled=true; startBtn.textContent='⏳ Memulai…'; }
+  try{
+    var examEndAt = Date.now()+ (mpState.examDurationSec||180)*1000;
+    await db.collection('mpSessions').doc(mpState.code).update({
+      status:'active', examEndAt: examEndAt, startedAt: firebase.firestore.FieldValue.serverTimestamp()
+    });
+  }catch(e){
+    alert('Gagal memulai sesi: '+(e&&e.message||e));
+    if(startBtn){ startBtn.disabled=false; startBtn.textContent='🚀 Mulai Sesi'; }
+  }
+}
+
+function mpPlayerRowHTML(r, opts){
+  opts=opts||{};
+  var now=Date.now();
+  var lastMs = (r.lastActive && typeof r.lastActive.toMillis==='function') ? r.lastActive.toMillis() : 0;
+  var online = (now-lastMs) < 20000;
+  var isMe = opts.myId && r.id===opts.myId;
+  var statusTxt = r.finished ? '✅ Selesai' : ((r.answered||0)+' soal dijawab');
+  return '<div style="display:flex;align-items:center;justify-content:space-between;padding:9px 11px;border:1.5px solid '+(isMe?'var(--red)':'var(--border)')+';border-radius:9px;margin-bottom:6px;background:'+(isMe?'rgba(192,57,43,.05)':'white')+'">'
+    +'<div style="display:flex;align-items:center;gap:8px;min-width:0">'
+    +'<span title="'+(online?'Online':'Offline')+'" style="width:8px;height:8px;border-radius:50%;background:'+(online?'var(--jade)':'var(--mist)')+';flex-shrink:0"></span>'
+    +'<div style="min-width:0">'
+    +'<div style="font-weight:700;font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+(opts.rank?opts.rank+'. ':'')+mpEsc(r.name||'Pemain')+(isMe?' (kamu)':'')+'</div>'
+    +(opts.showStatus?'<div style="font-size:11px;color:var(--mist)">'+statusTxt+'</div>':'')
+    +'</div></div>'
+    +'<div style="font-weight:800;color:var(--red);flex-shrink:0;margin-left:8px">'+(r.score||0)+'</div></div>';
+}
+
+function mpListenPlayerList(code, prefix){
   mpLeaveLobby();
   mpState.unsubLobby = db.collection('mpSessions').doc(code).collection('players')
     .orderBy('score','desc')
     .onSnapshot(function(snap){
       var rows=[];
       snap.forEach(function(d){ rows.push(Object.assign({id:d.id}, d.data())); });
-      mpRenderLobbyList(rows);
-    }, function(e){ console.error('mpListenLobby', e); });
+      mpRenderPlayerList(rows, prefix);
+    }, function(e){ console.error('mpListenPlayerList', e); });
 }
 function mpLeaveLobby(){
   if(mpState.unsubLobby){ try{mpState.unsubLobby();}catch(e){} mpState.unsubLobby=null; }
 }
 
-function mpRenderLobbyList(rows){
-  var el=document.getElementById('mp-lobby-players');
+function mpRenderPlayerList(rows, prefix){
+  var el=document.getElementById('mp-'+prefix+'-players');
+  var countEl=document.getElementById('mp-'+prefix+'-count');
+  if(countEl) countEl.textContent = rows.length+' pemain';
   if(!el) return;
   if(!rows.length){ el.innerHTML='<div style="text-align:center;padding:20px;color:var(--mist);font-size:13px">Menunggu pemain gabung…</div>'; return; }
-  el.innerHTML=rows.map(function(r,i){
-    var status = r.finished ? '✅ Selesai' : ((r.answered||0)+' soal dijawab');
-    return '<div style="display:flex;align-items:center;justify-content:space-between;padding:10px 12px;border:1px solid var(--border);border-radius:10px;margin-bottom:6px;background:white">'
-      +'<div><div style="font-weight:700;font-size:13px">'+(i+1)+'. '+mpEsc(r.name||'Pemain')+'</div>'
-      +'<div style="font-size:11px;color:var(--mist)">'+status+'</div></div>'
-      +'<div style="font-weight:800;color:var(--red)">'+(r.score||0)+'</div></div>';
-  }).join('');
+  el.innerHTML=rows.map(function(r,i){ return mpPlayerRowHTML(r, {rank:i+1, myId:mpState.playerId, showStatus:true}); }).join('');
+}
+
+function mpListenSessionDoc(code, role){
+  mpLeaveSessionDoc();
+  mpState.unsubSessionDoc = db.collection('mpSessions').doc(code).onSnapshot(function(doc){
+    if(!doc.exists) return;
+    var d=doc.data();
+    if(role==='host'){
+      var startBtn=document.getElementById('mp-start-btn');
+      var stEl=document.getElementById('mp-lobby-status');
+      if(d.status==='lobby'){
+        if(startBtn) startBtn.style.display='';
+        if(stEl) stEl.style.display='none';
+      } else if(d.status==='active'){
+        if(startBtn) startBtn.style.display='none';
+        if(stEl){ stEl.style.display='block'; stEl.textContent='🟢 Sesi sedang berjalan'; }
+      } else if(d.status==='closed'){
+        if(startBtn) startBtn.style.display='none';
+        if(stEl){ stEl.style.display='block'; stEl.textContent='🔒 Sesi ditutup'; stEl.style.color='var(--mist)'; }
+      }
+    } else if(role==='wait'){
+      if(d.status==='active' && !mpState._examOver && mpState.code===code){
+        mpBeginPlayFromWaiting(d);
+      } else if(d.status==='closed'){
+        var errEl=document.getElementById('mp-join-error');
+        mpLeaveWaiting(true);
+        if(errEl){ errEl.textContent='Sesi ditutup host.'; errEl.style.display='block'; }
+      }
+    }
+  }, function(e){ console.error('mpListenSessionDoc', e); });
+}
+function mpLeaveSessionDoc(){
+  if(mpState.unsubSessionDoc){ try{mpState.unsubSessionDoc();}catch(e){} mpState.unsubSessionDoc=null; }
+}
+
+function mpHeartbeatStart(){
+  mpHeartbeatStop();
+  mpState.heartbeatInterval=setInterval(function(){
+    if(!db || !mpState.code || !mpState.playerId) return;
+    db.collection('mpSessions').doc(mpState.code).collection('players').doc(mpState.playerId)
+      .update({ lastActive: firebase.firestore.FieldValue.serverTimestamp() }).catch(function(){});
+  }, 12000);
+}
+function mpHeartbeatStop(){
+  if(mpState.heartbeatInterval){ clearInterval(mpState.heartbeatInterval); mpState.heartbeatInterval=null; }
 }
 
 function mpCopyCode(){
@@ -9158,7 +9267,7 @@ async function mpJoinSession(){
     var sdoc=await sref.get();
     if(!sdoc.exists) throw new Error('Kode tidak ditemukan.');
     var sdata=sdoc.data();
-    if(sdata.status!=='open') throw new Error('Sesi ini sudah ditutup.');
+    if(sdata.status==='closed') throw new Error('Sesi ini sudah ditutup.');
     localStorage.setItem('mp_name', name);
     var examDurationSec = sdata.examDurationSec || 180;
     var pid = localStorage.getItem('mp_pid_'+code);
@@ -9169,12 +9278,13 @@ async function mpJoinSession(){
       if(pdoc.exists) pdata=pdoc.data(); else pid=null;
     }
     if(!pid){
+      if(sdata.status==='active') throw new Error('Sesi sudah dimulai, tidak bisa gabung lagi.');
       pid = 'p_'+Date.now().toString(36)+Math.random().toString(36).slice(2,8);
       pref = sref.collection('players').doc(pid);
       pdata = {name:name, score:0, correct:0, answered:0, streak:0,
         totalQuestions:(sdata.questions||[]).length, finished:false,
         powerups:{ff:0,boost:0,shield:0,atk:0,freeze:0}, shieldActive:false, boostActive:false, lastAttack:null,
-        examEndAt: Date.now()+examDurationSec*1000};
+        examEndAt: null};
       await pref.set(Object.assign({}, pdata, {
         joinedAt: firebase.firestore.FieldValue.serverTimestamp(),
         lastActive: firebase.firestore.FieldValue.serverTimestamp()
@@ -9183,25 +9293,102 @@ async function mpJoinSession(){
     }
     mpState.code=code; mpState.isHost=false; mpState.playerId=pid; mpState.playerName=name;
     mpState.questions=sdata.questions||[]; mpState.level=sdata.level; mpState.examDurationSec=examDurationSec;
-    mpState.examEndAt = pdata.examEndAt || (Date.now()+examDurationSec*1000);
     mpState.idx=pdata.answered||0; mpState.score=pdata.score||0; mpState.correct=pdata.correct||0; mpState.streak=pdata.streak||0;
     mpState.powerups=Object.assign({ff:0,boost:0,shield:0,atk:0,freeze:0}, pdata.powerups||{});
     mpState.shieldActive=!!pdata.shieldActive; mpState.boostActive=!!pdata.boostActive;
     mpState._lastAttackSeen=(pdata.lastAttack&&pdata.lastAttack.ts)||0;
     mpState._examOver=false;
-    if(pdata.finished || mpState.idx>=mpState.questions.length || Date.now()>=mpState.examEndAt){
+    if(pdata.finished){
       mpShowResult();
+    } else if(sdata.status==='lobby'){
+      var wcEl=document.getElementById('mp-wait-code'); if(wcEl) wcEl.textContent=code;
+      gotoScreen('mpwaiting');
+      mpListenPlayerList(code,'wait');
+      mpListenSessionDoc(code,'wait');
+      mpHeartbeatStart();
     } else {
-      gotoScreen('mpplay');
-      mpRenderPlay();
-      mpListenSelf();
-      mpStartExamTimer();
+      // status active: kalau examEndAt player belum ke-set (baru nyusul dari lobby), ambil dari sesi
+      mpState.examEndAt = pdata.examEndAt || sdata.examEndAt || (Date.now()+examDurationSec*1000);
+      if(!pdata.examEndAt){ pref.update({examEndAt: mpState.examEndAt}).catch(function(){}); }
+      if(mpState.idx>=mpState.questions.length || Date.now()>=mpState.examEndAt){
+        mpShowResult();
+      } else {
+        gotoScreen('mpplay');
+        mpRenderPlay();
+        mpListenSelf();
+        mpListenPlayersLive();
+        mpStartExamTimer();
+        mpHeartbeatStart();
+      }
     }
   }catch(e){
     if(errEl){ errEl.textContent=e.message||'Gagal gabung.'; errEl.style.display='block'; }
   }finally{
     if(btn) btn.disabled=false;
   }
+}
+
+function mpBeginPlayFromWaiting(sdata){
+  if(mpState._examOver) return;
+  mpState.examEndAt = sdata.examEndAt || (Date.now()+mpState.examDurationSec*1000);
+  if(db && mpState.code && mpState.playerId){
+    db.collection('mpSessions').doc(mpState.code).collection('players').doc(mpState.playerId)
+      .update({ examEndAt: mpState.examEndAt }).catch(function(){});
+  }
+  mpLeaveLobby();
+  mpLeaveSessionDoc();
+  gotoScreen('mpplay');
+  mpRenderPlay();
+  mpListenSelf();
+  mpListenPlayersLive();
+  mpStartExamTimer();
+}
+
+function mpLeaveWaiting(silent){
+  mpLeaveLobby();
+  mpLeaveSessionDoc();
+  mpHeartbeatStop();
+  if(!silent){
+    mpState={code:null,isHost:false,playerId:null,playerName:null,questions:[],idx:0,score:0,correct:0,streak:0,answered:0,
+      unsubLobby:null,unsubResult:null,unsubSelf:null,unsubSessionDoc:null,unsubLiveBoard:null,heartbeatInterval:null,level:null,_qStart:0,
+      powerups:{ff:0,boost:0,shield:0,atk:0,freeze:0},shieldActive:false,boostActive:false,_lastAttackSeen:0,_usedFF:false,
+      examDurationSec:180,examEndAt:0,examTimeLeft:180,examTimerInterval:null,_examOver:false};
+    gotoScreen('mphome');
+  }
+}
+
+function mpToggleLiveBoard(){
+  var panel=document.getElementById('mp-liveboard-panel');
+  if(!panel) return;
+  if(panel.style.display==='block'){ panel.style.display='none'; return; }
+  panel.style.display='block';
+  mpRenderLiveBoard(mpState._liveRows||[]);
+}
+
+function mpRenderLiveBoard(rows){
+  var panel=document.getElementById('mp-liveboard-panel');
+  if(panel && panel.style.display==='block'){
+    panel.innerHTML = rows.length ? rows.map(function(r,i){ return mpPlayerRowHTML(r, {rank:i+1, myId:mpState.playerId, showStatus:false}); }).join('')
+      : '<div style="text-align:center;color:var(--mist);font-size:12px;padding:8px">Belum ada pemain lain.</div>';
+  }
+}
+
+function mpListenPlayersLive(){
+  mpLeaveLiveBoard();
+  if(!db || !mpState.code) return;
+  mpState.unsubLiveBoard = db.collection('mpSessions').doc(mpState.code).collection('players')
+    .orderBy('score','desc')
+    .onSnapshot(function(snap){
+      var rows=[]; snap.forEach(function(d){ rows.push(Object.assign({id:d.id}, d.data())); });
+      mpState._liveRows=rows;
+      var myIdx=rows.findIndex(function(r){ return r.id===mpState.playerId; });
+      var badge=document.getElementById('mp-rank-badge');
+      if(badge) badge.textContent='🏆 Peringkat: '+(myIdx>=0?('#'+(myIdx+1)):'--')+' / '+rows.length;
+      mpRenderLiveBoard(rows);
+    }, function(e){ console.error('mpListenPlayersLive', e); });
+}
+function mpLeaveLiveBoard(){
+  if(mpState.unsubLiveBoard){ try{mpState.unsubLiveBoard();}catch(e){} mpState.unsubLiveBoard=null; }
 }
 
 function mpRenderPlay(){
@@ -9534,22 +9721,20 @@ function mpListenResult(){
 function mpRenderResultList(rows){
   var el=document.getElementById('mp-result-list');
   if(!el) return;
-  el.innerHTML=rows.map(function(r,i){
-    var me = r.id===mpState.playerId;
-    return '<div style="display:flex;align-items:center;justify-content:space-between;padding:10px 12px;border:1.5px solid '+(me?'var(--red)':'var(--border)')+';border-radius:10px;margin-bottom:6px;background:'+(me?'rgba(192,57,43,.05)':'white')+'">'
-      +'<div style="font-weight:700;font-size:13px">'+(i+1)+'. '+mpEsc(r.name||'Pemain')+(me?' (kamu)':'')+'</div>'
-      +'<div style="font-weight:800;color:var(--red)">'+(r.score||0)+'</div></div>';
-  }).join('');
+  el.innerHTML=rows.map(function(r,i){ return mpPlayerRowHTML(r, {rank:i+1, myId:mpState.playerId, showStatus:false}); }).join('');
 }
 
 function mpLeaveResult(){
   if(mpState.unsubResult){ try{mpState.unsubResult();}catch(e){} mpState.unsubResult=null; }
   if(mpState.unsubSelf){ try{mpState.unsubSelf();}catch(e){} mpState.unsubSelf=null; }
+  if(mpState.unsubLiveBoard){ try{mpState.unsubLiveBoard();}catch(e){} mpState.unsubLiveBoard=null; }
+  if(mpState.unsubSessionDoc){ try{mpState.unsubSessionDoc();}catch(e){} mpState.unsubSessionDoc=null; }
   if(mpState.examTimerInterval){ clearInterval(mpState.examTimerInterval); }
+  mpHeartbeatStop();
   mpState={code:null,isHost:false,playerId:null,playerName:null,questions:[],idx:0,score:0,correct:0,streak:0,answered:0,
-    unsubLobby:null,unsubResult:null,unsubSelf:null,level:null,_qStart:0,
+    unsubLobby:null,unsubResult:null,unsubSelf:null,unsubSessionDoc:null,unsubLiveBoard:null,heartbeatInterval:null,level:null,_qStart:0,
     powerups:{ff:0,boost:0,shield:0,atk:0,freeze:0},shieldActive:false,boostActive:false,_lastAttackSeen:0,_usedFF:false,
-    examDurationSec:180,examEndAt:0,examTimeLeft:180,examTimerInterval:null,_examOver:false};
+    examDurationSec:180,examEndAt:0,examTimeLeft:180,examTimerInterval:null,_examOver:false,_liveRows:[]};
   gotoScreen('overview');
 }
 
