@@ -2189,8 +2189,27 @@ header:has(.user-menu.open) { z-index:1000; }
       <div style="width:44px;height:44px;border-radius:12px;background:rgba(45,122,79,.08);color:var(--jade);display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0">🔑</div>
       <div><div style="font-weight:700;font-size:15px">Gabung dengan Kode</div><div style="font-size:12px;color:var(--mist)">Masukkan kode sesi dari host &amp; mulai main</div></div>
     </div>
+    <div onclick="mpGoHistory()" style="background:white;border:1px solid var(--border);border-top:3px solid var(--gold);border-radius:12px;padding:18px;cursor:pointer;display:flex;align-items:center;gap:14px">
+      <div style="width:44px;height:44px;border-radius:12px;background:rgba(212,160,23,.1);color:var(--gold);display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0">📜</div>
+      <div><div style="font-weight:700;font-size:15px">Riwayat &amp; Pembahasan</div><div style="font-size:12px;color:var(--mist)">Lihat nilai lama, pembahasan soal, unduh PDF</div></div>
+    </div>
   </div>
   <button onclick="gotoScreen('overview')" style="width:100%;margin-top:20px;padding:12px;border:none;border-radius:10px;background:transparent;color:var(--mist);cursor:pointer;font-weight:600">← Kembali ke Menu</button>
+</div>
+
+<div id="screen-mphistory" class="screen">
+  <div class="section-title" style="margin-bottom:14px">📜 Riwayat Kuis Bareng</div>
+  <div id="mp-history-list"></div>
+  <button onclick="mpClearHistory()" style="width:100%;margin-top:16px;padding:12px;border:none;border-radius:10px;background:transparent;color:var(--red);cursor:pointer;font-weight:600;font-size:13px">🗑️ Hapus Semua Riwayat</button>
+  <button onclick="gotoScreen('mphome')" style="width:100%;margin-top:8px;padding:12px;border:none;border-radius:10px;background:transparent;color:var(--mist);cursor:pointer;font-weight:600">← Kembali</button>
+</div>
+
+<div id="screen-mphistorydetail" class="screen">
+  <div class="section-title" style="margin-bottom:6px">📋 Pembahasan</div>
+  <div id="mp-histdet-header" style="background:white;border:1px solid var(--border);border-radius:12px;padding:16px;margin-bottom:14px"></div>
+  <button onclick="mpExportHistoryPDF()" style="width:100%;margin-bottom:14px;padding:12px;border:none;border-radius:10px;background:var(--ink);color:white;cursor:pointer;font-weight:700">📄 Unduh PDF</button>
+  <div id="mp-histdet-questions"></div>
+  <button onclick="gotoScreen('mphistory')" style="width:100%;margin-top:8px;padding:12px;border:none;border-radius:10px;background:transparent;color:var(--mist);cursor:pointer;font-weight:600">← Kembali ke Riwayat</button>
 </div>
 
 <div id="screen-mphostsetup" class="screen">
@@ -2341,6 +2360,7 @@ header:has(.user-menu.open) { z-index:1000; }
 <div id="screen-mpresult" class="screen">
   <div class="section-title" style="margin-bottom:6px">🏁 Hasil</div>
   <div id="mp-result-title" style="text-align:center;font-size:16px;font-weight:800;color:var(--red);background:white;border:1px solid var(--border);border-radius:12px;padding:18px;margin-bottom:16px"></div>
+  <button onclick="mpOpenLatestHistoryDetail()" style="width:100%;margin-bottom:14px;padding:12px;border:1.5px solid var(--border);border-radius:10px;background:white;color:var(--ink);cursor:pointer;font-weight:700">📋 Lihat Pembahasan &amp; Unduh PDF</button>
   <div style="font-size:12px;font-weight:700;color:var(--mist);margin-bottom:8px">RANKING (live)</div>
   <div id="mp-result-list"></div>
   <button onclick="mpLeaveResult()" style="width:100%;margin-top:16px;padding:12px;border:none;border-radius:10px;background:var(--ink);color:white;cursor:pointer;font-weight:700">Kembali ke Menu</button>
@@ -8909,7 +8929,7 @@ function shuffle(arr) {
 // 🎮 MULTIPLAYER — Kuis Bareng (self-paced, kode sesi publik via Firestore)
 // ══════════════════════════════════════════════════════════════════
 var mpState = { code:null, isHost:false, playerId:null, playerName:null,
-  questions:[], idx:0, score:0, correct:0, streak:0, answered:0,
+  questions:[], idx:0, score:0, correct:0, streak:0, answered:0, answerLog:[],
   unsubLobby:null, unsubResult:null, unsubSelf:null, unsubSessionDoc:null, unsubLiveBoard:null, heartbeatInterval:null, level:null, _qStart:0,
   powerups:{ff:0,boost:0,shield:0,atk:0,freeze:0}, shieldActive:false, boostActive:false,
   _lastAttackSeen:0, _usedFF:false, examDurationSec:180, examEndAt:0, examTimeLeft:180, examTimerInterval:null, _examOver:false, _liveRows:[] };
@@ -9195,6 +9215,8 @@ async function mpCreateSession(){
     gotoScreen('mphostlobby');
     mpListenPlayerList(code,'lobby');
     mpListenSessionDoc(code,'host');
+    localStorage.setItem('mp_last_role','host');
+    localStorage.setItem('mp_last_code', code);
   }catch(e){
     alert('Gagal membuat sesi: '+(e&&e.message||e));
   }finally{
@@ -9256,7 +9278,7 @@ async function mpHostJoinAsPlayer(){
       var hostName = (currentUser && currentUser.displayName) ? currentUser.displayName.split(' ')[0] : 'Host';
       pdata = {name: hostName+' 👑', score:0, correct:0, answered:0, streak:0,
         totalQuestions:(sdata.questions||mpState.questions||[]).length, finished:false,
-        powerups:{ff:0,boost:0,shield:0,atk:0,freeze:0}, shieldActive:false, boostActive:false, lastAttack:null,
+        powerups:{ff:0,boost:0,shield:0,atk:0,freeze:0}, shieldActive:false, boostActive:false, lastAttack:null, answerLog:[],
         examEndAt: sdata.examEndAt || (Date.now()+(mpState.examDurationSec||180)*1000)};
       await pref.set(Object.assign({}, pdata, {
         joinedAt: firebase.firestore.FieldValue.serverTimestamp(),
@@ -9267,6 +9289,7 @@ async function mpHostJoinAsPlayer(){
     mpState.playerId=pid; mpState.playerName=pdata.name;
     mpState.questions = sdata.questions || mpState.questions;
     mpState.idx=pdata.answered||0; mpState.score=pdata.score||0; mpState.correct=pdata.correct||0; mpState.streak=pdata.streak||0;
+    mpState.answerLog = pdata.answerLog || [];
     mpState.powerups=Object.assign({ff:0,boost:0,shield:0,atk:0,freeze:0}, pdata.powerups||{});
     mpState.shieldActive=!!pdata.shieldActive; mpState.boostActive=!!pdata.boostActive;
     mpState._lastAttackSeen=(pdata.lastAttack&&pdata.lastAttack.ts)||0;
@@ -9410,23 +9433,55 @@ async function mpShareLink(){
 }
 
 function mpCheckJoinLink(){
-  if(window._mpJoinLinkChecked) return;
+  if(window._mpJoinLinkChecked) return false;
   window._mpJoinLinkChecked=true;
   try{
     var params = new URLSearchParams(window.location.search);
     var code = params.get('join');
-    if(!code) return;
+    if(!code) return false;
     code = code.trim().toUpperCase();
+    // buang ?join=... dari URL supaya refresh berikutnya TIDAK maksa balik ke layar Gabung Sesi lagi
+    try{ history.replaceState(null, '', location.pathname); }catch(e){}
     mpGoJoin();
     var codeEl=document.getElementById('mp-join-code'); if(codeEl) codeEl.value=code;
     var nameEl=document.getElementById('mp-join-name'); if(nameEl) setTimeout(function(){ nameEl.focus(); }, 300);
-  }catch(e){}
+    return true;
+  }catch(e){ return false; }
+}
+
+async function mpTryResumeSession(){
+  if(!db) return;
+  var role = localStorage.getItem('mp_last_role');
+  var code = localStorage.getItem('mp_last_code');
+  if(!role || !code) return;
+  try{
+    var sref = db.collection('mpSessions').doc(code);
+    var sdoc = await sref.get();
+    if(!sdoc.exists || sdoc.data().status==='closed'){
+      localStorage.removeItem('mp_last_role'); localStorage.removeItem('mp_last_code');
+      return;
+    }
+    var sdata = sdoc.data();
+    if(role==='host'){
+      mpState.code=code; mpState.isHost=true; mpState.level=sdata.level; mpState.questions=sdata.questions||[]; mpState.examDurationSec=sdata.examDurationSec||180;
+      var codeEl=document.getElementById('mp-lobby-code'); if(codeEl) codeEl.textContent=code;
+      var metaEl=document.getElementById('mp-lobby-meta'); if(metaEl) metaEl.textContent=mpLevelsLabel(sdata.level)+' · '+(sdata.questions||[]).length+' soal · ⏱️'+Math.round((sdata.examDurationSec||180)/60)+' menit · '+mpSourceLabel(sdata.source);
+      gotoScreen('mphostlobby');
+      mpListenPlayerList(code,'lobby');
+      mpListenSessionDoc(code,'host');
+    } else {
+      var codeEl2=document.getElementById('mp-join-code'); if(codeEl2) codeEl2.value=code;
+      var nameEl2=document.getElementById('mp-join-name'); if(nameEl2) nameEl2.value = localStorage.getItem('mp_name')||'Pemain';
+      await mpJoinSession(); // pakai logic gabung yang udah ada — otomatis nentuin nunggu/main/hasil sesuai progress
+    }
+  }catch(e){ console.error('mpTryResumeSession', e); }
 }
 
 async function mpCloseSession(){
   if(!mpState.code){ gotoScreen('overview'); return; }
   if(!confirm('Tutup sesi ini? Pemain tidak akan bisa gabung/main lagi.')) return;
   try{ await db.collection('mpSessions').doc(mpState.code).update({status:'closed'}); }catch(e){}
+  localStorage.removeItem('mp_last_role'); localStorage.removeItem('mp_last_code');
   gotoScreen('overview');
 }
 
@@ -9472,7 +9527,7 @@ async function mpJoinSession(){
       var initExamEndAt = (startMode==='free') ? (Date.now()+examDurationSec*1000) : null;
       pdata = {name:name, score:0, correct:0, answered:0, streak:0,
         totalQuestions:(sdata.questions||[]).length, finished:false,
-        powerups:{ff:0,boost:0,shield:0,atk:0,freeze:0}, shieldActive:false, boostActive:false, lastAttack:null,
+        powerups:{ff:0,boost:0,shield:0,atk:0,freeze:0}, shieldActive:false, boostActive:false, lastAttack:null, answerLog:[],
         examEndAt: initExamEndAt};
       await pref.set(Object.assign({}, pdata, {
         joinedAt: firebase.firestore.FieldValue.serverTimestamp(),
@@ -9481,8 +9536,11 @@ async function mpJoinSession(){
       localStorage.setItem('mp_pid_'+code, pid);
     }
     mpState.code=code; mpState.isHost=false; mpState.playerId=pid; mpState.playerName=name;
+    localStorage.setItem('mp_last_role','player');
+    localStorage.setItem('mp_last_code', code);
     mpState.questions=sdata.questions||[]; mpState.level=sdata.level; mpState.examDurationSec=examDurationSec;
     mpState.idx=pdata.answered||0; mpState.score=pdata.score||0; mpState.correct=pdata.correct||0; mpState.streak=pdata.streak||0;
+    mpState.answerLog = pdata.answerLog || [];
     mpState.powerups=Object.assign({ff:0,boost:0,shield:0,atk:0,freeze:0}, pdata.powerups||{});
     mpState.shieldActive=!!pdata.shieldActive; mpState.boostActive=!!pdata.boostActive;
     mpState._lastAttackSeen=(pdata.lastAttack&&pdata.lastAttack.ts)||0;
@@ -9537,8 +9595,9 @@ function mpLeaveWaiting(silent){
   mpLeaveLobby();
   mpLeaveSessionDoc();
   mpHeartbeatStop();
+  localStorage.removeItem('mp_last_role'); localStorage.removeItem('mp_last_code');
   if(!silent){
-    mpState={code:null,isHost:false,playerId:null,playerName:null,questions:[],idx:0,score:0,correct:0,streak:0,answered:0,
+    mpState={code:null,isHost:false,playerId:null,playerName:null,questions:[],idx:0,score:0,correct:0,streak:0,answered:0,answerLog:[],
       unsubLobby:null,unsubResult:null,unsubSelf:null,unsubSessionDoc:null,unsubLiveBoard:null,heartbeatInterval:null,level:null,_qStart:0,
       powerups:{ff:0,boost:0,shield:0,atk:0,freeze:0},shieldActive:false,boostActive:false,_lastAttackSeen:0,_usedFF:false,
       examDurationSec:180,examEndAt:0,examTimeLeft:180,examTimerInterval:null,_examOver:false};
@@ -9858,6 +9917,11 @@ function mpFinalizeAnswer(choiceIdx){
     mpState.streak=0;
     if(mpState.boostActive){ mpState.boostActive=false; } // boost habis walau salah
   }
+  if(!Array.isArray(mpState.answerLog)) mpState.answerLog=[];
+  mpState.answerLog.push({
+    q:q.q, choices:q.choices, answer:q.answer, chosen:choiceIdx, correct:isCorrect,
+    section:q.section||'', passage:q.passage||null, gained:gained
+  });
   mpState.idx++; mpState.answered=mpState.idx;
   var fb=document.getElementById('mp-play-feedback');
   if(fb){
@@ -9881,7 +9945,7 @@ async function mpSaveProgress(){
       score: mpState.score, correct: mpState.correct, streak: mpState.streak,
       answered: mpState.idx, finished: finished,
       powerups: mpState.powerups, shieldActive: mpState.shieldActive, boostActive: mpState.boostActive,
-      examEndAt: mpState.examEndAt,
+      examEndAt: mpState.examEndAt, answerLog: mpState.answerLog||[],
       lastActive: firebase.firestore.FieldValue.serverTimestamp(),
       finishedAt: finished ? firebase.firestore.FieldValue.serverTimestamp() : null
     });
@@ -9893,8 +9957,161 @@ function mpShowResult(){
   var titleEl=document.getElementById('mp-result-title');
   var total = (mpState.questions||[]).length||1;
   if(titleEl) titleEl.textContent = mpState.correct+' / '+total+' benar · '+mpState.score+' poin';
+  mpSaveHistoryIfNew();
   gotoScreen('mpresult');
   mpListenResult();
+}
+
+// ═══ Riwayat & Pembahasan Kuis Bareng (disimpan lokal di HP, per device) ═══
+function mpLoadHistory(){
+  try{ return JSON.parse(localStorage.getItem('mp_history')||'[]'); }catch(e){ return []; }
+}
+function mpSaveHistoryList(list){
+  try{ localStorage.setItem('mp_history', JSON.stringify(list.slice(0,50))); }catch(e){}
+}
+function mpSaveHistoryIfNew(){
+  if(!mpState.code || !mpState.playerId) return;
+  var hist = mpLoadHistory();
+  var already = hist.some(function(h){ return h.code===mpState.code && h.playerId===mpState.playerId; });
+  if(already) return;
+  var entry = {
+    code: mpState.code,
+    playerId: mpState.playerId,
+    date: Date.now(),
+    level: mpState.level,
+    score: mpState.score,
+    correct: mpState.correct,
+    total: (mpState.questions||[]).length,
+    answers: mpState.answerLog||[]
+  };
+  hist.unshift(entry);
+  mpSaveHistoryList(hist);
+}
+function mpClearHistory(){
+  if(!confirm('Hapus semua riwayat Kuis Bareng di HP ini? Tidak bisa dibatalkan.')) return;
+  localStorage.removeItem('mp_history');
+  mpRenderHistoryList();
+}
+function mpGoHistory(){
+  gotoScreen('mphistory');
+  mpRenderHistoryList();
+}
+function mpRenderHistoryList(){
+  var el=document.getElementById('mp-history-list');
+  if(!el) return;
+  var hist=mpLoadHistory();
+  if(!hist.length){ el.innerHTML='<div style="text-align:center;padding:30px 10px;color:var(--mist);font-size:13px">Belum ada riwayat Kuis Bareng di HP ini.</div>'; return; }
+  el.innerHTML=hist.map(function(h,i){
+    var pct = h.total? Math.round(h.correct/h.total*100) : 0;
+    var d = new Date(h.date);
+    var dateStr = d.toLocaleDateString('id-ID', {day:'numeric', month:'short', year:'numeric'}) + ' · ' + d.toLocaleTimeString('id-ID', {hour:'2-digit', minute:'2-digit'});
+    return '<div onclick="mpOpenHistoryDetail('+i+')" style="background:white;border:1px solid var(--border);border-radius:12px;padding:14px;margin-bottom:8px;cursor:pointer">'
+      +'<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">'
+      +'<span style="font-weight:700;font-size:14px">'+mpLevelsLabel(h.level)+'</span>'
+      +'<span style="font-weight:800;color:var(--red);font-family:\'DM Mono\',monospace">'+h.score+' pts</span></div>'
+      +'<div style="display:flex;justify-content:space-between;align-items:center">'
+      +'<span style="font-size:11px;color:var(--mist)">'+dateStr+'</span>'
+      +'<span style="font-size:12px;color:var(--mist)">'+h.correct+'/'+h.total+' benar ('+pct+'%)</span></div>'
+      +'</div>';
+  }).join('');
+}
+
+function mpOpenLatestHistoryDetail(){
+  var hist=mpLoadHistory();
+  var idx=hist.findIndex(function(h){ return h.code===mpState.code && h.playerId===mpState.playerId; });
+  mpOpenHistoryDetail(idx>=0?idx:0);
+}
+
+function mpOpenHistoryDetail(idx){
+  var hist=mpLoadHistory();
+  var h=hist[idx];
+  if(!h){ gotoScreen('mphistory'); return; }
+  window._mpHistDetIdx=idx;
+  var d=new Date(h.date);
+  var dateStr = d.toLocaleDateString('id-ID', {day:'numeric', month:'long', year:'numeric'}) + ' · ' + d.toLocaleTimeString('id-ID', {hour:'2-digit', minute:'2-digit'});
+  var pct = h.total? Math.round(h.correct/h.total*100) : 0;
+  var headerEl=document.getElementById('mp-histdet-header');
+  if(headerEl){
+    headerEl.innerHTML = '<div style="font-size:11px;color:var(--mist);margin-bottom:6px">'+dateStr+'</div>'
+      + '<div style="font-weight:800;font-size:18px;margin-bottom:4px">'+mpLevelsLabel(h.level)+' — Kuis Bareng</div>'
+      + '<div style="display:flex;gap:16px;margin-top:10px">'
+      + '<div><div style="font-size:11px;color:var(--mist)">Skor</div><div style="font-weight:800;font-size:20px;color:var(--red)">'+h.score+'</div></div>'
+      + '<div><div style="font-size:11px;color:var(--mist)">Benar</div><div style="font-weight:800;font-size:20px;color:var(--jade)">'+h.correct+'/'+h.total+'</div></div>'
+      + '<div><div style="font-size:11px;color:var(--mist)">Persentase</div><div style="font-weight:800;font-size:20px">'+pct+'%</div></div>'
+      + '</div>';
+  }
+  var qEl=document.getElementById('mp-histdet-questions');
+  if(qEl){
+    qEl.innerHTML = (h.answers||[]).map(function(a,i){
+      var timedOut = a.chosen===-1 || a.chosen===undefined;
+      return '<div style="background:white;border:1px solid var(--border);border-radius:12px;padding:14px;margin-bottom:10px">'
+        + (a.section?('<div style="font-size:10px;color:var(--red);font-weight:700;text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px">'+mpEsc(a.section)+'</div>'):'')
+        + (a.passage?('<div style="background:var(--paper);border:1px solid var(--border);border-radius:8px;padding:10px;margin-bottom:8px;font-size:13px;white-space:pre-wrap">'+mpEsc(a.passage)+'</div>'):'')
+        + '<div style="font-weight:600;font-size:14px;margin-bottom:8px;white-space:pre-wrap">'+(i+1)+'. '+mpEsc(a.q)+'</div>'
+        + (a.choices||[]).map(function(c,ci){
+            var isAns=ci===a.answer, isChosen=ci===a.chosen;
+            var bg='white', bc='var(--border)', extra='';
+            if(isAns){ bg='rgba(45,122,79,.08)'; bc='var(--jade)'; }
+            if(isChosen && !isAns){ bg='rgba(192,57,43,.08)'; bc='var(--red)'; }
+            if(isChosen) extra = ' ← jawabanmu';
+            if(isAns) extra += (isChosen?'':' (jawaban benar)');
+            return '<div style="padding:8px 10px;margin-bottom:5px;border:1.5px solid '+bc+';border-radius:8px;background:'+bg+';font-size:13px">'+mpEsc(c)+(extra?'<span style="color:var(--mist);font-size:11px">'+extra+'</span>':'')+'</div>';
+          }).join('')
+        + (timedOut?'<div style="margin-top:6px;font-size:11px;color:var(--mist)">⏰ Tidak dijawab (waktu habis)</div>':'')
+        + '</div>';
+    }).join('') || '<div style="text-align:center;padding:20px;color:var(--mist);font-size:13px">Detail pembahasan soal untuk riwayat ini tidak tersedia.</div>';
+  }
+  gotoScreen('mphistorydetail');
+}
+
+function mpExportHistoryPDF(){
+  var hist=mpLoadHistory();
+  var h=hist[window._mpHistDetIdx];
+  if(!h){ alert('Data riwayat tidak ditemukan.'); return; }
+  var d=new Date(h.date);
+  var dateStr = d.toLocaleDateString('id-ID', {day:'numeric', month:'long', year:'numeric'}) + ' · ' + d.toLocaleTimeString('id-ID', {hour:'2-digit', minute:'2-digit'});
+  var pct = h.total? Math.round(h.correct/h.total*100) : 0;
+  var qHtml = (h.answers||[]).map(function(a,i){
+    var timedOut = a.chosen===-1 || a.chosen===undefined;
+    var choicesHtml = (a.choices||[]).map(function(c,ci){
+      var isAns=ci===a.answer, isChosen=ci===a.chosen;
+      var style='padding:6px 10px;margin-bottom:4px;border:1px solid #ddd;border-radius:6px;';
+      if(isAns) style+='background:#e8f5e9;border-color:#2d7a4f;font-weight:600;';
+      if(isChosen && !isAns) style+='background:#fdecea;border-color:#c0392b;';
+      var tag = isChosen? ' (jawabanmu)' : (isAns? ' (jawaban benar)':'');
+      return '<div style="'+style+'">'+mpEsc(c)+(tag?'<i style="color:#888;font-size:11px">'+tag+'</i>':'')+'</div>';
+    }).join('');
+    return '<div style="margin-bottom:16px;page-break-inside:avoid">'
+      + (a.section?('<div style="font-size:10px;color:#c0392b;font-weight:700;text-transform:uppercase;margin-bottom:4px">'+mpEsc(a.section)+'</div>'):'')
+      + (a.passage?('<div style="background:#f5f0e8;border:1px solid #ddd;border-radius:6px;padding:8px;margin-bottom:6px;font-size:13px;white-space:pre-wrap">'+mpEsc(a.passage)+'</div>'):'')
+      + '<div style="font-weight:600;margin-bottom:6px;white-space:pre-wrap">'+(i+1)+'. '+mpEsc(a.q)+'</div>'
+      + choicesHtml
+      + (timedOut?'<div style="margin-top:4px;font-size:11px;color:#888">⏰ Tidak dijawab (waktu habis)</div>':'')
+      + '</div>';
+  }).join('');
+  var w=window.open('','_blank');
+  if(!w){ alert('Popup diblokir. Izinkan popup untuk unduh PDF.'); return; }
+  var doc='<!DOCTYPE html><html lang="id"><head><meta charset="UTF-8"><title>Kuis Bareng '+mpLevelsLabel(h.level)+' '+h.score+'</title>'
+    +'<style>'
+    +'body{font-family:-apple-system,Segoe UI,Roboto,sans-serif;padding:24px;color:#1a1a2e;line-height:1.6}'
+    +'h1{font-size:20px;margin:0 0 4px}.sub{color:#888;font-size:13px;margin-bottom:16px}'
+    +'.stats{display:flex;gap:24px;margin:12px 0 20px}.stats div{text-align:left}'
+    +'.stats b{display:block;font-size:22px}'
+    +'button{display:none!important}'
+    +'@media print{body{padding:0}}'
+    +'</style></head><body>'
+    +'<h1>JLPT 満点コース — Kuis Bareng '+mpLevelsLabel(h.level)+'</h1>'
+    +'<div class="sub">'+dateStr+'</div>'
+    +'<div class="stats">'
+    +'<div>Skor<b>'+h.score+'</b></div>'
+    +'<div>Benar<b>'+h.correct+'/'+h.total+'</b></div>'
+    +'<div>Persentase<b>'+pct+'%</b></div>'
+    +'</div>'
+    +'<h2 style="font-size:15px">📋 Pembahasan Soal</h2>'
+    +qHtml
+    +'<script>setTimeout(function(){window.print();},300);<\/script>'
+    +'</body></html>';
+  w.document.open(); w.document.write(doc); w.document.close();
 }
 
 function mpListenResult(){
@@ -9921,7 +10138,8 @@ function mpLeaveResult(){
   if(mpState.unsubSessionDoc){ try{mpState.unsubSessionDoc();}catch(e){} mpState.unsubSessionDoc=null; }
   if(mpState.examTimerInterval){ clearInterval(mpState.examTimerInterval); }
   mpHeartbeatStop();
-  mpState={code:null,isHost:false,playerId:null,playerName:null,questions:[],idx:0,score:0,correct:0,streak:0,answered:0,
+  localStorage.removeItem('mp_last_role'); localStorage.removeItem('mp_last_code');
+  mpState={code:null,isHost:false,playerId:null,playerName:null,questions:[],idx:0,score:0,correct:0,streak:0,answered:0,answerLog:[],
     unsubLobby:null,unsubResult:null,unsubSelf:null,unsubSessionDoc:null,unsubLiveBoard:null,heartbeatInterval:null,level:null,_qStart:0,
     powerups:{ff:0,boost:0,shield:0,atk:0,freeze:0},shieldActive:false,boostActive:false,_lastAttackSeen:0,_usedFF:false,
     examDurationSec:180,examEndAt:0,examTimeLeft:180,examTimerInterval:null,_examOver:false,_liveRows:[]};
@@ -16662,7 +16880,13 @@ function init() {
   // (diukur langsung, bukan angka nebak) biar dia nempel di BAWAH header, bukan numpuk.
   try{ _fixStickyOffsets(); }catch(e){}
   window.addEventListener('resize', function(){ try{ _fixStickyOffsets(); }catch(e){} });
-  try{ mpCheckJoinLink(); }catch(e){}
+  try{
+    var _handledExplicitJoin = mpCheckJoinLink();
+    if(!_handledExplicitJoin){
+      // kasih jeda dikit biar Firestore (db) udah pasti siap sebelum coba resume
+      setTimeout(function(){ try{ mpTryResumeSession(); }catch(e){} }, 900);
+    }
+  }catch(e){}
 }
 function _fixStickyOffsets(){
   var hdr = document.querySelector('header');
