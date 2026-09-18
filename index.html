@@ -1104,7 +1104,7 @@ header:has(.user-menu.open) { z-index:1000; }
         <span class="user-name" id="user-name">...</span>
         <span id="level-badge" onclick="event.stopPropagation();gotoScreen('levelreward')" title="Level & Reward" style="font-size:10px;font-weight:800;background:linear-gradient(135deg,var(--gold),#c98a1f);color:white;padding:2px 7px;border-radius:8px;cursor:pointer;letter-spacing:.3px">Lv.1</span>
         <span class="sync-badge" id="sync-badge">● sync</span>
-        <span id="build-dot" title="Indikator update: warnanya ganti tiap ada versi baru dari Claude" style="display:inline-block;width:11px;height:11px;border-radius:50%;background:#2d7a4f;margin-left:6px;vertical-align:middle;border:2px solid white;box-shadow:0 0 0 1px rgba(0,0,0,.15)"></span>
+        <span id="build-dot" title="Indikator update: warnanya ganti tiap ada versi baru dari Claude" style="display:inline-block;width:11px;height:11px;border-radius:50%;background:#c0392b;margin-left:6px;vertical-align:middle;border:2px solid white;box-shadow:0 0 0 1px rgba(0,0,0,.15)"></span>
         <!-- 🔴🟢 CLAUDE: WAJIB toggle warna build-dot di atas SETIAP kali file ini dikirim ulang —
              merah #c0392b <-> hijau #2da050 gantian. Ini satu-satunya cara Riyan verifikasi
              upload-nya beneran ke-deploy. JANGAN LUPA, cek baris ini di awal SETIAP delivery. -->
@@ -2246,6 +2246,12 @@ header:has(.user-menu.open) { z-index:1000; }
       </label>
       <label style="display:flex;align-items:center;gap:8px;padding:11px;border:1.5px solid var(--border);border-radius:10px;cursor:pointer">
         <input type="checkbox" name="mp-source" value="bunpou" onchange="mpToggleKanjiDir()"> <span style="font-size:13px">📖 Bunpou (pola tata bahasa)</span>
+      </label>
+      <label style="display:flex;align-items:center;gap:8px;padding:11px;border:1.5px solid var(--border);border-radius:10px;cursor:pointer">
+        <input type="checkbox" name="mp-source" value="keisei" onchange="mpToggleKanjiDir()"> <span style="font-size:13px">🔊 Bunyi Kanji (keluarga fonetik)</span>
+      </label>
+      <label style="display:flex;align-items:center;gap:8px;padding:11px;border:1.5px solid var(--border);border-radius:10px;cursor:pointer">
+        <input type="checkbox" name="mp-source" value="konjugasi" onchange="mpToggleKanjiDir()"> <span style="font-size:13px">活用 Konjugasi (bentuk kata kerja)</span>
       </label>
     </div>
     <div id="mp-kanjidir-wrap" style="display:none;margin-bottom:16px">
@@ -8945,7 +8951,7 @@ var MP_POWERUP_DEFS = {
 function mpEsc(s){ return String(s==null?'':s).replace(/[&<>"']/g, function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];}); }
 function mpShuffleCopy(arr){ var a=arr.slice(); shuffle(a); return a; }
 function mpSourceLabel(sources){
-  var map={bank:'Bank Soal', kotoba:'Kotoba', kanji:'Kanji', bunpou:'Bunpou'};
+  var map={bank:'Bank Soal', kotoba:'Kotoba', kanji:'Kanji', bunpou:'Bunpou', keisei:'Bunyi Kanji', konjugasi:'Konjugasi'};
   var list = Array.isArray(sources) ? sources : [sources];
   return list.map(function(s){ return map[s]||s; }).join(' + ');
 }
@@ -9017,6 +9023,92 @@ function mpBunpouQuestions(words, count){
       section: '📖 Bunpou'
     });
   });
+  return out;
+}
+
+function mpKeiseiQuestions(count, levels){
+  // Pakai data KEISEI_SETS (Bunyi Kanji / 形声文字) yang udah divalidasi di fitur belajar existing —
+  // tebak bacaan onyomi dari kanji, berdasarkan komponen fonetiknya.
+  if(typeof KEISEI_SETS==='undefined' || !KEISEI_SETS.length) return [];
+  var lvlSet={}; (levels||[]).forEach(function(l){ lvlSet[l]=true; });
+  var candidates=[];
+  KEISEI_SETS.forEach(function(fam){
+    fam.kanji.forEach(function(k){
+      var lv = fam.lvl && fam.lvl[k];
+      if(!lv) return;
+      if(levels && levels.length && !lvlSet[lv]) return;
+      candidates.push({fam:fam, k:k});
+    });
+  });
+  if(!candidates.length){
+    KEISEI_SETS.forEach(function(fam){ fam.kanji.forEach(function(k){ candidates.push({fam:fam,k:k}); }); });
+  }
+  shuffle(candidates);
+  var allK = (typeof KANJI_READ!=='undefined') ? Object.keys(KANJI_READ) : [];
+  var out=[];
+  for(var ci=0; ci<candidates.length && out.length<count; ci++){
+    var fam=candidates[ci].fam, k=candidates[ci].k;
+    var correct=fam.read;
+    var shuffledAllK=allK.slice(); shuffle(shuffledAllK);
+    var seen={}; seen[correct.toLowerCase()]=true;
+    var distract=[];
+    for(var i=0;i<shuffledAllK.length && distract.length<3;i++){
+      var kk=shuffledAllK[i];
+      if(fam.kanji.indexOf(kk)>=0) continue;
+      var rd=KANJI_READ[kk];
+      if(!rd||!rd[0]||!rd[0].length) continue;
+      var r=rd[0][0]; if(!r) continue;
+      var rl=r.toLowerCase(); if(seen[rl]) continue; seen[rl]=true;
+      distract.push(r);
+    }
+    if(distract.length<3) continue;
+    var choices=[correct].concat(distract);
+    shuffle(choices);
+    out.push({
+      q: '「'+k+'」 ini dibaca (onyomi) apa? Komponen fonetik: '+fam.phon+' — kanji sekomponen biasanya bunyinya mirip',
+      choices: choices,
+      answer: choices.indexOf(correct),
+      section: '🔊 Bunyi Kanji'
+    });
+  }
+  return out;
+}
+
+function mpKonjugasiQuestions(count){
+  // Pakai data KATSUYO_VERBS/KATSUYO_FORMS dari fitur belajar Konjugasi existing (98 verba, akurat).
+  if(typeof KATSUYO_VERBS==='undefined' || !KATSUYO_VERBS.length) return [];
+  var verbs=KATSUYO_VERBS;
+  var forms=(KATSUYO_FORMS||[]).filter(function(f){ return f.k!=='jisho'; });
+  var out=[], used={}, attempts=0;
+  while(out.length<count && attempts<count*25){
+    attempts++;
+    var v=verbs[Math.floor(Math.random()*verbs.length)];
+    var f=forms[Math.floor(Math.random()*forms.length)];
+    var key=v.jp+'_'+f.k;
+    if(used[key]) continue; used[key]=true;
+    var correct=v.f && v.f[f.k];
+    if(!correct) continue;
+    var distractors=[];
+    var otherVerbs=mpShuffleCopy(verbs.filter(function(x){return x.jp!==v.jp;}));
+    for(var i=0;i<otherVerbs.length && distractors.length<2;i++){
+      var d=otherVerbs[i].f && otherVerbs[i].f[f.k];
+      if(d && d!==correct && distractors.indexOf(d)<0) distractors.push(d);
+    }
+    var otherForms=mpShuffleCopy(forms.filter(function(x){return x.k!==f.k;}));
+    for(var j=0;j<otherForms.length && distractors.length<3;j++){
+      var d2=v.f && v.f[otherForms[j].k];
+      if(d2 && d2!==correct && distractors.indexOf(d2)<0) distractors.push(d2);
+    }
+    if(distractors.length<3) continue;
+    var choices=[correct].concat(distractors.slice(0,3));
+    shuffle(choices);
+    out.push({
+      q: '「'+v.jp+'」（'+v.rom+' = '+v.id+'） — bentuk '+f.jp+' ('+f.id+')?',
+      choices: choices,
+      answer: choices.indexOf(correct),
+      section: '活用 Konjugasi'
+    });
+  }
   return out;
 }
 
@@ -9097,6 +9189,10 @@ async function mpBuildQuestionPool(sources, levels, count, kanjiDirs){
   // Pecah jadi daftar "spec" — tiap kombinasi sumber x level (x arah kanji kalau sumbernya kanji)
   var specs=[];
   srcList.forEach(function(src){
+    if(src==='konjugasi'){
+      specs.push({type:'konjugasi'}); // data gak terikat level, cukup 1 spec walau multi-level dipilih
+      return;
+    }
     lvlList.forEach(function(lvl){
       if(src==='kanji'){
         dirList.forEach(function(dir){ specs.push({type:'kanji', level:lvl, dir:dir}); });
@@ -9116,6 +9212,8 @@ async function mpBuildQuestionPool(sources, levels, count, kanjiDirs){
     if(spec.type==='kotoba'){ var words=await mpEnsureWords(spec.level); return mpKotobaQuestions(words, want); }
     if(spec.type==='kanji'){ var kwords=await mpEnsureWords(spec.level); return mpKanjiQuestions(kwords, want, spec.dir||'read'); }
     if(spec.type==='bunpou'){ var gwords=await mpEnsureWords(spec.level); return mpBunpouQuestions(gwords, want); }
+    if(spec.type==='keisei') return mpKeiseiQuestions(want, lvlList);
+    if(spec.type==='konjugasi') return mpKonjugasiQuestions(want);
     return [];
   }
 
