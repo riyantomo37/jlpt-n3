@@ -1104,7 +1104,7 @@ header:has(.user-menu.open) { z-index:1000; }
         <span class="user-name" id="user-name">...</span>
         <span id="level-badge" onclick="event.stopPropagation();gotoScreen('levelreward')" title="Level & Reward" style="font-size:10px;font-weight:800;background:linear-gradient(135deg,var(--gold),#c98a1f);color:white;padding:2px 7px;border-radius:8px;cursor:pointer;letter-spacing:.3px">Lv.1</span>
         <span class="sync-badge" id="sync-badge">● sync</span>
-        <span id="build-dot" title="Indikator update: warnanya ganti tiap ada versi baru dari Claude" style="display:inline-block;width:11px;height:11px;border-radius:50%;background:#c0392b;margin-left:6px;vertical-align:middle;border:2px solid white;box-shadow:0 0 0 1px rgba(0,0,0,.15)"></span>
+        <span id="build-dot" title="Indikator update: warnanya ganti tiap ada versi baru dari Claude" style="display:inline-block;width:11px;height:11px;border-radius:50%;background:#2d7a4f;margin-left:6px;vertical-align:middle;border:2px solid white;box-shadow:0 0 0 1px rgba(0,0,0,.15)"></span>
         <!-- 🔴🟢 CLAUDE: WAJIB toggle warna build-dot di atas SETIAP kali file ini dikirim ulang —
              merah #c0392b <-> hijau #2da050 gantian. Ini satu-satunya cara Riyan verifikasi
              upload-nya beneran ke-deploy. JANGAN LUPA, cek baris ini di awal SETIAP delivery. -->
@@ -2283,6 +2283,7 @@ header:has(.user-menu.open) { z-index:1000; }
   </div>
   <div id="mp-lobby-players"></div>
   <button id="mp-start-btn" onclick="mpStartExam()" style="width:100%;margin-top:16px;padding:14px;border:none;border-radius:10px;background:var(--jade);color:white;cursor:pointer;font-weight:700;font-size:14px">🚀 Mulai Sesi</button>
+  <button id="mp-host-play-btn" onclick="mpHostJoinAsPlayer()" style="width:100%;margin-top:8px;padding:14px;border:none;border-radius:10px;background:var(--red);color:white;cursor:pointer;font-weight:700;font-size:14px">🎮 Mulai &amp; Ikut Main</button>
   <button onclick="mpCloseSession()" style="width:100%;margin-top:8px;padding:12px;border:none;border-radius:10px;background:var(--ink);color:white;cursor:pointer;font-weight:700">Tutup Sesi</button>
 </div>
 
@@ -2319,6 +2320,7 @@ header:has(.user-menu.open) { z-index:1000; }
     <span id="mp-play-progress" style="font-size:12px;font-weight:700;color:var(--mist)"></span>
     <span id="mp-play-score" style="font-family:'DM Mono',monospace;font-size:13px;font-weight:800;color:var(--red)"></span>
   </div>
+  <button id="mp-host-panel-btn" onclick="mpGoHostLobby()" style="display:none;width:100%;margin-bottom:10px;padding:8px;border:1.5px solid var(--gold);border-radius:10px;background:rgba(212,160,23,.08);font-family:inherit;font-size:12px;font-weight:700;color:var(--ink);cursor:pointer">👑 Lihat Panel Host</button>
   <div id="mp-examtimer-wrap" style="margin-bottom:10px">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
       <span style="font-size:11px;font-weight:700;color:var(--mist)">⏱️ SISA WAKTU UJIAN</span>
@@ -9217,6 +9219,85 @@ async function mpStartExam(){
   }
 }
 
+function mpUpdateHostPlayBtnLabel(status){
+  var btn=document.getElementById('mp-host-play-btn');
+  if(!btn || !mpState.code) return;
+  var alreadyJoined = !!localStorage.getItem('mp_pid_'+mpState.code);
+  if(alreadyJoined) btn.textContent='▶️ Lanjut Main';
+  else if(status==='lobby') btn.textContent='🎮 Mulai & Ikut Main';
+  else btn.textContent='🎮 Ikut Main';
+}
+
+async function mpHostJoinAsPlayer(){
+  if(!mpState.code || !mpState.isHost || !db) return;
+  var btn=document.getElementById('mp-host-play-btn');
+  if(btn) btn.disabled=true;
+  try{
+    var sref=db.collection('mpSessions').doc(mpState.code);
+    var sdoc=await sref.get();
+    if(!sdoc.exists) throw new Error('Sesi tidak ditemukan.');
+    var sdata=sdoc.data();
+    if(sdata.status==='closed') throw new Error('Sesi sudah ditutup.');
+    if(sdata.status==='lobby'){
+      var examEndAt = Date.now()+(mpState.examDurationSec||180)*1000;
+      await sref.update({ status:'active', examEndAt: examEndAt, startedAt: firebase.firestore.FieldValue.serverTimestamp() });
+      sdata.status='active'; sdata.examEndAt=examEndAt;
+    }
+    var pid = localStorage.getItem('mp_pid_'+mpState.code);
+    var pref=null, pdata=null;
+    if(pid){
+      pref = sref.collection('players').doc(pid);
+      var pdoc = await pref.get();
+      if(pdoc.exists) pdata=pdoc.data(); else pid=null;
+    }
+    if(!pid){
+      pid = 'p_'+Date.now().toString(36)+Math.random().toString(36).slice(2,8);
+      pref = sref.collection('players').doc(pid);
+      var hostName = (currentUser && currentUser.displayName) ? currentUser.displayName.split(' ')[0] : 'Host';
+      pdata = {name: hostName+' 👑', score:0, correct:0, answered:0, streak:0,
+        totalQuestions:(sdata.questions||mpState.questions||[]).length, finished:false,
+        powerups:{ff:0,boost:0,shield:0,atk:0,freeze:0}, shieldActive:false, boostActive:false, lastAttack:null,
+        examEndAt: sdata.examEndAt || (Date.now()+(mpState.examDurationSec||180)*1000)};
+      await pref.set(Object.assign({}, pdata, {
+        joinedAt: firebase.firestore.FieldValue.serverTimestamp(),
+        lastActive: firebase.firestore.FieldValue.serverTimestamp()
+      }));
+      localStorage.setItem('mp_pid_'+mpState.code, pid);
+    }
+    mpState.playerId=pid; mpState.playerName=pdata.name;
+    mpState.questions = sdata.questions || mpState.questions;
+    mpState.idx=pdata.answered||0; mpState.score=pdata.score||0; mpState.correct=pdata.correct||0; mpState.streak=pdata.streak||0;
+    mpState.powerups=Object.assign({ff:0,boost:0,shield:0,atk:0,freeze:0}, pdata.powerups||{});
+    mpState.shieldActive=!!pdata.shieldActive; mpState.boostActive=!!pdata.boostActive;
+    mpState._lastAttackSeen=(pdata.lastAttack&&pdata.lastAttack.ts)||0;
+    mpState.examEndAt = pdata.examEndAt || sdata.examEndAt || (Date.now()+(mpState.examDurationSec||180)*1000);
+    mpState._examOver=false;
+    // mpState.isHost SENGAJA dibiarkan true — biar host masih bisa balik ke panel host sambil main
+    if(pdata.finished || mpState.idx>=mpState.questions.length || Date.now()>=mpState.examEndAt){
+      mpShowResult();
+    } else {
+      gotoScreen('mpplay');
+      mpRenderPlay();
+      mpListenSelf();
+      mpListenPlayersLive();
+      mpStartExamTimer();
+      mpHeartbeatStart();
+    }
+  }catch(e){
+    alert('Gagal ikut main: '+(e&&e.message||e));
+  }finally{
+    if(btn) btn.disabled=false;
+  }
+}
+
+function mpGoHostLobby(){
+  if(!mpState.code || !mpState.isHost) return;
+  gotoScreen('mphostlobby');
+  var codeEl=document.getElementById('mp-lobby-code'); if(codeEl) codeEl.textContent=mpState.code;
+  mpListenPlayerList(mpState.code,'lobby');
+  mpListenSessionDoc(mpState.code,'host');
+}
+
 function mpPlayerRowHTML(r, opts){
   opts=opts||{};
   var now=Date.now();
@@ -9275,6 +9356,7 @@ function mpListenSessionDoc(code, role){
         if(startBtn) startBtn.style.display='none';
         if(stEl){ stEl.style.display='block'; stEl.textContent='🔒 Sesi ditutup'; stEl.style.color='var(--mist)'; }
       }
+      mpUpdateHostPlayBtnLabel(d.status);
     } else if(role==='wait'){
       if(d.status==='active' && !mpState._examOver && mpState.code===code){
         mpBeginPlayFromWaiting(d);
@@ -9504,6 +9586,7 @@ function mpRenderPlay(){
   var box=document.getElementById('mp-play-content');
   var prog=document.getElementById('mp-play-progress');
   var scoreEl=document.getElementById('mp-play-score');
+  var hostPanelBtn=document.getElementById('mp-host-panel-btn'); if(hostPanelBtn) hostPanelBtn.style.display = mpState.isHost ? 'block' : 'none';
   if(scoreEl) scoreEl.textContent=mpState.score+' pts · 🔥'+mpState.streak+(mpState.boostActive?' · ⚡2x AKTIF':'')+(mpState.shieldActive?' · 🛡️':'');
   if(i>=qs.length){ mpShowResult(); return; }
   mpState._usedFF=false;
