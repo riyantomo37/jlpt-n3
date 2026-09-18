@@ -1104,7 +1104,7 @@ header:has(.user-menu.open) { z-index:1000; }
         <span class="user-name" id="user-name">...</span>
         <span id="level-badge" onclick="event.stopPropagation();gotoScreen('levelreward')" title="Level & Reward" style="font-size:10px;font-weight:800;background:linear-gradient(135deg,var(--gold),#c98a1f);color:white;padding:2px 7px;border-radius:8px;cursor:pointer;letter-spacing:.3px">Lv.1</span>
         <span class="sync-badge" id="sync-badge">● sync</span>
-        <span id="build-dot" title="Indikator update: warnanya ganti tiap ada versi baru dari Claude" style="display:inline-block;width:11px;height:11px;border-radius:50%;background:#2d7a4f;margin-left:6px;vertical-align:middle;border:2px solid white;box-shadow:0 0 0 1px rgba(0,0,0,.15)"></span>
+        <span id="build-dot" title="Indikator update: warnanya ganti tiap ada versi baru dari Claude" style="display:inline-block;width:11px;height:11px;border-radius:50%;background:#c0392b;margin-left:6px;vertical-align:middle;border:2px solid white;box-shadow:0 0 0 1px rgba(0,0,0,.15)"></span>
         <!-- 🔴🟢 CLAUDE: WAJIB toggle warna build-dot di atas SETIAP kali file ini dikirim ulang —
              merah #c0392b <-> hijau #2da050 gantian. Ini satu-satunya cara Riyan verifikasi
              upload-nya beneran ke-deploy. JANGAN LUPA, cek baris ini di awal SETIAP delivery. -->
@@ -2250,11 +2250,14 @@ header:has(.user-menu.open) { z-index:1000; }
 </div>
 
 <div id="screen-mpplay" class="screen">
-  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
     <span id="mp-play-progress" style="font-size:12px;font-weight:700;color:var(--mist)"></span>
     <span id="mp-play-score" style="font-family:'DM Mono',monospace;font-size:13px;font-weight:800;color:var(--red)"></span>
   </div>
+  <div id="mp-powerup-bar" style="display:flex;gap:6px;margin-bottom:10px"></div>
+  <div id="mp-attack-panel" style="display:none;background:white;border:1.5px solid var(--red);border-radius:10px;padding:10px;margin-bottom:10px"></div>
   <div id="mp-play-content" style="background:white;border:1px solid var(--border);border-radius:12px;padding:16px"></div>
+  <div id="mp-toast" style="display:none;position:fixed;left:16px;right:16px;bottom:24px;z-index:999;padding:13px 16px;border-radius:12px;text-align:center;font-weight:700;font-size:13px;box-shadow:var(--shadow);transition:opacity .3s"></div>
 </div>
 
 <div id="screen-mpresult" class="screen">
@@ -7465,6 +7468,7 @@ function gotoScreen(name) {
   var _mpPrevName=_mpPrev?_mpPrev.id.replace('screen-',''):null;
   if(_mpPrevName==='mphostlobby' && name!=='mphostlobby' && typeof mpLeaveLobby==='function') mpLeaveLobby();
   if(_mpPrevName==='mpresult' && name!=='mpresult' && typeof mpState!=='undefined' && mpState.unsubResult){ try{mpState.unsubResult();}catch(e){} mpState.unsubResult=null; }
+  if(_mpPrevName==='mpplay' && name!=='mpplay' && typeof mpState!=='undefined' && mpState.unsubSelf){ try{mpState.unsubSelf();}catch(e){} mpState.unsubSelf=null; }
   document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
   document.getElementById('screen-' + name).classList.add('active');
   document.querySelectorAll('nav button').forEach(function(b){
@@ -8815,8 +8819,17 @@ function shuffle(arr) {
 // ══════════════════════════════════════════════════════════════════
 var mpState = { code:null, isHost:false, playerId:null, playerName:null,
   questions:[], idx:0, score:0, correct:0, streak:0, answered:0,
-  unsubLobby:null, unsubResult:null, level:null, _qStart:0 };
+  unsubLobby:null, unsubResult:null, unsubSelf:null, level:null, _qStart:0,
+  powerups:{ff:0,boost:0,shield:0,atk:0,skip:0}, shieldActive:false, boostActive:false,
+  _lastAttackSeen:0, _usedFF:false, _usedSkip:false };
 var MP_LEVELS = ['N5','N4','N3','N2','N1'];
+var MP_POWERUP_DEFS = {
+  ff:   {emo:'🎯', label:'50:50'},
+  boost:{emo:'⚡', label:'2x Poin'},
+  shield:{emo:'🛡️', label:'Shield'},
+  atk:  {emo:'⚔️', label:'Serang'},
+  skip: {emo:'⏭️', label:'Skip Aman'}
+};
 
 function mpEsc(s){ return String(s==null?'':s).replace(/[&<>"']/g, function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];}); }
 function mpShuffleCopy(arr){ var a=arr.slice(); shuffle(a); return a; }
@@ -9042,7 +9055,8 @@ async function mpJoinSession(){
       pid = 'p_'+Date.now().toString(36)+Math.random().toString(36).slice(2,8);
       pref = sref.collection('players').doc(pid);
       pdata = {name:name, score:0, correct:0, answered:0, streak:0,
-        totalQuestions:(sdata.questions||[]).length, finished:false};
+        totalQuestions:(sdata.questions||[]).length, finished:false,
+        powerups:{ff:0,boost:0,shield:0,atk:0,skip:0}, shieldActive:false, boostActive:false, lastAttack:null};
       await pref.set(Object.assign({}, pdata, {
         joinedAt: firebase.firestore.FieldValue.serverTimestamp(),
         lastActive: firebase.firestore.FieldValue.serverTimestamp()
@@ -9052,11 +9066,15 @@ async function mpJoinSession(){
     mpState.code=code; mpState.isHost=false; mpState.playerId=pid; mpState.playerName=name;
     mpState.questions=sdata.questions||[]; mpState.level=sdata.level;
     mpState.idx=pdata.answered||0; mpState.score=pdata.score||0; mpState.correct=pdata.correct||0; mpState.streak=pdata.streak||0;
+    mpState.powerups=Object.assign({ff:0,boost:0,shield:0,atk:0,skip:0}, pdata.powerups||{});
+    mpState.shieldActive=!!pdata.shieldActive; mpState.boostActive=!!pdata.boostActive;
+    mpState._lastAttackSeen=(pdata.lastAttack&&pdata.lastAttack.ts)||0;
     if(pdata.finished || mpState.idx>=mpState.questions.length){
       mpShowResult();
     } else {
       gotoScreen('mpplay');
       mpRenderPlay();
+      mpListenSelf();
     }
   }catch(e){
     if(errEl){ errEl.textContent=e.message||'Gagal gabung.'; errEl.style.display='block'; }
@@ -9071,8 +9089,11 @@ function mpRenderPlay(){
   var box=document.getElementById('mp-play-content');
   var prog=document.getElementById('mp-play-progress');
   var scoreEl=document.getElementById('mp-play-score');
-  if(scoreEl) scoreEl.textContent=mpState.score+' pts · 🔥'+mpState.streak;
+  if(scoreEl) scoreEl.textContent=mpState.score+' pts · 🔥'+mpState.streak+(mpState.boostActive?' · ⚡2x AKTIF':'')+(mpState.shieldActive?' · 🛡️':'');
   if(i>=qs.length){ mpShowResult(); return; }
+  mpState._usedFF=false; mpState._usedSkip=false;
+  var atkPanel=document.getElementById('mp-attack-panel'); if(atkPanel) atkPanel.style.display='none';
+  mpRenderPowerupBar();
   var q=qs[i];
   mpState._qStart=Date.now();
   if(prog) prog.textContent='Soal '+(i+1)+' / '+qs.length;
@@ -9090,6 +9111,190 @@ function mpRenderPlay(){
   if(box){ box.innerHTML=html; box.scrollTop=0; }
 }
 
+function mpRenderPowerupBar(){
+  var el=document.getElementById('mp-powerup-bar');
+  if(!el) return;
+  var keys=['ff','boost','shield','atk','skip'];
+  el.innerHTML=keys.map(function(k){
+    var def=MP_POWERUP_DEFS[k];
+    var n=mpState.powerups[k]||0;
+    var oneShotUsed=(k==='ff'&&mpState._usedFF)||(k==='skip'&&mpState._usedSkip);
+    var statusActive=(k==='boost'&&mpState.boostActive)||(k==='shield'&&mpState.shieldActive);
+    var usable = n>0 && !oneShotUsed && !statusActive;
+    return '<button onclick="mpUsePowerup(&apos;'+k+'&apos;)" '+(usable?'':'disabled')+' style="flex:1;padding:9px 4px;border:1.5px solid '+(statusActive?'var(--jade)':'var(--border)')+';border-radius:10px;background:'+(usable?'white':'rgba(26,26,46,.04)')+';cursor:'+(usable?'pointer':'default')+';font-family:inherit;position:relative">'
+      +'<div style="font-size:16px;opacity:'+(n>0?1:.35)+'">'+def.emo+'</div>'
+      +'<div style="font-size:9px;font-weight:700;color:var(--mist);margin-top:2px">'+def.label+'</div>'
+      +'<div style="position:absolute;top:-6px;right:-6px;background:var(--red);color:white;font-size:10px;font-weight:800;border-radius:50%;width:17px;height:17px;display:flex;align-items:center;justify-content:center">'+n+'</div>'
+      +'</button>';
+  }).join('');
+}
+
+function mpToast(msg, kind){
+  var el=document.getElementById('mp-toast');
+  if(!el) return;
+  var colors={ok:['rgba(45,122,79,.95)','white'], bad:['rgba(192,57,43,.95)','white'], info:['rgba(26,26,46,.9)','white']};
+  var c=colors[kind]||colors.info;
+  el.style.background=c[0]; el.style.color=c[1];
+  el.textContent=msg;
+  el.style.display='block'; el.style.opacity='1';
+  clearTimeout(mpState._toastTimer);
+  mpState._toastTimer=setTimeout(function(){
+    el.style.opacity='0';
+    setTimeout(function(){ el.style.display='none'; }, 300);
+  }, 2600);
+}
+
+async function mpPersistPowerups(extra){
+  if(!db || !mpState.code || !mpState.playerId) return;
+  try{
+    await db.collection('mpSessions').doc(mpState.code).collection('players').doc(mpState.playerId)
+      .update(Object.assign({ powerups: mpState.powerups, shieldActive: mpState.shieldActive, boostActive: mpState.boostActive }, extra||{}));
+  }catch(e){ console.error('mpPersistPowerups', e); }
+}
+
+function mpAwardPowerupIfStreak(){
+  if(mpState.streak>0 && mpState.streak%3===0){
+    var weights=[['ff',25],['boost',25],['shield',20],['atk',20],['skip',10]];
+    var total=weights.reduce(function(s,w){return s+w[1];},0);
+    var r=Math.random()*total, key=weights[0][0];
+    for(var i=0;i<weights.length;i++){ if(r<weights[i][1]){ key=weights[i][0]; break;} r-=weights[i][1]; }
+    mpState.powerups[key]=(mpState.powerups[key]||0)+1;
+    mpToast('🎁 Combo '+mpState.streak+'x! Dapat power-up: '+MP_POWERUP_DEFS[key].emo+' '+MP_POWERUP_DEFS[key].label, 'ok');
+    mpPersistPowerups();
+  }
+}
+
+function mpUsePowerup(key){
+  var choicesEl=document.getElementById('mp-play-choices');
+  var alreadyLocked = choicesEl && choicesEl.dataset.locked==='1';
+  if((mpState.powerups[key]||0)<=0) return;
+  if(key==='ff'){
+    if(alreadyLocked || mpState._usedFF) return;
+    mpApply5050();
+    mpState.powerups.ff--; mpState._usedFF=true;
+    mpPersistPowerups(); mpRenderPowerupBar();
+  } else if(key==='skip'){
+    if(alreadyLocked || mpState._usedSkip) return;
+    mpState.powerups.skip--; mpState._usedSkip=true;
+    mpSkipQuestion();
+  } else if(key==='boost'){
+    if(mpState.boostActive) return;
+    mpState.powerups.boost--; mpState.boostActive=true;
+    mpPersistPowerups(); mpRenderPowerupBar();
+    mpToast('⚡ 2x Poin aktif untuk jawaban benar berikutnya!', 'ok');
+    var scoreEl=document.getElementById('mp-play-score'); if(scoreEl) scoreEl.textContent=mpState.score+' pts · 🔥'+mpState.streak+' · ⚡2x AKTIF';
+  } else if(key==='shield'){
+    if(mpState.shieldActive) return;
+    mpState.powerups.shield--; mpState.shieldActive=true;
+    mpPersistPowerups(); mpRenderPowerupBar();
+    mpToast('🛡️ Shield aktif — nahan 1x serangan lawan', 'ok');
+  } else if(key==='atk'){
+    mpOpenAttackPicker();
+  }
+}
+
+function mpApply5050(){
+  var choicesEl=document.getElementById('mp-play-choices');
+  if(!choicesEl) return;
+  var q=mpState.questions[mpState.idx];
+  var wrongIdx=[]; for(var i=0;i<(q.choices||[]).length;i++){ if(i!==q.answer) wrongIdx.push(i); }
+  shuffle(wrongIdx);
+  var toHide=wrongIdx.slice(0,2);
+  toHide.forEach(function(idx){
+    var el=choicesEl.children[idx];
+    if(el){ el.style.opacity='.2'; el.style.pointerEvents='none'; }
+  });
+  mpToast('🎯 50:50 dipakai — 2 pilihan salah disembunyikan', 'info');
+}
+
+function mpSkipQuestion(){
+  mpState.idx++; mpState.answered=mpState.idx;
+  mpToast('⏭️ Soal dilewati dengan aman (streak & benar tidak berubah)', 'info');
+  mpSaveProgress();
+  mpRenderPlay();
+}
+
+async function mpOpenAttackPicker(){
+  var panel=document.getElementById('mp-attack-panel');
+  if(!panel) return;
+  if(panel.style.display==='block'){ panel.style.display='none'; return; }
+  panel.style.display='block';
+  panel.innerHTML='<div style="text-align:center;color:var(--mist);font-size:12px;padding:8px">Memuat daftar pemain…</div>';
+  try{
+    var snap=await db.collection('mpSessions').doc(mpState.code).collection('players').get();
+    var rows=[];
+    snap.forEach(function(d){ if(d.id!==mpState.playerId) rows.push(Object.assign({id:d.id}, d.data())); });
+    rows=rows.filter(function(r){ return (r.score||0)>0; }).sort(function(a,b){return (b.score||0)-(a.score||0);});
+    if(!rows.length){
+      panel.innerHTML='<div style="text-align:center;color:var(--mist);font-size:12px;padding:8px">Belum ada lawan dengan poin buat diserang.</div>';
+      return;
+    }
+    panel.innerHTML='<div style="font-size:11px;font-weight:700;color:var(--red);margin-bottom:8px">⚔️ Pilih lawan untuk diserang:</div>'
+      + rows.map(function(r){
+          return '<div onclick="mpAttack(&apos;'+r.id+'&apos;,&apos;'+mpEsc(r.name||'Pemain').replace(/'/g,'&#39;')+'&apos;)" style="display:flex;align-items:center;justify-content:space-between;padding:9px 11px;margin-bottom:6px;border:1px solid var(--border);border-radius:9px;cursor:pointer;background:var(--paper)">'
+            +'<span style="font-size:13px;font-weight:600">'+mpEsc(r.name||'Pemain')+(r.shieldActive?' 🛡️':'')+'</span>'
+            +'<span style="font-size:12px;font-weight:800;color:var(--red)">'+(r.score||0)+' pts</span></div>';
+        }).join('');
+  }catch(e){
+    panel.innerHTML='<div style="text-align:center;color:var(--red);font-size:12px;padding:8px">Gagal memuat daftar pemain.</div>';
+  }
+}
+
+async function mpAttack(targetId, targetName){
+  if((mpState.powerups.atk||0)<=0) return;
+  var panel=document.getElementById('mp-attack-panel');
+  if(!db || !mpState.code || !mpState.playerId) return;
+  var sref=db.collection('mpSessions').doc(mpState.code);
+  var myRef=sref.collection('players').doc(mpState.playerId);
+  var targetRef=sref.collection('players').doc(targetId);
+  try{
+    var result=await db.runTransaction(async function(tx){
+      var tSnap=await tx.get(targetRef);
+      var mSnap=await tx.get(myRef);
+      if(!tSnap.exists || !mSnap.exists) throw new Error('Data pemain tidak ditemukan.');
+      var tdata=tSnap.data(), mdata=mSnap.data();
+      var stolen=0, blocked=false;
+      if(tdata.shieldActive){
+        blocked=true;
+        tx.update(targetRef, { shieldActive:false, lastAttack:{by:mpState.playerName, amount:0, blocked:true, ts:Date.now()} });
+      } else {
+        stolen=Math.min(tdata.score||0, Math.max(20, Math.round((tdata.score||0)*0.15)));
+        tx.update(targetRef, { score:(tdata.score||0)-stolen, lastAttack:{by:mpState.playerName, amount:stolen, blocked:false, ts:Date.now()} });
+      }
+      var myPowerups=Object.assign({}, mdata.powerups||{});
+      myPowerups.atk=Math.max(0,(myPowerups.atk||0)-1);
+      tx.update(myRef, { score:(mdata.score||0)+stolen, powerups:myPowerups });
+      return { stolen:stolen, blocked:blocked };
+    });
+    mpState.score+=result.stolen;
+    mpState.powerups.atk=Math.max(0,(mpState.powerups.atk||0)-1);
+    if(panel) panel.style.display='none';
+    mpRenderPowerupBar();
+    var scoreEl=document.getElementById('mp-play-score'); if(scoreEl) scoreEl.textContent=mpState.score+' pts · 🔥'+mpState.streak;
+    if(result.blocked) mpToast('🛡️ Serangan ke '+targetName+' ditahan Shield-nya!', 'bad');
+    else mpToast('⚔️ Berhasil curi '+result.stolen+' poin dari '+targetName+'!', 'ok');
+  }catch(e){
+    mpToast('Gagal menyerang: '+(e.message||e), 'bad');
+  }
+}
+
+function mpListenSelf(){
+  if(mpState.unsubSelf){ try{mpState.unsubSelf();}catch(e){} mpState.unsubSelf=null; }
+  if(!db || !mpState.code || !mpState.playerId) return;
+  mpState.unsubSelf = db.collection('mpSessions').doc(mpState.code).collection('players').doc(mpState.playerId)
+    .onSnapshot(function(doc){
+      if(!doc.exists) return;
+      var d=doc.data();
+      if(typeof d.score==='number' && d.score<mpState.score){ mpState.score=d.score; var se=document.getElementById('mp-play-score'); if(se) se.textContent=mpState.score+' pts · 🔥'+mpState.streak; }
+      if(d.shieldActive===false && mpState.shieldActive){ mpState.shieldActive=false; mpRenderPowerupBar(); }
+      if(d.lastAttack && d.lastAttack.ts && d.lastAttack.ts>mpState._lastAttackSeen){
+        mpState._lastAttackSeen=d.lastAttack.ts;
+        if(d.lastAttack.blocked) mpToast('🛡️ Shield-mu menahan serangan dari '+d.lastAttack.by+'!', 'ok');
+        else mpToast('😱 Diserang '+d.lastAttack.by+'! -'+d.lastAttack.amount+' poin', 'bad');
+      }
+    }, function(e){ console.error('mpListenSelf', e); });
+}
+
 function mpAnswer(choiceIdx){
   var choicesEl=document.getElementById('mp-play-choices');
   if(!choicesEl || choicesEl.dataset.locked==='1') return;
@@ -9102,16 +9307,23 @@ function mpAnswer(choiceIdx){
     if(k===q.answer){ kids[k].style.borderColor='var(--jade)'; kids[k].style.background='rgba(45,122,79,.08)'; }
     if(k===choiceIdx && !isCorrect){ kids[k].style.borderColor='var(--red)'; kids[k].style.background='rgba(192,57,43,.08)'; }
   }
-  var gained=0;
-  if(isCorrect){ mpState.streak++; gained=100+Math.min(mpState.streak-1,5)*10; mpState.score+=gained; mpState.correct++; }
-  else { mpState.streak=0; }
+  var gained=0, wasBoost=false;
+  if(isCorrect){
+    mpState.streak++; gained=100+Math.min(mpState.streak-1,5)*10;
+    if(mpState.boostActive){ gained*=2; wasBoost=true; mpState.boostActive=false; }
+    mpState.score+=gained; mpState.correct++;
+  } else {
+    mpState.streak=0;
+    if(mpState.boostActive){ mpState.boostActive=false; } // boost habis walau salah
+  }
   mpState.idx++; mpState.answered=mpState.idx;
   var fb=document.getElementById('mp-play-feedback');
   if(fb){
     fb.innerHTML='<div style="margin-top:10px;padding:12px;border-radius:10px;text-align:center;font-weight:700;background:'+(isCorrect?'rgba(45,122,79,.1)':'rgba(192,57,43,.1)')+';color:'+(isCorrect?'var(--jade)':'var(--red)')+'">'
-      +(isCorrect?('✅ Benar! +'+gained+' poin'):('❌ Salah — jawaban benar: '+mpEsc(q.choices[q.answer])))
+      +(isCorrect?('✅ Benar! +'+gained+' poin'+(wasBoost?' (⚡2x!)':'')):('❌ Salah — jawaban benar: '+mpEsc(q.choices[q.answer])))
       +'</div><button onclick="mpRenderPlay()" style="width:100%;margin-top:10px;padding:12px;border:none;border-radius:10px;background:var(--ink);color:white;font-weight:700;cursor:pointer">Lanjut →</button>';
   }
+  if(isCorrect) mpAwardPowerupIfStreak();
   mpSaveProgress();
 }
 
@@ -9122,6 +9334,7 @@ async function mpSaveProgress(){
     await db.collection('mpSessions').doc(mpState.code).collection('players').doc(mpState.playerId).update({
       score: mpState.score, correct: mpState.correct, streak: mpState.streak,
       answered: mpState.idx, finished: finished,
+      powerups: mpState.powerups, shieldActive: mpState.shieldActive, boostActive: mpState.boostActive,
       lastActive: firebase.firestore.FieldValue.serverTimestamp(),
       finishedAt: finished ? firebase.firestore.FieldValue.serverTimestamp() : null
     });
@@ -9160,7 +9373,10 @@ function mpRenderResultList(rows){
 
 function mpLeaveResult(){
   if(mpState.unsubResult){ try{mpState.unsubResult();}catch(e){} mpState.unsubResult=null; }
-  mpState={code:null,isHost:false,playerId:null,playerName:null,questions:[],idx:0,score:0,correct:0,streak:0,answered:0,unsubLobby:null,unsubResult:null,level:null,_qStart:0};
+  if(mpState.unsubSelf){ try{mpState.unsubSelf();}catch(e){} mpState.unsubSelf=null; }
+  mpState={code:null,isHost:false,playerId:null,playerName:null,questions:[],idx:0,score:0,correct:0,streak:0,answered:0,
+    unsubLobby:null,unsubResult:null,unsubSelf:null,level:null,_qStart:0,
+    powerups:{ff:0,boost:0,shield:0,atk:0,skip:0},shieldActive:false,boostActive:false,_lastAttackSeen:0,_usedFF:false,_usedSkip:false};
   gotoScreen('overview');
 }
 
