@@ -2196,11 +2196,24 @@ header:has(.user-menu.open) { z-index:1000; }
 <div id="screen-mphostsetup" class="screen">
   <div class="section-title" style="margin-bottom:14px">🎤 Buat Sesi</div>
   <div style="background:white;border:1px solid var(--border);border-radius:12px;padding:16px;margin-bottom:14px">
-    <label style="font-size:12px;font-weight:700;color:var(--mist);display:block;margin-bottom:6px">Level</label>
-    <select id="mp-host-level" style="width:100%;padding:11px;border:1.5px solid var(--border);border-radius:10px;font-family:inherit;font-size:14px;margin-bottom:16px">
-      <option value="N5">N5</option><option value="N4">N4</option><option value="N3" selected>N3</option>
-      <option value="N2">N2</option><option value="N1">N1</option>
-    </select>
+    <label style="font-size:12px;font-weight:700;color:var(--mist);display:block;margin-bottom:6px">Level (bisa pilih lebih dari satu, di-mix)</label>
+    <div id="mp-level-group" style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:16px">
+      <label style="display:flex;align-items:center;gap:6px;padding:9px 12px;border:1.5px solid var(--border);border-radius:10px;cursor:pointer">
+        <input type="checkbox" name="mp-level" value="N5"> <span style="font-size:13px">N5</span>
+      </label>
+      <label style="display:flex;align-items:center;gap:6px;padding:9px 12px;border:1.5px solid var(--border);border-radius:10px;cursor:pointer">
+        <input type="checkbox" name="mp-level" value="N4"> <span style="font-size:13px">N4</span>
+      </label>
+      <label style="display:flex;align-items:center;gap:6px;padding:9px 12px;border:1.5px solid var(--border);border-radius:10px;cursor:pointer">
+        <input type="checkbox" name="mp-level" value="N3" checked> <span style="font-size:13px">N3</span>
+      </label>
+      <label style="display:flex;align-items:center;gap:6px;padding:9px 12px;border:1.5px solid var(--border);border-radius:10px;cursor:pointer">
+        <input type="checkbox" name="mp-level" value="N2"> <span style="font-size:13px">N2</span>
+      </label>
+      <label style="display:flex;align-items:center;gap:6px;padding:9px 12px;border:1.5px solid var(--border);border-radius:10px;cursor:pointer">
+        <input type="checkbox" name="mp-level" value="N1"> <span style="font-size:13px">N1</span>
+      </label>
+    </div>
     <label style="font-size:12px;font-weight:700;color:var(--mist);display:block;margin-bottom:6px">Sumber Soal (bisa pilih lebih dari satu, di-mix)</label>
     <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:10px">
       <label style="display:flex;align-items:center;gap:8px;padding:11px;border:1.5px solid var(--border);border-radius:10px;cursor:pointer">
@@ -2212,17 +2225,29 @@ header:has(.user-menu.open) { z-index:1000; }
       <label style="display:flex;align-items:center;gap:8px;padding:11px;border:1.5px solid var(--border);border-radius:10px;cursor:pointer">
         <input type="checkbox" name="mp-source" value="kanji" onchange="mpToggleKanjiDir()"> <span style="font-size:13px">🈁 Kanji (baca kanji / cari kanji)</span>
       </label>
+      <label style="display:flex;align-items:center;gap:8px;padding:11px;border:1.5px solid var(--border);border-radius:10px;cursor:pointer">
+        <input type="checkbox" name="mp-source" value="bunpou" onchange="mpToggleKanjiDir()"> <span style="font-size:13px">📖 Bunpou (pola tata bahasa)</span>
+      </label>
     </div>
     <div id="mp-kanjidir-wrap" style="display:none;margin-bottom:16px">
-      <label style="font-size:12px;font-weight:700;color:var(--mist);display:block;margin-bottom:6px">Arah Soal Kanji</label>
+      <label style="font-size:12px;font-weight:700;color:var(--mist);display:block;margin-bottom:6px">Arah Soal Kanji (bisa pilih dua-duanya, di-mix)</label>
       <div style="display:flex;gap:8px">
         <label style="flex:1;display:flex;align-items:center;gap:6px;padding:10px;border:1.5px solid var(--border);border-radius:10px;cursor:pointer">
-          <input type="radio" name="mp-kanjidir" value="read" checked> <span style="font-size:12px">🈶→🔤 Baca Kanji</span>
+          <input type="checkbox" name="mp-kanjidir" value="read" checked> <span style="font-size:12px">🈶→🔤 Baca Kanji</span>
         </label>
         <label style="flex:1;display:flex;align-items:center;gap:6px;padding:10px;border:1.5px solid var(--border);border-radius:10px;cursor:pointer">
-          <input type="radio" name="mp-kanjidir" value="find"> <span style="font-size:12px">🔤→🈶 Cari Kanji</span>
+          <input type="checkbox" name="mp-kanjidir" value="find"> <span style="font-size:12px">🔤→🈶 Cari Kanji</span>
         </label>
       </div>
+    </div>
+    <label style="font-size:12px;font-weight:700;color:var(--mist);display:block;margin-bottom:6px">🎮 Mode Mulai Sesi</label>
+    <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:16px">
+      <label style="display:flex;align-items:center;gap:8px;padding:11px;border:1.5px solid var(--border);border-radius:10px;cursor:pointer">
+        <input type="radio" name="mp-startmode" value="host" checked> <span style="font-size:13px">🎬 Host Kontrol — pemain nunggu di lobby sampai host tekan Mulai</span>
+      </label>
+      <label style="display:flex;align-items:center;gap:8px;padding:11px;border:1.5px solid var(--border);border-radius:10px;cursor:pointer">
+        <input type="radio" name="mp-startmode" value="free"> <span style="font-size:13px">⚡ Bebas — pemain langsung main begitu gabung, kapan aja</span>
+      </label>
     </div>
     <label style="font-size:12px;font-weight:700;color:var(--mist);display:block;margin-bottom:6px">Jumlah Soal</label>
     <select id="mp-host-count" style="width:100%;padding:11px;border:1.5px solid var(--border);border-radius:10px;font-family:inherit;font-size:14px;margin-bottom:16px">
@@ -8898,7 +8923,7 @@ var MP_POWERUP_DEFS = {
 function mpEsc(s){ return String(s==null?'':s).replace(/[&<>"']/g, function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];}); }
 function mpShuffleCopy(arr){ var a=arr.slice(); shuffle(a); return a; }
 function mpSourceLabel(sources){
-  var map={bank:'Bank Soal', kotoba:'Kotoba', kanji:'Kanji'};
+  var map={bank:'Bank Soal', kotoba:'Kotoba', kanji:'Kanji', bunpou:'Bunpou'};
   var list = Array.isArray(sources) ? sources : [sources];
   return list.map(function(s){ return map[s]||s; }).join(' + ');
 }
@@ -8947,6 +8972,27 @@ function mpKotobaQuestions(words, count){
       choices: choices,
       answer: choices.indexOf(w.id_),
       section: '単語 Kotoba'
+    });
+  });
+  return out;
+}
+
+function mpBunpouQuestions(words, count){
+  // Sama seperti Kotoba tapi cuma dari kata/pola yang ditag 'grammar' — variasi metode belajar
+  var pool=(words||[]).filter(function(w){ return w && w.jp && w.id_ && w.cat==='grammar'; });
+  shuffle(pool);
+  var picks=pool.slice(0, Math.max(0, Math.min(count, pool.length)));
+  var out=[];
+  picks.forEach(function(w){
+    var distractors=mpShuffleCopy(pool.filter(function(x){return x.id_!==w.id_;})).slice(0,3).map(function(x){return x.id_;});
+    while(distractors.length<3) distractors.push('—');
+    var choices=distractors.concat([w.id_]);
+    shuffle(choices);
+    out.push({
+      q: '「'+w.jp+'」 — arti/pemakaian pola ini?',
+      choices: choices,
+      answer: choices.indexOf(w.id_),
+      section: '📖 Bunpou'
     });
   });
   return out;
@@ -9017,29 +9063,51 @@ async function mpBankQuestions(level, count){
   }catch(e){ return []; }
 }
 
-async function mpBuildQuestionPool(sources, level, count, kanjiDir){
-  // sources: array, misal ['bank','kotoba'] atau ['kanji'] atau ketiganya sekaligus
-  var list = Array.isArray(sources) ? sources.slice() : [sources];
-  if(!list.length) list=['bank'];
-  var n = list.length;
-  var base = Math.floor(count/n);
+async function mpBuildQuestionPool(sources, levels, count, kanjiDirs){
+  // sources: array ['bank','kotoba','kanji'...]; levels: array ['N5','N3',...]; kanjiDirs: array ['read','find']
+  var srcList = Array.isArray(sources) ? sources.slice() : [sources];
+  if(!srcList.length) srcList=['bank'];
+  var lvlList = Array.isArray(levels) ? levels.slice() : [levels];
+  if(!lvlList.length) lvlList=['N3'];
+  var dirList = Array.isArray(kanjiDirs) ? kanjiDirs.slice() : [kanjiDirs||'read'];
+  if(!dirList.length) dirList=['read'];
+
+  // Pecah jadi daftar "spec" — tiap kombinasi sumber x level (x arah kanji kalau sumbernya kanji)
+  var specs=[];
+  srcList.forEach(function(src){
+    lvlList.forEach(function(lvl){
+      if(src==='kanji'){
+        dirList.forEach(function(dir){ specs.push({type:'kanji', level:lvl, dir:dir}); });
+      } else {
+        specs.push({type:src, level:lvl});
+      }
+    });
+  });
+  if(!specs.length) specs=[{type:'bank', level:lvlList[0]}];
+
+  var n=specs.length;
+  var base=Math.floor(count/n);
+
+  async function fetchSpec(spec, want){
+    if(want<=0) return [];
+    if(spec.type==='bank') return await mpBankQuestions(spec.level, want);
+    if(spec.type==='kotoba'){ var words=await mpEnsureWords(spec.level); return mpKotobaQuestions(words, want); }
+    if(spec.type==='kanji'){ var kwords=await mpEnsureWords(spec.level); return mpKanjiQuestions(kwords, want, spec.dir||'read'); }
+    if(spec.type==='bunpou'){ var gwords=await mpEnsureWords(spec.level); return mpBunpouQuestions(gwords, want); }
+    return [];
+  }
+
   var pools=[];
-  for(var i=0;i<list.length;i++){
-    var want = (i===list.length-1) ? (count - base*(n-1)) : base; // sisa dibulatkan ke sumber terakhir
-    if(list[i]==='bank') pools.push(await mpBankQuestions(level, want));
-    else if(list[i]==='kotoba'){ var words=await mpEnsureWords(level); pools.push(mpKotobaQuestions(words, want)); }
-    else if(list[i]==='kanji'){ var kwords=await mpEnsureWords(level); pools.push(mpKanjiQuestions(kwords, want, kanjiDir||'read')); }
+  for(var i=0;i<specs.length;i++){
+    var want = (i===specs.length-1) ? (count - base*(n-1)) : base; // sisa dibulatkan ke spec terakhir
+    pools.push(await fetchSpec(specs[i], want));
   }
   var out=[].concat.apply([], pools);
-  // kalau ada sumber yang kurang dari jatahnya (misal bank soal levelnya belum lengkap), isi kekurangan dari sumber lain yang masih ada stok
+  // kalau ada spec yang kurang dari jatahnya, isi kekurangan dari spec lain yang masih ada stok
   var deficit = count - out.length;
   if(deficit>0){
-    for(var j=0;j<list.length && deficit>0;j++){
-      var extra=[];
-      if(list[j]==='bank') extra = await mpBankQuestions(level, deficit);
-      else if(list[j]==='kotoba'){ var w2=await mpEnsureWords(level); extra = mpKotobaQuestions(w2, deficit); }
-      else if(list[j]==='kanji'){ var k2=await mpEnsureWords(level); extra = mpKanjiQuestions(k2, deficit, kanjiDir||'read'); }
-      // hindari duplikat pertanyaan yang sama persis
+    for(var j=0;j<specs.length && deficit>0;j++){
+      var extra = await fetchSpec(specs[j], deficit);
       extra = extra.filter(function(eq){ return !out.some(function(oq){ return oq.q===eq.q; }); });
       out = out.concat(extra);
       deficit = count - out.length;
@@ -9049,9 +9117,14 @@ async function mpBuildQuestionPool(sources, level, count, kanjiDir){
   return out.slice(0,count);
 }
 
+function mpLevelsLabel(levels){
+  var list = Array.isArray(levels) ? levels : [levels];
+  return list.join('+');
+}
+
 function mpGoHostSetup(){
-  var sel=document.getElementById('mp-host-level');
-  if(sel) sel.value = (currentJLPT && MP_LEVELS.indexOf(currentJLPT)>=0) ? currentJLPT : 'N3';
+  var defLevel = (currentJLPT && MP_LEVELS.indexOf(currentJLPT)>=0) ? currentJLPT : 'N3';
+  document.querySelectorAll('input[name="mp-level"]').forEach(function(el){ el.checked = (el.value===defLevel); });
   gotoScreen('mphostsetup');
   mpToggleKanjiDir();
 }
@@ -9064,12 +9137,17 @@ function mpToggleKanjiDir(){
 
 async function mpCreateSession(){
   if(!db){ alert('Koneksi ke server belum siap. Coba beberapa detik lagi.'); return; }
-  var level=document.getElementById('mp-host-level').value;
+  var lvlEls=document.querySelectorAll('input[name="mp-level"]:checked');
+  var levels=[]; lvlEls.forEach(function(el){ levels.push(el.value); });
+  if(!levels.length){ alert('Pilih minimal 1 level.'); return; }
   var srcEls=document.querySelectorAll('input[name="mp-source"]:checked');
   var sources=[]; srcEls.forEach(function(el){ sources.push(el.value); });
   if(!sources.length){ alert('Pilih minimal 1 sumber soal.'); return; }
-  var kdirEl=document.querySelector('input[name="mp-kanjidir"]:checked');
-  var kanjiDir = kdirEl ? kdirEl.value : 'read';
+  var kdirEls=document.querySelectorAll('input[name="mp-kanjidir"]:checked');
+  var kanjiDirs=[]; kdirEls.forEach(function(el){ kanjiDirs.push(el.value); });
+  if(sources.indexOf('kanji')>=0 && !kanjiDirs.length){ alert('Pilih minimal 1 arah soal kanji.'); return; }
+  var smEl=document.querySelector('input[name="mp-startmode"]:checked');
+  var startMode = smEl ? smEl.value : 'host';
   var count = parseInt(document.getElementById('mp-host-count').value,10)||10;
   var examDurationSec = parseInt(document.getElementById('mp-host-time').value,10)||180;
   var btn=document.getElementById('mp-host-create-btn');
@@ -9077,31 +9155,41 @@ async function mpCreateSession(){
   if(btn) btn.disabled=true;
   if(statusEl){statusEl.textContent='⏳ Menyiapkan '+count+' soal…'; statusEl.style.display='block';}
   try{
-    var questions = await mpBuildQuestionPool(sources, level, count, kanjiDir);
+    var questions = await mpBuildQuestionPool(sources, levels, count, kanjiDirs);
     if(questions.length<3){
-      alert('Gagal menyiapkan soal (hanya '+questions.length+' soal ditemukan untuk '+level+'). Coba level atau sumber lain.');
+      alert('Gagal menyiapkan soal (hanya '+questions.length+' soal ditemukan untuk '+mpLevelsLabel(levels)+'). Coba level atau sumber lain.');
       return;
     }
     var code = await mpUniqueCode();
     var hostName = (currentUser && currentUser.displayName) ? currentUser.displayName.split(' ')[0] : 'Host';
-    await db.collection('mpSessions').doc(code).set({
+    var initStatus = startMode==='free' ? 'active' : 'lobby';
+    var sessionDoc = {
       hostUid: currentUser ? currentUser.uid : null,
       hostName: hostName,
-      level: level,
+      level: levels,
       source: sources,
-      kanjiDir: kanjiDir,
+      kanjiDir: kanjiDirs,
+      startMode: startMode,
       questions: questions,
       count: questions.length,
       examDurationSec: examDurationSec,
-      status: 'lobby',
+      status: initStatus,
       createdAt: firebase.firestore.FieldValue.serverTimestamp(),
       expiresAt: new Date(Date.now()+24*3600*1000)
-    });
-    mpState.code=code; mpState.isHost=true; mpState.level=level; mpState.questions=questions; mpState.examDurationSec=examDurationSec;
+    };
+    await db.collection('mpSessions').doc(code).set(sessionDoc);
+    mpState.code=code; mpState.isHost=true; mpState.level=levels; mpState.questions=questions; mpState.examDurationSec=examDurationSec;
     var codeEl=document.getElementById('mp-lobby-code'); if(codeEl) codeEl.textContent=code;
-    var metaEl=document.getElementById('mp-lobby-meta'); if(metaEl) metaEl.textContent=level+' · '+questions.length+' soal · ⏱️'+Math.round(examDurationSec/60)+' menit · '+mpSourceLabel(sources);
-    var startBtn=document.getElementById('mp-start-btn'); if(startBtn){ startBtn.style.display=''; startBtn.disabled=false; startBtn.textContent='🚀 Mulai Sesi'; }
-    var stEl=document.getElementById('mp-lobby-status'); if(stEl) stEl.style.display='none';
+    var metaEl=document.getElementById('mp-lobby-meta'); if(metaEl) metaEl.textContent=mpLevelsLabel(levels)+' · '+questions.length+' soal · ⏱️'+Math.round(examDurationSec/60)+' menit · '+mpSourceLabel(sources);
+    var startBtn=document.getElementById('mp-start-btn');
+    var stEl=document.getElementById('mp-lobby-status');
+    if(startMode==='free'){
+      if(startBtn) startBtn.style.display='none';
+      if(stEl){ stEl.style.display='block'; stEl.style.color='var(--jade)'; stEl.textContent='⚡ Mode Bebas — pemain langsung main begitu gabung'; }
+    } else {
+      if(startBtn){ startBtn.style.display=''; startBtn.disabled=false; startBtn.textContent='🚀 Mulai Sesi'; }
+      if(stEl) stEl.style.display='none';
+    }
     gotoScreen('mphostlobby');
     mpListenPlayerList(code,'lobby');
     mpListenSessionDoc(code,'host');
@@ -9182,7 +9270,7 @@ function mpListenSessionDoc(code, role){
         if(stEl) stEl.style.display='none';
       } else if(d.status==='active'){
         if(startBtn) startBtn.style.display='none';
-        if(stEl){ stEl.style.display='block'; stEl.textContent='🟢 Sesi sedang berjalan'; }
+        if(stEl){ stEl.style.display='block'; stEl.style.color='var(--jade)'; stEl.textContent = d.startMode==='free' ? '⚡ Mode Bebas — pemain langsung main begitu gabung' : '🟢 Sesi sedang berjalan'; }
       } else if(d.status==='closed'){
         if(startBtn) startBtn.style.display='none';
         if(stEl){ stEl.style.display='block'; stEl.textContent='🔒 Sesi ditutup'; stEl.style.color='var(--mist)'; }
@@ -9285,6 +9373,7 @@ async function mpJoinSession(){
     if(!sdoc.exists) throw new Error('Kode tidak ditemukan.');
     var sdata=sdoc.data();
     if(sdata.status==='closed') throw new Error('Sesi ini sudah ditutup.');
+    var startMode = sdata.startMode || 'host';
     localStorage.setItem('mp_name', name);
     var examDurationSec = sdata.examDurationSec || 180;
     var pid = localStorage.getItem('mp_pid_'+code);
@@ -9295,13 +9384,14 @@ async function mpJoinSession(){
       if(pdoc.exists) pdata=pdoc.data(); else pid=null;
     }
     if(!pid){
-      if(sdata.status==='active') throw new Error('Sesi sudah dimulai, tidak bisa gabung lagi.');
+      if(startMode==='host' && sdata.status==='active') throw new Error('Sesi sudah dimulai, tidak bisa gabung lagi.');
       pid = 'p_'+Date.now().toString(36)+Math.random().toString(36).slice(2,8);
       pref = sref.collection('players').doc(pid);
+      var initExamEndAt = (startMode==='free') ? (Date.now()+examDurationSec*1000) : null;
       pdata = {name:name, score:0, correct:0, answered:0, streak:0,
         totalQuestions:(sdata.questions||[]).length, finished:false,
         powerups:{ff:0,boost:0,shield:0,atk:0,freeze:0}, shieldActive:false, boostActive:false, lastAttack:null,
-        examEndAt: null};
+        examEndAt: initExamEndAt};
       await pref.set(Object.assign({}, pdata, {
         joinedAt: firebase.firestore.FieldValue.serverTimestamp(),
         lastActive: firebase.firestore.FieldValue.serverTimestamp()
@@ -9317,14 +9407,14 @@ async function mpJoinSession(){
     mpState._examOver=false;
     if(pdata.finished){
       mpShowResult();
-    } else if(sdata.status==='lobby'){
+    } else if(startMode==='host' && sdata.status==='lobby'){
       var wcEl=document.getElementById('mp-wait-code'); if(wcEl) wcEl.textContent=code;
       gotoScreen('mpwaiting');
       mpListenPlayerList(code,'wait');
       mpListenSessionDoc(code,'wait');
       mpHeartbeatStart();
     } else {
-      // status active: kalau examEndAt player belum ke-set (baru nyusul dari lobby), ambil dari sesi
+      // mode bebas (langsung main), atau mode host yang statusnya udah active (nyusul/resume)
       mpState.examEndAt = pdata.examEndAt || sdata.examEndAt || (Date.now()+examDurationSec*1000);
       if(!pdata.examEndAt){ pref.update({examEndAt: mpState.examEndAt}).catch(function(){}); }
       if(mpState.idx>=mpState.questions.length || Date.now()>=mpState.examEndAt){
