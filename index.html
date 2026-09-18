@@ -1104,7 +1104,7 @@ header:has(.user-menu.open) { z-index:1000; }
         <span class="user-name" id="user-name">...</span>
         <span id="level-badge" onclick="event.stopPropagation();gotoScreen('levelreward')" title="Level & Reward" style="font-size:10px;font-weight:800;background:linear-gradient(135deg,var(--gold),#c98a1f);color:white;padding:2px 7px;border-radius:8px;cursor:pointer;letter-spacing:.3px">Lv.1</span>
         <span class="sync-badge" id="sync-badge">● sync</span>
-        <span id="build-dot" title="Indikator update: warnanya ganti tiap ada versi baru dari Claude" style="display:inline-block;width:11px;height:11px;border-radius:50%;background:#c0392b;margin-left:6px;vertical-align:middle;border:2px solid white;box-shadow:0 0 0 1px rgba(0,0,0,.15)"></span>
+        <span id="build-dot" title="Indikator update: warnanya ganti tiap ada versi baru dari Claude" style="display:inline-block;width:11px;height:11px;border-radius:50%;background:#2d7a4f;margin-left:6px;vertical-align:middle;border:2px solid white;box-shadow:0 0 0 1px rgba(0,0,0,.15)"></span>
         <!-- 🔴🟢 CLAUDE: WAJIB toggle warna build-dot di atas SETIAP kali file ini dikirim ulang —
              merah #c0392b <-> hijau #2da050 gantian. Ini satu-satunya cara Riyan verifikasi
              upload-nya beneran ke-deploy. JANGAN LUPA, cek baris ini di awal SETIAP delivery. -->
@@ -2171,6 +2171,98 @@ header:has(.user-menu.open) { z-index:1000; }
     </div>
   </div>
 
+</div>
+
+<!-- ════ MULTIPLAYER: KUIS BARENG ════ -->
+<div id="screen-mphome" class="screen">
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
+    <div class="section-title" style="margin:0">🎮 Kuis Bareng</div>
+  </div>
+  <p style="font-size:13px;color:var(--mist);margin-bottom:20px">Main soal JLPT bareng teman — tiap orang gabung pakai kode, jalan sendiri-sendiri, ranking update langsung.</p>
+  <div style="display:flex;flex-direction:column;gap:12px">
+    <div onclick="mpGoHostSetup()" style="background:white;border:1px solid var(--border);border-top:3px solid var(--red);border-radius:12px;padding:18px;cursor:pointer;display:flex;align-items:center;gap:14px">
+      <div style="width:44px;height:44px;border-radius:12px;background:rgba(192,57,43,.08);color:var(--red);display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0">🎤</div>
+      <div><div style="font-weight:700;font-size:15px">Buat Sesi (Host)</div><div style="font-size:12px;color:var(--mist)">Pilih level &amp; sumber soal, bagikan kode ke teman</div></div>
+    </div>
+    <div onclick="mpGoJoin()" style="background:white;border:1px solid var(--border);border-top:3px solid var(--jade);border-radius:12px;padding:18px;cursor:pointer;display:flex;align-items:center;gap:14px">
+      <div style="width:44px;height:44px;border-radius:12px;background:rgba(45,122,79,.08);color:var(--jade);display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0">🔑</div>
+      <div><div style="font-weight:700;font-size:15px">Gabung dengan Kode</div><div style="font-size:12px;color:var(--mist)">Masukkan kode sesi dari host &amp; mulai main</div></div>
+    </div>
+  </div>
+  <button onclick="gotoScreen('overview')" style="width:100%;margin-top:20px;padding:12px;border:none;border-radius:10px;background:transparent;color:var(--mist);cursor:pointer;font-weight:600">← Kembali ke Menu</button>
+</div>
+
+<div id="screen-mphostsetup" class="screen">
+  <div class="section-title" style="margin-bottom:14px">🎤 Buat Sesi</div>
+  <div style="background:white;border:1px solid var(--border);border-radius:12px;padding:16px;margin-bottom:14px">
+    <label style="font-size:12px;font-weight:700;color:var(--mist);display:block;margin-bottom:6px">Level</label>
+    <select id="mp-host-level" style="width:100%;padding:11px;border:1.5px solid var(--border);border-radius:10px;font-family:inherit;font-size:14px;margin-bottom:16px">
+      <option value="N5">N5</option><option value="N4">N4</option><option value="N3" selected>N3</option>
+      <option value="N2">N2</option><option value="N1">N1</option>
+    </select>
+    <label style="font-size:12px;font-weight:700;color:var(--mist);display:block;margin-bottom:6px">Sumber Soal</label>
+    <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:16px">
+      <label style="display:flex;align-items:center;gap:8px;padding:11px;border:1.5px solid var(--border);border-radius:10px;cursor:pointer">
+        <input type="radio" name="mp-source" value="mixed" checked> <span style="font-size:13px">🎲 Campuran (bank soal + kotoba)</span>
+      </label>
+      <label style="display:flex;align-items:center;gap:8px;padding:11px;border:1.5px solid var(--border);border-radius:10px;cursor:pointer">
+        <input type="radio" name="mp-source" value="bank"> <span style="font-size:13px">📚 Bank Soal (arsip ujian asli)</span>
+      </label>
+      <label style="display:flex;align-items:center;gap:8px;padding:11px;border:1.5px solid var(--border);border-radius:10px;cursor:pointer">
+        <input type="radio" name="mp-source" value="kotoba"> <span style="font-size:13px">単語 Kotoba (arti kata)</span>
+      </label>
+    </div>
+    <label style="font-size:12px;font-weight:700;color:var(--mist);display:block;margin-bottom:6px">Jumlah Soal</label>
+    <select id="mp-host-count" style="width:100%;padding:11px;border:1.5px solid var(--border);border-radius:10px;font-family:inherit;font-size:14px">
+      <option value="5">5 soal</option><option value="10" selected>10 soal</option>
+      <option value="15">15 soal</option><option value="20">20 soal</option><option value="30">30 soal</option>
+    </select>
+  </div>
+  <div id="mp-host-status" style="display:none;text-align:center;padding:10px;color:var(--mist);font-size:13px;margin-bottom:8px"></div>
+  <button id="mp-host-create-btn" onclick="mpCreateSession()" style="width:100%;padding:14px;border:none;border-radius:10px;background:var(--red);color:white;font-weight:700;font-size:14px;cursor:pointer">🎮 Buat Sesi</button>
+  <button onclick="gotoScreen('mphome')" style="width:100%;margin-top:8px;padding:12px;border:none;border-radius:10px;background:transparent;color:var(--mist);cursor:pointer;font-weight:600">← Batal</button>
+</div>
+
+<div id="screen-mphostlobby" class="screen">
+  <div class="section-title" style="margin-bottom:14px">🎤 Sesi Aktif</div>
+  <div style="background:white;border:1px solid var(--border);border-radius:14px;padding:22px;text-align:center;margin-bottom:16px">
+    <div style="font-size:11px;color:var(--mist);font-weight:700;letter-spacing:1px;margin-bottom:8px">KODE SESI</div>
+    <div id="mp-lobby-code" style="font-family:'DM Mono',monospace;font-size:36px;font-weight:800;letter-spacing:4px;color:var(--red);margin-bottom:10px">------</div>
+    <div id="mp-lobby-meta" style="font-size:12px;color:var(--mist);margin-bottom:14px"></div>
+    <button id="mp-copy-btn" onclick="mpCopyCode()" style="padding:10px 20px;border:1.5px solid var(--border);border-radius:10px;background:white;font-family:inherit;font-weight:700;cursor:pointer;font-size:13px">📋 Salin Kode</button>
+  </div>
+  <div style="font-size:12px;font-weight:700;color:var(--mist);margin-bottom:8px">PEMAIN GABUNG (live)</div>
+  <div id="mp-lobby-players"></div>
+  <button onclick="mpCloseSession()" style="width:100%;margin-top:16px;padding:12px;border:none;border-radius:10px;background:var(--ink);color:white;cursor:pointer;font-weight:700">Tutup Sesi</button>
+</div>
+
+<div id="screen-mpjoin" class="screen">
+  <div class="section-title" style="margin-bottom:14px">🔑 Gabung Sesi</div>
+  <div style="background:white;border:1px solid var(--border);border-radius:12px;padding:16px;margin-bottom:14px">
+    <label style="font-size:12px;font-weight:700;color:var(--mist);display:block;margin-bottom:6px">Kode Sesi</label>
+    <input id="mp-join-code" maxlength="8" placeholder="Contoh: A7K93P" style="width:100%;padding:12px;border:1.5px solid var(--border);border-radius:10px;font-family:'DM Mono',monospace;font-size:18px;letter-spacing:3px;text-align:center;text-transform:uppercase;margin-bottom:14px" oninput="this.value=this.value.toUpperCase()">
+    <label style="font-size:12px;font-weight:700;color:var(--mist);display:block;margin-bottom:6px">Nama Kamu</label>
+    <input id="mp-join-name" maxlength="24" placeholder="Nama untuk ditampilkan" style="width:100%;padding:12px;border:1.5px solid var(--border);border-radius:10px;font-family:inherit;font-size:14px">
+  </div>
+  <div id="mp-join-error" style="display:none;color:var(--red);font-size:12px;margin-bottom:10px;text-align:center"></div>
+  <button id="mp-join-btn" onclick="mpJoinSession()" style="width:100%;padding:14px;border:none;border-radius:10px;background:var(--jade);color:white;font-weight:700;font-size:14px;cursor:pointer">Gabung ▶</button>
+  <button onclick="gotoScreen('mphome')" style="width:100%;margin-top:8px;padding:12px;border:none;border-radius:10px;background:transparent;color:var(--mist);cursor:pointer;font-weight:600">← Batal</button>
+</div>
+
+<div id="screen-mpplay" class="screen">
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+    <span id="mp-play-progress" style="font-size:12px;font-weight:700;color:var(--mist)"></span>
+    <span id="mp-play-score" style="font-family:'DM Mono',monospace;font-size:13px;font-weight:800;color:var(--red)"></span>
+  </div>
+  <div id="mp-play-content" style="background:white;border:1px solid var(--border);border-radius:12px;padding:16px"></div>
+</div>
+
+<div id="screen-mpresult" class="screen">
+  <div class="section-title" style="margin-bottom:6px">🏁 Hasil</div>
+  <div id="mp-result-title" style="text-align:center;font-size:16px;font-weight:800;color:var(--red);background:white;border:1px solid var(--border);border-radius:12px;padding:18px;margin-bottom:16px"></div>
+  <div style="font-size:12px;font-weight:700;color:var(--mist);margin-bottom:8px">RANKING (live)</div>
+  <div id="mp-result-list"></div>
+  <button onclick="mpLeaveResult()" style="width:100%;margin-top:16px;padding:12px;border:none;border-radius:10px;background:var(--ink);color:white;cursor:pointer;font-weight:700">Kembali ke Menu</button>
 </div>
 
 <!-- ====== AI PLACEHOLDER --><!-- ====== EXAM SCREEN ====== -->
@@ -7369,6 +7461,10 @@ function gotoScreenRaw(name){
 
 function gotoScreen(name) {
   if (typeof stopAudio === 'function') stopAudio();
+  var _mpPrev=document.querySelector('.screen.active');
+  var _mpPrevName=_mpPrev?_mpPrev.id.replace('screen-',''):null;
+  if(_mpPrevName==='mphostlobby' && name!=='mphostlobby' && typeof mpLeaveLobby==='function') mpLeaveLobby();
+  if(_mpPrevName==='mpresult' && name!=='mpresult' && typeof mpState!=='undefined' && mpState.unsubResult){ try{mpState.unsubResult();}catch(e){} mpState.unsubResult=null; }
   document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
   document.getElementById('screen-' + name).classList.add('active');
   document.querySelectorAll('nav button').forEach(function(b){
@@ -8432,6 +8528,9 @@ function renderOverviewMenu(){
       {scr:'review', emo:'📊', t:'Progress Hafalan', d:'Kotoba · Kanji · Bunpou · Ujian', c:'var(--jade)'},
       {scr:'leaderboard', emo:'🏆', t:'Ranking', d:'Peringkat poin', c:'#d08700'},
     ]},
+    { label:'🎮 MULTIPLAYER', items:[
+      {scr:'mphome', emo:'🎮', t:'Kuis Bareng', d:'Main bareng teman pakai kode sesi', c:'#7a5cc4', direct:true},
+    ]},
     { label:'🛠️ BANTUAN', items:[
       {scr:'ai', emo:'🤖', t:'Tanya Sensei', d:'Tanya grammar & arti', c:'var(--indigo)'},
     ]},
@@ -8709,6 +8808,360 @@ function shuffle(arr) {
     const j = Math.floor(Math.random() * (i + 1));
     [arr[i], arr[j]] = [arr[j], arr[i]];
   }
+}
+
+// ══════════════════════════════════════════════════════════════════
+// 🎮 MULTIPLAYER — Kuis Bareng (self-paced, kode sesi publik via Firestore)
+// ══════════════════════════════════════════════════════════════════
+var mpState = { code:null, isHost:false, playerId:null, playerName:null,
+  questions:[], idx:0, score:0, correct:0, streak:0, answered:0,
+  unsubLobby:null, unsubResult:null, level:null, _qStart:0 };
+var MP_LEVELS = ['N5','N4','N3','N2','N1'];
+
+function mpEsc(s){ return String(s==null?'':s).replace(/[&<>"']/g, function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];}); }
+function mpShuffleCopy(arr){ var a=arr.slice(); shuffle(a); return a; }
+function mpSourceLabel(s){ return s==='bank'?'Bank Soal':(s==='kotoba'?'Kotoba':'Campuran'); }
+
+function mpCodeGen(){
+  var chars='ABCDEFGHJKMNPQRSTUVWXYZ23456789'; // tanpa 0/O/1/I/L biar gak salah baca
+  var s=''; for(var i=0;i<6;i++) s+=chars[Math.floor(Math.random()*chars.length)];
+  return s;
+}
+async function mpUniqueCode(){
+  for(var tries=0;tries<8;tries++){
+    var c=mpCodeGen();
+    try{
+      var doc=await db.collection('mpSessions').doc(c).get();
+      if(!doc.exists) return c;
+    }catch(e){ return c; }
+  }
+  return mpCodeGen()+Date.now().toString(36).slice(-2).toUpperCase();
+}
+
+function mpWordPool(level){
+  if(level==='N3'){
+    var all=[];
+    Object.keys(ALL_WORDS).forEach(function(cat){ all=all.concat(ALL_WORDS[cat]); });
+    return all;
+  }
+  return (JLPT_DATA[level]||[]).slice();
+}
+async function mpEnsureWords(level){
+  if(level!=='N3' && !kotobaLoaded(level)){ try{ await loadKotoba(level); }catch(e){} }
+  return mpWordPool(level);
+}
+
+function mpKotobaQuestions(words, count){
+  var pool=(words||[]).filter(function(w){ return w && w.jp && w.id_; });
+  shuffle(pool);
+  var picks=pool.slice(0, Math.max(0, Math.min(count, pool.length)));
+  var out=[];
+  picks.forEach(function(w){
+    var distractors=mpShuffleCopy(pool.filter(function(x){return x.id_!==w.id_;})).slice(0,3).map(function(x){return x.id_;});
+    while(distractors.length<3) distractors.push('—');
+    var choices=distractors.concat([w.id_]);
+    shuffle(choices);
+    out.push({
+      q: w.jp+'（'+w.rom+'）artinya apa?',
+      choices: choices,
+      answer: choices.indexOf(w.id_),
+      section: '単語 Kotoba'
+    });
+  });
+  return out;
+}
+
+async function mpBankQuestions(level, count){
+  if(count<=0) return [];
+  try{
+    var res=await fetch('bank/'+level.toLowerCase()+'/index.json');
+    if(!res.ok) throw new Error('no bank');
+    var idx=await res.json();
+    var sessions=(idx.sessions||[]).filter(function(s){return s.graded;});
+    if(!sessions.length) return [];
+    shuffle(sessions);
+    var pool=[];
+    for(var i=0;i<sessions.length && pool.length<count*2;i++){
+      try{
+        var r=await fetch('bank/'+level.toLowerCase()+'/'+sessions[i].id+'.json');
+        if(!r.ok) continue;
+        var data=await r.json();
+        (data.sections||[]).forEach(function(sec){
+          var secPassage=sec.passage||null;
+          (sec.questions||[]).forEach(function(q){
+            if(!q.choices||q.choices.length<2||typeof q.answer!=='number') return;
+            pool.push({ q:q.q, choices:q.choices, answer:q.answer, section:sec.name||'', passage:q.passage||secPassage||null });
+          });
+        });
+      }catch(e){}
+    }
+    shuffle(pool);
+    return pool.slice(0, count);
+  }catch(e){ return []; }
+}
+
+async function mpBuildQuestionPool(source, level, count){
+  var bankQ=[], kotobaQ=[];
+  if(source==='bank' || source==='mixed'){
+    bankQ = await mpBankQuestions(level, source==='mixed'?Math.ceil(count/2):count);
+  }
+  var need = count - bankQ.length;
+  if(source==='kotoba' || source==='mixed' || (source==='bank' && need>0)){
+    var words = await mpEnsureWords(level);
+    kotobaQ = mpKotobaQuestions(words, need);
+  }
+  var out=bankQ.concat(kotobaQ);
+  shuffle(out);
+  return out.slice(0,count);
+}
+
+function mpGoHostSetup(){
+  var sel=document.getElementById('mp-host-level');
+  if(sel) sel.value = (currentJLPT && MP_LEVELS.indexOf(currentJLPT)>=0) ? currentJLPT : 'N3';
+  gotoScreen('mphostsetup');
+}
+
+async function mpCreateSession(){
+  if(!db){ alert('Koneksi ke server belum siap. Coba beberapa detik lagi.'); return; }
+  var level=document.getElementById('mp-host-level').value;
+  var srcEl=document.querySelector('input[name="mp-source"]:checked');
+  var source = srcEl ? srcEl.value : 'mixed';
+  var count = parseInt(document.getElementById('mp-host-count').value,10)||10;
+  var btn=document.getElementById('mp-host-create-btn');
+  var statusEl=document.getElementById('mp-host-status');
+  if(btn) btn.disabled=true;
+  if(statusEl){statusEl.textContent='⏳ Menyiapkan '+count+' soal…'; statusEl.style.display='block';}
+  try{
+    var questions = await mpBuildQuestionPool(source, level, count);
+    if(questions.length<3){
+      alert('Gagal menyiapkan soal (hanya '+questions.length+' soal ditemukan untuk '+level+'). Coba level atau sumber lain.');
+      return;
+    }
+    var code = await mpUniqueCode();
+    var hostName = (currentUser && currentUser.displayName) ? currentUser.displayName.split(' ')[0] : 'Host';
+    await db.collection('mpSessions').doc(code).set({
+      hostUid: currentUser ? currentUser.uid : null,
+      hostName: hostName,
+      level: level,
+      source: source,
+      questions: questions,
+      count: questions.length,
+      status: 'open',
+      createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+      expiresAt: new Date(Date.now()+24*3600*1000)
+    });
+    mpState.code=code; mpState.isHost=true; mpState.level=level; mpState.questions=questions;
+    var codeEl=document.getElementById('mp-lobby-code'); if(codeEl) codeEl.textContent=code;
+    var metaEl=document.getElementById('mp-lobby-meta'); if(metaEl) metaEl.textContent=level+' · '+questions.length+' soal · '+mpSourceLabel(source);
+    gotoScreen('mphostlobby');
+    mpListenLobby(code);
+  }catch(e){
+    alert('Gagal membuat sesi: '+(e&&e.message||e));
+  }finally{
+    if(btn) btn.disabled=false;
+    if(statusEl) statusEl.style.display='none';
+  }
+}
+
+function mpListenLobby(code){
+  mpLeaveLobby();
+  mpState.unsubLobby = db.collection('mpSessions').doc(code).collection('players')
+    .orderBy('score','desc')
+    .onSnapshot(function(snap){
+      var rows=[];
+      snap.forEach(function(d){ rows.push(Object.assign({id:d.id}, d.data())); });
+      mpRenderLobbyList(rows);
+    }, function(e){ console.error('mpListenLobby', e); });
+}
+function mpLeaveLobby(){
+  if(mpState.unsubLobby){ try{mpState.unsubLobby();}catch(e){} mpState.unsubLobby=null; }
+}
+
+function mpRenderLobbyList(rows){
+  var el=document.getElementById('mp-lobby-players');
+  if(!el) return;
+  if(!rows.length){ el.innerHTML='<div style="text-align:center;padding:20px;color:var(--mist);font-size:13px">Menunggu pemain gabung…</div>'; return; }
+  el.innerHTML=rows.map(function(r,i){
+    var status = r.finished ? '✅ Selesai' : ((r.answered||0)+' soal dijawab');
+    return '<div style="display:flex;align-items:center;justify-content:space-between;padding:10px 12px;border:1px solid var(--border);border-radius:10px;margin-bottom:6px;background:white">'
+      +'<div><div style="font-weight:700;font-size:13px">'+(i+1)+'. '+mpEsc(r.name||'Pemain')+'</div>'
+      +'<div style="font-size:11px;color:var(--mist)">'+status+'</div></div>'
+      +'<div style="font-weight:800;color:var(--red)">'+(r.score||0)+'</div></div>';
+  }).join('');
+}
+
+function mpCopyCode(){
+  var code=mpState.code; if(!code) return;
+  try{
+    navigator.clipboard.writeText(code);
+    var b=document.getElementById('mp-copy-btn'); if(b){var t=b.textContent; b.textContent='Disalin ✓'; setTimeout(function(){b.textContent=t;},1500);}
+  }catch(e){ alert('Kode sesi: '+code); }
+}
+
+async function mpCloseSession(){
+  if(!mpState.code){ gotoScreen('overview'); return; }
+  if(!confirm('Tutup sesi ini? Pemain tidak akan bisa gabung/main lagi.')) return;
+  try{ await db.collection('mpSessions').doc(mpState.code).update({status:'closed'}); }catch(e){}
+  gotoScreen('overview');
+}
+
+function mpGoJoin(){
+  var codeEl=document.getElementById('mp-join-code'); if(codeEl) codeEl.value='';
+  var nameEl=document.getElementById('mp-join-name');
+  if(nameEl) nameEl.value = (currentUser&&currentUser.displayName)? currentUser.displayName.split(' ')[0] : (localStorage.getItem('mp_name')||'');
+  var errEl=document.getElementById('mp-join-error'); if(errEl) errEl.style.display='none';
+  gotoScreen('mpjoin');
+}
+
+async function mpJoinSession(){
+  var codeEl=document.getElementById('mp-join-code');
+  var nameEl=document.getElementById('mp-join-name');
+  var errEl=document.getElementById('mp-join-error');
+  var code=(codeEl.value||'').trim().toUpperCase();
+  var name=(nameEl.value||'').trim().slice(0,24) || 'Pemain';
+  if(errEl) errEl.style.display='none';
+  if(!code){ if(errEl){errEl.textContent='Masukkan kode sesi.'; errEl.style.display='block';} return; }
+  if(!db){ if(errEl){errEl.textContent='Koneksi belum siap, coba lagi.'; errEl.style.display='block';} return; }
+  var btn=document.getElementById('mp-join-btn');
+  if(btn) btn.disabled=true;
+  try{
+    var sref=db.collection('mpSessions').doc(code);
+    var sdoc=await sref.get();
+    if(!sdoc.exists) throw new Error('Kode tidak ditemukan.');
+    var sdata=sdoc.data();
+    if(sdata.status!=='open') throw new Error('Sesi ini sudah ditutup.');
+    localStorage.setItem('mp_name', name);
+    var pid = localStorage.getItem('mp_pid_'+code);
+    var pref=null, pdata=null;
+    if(pid){
+      pref = sref.collection('players').doc(pid);
+      var pdoc = await pref.get();
+      if(pdoc.exists) pdata=pdoc.data(); else pid=null;
+    }
+    if(!pid){
+      pid = 'p_'+Date.now().toString(36)+Math.random().toString(36).slice(2,8);
+      pref = sref.collection('players').doc(pid);
+      pdata = {name:name, score:0, correct:0, answered:0, streak:0,
+        totalQuestions:(sdata.questions||[]).length, finished:false};
+      await pref.set(Object.assign({}, pdata, {
+        joinedAt: firebase.firestore.FieldValue.serverTimestamp(),
+        lastActive: firebase.firestore.FieldValue.serverTimestamp()
+      }));
+      localStorage.setItem('mp_pid_'+code, pid);
+    }
+    mpState.code=code; mpState.isHost=false; mpState.playerId=pid; mpState.playerName=name;
+    mpState.questions=sdata.questions||[]; mpState.level=sdata.level;
+    mpState.idx=pdata.answered||0; mpState.score=pdata.score||0; mpState.correct=pdata.correct||0; mpState.streak=pdata.streak||0;
+    if(pdata.finished || mpState.idx>=mpState.questions.length){
+      mpShowResult();
+    } else {
+      gotoScreen('mpplay');
+      mpRenderPlay();
+    }
+  }catch(e){
+    if(errEl){ errEl.textContent=e.message||'Gagal gabung.'; errEl.style.display='block'; }
+  }finally{
+    if(btn) btn.disabled=false;
+  }
+}
+
+function mpRenderPlay(){
+  var qs=mpState.questions||[];
+  var i=mpState.idx;
+  var box=document.getElementById('mp-play-content');
+  var prog=document.getElementById('mp-play-progress');
+  var scoreEl=document.getElementById('mp-play-score');
+  if(scoreEl) scoreEl.textContent=mpState.score+' pts · 🔥'+mpState.streak;
+  if(i>=qs.length){ mpShowResult(); return; }
+  var q=qs[i];
+  mpState._qStart=Date.now();
+  if(prog) prog.textContent='Soal '+(i+1)+' / '+qs.length;
+  var html='';
+  if(q.section) html+='<div style="font-size:11px;color:var(--red);font-weight:700;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px">'+mpEsc(q.section)+'</div>';
+  if(q.passage) html+='<div style="background:var(--paper);border:1px solid var(--border);border-radius:10px;padding:14px;margin-bottom:14px;font-size:14px;line-height:1.9;white-space:pre-wrap">'+mpEsc(q.passage)+'</div>';
+  html+='<div style="font-size:15px;font-weight:600;line-height:1.7;margin-bottom:14px;white-space:pre-wrap">'+mpEsc(q.q)+'</div>';
+  html+='<div id="mp-play-choices">';
+  (q.choices||[]).forEach(function(c,idx){
+    html+='<div onclick="mpAnswer('+idx+')" style="display:flex;gap:10px;align-items:flex-start;padding:12px 14px;margin-bottom:8px;border:2px solid var(--border);border-radius:10px;cursor:pointer;background:white;transition:all .12s">'
+      +'<span style="flex-shrink:0;width:22px;height:22px;border-radius:50%;background:rgba(26,26,46,.08);color:var(--mist);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700">'+(idx+1)+'</span>'
+      +'<span style="font-size:14px;line-height:1.6">'+mpEsc(c)+'</span></div>';
+  });
+  html+='</div><div id="mp-play-feedback"></div>';
+  if(box){ box.innerHTML=html; box.scrollTop=0; }
+}
+
+function mpAnswer(choiceIdx){
+  var choicesEl=document.getElementById('mp-play-choices');
+  if(!choicesEl || choicesEl.dataset.locked==='1') return;
+  choicesEl.dataset.locked='1';
+  var q=mpState.questions[mpState.idx];
+  var isCorrect = choiceIdx===q.answer;
+  var kids=choicesEl.children;
+  for(var k=0;k<kids.length;k++){
+    kids[k].style.pointerEvents='none';
+    if(k===q.answer){ kids[k].style.borderColor='var(--jade)'; kids[k].style.background='rgba(45,122,79,.08)'; }
+    if(k===choiceIdx && !isCorrect){ kids[k].style.borderColor='var(--red)'; kids[k].style.background='rgba(192,57,43,.08)'; }
+  }
+  var gained=0;
+  if(isCorrect){ mpState.streak++; gained=100+Math.min(mpState.streak-1,5)*10; mpState.score+=gained; mpState.correct++; }
+  else { mpState.streak=0; }
+  mpState.idx++; mpState.answered=mpState.idx;
+  var fb=document.getElementById('mp-play-feedback');
+  if(fb){
+    fb.innerHTML='<div style="margin-top:10px;padding:12px;border-radius:10px;text-align:center;font-weight:700;background:'+(isCorrect?'rgba(45,122,79,.1)':'rgba(192,57,43,.1)')+';color:'+(isCorrect?'var(--jade)':'var(--red)')+'">'
+      +(isCorrect?('✅ Benar! +'+gained+' poin'):('❌ Salah — jawaban benar: '+mpEsc(q.choices[q.answer])))
+      +'</div><button onclick="mpRenderPlay()" style="width:100%;margin-top:10px;padding:12px;border:none;border-radius:10px;background:var(--ink);color:white;font-weight:700;cursor:pointer">Lanjut →</button>';
+  }
+  mpSaveProgress();
+}
+
+async function mpSaveProgress(){
+  if(!db || !mpState.code || !mpState.playerId) return;
+  var finished = mpState.idx>=mpState.questions.length;
+  try{
+    await db.collection('mpSessions').doc(mpState.code).collection('players').doc(mpState.playerId).update({
+      score: mpState.score, correct: mpState.correct, streak: mpState.streak,
+      answered: mpState.idx, finished: finished,
+      lastActive: firebase.firestore.FieldValue.serverTimestamp(),
+      finishedAt: finished ? firebase.firestore.FieldValue.serverTimestamp() : null
+    });
+  }catch(e){ console.error('mpSaveProgress', e); }
+}
+
+function mpShowResult(){
+  var titleEl=document.getElementById('mp-result-title');
+  var total = (mpState.questions||[]).length||1;
+  if(titleEl) titleEl.textContent = mpState.correct+' / '+total+' benar · '+mpState.score+' poin';
+  gotoScreen('mpresult');
+  mpListenResult();
+}
+
+function mpListenResult(){
+  if(mpState.unsubResult){ try{mpState.unsubResult();}catch(e){} mpState.unsubResult=null; }
+  if(!db || !mpState.code) return;
+  mpState.unsubResult = db.collection('mpSessions').doc(mpState.code).collection('players')
+    .orderBy('score','desc')
+    .onSnapshot(function(snap){
+      var rows=[]; snap.forEach(function(d){ rows.push(Object.assign({id:d.id}, d.data())); });
+      mpRenderResultList(rows);
+    }, function(e){ console.error('mpListenResult', e); });
+}
+
+function mpRenderResultList(rows){
+  var el=document.getElementById('mp-result-list');
+  if(!el) return;
+  el.innerHTML=rows.map(function(r,i){
+    var me = r.id===mpState.playerId;
+    return '<div style="display:flex;align-items:center;justify-content:space-between;padding:10px 12px;border:1.5px solid '+(me?'var(--red)':'var(--border)')+';border-radius:10px;margin-bottom:6px;background:'+(me?'rgba(192,57,43,.05)':'white')+'">'
+      +'<div style="font-weight:700;font-size:13px">'+(i+1)+'. '+mpEsc(r.name||'Pemain')+(me?' (kamu)':'')+'</div>'
+      +'<div style="font-weight:800;color:var(--red)">'+(r.score||0)+'</div></div>';
+  }).join('');
+}
+
+function mpLeaveResult(){
+  if(mpState.unsubResult){ try{mpState.unsubResult();}catch(e){} mpState.unsubResult=null; }
+  mpState={code:null,isHost:false,playerId:null,playerName:null,questions:[],idx:0,score:0,correct:0,streak:0,answered:0,unsubLobby:null,unsubResult:null,level:null,_qStart:0};
+  gotoScreen('overview');
 }
 
 // ══════════════════════════════════════════════════════════════════
