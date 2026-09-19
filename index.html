@@ -2379,7 +2379,7 @@ header:has(.user-menu.open) { z-index:1000; }
   <div id="mp-lobby-players"></div>
   <button id="mp-start-btn" onclick="mpStartExam()" style="width:100%;margin-top:16px;padding:14px;border:none;border-radius:10px;background:var(--jade);color:white;cursor:pointer;font-weight:700;font-size:14px">🚀 Mulai Sesi</button>
   <button id="mp-host-play-btn" onclick="mpHostJoinAsPlayer()" style="width:100%;margin-top:8px;padding:14px;border:none;border-radius:10px;background:var(--red);color:white;cursor:pointer;font-weight:700;font-size:14px">🎮 Mulai &amp; Ikut Main</button>
-  <button onclick="mpCloseSession()" style="width:100%;margin-top:8px;padding:12px;border:none;border-radius:10px;background:var(--ink);color:white;cursor:pointer;font-weight:700">Tutup Sesi</button>
+  <button onclick="mpCloseSession()" style="width:100%;margin-top:8px;padding:12px;border:none;border-radius:10px;background:var(--ink);color:white;cursor:pointer;font-weight:700">🏁 Tutup &amp; Selesaikan Sesi</button>
 </div>
 
 <div id="screen-mpwaiting" class="screen">
@@ -7658,6 +7658,7 @@ function gotoScreen(name) {
     if(mpState.unsubLiveBoard){ try{mpState.unsubLiveBoard();}catch(e){} mpState.unsubLiveBoard=null; }
     if(mpState.examTimerInterval){ clearInterval(mpState.examTimerInterval); mpState.examTimerInterval=null; }
     if(typeof mpHeartbeatStop==='function') mpHeartbeatStop();
+    if(name!=='mphostlobby' && typeof mpLeaveSessionDoc==='function') mpLeaveSessionDoc();
   }
   document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
   document.getElementById('screen-' + name).classList.add('active');
@@ -9328,10 +9329,16 @@ function mpGuessUnderline(sentence, answerText, mode){
 // (cuma ada di data hasil generate AI), padahal beberapa tipe soal (漢字読み, 表記, 用法, dst)
 // gak bisa dipahami tanpa tau apa yang diminta.
 var MP_MONDAI_INSTR = {
-  '漢字読み': '＿＿の言葉の読み方として最もよいものを、１・２・３・４から一つえらんでください。',
-  '表記': '＿＿のことばを漢字で書くとき、最もよいものを１・２・３・４から一つえらんでください。',
+  // 漢字読み & 表記: kita beneran nge-underline kata targetnya (kalau heuristiknya berhasil nebak),
+  // jadi "下線" (kata yang digarisbawahi) di sini valid — beda sama pakai placeholder ＿＿ yang
+  // gak nunjuk ke apa-apa kalau gak ada underline beneran di kalimatnya.
+  '漢字読み': '下線の言葉の読み方として最もよいものを、１・２・３・４から一つえらんでください。',
+  '表記': '下線のことばを漢字で書くとき、最もよいものを１・２・３・４から一つえらんでください。',
   '語彙': '（　）に入れるのに最もよいものを、１・２・３・４から一つえらんでください。',
-  '言い換え': '＿＿に意味が最も近いものを、１・２・３・４から一つえらんでください。',
+  // 言い換え: gak ada underline beneran (gak ada cara diandalkan buat nebak kata mana yang
+  // diuji tanpa kamus sinonim), jadi instruksinya sengaja gak nyebut "下線"/"＿＿" biar gak
+  // nunjuk ke kata yang sebenernya gak ditandai sama sekali.
+  '言い換え': 'この文に意味が一番近い言葉を、１・２・３・４から一つえらんでください。',
   '用法': '次の言葉の使い方として最もよいものを、１・２・３・４から一つえらんでください。',
   '文法': '次の文の（　）に入れるのに最もよいものを、１・２・３・４から一つえらんでください。',
   '文法(整序)': '次の文の★に入る最もよいものを、１・２・３・４から一つえらんでください。',
@@ -9754,6 +9761,7 @@ async function mpHostJoinAsPlayer(){
       mpRenderPlay();
       mpListenSelf();
       mpListenPlayersLive();
+      mpListenSessionDoc(mpState.code,'play');
       mpStartExamTimer();
       mpHeartbeatStart();
     }
@@ -9848,6 +9856,13 @@ function mpListenSessionDoc(code, role){
         mpLeaveWaiting(true);
         if(errEl){ errEl.textContent='Sesi ditutup host.'; errEl.style.display='block'; }
       }
+    } else if(role==='play'){
+      // Host nutup sesi lewat "Tutup & Selesaikan Sesi" saat kita masih ngerjain soal —
+      // langsung akhiri kuisnya sekarang, jangan nunggu timer sendiri habis.
+      if(d.status==='closed' && !mpState._examOver){
+        mpToast('🏁 Sesi diakhiri oleh host.', 'info');
+        mpExamTimeUp();
+      }
     }
   }, function(e){ console.error('mpListenSessionDoc', e); });
 }
@@ -9939,7 +9954,7 @@ async function mpTryResumeSession(){
 
 async function mpCloseSession(){
   if(!mpState.code){ gotoScreen('overview'); return; }
-  if(!confirm('Tutup sesi ini? Pemain tidak akan bisa gabung/main lagi.')) return;
+  if(!confirm('Tutup & selesaikan sesi ini sekarang? Semua pemain yang masih ngerjain bakal langsung dianggap selesai (soal yang belum dijawab gak dihitung), dan gak ada yang bisa gabung/main lagi.')) return;
   try{ await db.collection('mpSessions').doc(mpState.code).update({status:'closed'}); }catch(e){}
   localStorage.removeItem('mp_last_role'); localStorage.removeItem('mp_last_code');
   gotoScreen('overview');
@@ -10079,6 +10094,7 @@ async function mpJoinSession(){
         mpRenderPlay();
         mpListenSelf();
         mpListenPlayersLive();
+        mpListenSessionDoc(code,'play');
         mpStartExamTimer();
         mpHeartbeatStart();
       }
@@ -10103,6 +10119,7 @@ function mpBeginPlayFromWaiting(sdata){
   mpRenderPlay();
   mpListenSelf();
   mpListenPlayersLive();
+  mpListenSessionDoc(mpState.code,'play');
   mpStartExamTimer();
 }
 
