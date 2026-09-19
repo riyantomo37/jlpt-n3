@@ -1104,7 +1104,7 @@ header:has(.user-menu.open) { z-index:1000; }
         <span class="user-name" id="user-name">...</span>
         <span id="level-badge" onclick="event.stopPropagation();gotoScreen('levelreward')" title="Level & Reward" style="font-size:10px;font-weight:800;background:linear-gradient(135deg,var(--gold),#c98a1f);color:white;padding:2px 7px;border-radius:8px;cursor:pointer;letter-spacing:.3px">Lv.1</span>
         <span class="sync-badge" id="sync-badge">● sync</span>
-        <span id="build-dot" title="Indikator update: warnanya ganti tiap ada versi baru dari Claude" style="display:inline-block;width:11px;height:11px;border-radius:50%;background:#2d7a4f;margin-left:6px;vertical-align:middle;border:2px solid white;box-shadow:0 0 0 1px rgba(0,0,0,.15)"></span>
+        <span id="build-dot" title="Indikator update: warnanya ganti tiap ada versi baru dari Claude" style="display:inline-block;width:11px;height:11px;border-radius:50%;background:#c0392b;margin-left:6px;vertical-align:middle;border:2px solid white;box-shadow:0 0 0 1px rgba(0,0,0,.15)"></span>
         <!-- 🔴🟢 CLAUDE: WAJIB toggle warna build-dot di atas SETIAP kali file ini dikirim ulang —
              merah #c0392b <-> hijau #2da050 gantian. Ini satu-satunya cara Riyan verifikasi
              upload-nya beneran ke-deploy. JANGAN LUPA, cek baris ini di awal SETIAP delivery. -->
@@ -2409,7 +2409,10 @@ header:has(.user-menu.open) { z-index:1000; }
 <div id="screen-mpplay" class="screen">
   <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
     <span id="mp-play-progress" style="font-size:12px;font-weight:700;color:var(--mist)"></span>
-    <span id="mp-play-score" style="font-family:'DM Mono',monospace;font-size:13px;font-weight:800;color:var(--red)"></span>
+    <div style="display:flex;align-items:center;gap:10px">
+      <span id="mp-play-score" style="font-family:'DM Mono',monospace;font-size:13px;font-weight:800;color:var(--red)"></span>
+      <button onclick="mpExitPlay()" title="Keluar dari kuis" style="border:none;background:none;color:var(--mist);cursor:pointer;font-size:17px;line-height:1;padding:2px 2px">🚪</button>
+    </div>
   </div>
   <button id="mp-host-panel-btn" onclick="mpGoHostLobby()" style="display:none;width:100%;margin-bottom:10px;padding:8px;border:1.5px solid var(--gold);border-radius:10px;background:rgba(212,160,23,.08);font-family:inherit;font-size:12px;font-weight:700;color:var(--ink);cursor:pointer">👑 Lihat Panel Host</button>
   <div id="mp-examtimer-wrap" style="margin-bottom:10px">
@@ -9759,6 +9762,12 @@ function mpGoHostLobby(){
   var codeEl=document.getElementById('mp-lobby-code'); if(codeEl) codeEl.textContent=mpState.code;
   mpListenPlayerList(mpState.code,'lobby');
   mpListenSessionDoc(mpState.code,'host');
+}
+
+function mpExitPlay(){
+  if(!confirm('Keluar dari kuis sekarang? Progress & skor kamu tetap kesimpen — bisa lanjut lagi nanti pakai kode yang sama.')) return;
+  if(mpState.isHost) mpGoHostLobby();
+  else gotoScreen('mphome');
 }
 
 function mpPlayerRowHTML(r, opts){
