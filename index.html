@@ -1104,7 +1104,7 @@ header:has(.user-menu.open) { z-index:1000; }
         <span class="user-name" id="user-name">...</span>
         <span id="level-badge" onclick="event.stopPropagation();gotoScreen('levelreward')" title="Level & Reward" style="font-size:10px;font-weight:800;background:linear-gradient(135deg,var(--gold),#c98a1f);color:white;padding:2px 7px;border-radius:8px;cursor:pointer;letter-spacing:.3px">Lv.1</span>
         <span class="sync-badge" id="sync-badge">● sync</span>
-        <span id="build-dot" title="Indikator update: warnanya ganti tiap ada versi baru dari Claude" style="display:inline-block;width:11px;height:11px;border-radius:50%;background:#c0392b;margin-left:6px;vertical-align:middle;border:2px solid white;box-shadow:0 0 0 1px rgba(0,0,0,.15)"></span>
+        <span id="build-dot" title="Indikator update: warnanya ganti tiap ada versi baru dari Claude" style="display:inline-block;width:11px;height:11px;border-radius:50%;background:#2d7a4f;margin-left:6px;vertical-align:middle;border:2px solid white;box-shadow:0 0 0 1px rgba(0,0,0,.15)"></span>
         <!-- 🔴🟢 CLAUDE: WAJIB toggle warna build-dot di atas SETIAP kali file ini dikirim ulang —
              merah #c0392b <-> hijau #2da050 gantian. Ini satu-satunya cara Riyan verifikasi
              upload-nya beneran ke-deploy. JANGAN LUPA, cek baris ini di awal SETIAP delivery. -->
@@ -2185,9 +2185,17 @@ header:has(.user-menu.open) { z-index:1000; }
       <div style="width:44px;height:44px;border-radius:12px;background:rgba(192,57,43,.08);color:var(--red);display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0">🎤</div>
       <div><div style="font-weight:700;font-size:15px">Buat Sesi (Host)</div><div style="font-size:12px;color:var(--mist)">Pilih level &amp; sumber soal, bagikan kode ke teman</div></div>
     </div>
+    <div onclick="mpGoCustomSetup()" style="background:white;border:1px solid var(--border);border-top:3px solid #7a5cc4;border-radius:12px;padding:18px;cursor:pointer;display:flex;align-items:center;gap:14px">
+      <div style="width:44px;height:44px;border-radius:12px;background:rgba(122,92,196,.1);color:#7a5cc4;display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0">✏️</div>
+      <div><div style="font-weight:700;font-size:15px">Buat Sesi Custom</div><div style="font-size:12px;color:var(--mist)">Tulis soal &amp; jawaban sendiri, bebas topiknya</div></div>
+    </div>
     <div onclick="mpGoJoin()" style="background:white;border:1px solid var(--border);border-top:3px solid var(--jade);border-radius:12px;padding:18px;cursor:pointer;display:flex;align-items:center;gap:14px">
       <div style="width:44px;height:44px;border-radius:12px;background:rgba(45,122,79,.08);color:var(--jade);display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0">🔑</div>
       <div><div style="font-weight:700;font-size:15px">Gabung dengan Kode</div><div style="font-size:12px;color:var(--mist)">Masukkan kode sesi dari host &amp; mulai main</div></div>
+    </div>
+    <div onclick="mpGoHall()" style="background:white;border:1px solid var(--border);border-top:3px solid var(--indigo);border-radius:12px;padding:18px;cursor:pointer;display:flex;align-items:center;gap:14px">
+      <div style="width:44px;height:44px;border-radius:12px;background:rgba(44,62,122,.08);color:var(--indigo);display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0">🌐</div>
+      <div><div style="font-weight:700;font-size:15px">Public Lobby</div><div style="font-size:12px;color:var(--mist)">Lihat &amp; gabung sesi publik siapa aja</div></div>
     </div>
     <div onclick="mpGoHistory()" style="background:white;border:1px solid var(--border);border-top:3px solid var(--gold);border-radius:12px;padding:18px;cursor:pointer;display:flex;align-items:center;gap:14px">
       <div style="width:44px;height:44px;border-radius:12px;background:rgba(212,160,23,.1);color:var(--gold);display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0">📜</div>
@@ -2195,6 +2203,15 @@ header:has(.user-menu.open) { z-index:1000; }
     </div>
   </div>
   <button onclick="gotoScreen('overview')" style="width:100%;margin-top:20px;padding:12px;border:none;border-radius:10px;background:transparent;color:var(--mist);cursor:pointer;font-weight:600">← Kembali ke Menu</button>
+</div>
+
+<div id="screen-mphall" class="screen">
+  <div class="section-title" style="margin-bottom:14px">🌐 Public Lobby</div>
+  <p style="font-size:13px;color:var(--mist);margin-bottom:14px">Semua sesi publik yang masih terbuka — tap buat langsung gabung.</p>
+  <div id="mp-hall-status" style="text-align:center;padding:20px;color:var(--mist);font-size:13px">⏳ Memuat...</div>
+  <div id="mp-hall-list"></div>
+  <button onclick="mpGoHall()" style="width:100%;margin-top:8px;padding:12px;border:1.5px solid var(--border);border-radius:10px;background:white;color:var(--ink);cursor:pointer;font-weight:600">🔄 Refresh</button>
+  <button onclick="gotoScreen('mphome')" style="width:100%;margin-top:8px;padding:12px;border:none;border-radius:10px;background:transparent;color:var(--mist);cursor:pointer;font-weight:600">← Kembali</button>
 </div>
 
 <div id="screen-mphistory" class="screen">
@@ -2210,6 +2227,46 @@ header:has(.user-menu.open) { z-index:1000; }
   <button onclick="mpExportHistoryPDF()" style="width:100%;margin-bottom:14px;padding:12px;border:none;border-radius:10px;background:var(--ink);color:white;cursor:pointer;font-weight:700">📄 Unduh PDF</button>
   <div id="mp-histdet-questions"></div>
   <button onclick="gotoScreen('mphistory')" style="width:100%;margin-top:8px;padding:12px;border:none;border-radius:10px;background:transparent;color:var(--mist);cursor:pointer;font-weight:600">← Kembali ke Riwayat</button>
+</div>
+
+<div id="screen-mpcustomsetup" class="screen">
+  <div class="section-title" style="margin-bottom:14px">✏️ Buat Sesi Custom</div>
+  <div style="background:white;border:1px solid var(--border);border-radius:12px;padding:16px;margin-bottom:14px">
+    <label style="font-size:12px;font-weight:700;color:var(--mist);display:block;margin-bottom:6px">Judul Sesi (opsional)</label>
+    <input id="mp-custom-title" maxlength="40" placeholder="misal: Kelas B — Bab 5" style="width:100%;padding:11px;border:1.5px solid var(--border);border-radius:10px;font-family:inherit;font-size:14px;margin-bottom:16px">
+    <label style="font-size:12px;font-weight:700;color:var(--mist);display:block;margin-bottom:6px">🎮 Mode Mulai Sesi</label>
+    <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:16px">
+      <label style="display:flex;align-items:center;gap:8px;padding:11px;border:1.5px solid var(--border);border-radius:10px;cursor:pointer">
+        <input type="radio" name="mpc-startmode" value="host" checked> <span style="font-size:13px">🎬 Host Kontrol — pemain nunggu di lobby sampai host tekan Mulai</span>
+      </label>
+      <label style="display:flex;align-items:center;gap:8px;padding:11px;border:1.5px solid var(--border);border-radius:10px;cursor:pointer">
+        <input type="radio" name="mpc-startmode" value="free"> <span style="font-size:13px">⚡ Bebas — pemain langsung main begitu gabung, kapan aja</span>
+      </label>
+    </div>
+    <label style="font-size:12px;font-weight:700;color:var(--mist);display:block;margin-bottom:6px">👁️ Siapa yang Bisa Gabung</label>
+    <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:16px">
+      <label style="display:flex;align-items:center;gap:8px;padding:11px;border:1.5px solid var(--border);border-radius:10px;cursor:pointer">
+        <input type="radio" name="mpc-visibility" value="private" checked> <span style="font-size:13px">🔒 Privat — cuma yang punya kode/link</span>
+      </label>
+      <label style="display:flex;align-items:center;gap:8px;padding:11px;border:1.5px solid var(--border);border-radius:10px;cursor:pointer">
+        <input type="radio" name="mpc-visibility" value="public"> <span style="font-size:13px">🌐 Publik — muncul di Public Lobby</span>
+      </label>
+    </div>
+    <label style="font-size:12px;font-weight:700;color:var(--mist);display:block;margin-bottom:6px">⏱️ Waktu Ujian (total)</label>
+    <select id="mpc-host-time" style="width:100%;padding:11px;border:1.5px solid var(--border);border-radius:10px;font-family:inherit;font-size:14px">
+      <option value="120">2 menit</option><option value="180" selected>3 menit</option>
+      <option value="300">5 menit</option><option value="600">10 menit</option><option value="900">15 menit</option>
+      <option value="1800">30 menit</option><option value="3600">60 menit</option>
+    </select>
+  </div>
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+    <span style="font-size:12px;font-weight:700;color:var(--mist)">DAFTAR SOAL</span>
+    <span id="mp-custom-count" style="font-size:11px;color:var(--mist)">0 soal</span>
+  </div>
+  <div id="mp-custom-qlist"></div>
+  <button onclick="mpCustomAddQuestion()" style="width:100%;padding:12px;border:1.5px dashed var(--border);border-radius:10px;background:white;color:#7a5cc4;cursor:pointer;font-weight:700;margin-bottom:14px">+ Tambah Soal</button>
+  <button id="mpc-create-btn" onclick="mpCreateCustomSession()" style="width:100%;padding:14px;border:none;border-radius:10px;background:var(--red);color:white;font-weight:700;font-size:14px;cursor:pointer">🎮 Buat Sesi</button>
+  <button onclick="gotoScreen('mphome')" style="width:100%;margin-top:8px;padding:12px;border:none;border-radius:10px;background:transparent;color:var(--mist);cursor:pointer;font-weight:600">← Batal</button>
 </div>
 
 <div id="screen-mphostsetup" class="screen">
@@ -2272,6 +2329,15 @@ header:has(.user-menu.open) { z-index:1000; }
       </label>
       <label style="display:flex;align-items:center;gap:8px;padding:11px;border:1.5px solid var(--border);border-radius:10px;cursor:pointer">
         <input type="radio" name="mp-startmode" value="free"> <span style="font-size:13px">⚡ Bebas — pemain langsung main begitu gabung, kapan aja</span>
+      </label>
+    </div>
+    <label style="font-size:12px;font-weight:700;color:var(--mist);display:block;margin-bottom:6px">👁️ Siapa yang Bisa Gabung</label>
+    <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:16px">
+      <label style="display:flex;align-items:center;gap:8px;padding:11px;border:1.5px solid var(--border);border-radius:10px;cursor:pointer">
+        <input type="radio" name="mp-visibility" value="private" checked> <span style="font-size:13px">🔒 Privat — cuma yang punya kode/link</span>
+      </label>
+      <label style="display:flex;align-items:center;gap:8px;padding:11px;border:1.5px solid var(--border);border-radius:10px;cursor:pointer">
+        <input type="radio" name="mp-visibility" value="public"> <span style="font-size:13px">🌐 Publik — muncul di Public Lobby, siapa aja boleh gabung</span>
       </label>
     </div>
     <label style="font-size:12px;font-weight:700;color:var(--mist);display:block;margin-bottom:6px">Jumlah Soal</label>
@@ -8961,7 +9027,7 @@ function mpQuestionTextHTML(q){
 }
 function mpShuffleCopy(arr){ var a=arr.slice(); shuffle(a); return a; }
 function mpSourceLabel(sources){
-  var map={bank:'Bank Soal', kotoba:'Kotoba', kanji:'Kanji', bunpou:'Bunpou', keisei:'Bunyi Kanji', konjugasi:'Konjugasi'};
+  var map={bank:'Bank Soal', kotoba:'Kotoba', kanji:'Kanji', bunpou:'Bunpou', keisei:'Bunyi Kanji', konjugasi:'Konjugasi', custom:'Custom'};
   var list = Array.isArray(sources) ? sources : [sources];
   return list.map(function(s){ return map[s]||s; }).join(' + ');
 }
@@ -9206,20 +9272,18 @@ function mpGuessUnderline(sentence, answerText, mode){
       });
       return bestScore>0 ? best : null;
     } else {
-      var hruns=sentence.match(/[\u3041-\u3096]+/g);
-      if(!hruns || !hruns.length) return null;
-      hruns=hruns.filter(function(r){ return r.length>=2; }); // buang partikel 1 huruf (は/が/を dst)
-      if(!hruns.length) return null;
-      if(hruns.length===1) return hruns[0];
+      // reading2kanji (問題2 表記): sengaja HANYA jalan kalau jawabannya kanji murni tanpa
+      // okurigana campuran (mis. "温泉" aman, "降りましょう" gak diproses) — karena verba
+      // berokurigana butuh analisis konjugasi yg gak bisa diandalkan dari data KANJI_READ aja.
+      // Cari kandidat bacaannya sbg SUBSTRING langsung di kalimat penuh (bukan potong per-run),
+      // biar gak ketuker sama partikel yang nempel tanpa jarak di sekitarnya.
+      if(!/^[\u4e00-\u9fff]+$/.test(answerText)) return null;
       var candidates=_mpReadingCandidates(answerText);
-      var best2=null, bestScore2=-1;
-      hruns.forEach(function(run){
-        var score2;
-        if(candidates.indexOf(run)>=0) score2=100;
-        else { score2=10-Math.abs(run.length-answerText.length*2); if(candidates.some(function(c){return c[0]===run[0];})) score2+=5; }
-        if(score2>bestScore2){ bestScore2=score2; best2=run; }
-      });
-      return bestScore2>0 ? best2 : null;
+      if(!candidates.length) return null;
+      for(var ci=0; ci<candidates.length; ci++){
+        if(candidates[ci].length>=2 && sentence.indexOf(candidates[ci])>=0) return candidates[ci];
+      }
+      return null;
     }
   }catch(e){ return null; }
 }
@@ -9253,10 +9317,9 @@ async function mpBankQuestions(level, count){
             var passage = q.passage || (q.passage_id && passageMap[q.passage_id]) || secPassage || null;
             var underline=null;
             if(q.section==='漢字読み') underline=mpGuessUnderline(q.q, q.choices[q.answer], 'kanji2reading');
-            // Catatan: arah 表記 (mondai2, hiragana→kanji) sengaja TIDAK di-underline —
-            // jawabannya sering ada okurigana (mis. 降りましょう) yang bikin heuristik pencocokan
-            // meleset jauh (partikel ikut kesedot jadi satu run hiragana). Mending gak ada
-            // underline sama sekali daripada nunjukkin kata yang salah.
+            // 表記 (mondai2, hiragana→kanji): aman dipakai kalau jawabannya kanji murni tanpa
+            // okurigana (mis. 温泉) — mpGuessUnderline sendiri yang nge-skip kasus verba berokurigana.
+            else if(q.section==='表記') underline=mpGuessUnderline(q.q, q.choices[q.answer], 'reading2kanji');
             pool.push({ q:q.q, choices:q.choices, answer:q.answer, section:sec.name||'', passage:passage, underline:underline });
           });
         });
@@ -9345,6 +9408,140 @@ function mpToggleKanjiDir(){
   if(wrap) wrap.style.display = (kanjiEl && kanjiEl.checked) ? 'block' : 'none';
 }
 
+// ══ Sesi Custom — host tulis soal & jawaban sendiri (bukan generate dari sumber bawaan) ══
+var mpCustomRowIds=[];
+var mpCustomNextId=0;
+
+function mpGoCustomSetup(){
+  mpCustomRowIds=[]; mpCustomNextId=0;
+  var listEl=document.getElementById('mp-custom-qlist'); if(listEl) listEl.innerHTML='';
+  var titleEl=document.getElementById('mp-custom-title'); if(titleEl) titleEl.value='';
+  gotoScreen('mpcustomsetup');
+  mpCustomAddQuestion(); // mulai dengan 1 baris soal kosong
+}
+
+function mpCustomAddQuestion(){
+  var id=mpCustomNextId++;
+  mpCustomRowIds.push(id);
+  var listEl=document.getElementById('mp-custom-qlist');
+  if(!listEl) return;
+  var n=mpCustomRowIds.length;
+  var choiceRows=[0,1,2,3].map(function(j){
+    return '<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">'
+      + '<input type="radio" name="mpc-ans-'+id+'" value="'+j+'" '+(j===0?'checked':'')+' style="flex-shrink:0">'
+      + '<input id="mpc-c-'+id+'-'+j+'" placeholder="Pilihan '+(j+1)+(j<2?' (wajib)':' (opsional)')+'" style="flex:1;padding:8px 10px;border:1px solid var(--border);border-radius:8px;font-family:inherit;font-size:13px">'
+      + '</div>';
+  }).join('');
+  var html='<div id="mpc-row-'+id+'" style="background:white;border:1px solid var(--border);border-radius:12px;padding:14px;margin-bottom:12px">'
+    + '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">'
+    + '<span style="font-size:12px;font-weight:700;color:var(--mist)">SOAL #'+n+'</span>'
+    + '<button onclick="mpCustomRemoveQuestion('+id+')" style="border:none;background:none;color:var(--red);cursor:pointer;font-size:12px;font-weight:700">🗑️ Hapus</button>'
+    + '</div>'
+    + '<textarea id="mpc-p-'+id+'" placeholder="Konteks/bacaan (opsional) — misal kutipan paragraf" style="width:100%;padding:8px 10px;border:1px solid var(--border);border-radius:8px;font-family:inherit;font-size:12px;margin-bottom:8px;min-height:38px"></textarea>'
+    + '<textarea id="mpc-q-'+id+'" placeholder="Tulis soalnya di sini..." style="width:100%;padding:10px;border:1.5px solid var(--border);border-radius:8px;font-family:inherit;font-size:13px;margin-bottom:8px;min-height:52px"></textarea>'
+    + '<div style="font-size:10px;color:var(--mist);margin-bottom:6px">Tandai bulatan di kiri pilihan yang jawaban BENAR</div>'
+    + choiceRows
+    + '</div>';
+  listEl.insertAdjacentHTML('beforeend', html);
+  mpCustomUpdateCounter();
+}
+
+function mpCustomRemoveQuestion(id){
+  var idx=mpCustomRowIds.indexOf(id);
+  if(idx<0) return;
+  if(mpCustomRowIds.length<=1){ alert('Minimal harus ada 1 soal.'); return; }
+  mpCustomRowIds.splice(idx,1);
+  var rowEl=document.getElementById('mpc-row-'+id);
+  if(rowEl) rowEl.remove();
+  mpCustomRowIds.forEach(function(rid,i){
+    var row=document.getElementById('mpc-row-'+rid);
+    if(row){ var label=row.querySelector('span'); if(label) label.textContent='SOAL #'+(i+1); }
+  });
+  mpCustomUpdateCounter();
+}
+
+function mpCustomUpdateCounter(){
+  var el=document.getElementById('mp-custom-count');
+  if(el) el.textContent=mpCustomRowIds.length+' soal';
+}
+
+function mpCustomCollectQuestions(){
+  var out=[], errors=[];
+  mpCustomRowIds.forEach(function(id,i){
+    var qEl=document.getElementById('mpc-q-'+id);
+    var pEl=document.getElementById('mpc-p-'+id);
+    var q=qEl?qEl.value.trim():'';
+    var passage=pEl?pEl.value.trim():'';
+    var choices=[0,1,2,3].map(function(j){ var c=document.getElementById('mpc-c-'+id+'-'+j); return c?c.value.trim():''; });
+    var ansEl=document.querySelector('input[name="mpc-ans-'+id+'"]:checked');
+    var answer=ansEl?parseInt(ansEl.value,10):0;
+    if(!q){ errors.push('Soal #'+(i+1)+': teks soal kosong'); return; }
+    var filled=choices.filter(function(c){ return c; });
+    if(filled.length<2){ errors.push('Soal #'+(i+1)+': minimal 2 pilihan jawaban harus diisi'); return; }
+    if(!choices[answer]){ errors.push('Soal #'+(i+1)+': pilihan yang ditandai benar masih kosong'); return; }
+    var cleanChoices=[], newAnswer=-1;
+    choices.forEach(function(c,j){ if(!c) return; if(j===answer) newAnswer=cleanChoices.length; cleanChoices.push(c); });
+    out.push({ q:q, choices:cleanChoices, answer:newAnswer, section:'✏️ Custom', passage:passage||null });
+  });
+  return { questions:out, errors:errors };
+}
+
+async function mpCreateCustomSession(){
+  if(!db){ alert('Koneksi ke server belum siap. Coba beberapa detik lagi.'); return; }
+  var result=mpCustomCollectQuestions();
+  if(result.errors.length){ alert('Ada yang perlu dilengkapi:\n- '+result.errors.join('\n- ')); return; }
+  if(!result.questions.length){ alert('Tambahkan minimal 1 soal.'); return; }
+  var titleEl=document.getElementById('mp-custom-title');
+  var title=(titleEl && titleEl.value.trim()) ? titleEl.value.trim() : 'Custom';
+  var smEl=document.querySelector('input[name="mpc-startmode"]:checked');
+  var startMode=smEl?smEl.value:'host';
+  var visEl=document.querySelector('input[name="mpc-visibility"]:checked');
+  var visibility=visEl?visEl.value:'private';
+  var examDurationSec=parseInt(document.getElementById('mpc-host-time').value,10)||180;
+  var btn=document.getElementById('mpc-create-btn');
+  if(btn) btn.disabled=true;
+  try{
+    var code=await mpUniqueCode();
+    var hostName=(currentUser && currentUser.displayName)?currentUser.displayName.split(' ')[0]:'Host';
+    var initStatus=startMode==='free'?'active':'lobby';
+    var sessionDoc={
+      hostUid: currentUser?currentUser.uid:null,
+      hostName: hostName,
+      level: [title],
+      source: ['custom'],
+      kanjiDir: [],
+      startMode: startMode,
+      visibility: visibility,
+      questions: result.questions,
+      count: result.questions.length,
+      examDurationSec: examDurationSec,
+      status: initStatus,
+      createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+      expiresAt: new Date(Date.now()+24*3600*1000)
+    };
+    await db.collection('mpSessions').doc(code).set(sessionDoc);
+    mpState.code=code; mpState.isHost=true; mpState.level=[title]; mpState.questions=result.questions; mpState.examDurationSec=examDurationSec;
+    var codeEl=document.getElementById('mp-lobby-code'); if(codeEl) codeEl.textContent=code;
+    var metaEl=document.getElementById('mp-lobby-meta'); if(metaEl) metaEl.textContent=title+' · '+result.questions.length+' soal · ⏱️'+Math.round(examDurationSec/60)+' menit · Custom · '+(visibility==='public'?'🌐 Publik':'🔒 Privat');
+    var startBtn=document.getElementById('mp-start-btn');
+    var stEl=document.getElementById('mp-lobby-status');
+    if(startMode==='free'){
+      if(startBtn) startBtn.style.display='none';
+      if(stEl){ stEl.style.display='block'; stEl.style.color='var(--jade)'; stEl.textContent='⚡ Mode Bebas — pemain langsung main begitu gabung'; }
+    } else {
+      if(startBtn){ startBtn.style.display=''; startBtn.disabled=false; startBtn.textContent='🚀 Mulai Sesi'; }
+      if(stEl) stEl.style.display='none';
+    }
+    gotoScreen('mphostlobby');
+    mpListenPlayerList(code,'lobby');
+    mpListenSessionDoc(code,'host');
+  }catch(e){
+    alert('Gagal membuat sesi: '+(e&&e.message||e));
+  }finally{
+    if(btn) btn.disabled=false;
+  }
+}
+
 async function mpCreateSession(){
   if(!db){ alert('Koneksi ke server belum siap. Coba beberapa detik lagi.'); return; }
   var lvlEls=document.querySelectorAll('input[name="mp-level"]:checked');
@@ -9358,6 +9555,8 @@ async function mpCreateSession(){
   if(sources.indexOf('kanji')>=0 && !kanjiDirs.length){ alert('Pilih minimal 1 arah soal kanji.'); return; }
   var smEl=document.querySelector('input[name="mp-startmode"]:checked');
   var startMode = smEl ? smEl.value : 'host';
+  var visEl=document.querySelector('input[name="mp-visibility"]:checked');
+  var visibility = visEl ? visEl.value : 'private';
   var count = parseInt(document.getElementById('mp-host-count').value,10)||10;
   var examDurationSec = parseInt(document.getElementById('mp-host-time').value,10)||180;
   var btn=document.getElementById('mp-host-create-btn');
@@ -9380,6 +9579,7 @@ async function mpCreateSession(){
       source: sources,
       kanjiDir: kanjiDirs,
       startMode: startMode,
+      visibility: visibility,
       questions: questions,
       count: questions.length,
       examDurationSec: examDurationSec,
@@ -9390,7 +9590,7 @@ async function mpCreateSession(){
     await db.collection('mpSessions').doc(code).set(sessionDoc);
     mpState.code=code; mpState.isHost=true; mpState.level=levels; mpState.questions=questions; mpState.examDurationSec=examDurationSec;
     var codeEl=document.getElementById('mp-lobby-code'); if(codeEl) codeEl.textContent=code;
-    var metaEl=document.getElementById('mp-lobby-meta'); if(metaEl) metaEl.textContent=mpLevelsLabel(levels)+' · '+questions.length+' soal · ⏱️'+Math.round(examDurationSec/60)+' menit · '+mpSourceLabel(sources);
+    var metaEl=document.getElementById('mp-lobby-meta'); if(metaEl) metaEl.textContent=mpLevelsLabel(levels)+' · '+questions.length+' soal · ⏱️'+Math.round(examDurationSec/60)+' menit · '+mpSourceLabel(sources)+' · '+(visibility==='public'?'🌐 Publik':'🔒 Privat');
     var startBtn=document.getElementById('mp-start-btn');
     var stEl=document.getElementById('mp-lobby-status');
     if(startMode==='free'){
@@ -9653,7 +9853,7 @@ async function mpTryResumeSession(){
     if(role==='host'){
       mpState.code=code; mpState.isHost=true; mpState.level=sdata.level; mpState.questions=sdata.questions||[]; mpState.examDurationSec=sdata.examDurationSec||180;
       var codeEl=document.getElementById('mp-lobby-code'); if(codeEl) codeEl.textContent=code;
-      var metaEl=document.getElementById('mp-lobby-meta'); if(metaEl) metaEl.textContent=mpLevelsLabel(sdata.level)+' · '+(sdata.questions||[]).length+' soal · ⏱️'+Math.round((sdata.examDurationSec||180)/60)+' menit · '+mpSourceLabel(sdata.source);
+      var metaEl=document.getElementById('mp-lobby-meta'); if(metaEl) metaEl.textContent=mpLevelsLabel(sdata.level)+' · '+(sdata.questions||[]).length+' soal · ⏱️'+Math.round((sdata.examDurationSec||180)/60)+' menit · '+mpSourceLabel(sdata.source)+' · '+(sdata.visibility==='public'?'🌐 Publik':'🔒 Privat');
       gotoScreen('mphostlobby');
       mpListenPlayerList(code,'lobby');
       mpListenSessionDoc(code,'host');
@@ -9679,6 +9879,60 @@ function mpGoJoin(){
   if(nameEl) nameEl.value = (currentUser&&currentUser.displayName)? currentUser.displayName.split(' ')[0] : (localStorage.getItem('mp_name')||'');
   var errEl=document.getElementById('mp-join-error'); if(errEl) errEl.style.display='none';
   gotoScreen('mpjoin');
+}
+
+function mpJoinFromHall(code){
+  mpGoJoin();
+  var codeEl=document.getElementById('mp-join-code'); if(codeEl) codeEl.value=code;
+  var nameEl=document.getElementById('mp-join-name'); if(nameEl) setTimeout(function(){ nameEl.focus(); }, 200);
+}
+
+async function mpGoHall(){
+  gotoScreen('mphall');
+  var statusEl=document.getElementById('mp-hall-status');
+  var listEl=document.getElementById('mp-hall-list');
+  if(listEl) listEl.innerHTML='';
+  if(statusEl){ statusEl.style.display='block'; statusEl.textContent='⏳ Memuat...'; }
+  if(!db){ if(statusEl) statusEl.textContent='Koneksi belum siap, coba lagi.'; return; }
+  try{
+    // Ambil sesi terbaru lalu filter publik+terbuka di klien — hindari perlu index gabungan Firestore
+    var snap = await db.collection('mpSessions').orderBy('createdAt','desc').limit(50).get();
+    var rows=[];
+    snap.forEach(function(d){
+      var data=d.data();
+      if(data.visibility==='public' && data.status!=='closed'){
+        rows.push(Object.assign({id:d.id}, data));
+      }
+    });
+    if(!rows.length){
+      if(statusEl){ statusEl.style.display='block'; statusEl.textContent='Belum ada sesi publik yang terbuka. Buat sesi dan pilih "Publik" biar muncul di sini!'; }
+      return;
+    }
+    if(statusEl) statusEl.style.display='none';
+    mpRenderHallList(rows);
+  }catch(e){
+    if(statusEl){ statusEl.style.display='block'; statusEl.textContent='Gagal memuat: '+(e&&e.message||e); }
+  }
+}
+
+function mpRenderHallList(rows){
+  var el=document.getElementById('mp-hall-list');
+  if(!el) return;
+  el.innerHTML=rows.map(function(r){
+    var createdMs = (r.createdAt && typeof r.createdAt.toMillis==='function') ? r.createdAt.toMillis() : Date.now();
+    var minsAgo = Math.max(0, Math.round((Date.now()-createdMs)/60000));
+    var agoTxt = minsAgo<1 ? 'baru aja' : (minsAgo<60 ? minsAgo+' menit lalu' : Math.round(minsAgo/60)+' jam lalu');
+    var statusTxt = r.status==='lobby' ? '⏳ Nunggu dimulai' : '🟢 Sedang berjalan';
+    return '<div onclick="mpJoinFromHall(&apos;'+r.id+'&apos;)" style="background:white;border:1px solid var(--border);border-radius:12px;padding:14px;margin-bottom:10px;cursor:pointer">'
+      + '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">'
+      + '<span style="font-weight:700;font-size:14px">'+mpEsc(mpLevelsLabel(r.level))+' · '+mpEsc(r.hostName||'Host')+'</span>'
+      + '<span style="font-family:\'DM Mono\',monospace;font-weight:800;color:var(--red);letter-spacing:1px">'+mpEsc(r.id)+'</span></div>'
+      + '<div style="font-size:12px;color:var(--mist);margin-bottom:2px">'+mpEsc(mpSourceLabel(r.source))+' · '+(r.count||0)+' soal · ⏱️'+Math.round((r.examDurationSec||180)/60)+' menit</div>'
+      + '<div style="display:flex;justify-content:space-between;align-items:center">'
+      + '<span style="font-size:12px;font-weight:700;color:'+(r.status==='lobby'?'var(--gold)':'var(--jade)')+'">'+statusTxt+'</span>'
+      + '<span style="font-size:11px;color:var(--mist)">'+agoTxt+'</span></div>'
+      + '</div>';
+  }).join('');
 }
 
 async function mpJoinSession(){
