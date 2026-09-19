@@ -1104,7 +1104,7 @@ header:has(.user-menu.open) { z-index:1000; }
         <span class="user-name" id="user-name">...</span>
         <span id="level-badge" onclick="event.stopPropagation();gotoScreen('levelreward')" title="Level & Reward" style="font-size:10px;font-weight:800;background:linear-gradient(135deg,var(--gold),#c98a1f);color:white;padding:2px 7px;border-radius:8px;cursor:pointer;letter-spacing:.3px">Lv.1</span>
         <span class="sync-badge" id="sync-badge">● sync</span>
-        <span id="build-dot" title="Indikator update: warnanya ganti tiap ada versi baru dari Claude" style="display:inline-block;width:11px;height:11px;border-radius:50%;background:#c0392b;margin-left:6px;vertical-align:middle;border:2px solid white;box-shadow:0 0 0 1px rgba(0,0,0,.15)"></span>
+        <span id="build-dot" title="Indikator update: warnanya ganti tiap ada versi baru dari Claude" style="display:inline-block;width:11px;height:11px;border-radius:50%;background:#2d7a4f;margin-left:6px;vertical-align:middle;border:2px solid white;box-shadow:0 0 0 1px rgba(0,0,0,.15)"></span>
         <!-- 🔴🟢 CLAUDE: WAJIB toggle warna build-dot di atas SETIAP kali file ini dikirim ulang —
              merah #c0392b <-> hijau #2da050 gantian. Ini satu-satunya cara Riyan verifikasi
              upload-nya beneran ke-deploy. JANGAN LUPA, cek baris ini di awal SETIAP delivery. -->
@@ -9023,7 +9023,36 @@ function mpQuestionTextHTML(q){
     var before=text.slice(0,idx), target=text.slice(idx,idx+q.underline.length), after=text.slice(idx+q.underline.length);
     return mpEsc(before)+'<u style="text-decoration-thickness:2.5px;text-underline-offset:3px">'+mpEsc(target)+'</u>'+mpEsc(after);
   }
+  var dialogHtml=mpFormatDialogHTML(text);
+  if(dialogHtml) return dialogHtml;
   return mpEsc(text);
+}
+function mpFormatDialogHTML(text){
+  // Deteksi soal berformat percakapan (misal "（畑で）子「...」父「...」") dan pecah tiap
+  // giliran bicara jadi baris sendiri biar gak numpuk satu paragraf panjang.
+  if(!text) return null;
+  var context='';
+  var rest=text;
+  var ctxMatch=text.match(/^（[^）]{1,24}）\s*/);
+  if(ctxMatch){ context=ctxMatch[0].trim(); rest=text.slice(ctxMatch[0].length); }
+  var re=/([^「」\s（）＿★]{1,10})「([^」]*)」/g;
+  var matches=[], mm, lastEnd=0, covered=0;
+  while((mm=re.exec(rest))!==null){
+    matches.push(mm);
+    covered += mm[0].length;
+    lastEnd = mm.index+mm[0].length;
+  }
+  if(matches.length<2) return null;
+  // pastikan hampir semua teks emang kepakai jadi dialog (bukan cuma kebetulan ada 2 tanda kutip)
+  if(covered < rest.length*0.6) return null;
+  var html='';
+  if(context) html+='<div style="font-size:12px;color:var(--mist);margin-bottom:8px">（'+mpEsc(context.replace(/^（|）$/g,''))+'）</div>';
+  matches.forEach(function(m){
+    html+='<div style="margin-bottom:8px"><b style="color:var(--red)">'+mpEsc(m[1])+'</b>「'+mpEsc(m[2])+'」</div>';
+  });
+  var tail=rest.slice(lastEnd).trim();
+  if(tail) html+='<div>'+mpEsc(tail)+'</div>';
+  return html;
 }
 function mpShuffleCopy(arr){ var a=arr.slice(); shuffle(a); return a; }
 function mpSourceLabel(sources){
