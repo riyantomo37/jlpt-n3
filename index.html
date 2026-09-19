@@ -1104,7 +1104,7 @@ header:has(.user-menu.open) { z-index:1000; }
         <span class="user-name" id="user-name">...</span>
         <span id="level-badge" onclick="event.stopPropagation();gotoScreen('levelreward')" title="Level & Reward" style="font-size:10px;font-weight:800;background:linear-gradient(135deg,var(--gold),#c98a1f);color:white;padding:2px 7px;border-radius:8px;cursor:pointer;letter-spacing:.3px">Lv.1</span>
         <span class="sync-badge" id="sync-badge">● sync</span>
-        <span id="build-dot" title="Indikator update: warnanya ganti tiap ada versi baru dari Claude" style="display:inline-block;width:11px;height:11px;border-radius:50%;background:#2d7a4f;margin-left:6px;vertical-align:middle;border:2px solid white;box-shadow:0 0 0 1px rgba(0,0,0,.15)"></span>
+        <span id="build-dot" title="Indikator update: warnanya ganti tiap ada versi baru dari Claude" style="display:inline-block;width:11px;height:11px;border-radius:50%;background:#c0392b;margin-left:6px;vertical-align:middle;border:2px solid white;box-shadow:0 0 0 1px rgba(0,0,0,.15)"></span>
         <!-- 🔴🟢 CLAUDE: WAJIB toggle warna build-dot di atas SETIAP kali file ini dikirim ulang —
              merah #c0392b <-> hijau #2da050 gantian. Ini satu-satunya cara Riyan verifikasi
              upload-nya beneran ke-deploy. JANGAN LUPA, cek baris ini di awal SETIAP delivery. -->
@@ -9288,6 +9288,24 @@ function mpGuessUnderline(sentence, answerText, mode){
   }catch(e){ return null; }
 }
 
+// Instruksi resmi tiap tipe mondai — data arsip soal aslinya gak nyimpen kalimat instruksi ini
+// (cuma ada di data hasil generate AI), padahal beberapa tipe soal (漢字読み, 表記, 用法, dst)
+// gak bisa dipahami tanpa tau apa yang diminta.
+var MP_MONDAI_INSTR = {
+  '漢字読み': '＿＿の言葉の読み方として最もよいものを、１・２・３・４から一つえらんでください。',
+  '表記': '＿＿のことばを漢字で書くとき、最もよいものを１・２・３・４から一つえらんでください。',
+  '語彙': '（　）に入れるのに最もよいものを、１・２・３・４から一つえらんでください。',
+  '言い換え': '＿＿に意味が最も近いものを、１・２・３・４から一つえらんでください。',
+  '用法': '次の言葉の使い方として最もよいものを、１・２・３・４から一つえらんでください。',
+  '文法': '次の文の（　）に入れるのに最もよいものを、１・２・３・４から一つえらんでください。',
+  '文法(整序)': '次の文の★に入る最もよいものを、１・２・３・４から一つえらんでください。',
+  '文法(文章)': '文章全体の内容を考えて、【　】に入れるのに最もよいものを、１・２・３・４から一つえらんでください。',
+  '読解(短文)': '次の文章を読んで、質問に対する答えとして最もよいものを、１・２・３・４から一つえらんでください。',
+  '読解(中文)': '次の文章を読んで、質問に対する答えとして最もよいものを、１・２・３・４から一つえらんでください。',
+  '読解(長文)': '次の文章を読んで、質問に対する答えとして最もよいものを、１・２・３・４から一つえらんでください。',
+  '読解(情報検索)': '右のページを見て、質問に対する答えとして最もよいものを、１・２・３・４から一つえらんでください。'
+};
+
 async function mpBankQuestions(level, count){
   if(count<=0) return [];
   try{
@@ -9320,7 +9338,12 @@ async function mpBankQuestions(level, count){
             // 表記 (mondai2, hiragana→kanji): aman dipakai kalau jawabannya kanji murni tanpa
             // okurigana (mis. 温泉) — mpGuessUnderline sendiri yang nge-skip kasus verba berokurigana.
             else if(q.section==='表記') underline=mpGuessUnderline(q.q, q.choices[q.answer], 'reading2kanji');
-            pool.push({ q:q.q, choices:q.choices, answer:q.answer, section:sec.name||'', passage:passage, underline:underline });
+            // 文法(文章): soal aslinya cuma nomor 【19】 dst tertanam di passage, field q kosong.
+            // Kasih teks pengganti biar gak nampil blank sama sekali.
+            var qText = q.q;
+            if(!qText && q.blank) qText = '【'+q.blank+'】 に入れるのに最もよいものはどれですか。';
+            else if(!qText) qText = '（　）に入れるのに最もよいものはどれですか。';
+            pool.push({ q:qText, choices:q.choices, answer:q.answer, section:sec.name||'', passage:passage, underline:underline, instr:MP_MONDAI_INSTR[q.section]||null });
           });
         });
       }catch(e){}
@@ -10098,6 +10121,7 @@ function mpRenderPlay(){
   if(prog) prog.textContent='Soal '+(i+1)+' / '+qs.length;
   var html='';
   if(q.section) html+='<div style="font-size:11px;color:var(--red);font-weight:700;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px">'+mpEsc(q.section)+'</div>';
+  if(q.instr) html+='<div style="font-size:12px;color:var(--mist);line-height:1.6;margin-bottom:10px;font-style:italic">'+mpEsc(q.instr)+'</div>';
   if(q.passage) html+='<div style="background:var(--paper);border:1px solid var(--border);border-radius:10px;padding:14px;margin-bottom:14px;font-size:14px;line-height:1.9;white-space:pre-wrap">'+mpEsc(q.passage)+'</div>';
   html+='<div style="font-size:15px;font-weight:600;line-height:1.7;margin-bottom:14px;white-space:pre-wrap">'+mpQuestionTextHTML(q)+'</div>';
   html+='<div id="mp-play-choices">';
@@ -10362,7 +10386,7 @@ function mpFinalizeAnswer(choiceIdx){
   if(!Array.isArray(mpState.answerLog)) mpState.answerLog=[];
   mpState.answerLog.push({
     q:q.q, choices:q.choices, answer:q.answer, chosen:choiceIdx, correct:isCorrect,
-    section:q.section||'', passage:q.passage||null, underline:q.underline||null, gained:gained
+    section:q.section||'', passage:q.passage||null, underline:q.underline||null, instr:q.instr||null, gained:gained
   });
   mpState.idx++; mpState.answered=mpState.idx;
   var fb=document.getElementById('mp-play-feedback');
@@ -10488,6 +10512,7 @@ function mpOpenHistoryDetail(idx){
       var timedOut = a.chosen===-1 || a.chosen===undefined;
       return '<div style="background:white;border:1px solid var(--border);border-radius:12px;padding:14px;margin-bottom:10px">'
         + (a.section?('<div style="font-size:10px;color:var(--red);font-weight:700;text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px">'+mpEsc(a.section)+'</div>'):'')
+        + (a.instr?('<div style="font-size:11px;color:var(--mist);line-height:1.5;margin-bottom:8px;font-style:italic">'+mpEsc(a.instr)+'</div>'):'')
         + (a.passage?('<div style="background:var(--paper);border:1px solid var(--border);border-radius:8px;padding:10px;margin-bottom:8px;font-size:13px;white-space:pre-wrap">'+mpEsc(a.passage)+'</div>'):'')
         + '<div style="font-weight:600;font-size:14px;margin-bottom:8px;white-space:pre-wrap">'+(i+1)+'. '+mpQuestionTextHTML(a)+'</div>'
         + (a.choices||[]).map(function(c,ci){
@@ -10525,6 +10550,7 @@ function mpExportHistoryPDF(){
     }).join('');
     return '<div style="margin-bottom:16px;page-break-inside:avoid">'
       + (a.section?('<div style="font-size:10px;color:#c0392b;font-weight:700;text-transform:uppercase;margin-bottom:4px">'+mpEsc(a.section)+'</div>'):'')
+      + (a.instr?('<div style="font-size:11px;color:#888;margin-bottom:6px;font-style:italic">'+mpEsc(a.instr)+'</div>'):'')
       + (a.passage?('<div style="background:#f5f0e8;border:1px solid #ddd;border-radius:6px;padding:8px;margin-bottom:6px;font-size:13px;white-space:pre-wrap">'+mpEsc(a.passage)+'</div>'):'')
       + '<div style="font-weight:600;margin-bottom:6px;white-space:pre-wrap">'+(i+1)+'. '+mpQuestionTextHTML(a)+'</div>'
       + choicesHtml
