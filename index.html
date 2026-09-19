@@ -1104,7 +1104,7 @@ header:has(.user-menu.open) { z-index:1000; }
         <span class="user-name" id="user-name">...</span>
         <span id="level-badge" onclick="event.stopPropagation();gotoScreen('levelreward')" title="Level & Reward" style="font-size:10px;font-weight:800;background:linear-gradient(135deg,var(--gold),#c98a1f);color:white;padding:2px 7px;border-radius:8px;cursor:pointer;letter-spacing:.3px">Lv.1</span>
         <span class="sync-badge" id="sync-badge">● sync</span>
-        <span id="build-dot" title="Indikator update: warnanya ganti tiap ada versi baru dari Claude" style="display:inline-block;width:11px;height:11px;border-radius:50%;background:#2d7a4f;margin-left:6px;vertical-align:middle;border:2px solid white;box-shadow:0 0 0 1px rgba(0,0,0,.15)"></span>
+        <span id="build-dot" title="Indikator update: warnanya ganti tiap ada versi baru dari Claude" style="display:inline-block;width:11px;height:11px;border-radius:50%;background:#c0392b;margin-left:6px;vertical-align:middle;border:2px solid white;box-shadow:0 0 0 1px rgba(0,0,0,.15)"></span>
         <!-- 🔴🟢 CLAUDE: WAJIB toggle warna build-dot di atas SETIAP kali file ini dikirim ulang —
              merah #c0392b <-> hijau #2da050 gantian. Ini satu-satunya cara Riyan verifikasi
              upload-nya beneran ke-deploy. JANGAN LUPA, cek baris ini di awal SETIAP delivery. -->
@@ -9375,6 +9375,11 @@ async function mpBankQuestions(level, count){
           });
           (sec.questions||[]).forEach(function(q){
             if(!q.choices||q.choices.length<2||typeof q.answer!=='number') return;
+            // Beberapa soal 漢字読み/表記 di arsip ternyata ada pilihan jawaban yang kembar
+            // persis (kesalahan transkripsi waktu digitisasi dari PDF, kanji mirip ketuker,
+            // mis. 元因/元因/原因/原因) — skip biar gak nampilin soal yang pilihannya rusak.
+            var uniqueChoices=Array.from(new Set(q.choices.map(function(c){return (c||'').trim();})));
+            if(uniqueChoices.length!==q.choices.length) return;
             var passage = q.passage || (q.passage_id && passageMap[q.passage_id]) || secPassage || null;
             var underline=null;
             if(q.section==='漢字読み') underline=mpGuessUnderline(q.q, q.choices[q.answer], 'kanji2reading');
