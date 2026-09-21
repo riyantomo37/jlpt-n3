@@ -1104,7 +1104,7 @@ header:has(.user-menu.open) { z-index:1000; }
         <span class="user-name" id="user-name">...</span>
         <span id="level-badge" onclick="event.stopPropagation();gotoScreen('levelreward')" title="Level & Reward" style="font-size:10px;font-weight:800;background:linear-gradient(135deg,var(--gold),#c98a1f);color:white;padding:2px 7px;border-radius:8px;cursor:pointer;letter-spacing:.3px">Lv.1</span>
         <span class="sync-badge" id="sync-badge">● sync</span>
-        <span id="build-dot" title="Indikator update: warnanya ganti tiap ada versi baru dari Claude" style="display:inline-block;width:11px;height:11px;border-radius:50%;background:#c0392b;margin-left:6px;vertical-align:middle;border:2px solid white;box-shadow:0 0 0 1px rgba(0,0,0,.15)"></span>
+        <span id="build-dot" title="Indikator update: warnanya ganti tiap ada versi baru dari Claude" style="display:inline-block;width:11px;height:11px;border-radius:50%;background:#2d7a4f;margin-left:6px;vertical-align:middle;border:2px solid white;box-shadow:0 0 0 1px rgba(0,0,0,.15)"></span>
         <!-- 🔴🟢 CLAUDE: WAJIB toggle warna build-dot di atas SETIAP kali file ini dikirim ulang —
              merah #c0392b <-> hijau #2da050 gantian. Ini satu-satunya cara Riyan verifikasi
              upload-nya beneran ke-deploy. JANGAN LUPA, cek baris ini di awal SETIAP delivery. -->
@@ -2439,6 +2439,7 @@ header:has(.user-menu.open) { z-index:1000; }
 <div id="screen-mpresult" class="screen">
   <div class="section-title" style="margin-bottom:6px">🏁 Hasil</div>
   <div id="mp-result-title" style="text-align:center;font-size:16px;font-weight:800;color:var(--red);background:white;border:1px solid var(--border);border-radius:12px;padding:18px;margin-bottom:16px"></div>
+  <button onclick="mpRetrySession()" style="width:100%;margin-bottom:8px;padding:12px;border:none;border-radius:10px;background:var(--jade);color:white;cursor:pointer;font-weight:700">🔄 Coba Lagi (Main Ulang)</button>
   <button onclick="mpOpenLatestHistoryDetail()" style="width:100%;margin-bottom:14px;padding:12px;border:1.5px solid var(--border);border-radius:10px;background:white;color:var(--ink);cursor:pointer;font-weight:700">📋 Lihat Pembahasan &amp; Unduh PDF</button>
   <div style="font-size:12px;font-weight:700;color:var(--mist);margin-bottom:8px">RANKING (live)</div>
   <div id="mp-result-list"></div>
@@ -9009,7 +9010,7 @@ function shuffle(arr) {
 // 🎮 MULTIPLAYER — Kuis Bareng (self-paced, kode sesi publik via Firestore)
 // ══════════════════════════════════════════════════════════════════
 var mpState = { code:null, isHost:false, playerId:null, playerName:null,
-  questions:[], idx:0, score:0, correct:0, streak:0, answered:0, answerLog:[],
+  questions:[], idx:0, score:0, correct:0, streak:0, answered:0, answerLog:[], attempt:0,
   unsubLobby:null, unsubResult:null, unsubSelf:null, unsubSessionDoc:null, unsubLiveBoard:null, heartbeatInterval:null, level:null, _qStart:0,
   powerups:{ff:0,boost:0,shield:0,atk:0,freeze:0}, shieldActive:false, boostActive:false,
   _lastAttackSeen:0, _usedFF:false, examDurationSec:180, examEndAt:0, examTimeLeft:180, examTimerInterval:null, _examOver:false, _liveRows:[] };
@@ -9784,7 +9785,7 @@ async function mpHostJoinAsPlayer(){
       pref = sref.collection('players').doc(pid);
       var hostName = (currentUser && currentUser.displayName) ? currentUser.displayName.split(' ')[0] : 'Host';
       pdata = {name: hostName+' 👑', score:0, correct:0, answered:0, streak:0,
-        totalQuestions:(sdata.questions||mpState.questions||[]).length, finished:false,
+        totalQuestions:(sdata.questions||mpState.questions||[]).length, finished:false, attempt:0,
         powerups:{ff:0,boost:0,shield:0,atk:0,freeze:0}, shieldActive:false, boostActive:false, lastAttack:null, answerLog:[],
         examEndAt: sdata.examEndAt || (Date.now()+(mpState.examDurationSec||180)*1000)};
       await pref.set(Object.assign({}, pdata, {
@@ -9797,6 +9798,7 @@ async function mpHostJoinAsPlayer(){
     mpState.questions = sdata.questions || mpState.questions;
     mpState.idx=pdata.answered||0; mpState.score=pdata.score||0; mpState.correct=pdata.correct||0; mpState.streak=pdata.streak||0;
     mpState.answerLog = pdata.answerLog || [];
+    mpState.attempt = pdata.attempt||0;
     mpState.powerups=Object.assign({ff:0,boost:0,shield:0,atk:0,freeze:0}, pdata.powerups||{});
     mpState.shieldActive=!!pdata.shieldActive; mpState.boostActive=!!pdata.boostActive;
     mpState._lastAttackSeen=(pdata.lastAttack&&pdata.lastAttack.ts)||0;
@@ -10099,12 +10101,14 @@ async function mpJoinSession(){
       if(pdoc.exists) pdata=pdoc.data(); else pid=null;
     }
     if(!pid){
-      if(startMode==='host' && sdata.status==='active') throw new Error('Sesi sudah dimulai, tidak bisa gabung lagi.');
+      // Sengaja TIDAK nolak join walau sesi udah 'active' — pemain yang telat (misal lewat
+      // Public Lobby) tetap bisa masuk. Kalau ternyata waktu ujiannya udah abis pas mereka
+      // gabung, mereka bakal langsung diarahkan ke layar hasil (kosong) — bukan ditolak sama sekali.
       pid = 'p_'+Date.now().toString(36)+Math.random().toString(36).slice(2,8);
       pref = sref.collection('players').doc(pid);
-      var initExamEndAt = (startMode==='free') ? (Date.now()+examDurationSec*1000) : null;
+      var initExamEndAt = (startMode==='free') ? (Date.now()+examDurationSec*1000) : (sdata.status==='active' ? sdata.examEndAt : null);
       pdata = {name:name, score:0, correct:0, answered:0, streak:0,
-        totalQuestions:(sdata.questions||[]).length, finished:false,
+        totalQuestions:(sdata.questions||[]).length, finished:false, attempt:0,
         powerups:{ff:0,boost:0,shield:0,atk:0,freeze:0}, shieldActive:false, boostActive:false, lastAttack:null, answerLog:[],
         examEndAt: initExamEndAt};
       await pref.set(Object.assign({}, pdata, {
@@ -10120,6 +10124,7 @@ async function mpJoinSession(){
     mpState.questions=sdata.questions||[]; mpState.level=sdata.level; mpState.examDurationSec=examDurationSec;
     mpState.idx=pdata.answered||0; mpState.score=pdata.score||0; mpState.correct=pdata.correct||0; mpState.streak=pdata.streak||0;
     mpState.answerLog = pdata.answerLog || [];
+    mpState.attempt = pdata.attempt||0;
     mpState.powerups=Object.assign({ff:0,boost:0,shield:0,atk:0,freeze:0}, pdata.powerups||{});
     mpState.shieldActive=!!pdata.shieldActive; mpState.boostActive=!!pdata.boostActive;
     mpState._lastAttackSeen=(pdata.lastAttack&&pdata.lastAttack.ts)||0;
@@ -10178,7 +10183,7 @@ function mpLeaveWaiting(silent){
   mpHeartbeatStop();
   localStorage.removeItem('mp_last_role'); localStorage.removeItem('mp_last_code');
   if(!silent){
-    mpState={code:null,isHost:false,playerId:null,playerName:null,questions:[],idx:0,score:0,correct:0,streak:0,answered:0,answerLog:[],
+    mpState={code:null,isHost:false,playerId:null,playerName:null,questions:[],idx:0,score:0,correct:0,streak:0,answered:0,answerLog:[],attempt:0,
       unsubLobby:null,unsubResult:null,unsubSelf:null,unsubSessionDoc:null,unsubLiveBoard:null,heartbeatInterval:null,level:null,_qStart:0,
       powerups:{ff:0,boost:0,shield:0,atk:0,freeze:0},shieldActive:false,boostActive:false,_lastAttackSeen:0,_usedFF:false,
       examDurationSec:180,examEndAt:0,examTimeLeft:180,examTimerInterval:null,_examOver:false};
@@ -10526,7 +10531,7 @@ async function mpSaveProgress(){
   try{
     await db.collection('mpSessions').doc(mpState.code).collection('players').doc(mpState.playerId).update({
       score: mpState.score, correct: mpState.correct, streak: mpState.streak,
-      answered: mpState.idx, finished: finished,
+      answered: mpState.idx, finished: finished, attempt: mpState.attempt||0,
       powerups: mpState.powerups, shieldActive: mpState.shieldActive, boostActive: mpState.boostActive,
       examEndAt: mpState.examEndAt, answerLog: mpState.answerLog||[],
       lastActive: firebase.firestore.FieldValue.serverTimestamp(),
@@ -10543,6 +10548,36 @@ function mpShowResult(){
   mpSaveHistoryIfNew();
   gotoScreen('mpresult');
   mpListenResult();
+}
+
+async function mpRetrySession(){
+  if(!mpState.code || !mpState.playerId || !db) return;
+  if(!confirm('Main ulang sesi ini dari awal? Skor & progress kamu di sesi ini bakal direset ke 0 (riwayat percobaan sebelumnya tetap kesimpen).')) return;
+  try{
+    var sref=db.collection('mpSessions').doc(mpState.code);
+    var sdoc=await sref.get();
+    if(!sdoc.exists || sdoc.data().status==='closed'){ alert('Sesi ini udah ditutup, gak bisa main ulang.'); return; }
+    var sdata=sdoc.data();
+    var newAttempt=(mpState.attempt||0)+1;
+    var newExamEndAt=Date.now()+(sdata.examDurationSec||mpState.examDurationSec||180)*1000;
+    var pref=sref.collection('players').doc(mpState.playerId);
+    await pref.update({
+      score:0, correct:0, answered:0, streak:0, finished:false, finishedAt:null, attempt:newAttempt,
+      powerups:{ff:0,boost:0,shield:0,atk:0,freeze:0}, shieldActive:false, boostActive:false,
+      answerLog:[], examEndAt:newExamEndAt
+    });
+    mpState.questions=sdata.questions||mpState.questions;
+    mpState.idx=0; mpState.score=0; mpState.correct=0; mpState.streak=0; mpState.answerLog=[];
+    mpState.powerups={ff:0,boost:0,shield:0,atk:0,freeze:0}; mpState.shieldActive=false; mpState.boostActive=false;
+    mpState.examEndAt=newExamEndAt; mpState.attempt=newAttempt; mpState._examOver=false;
+    gotoScreen('mpplay');
+    mpRenderPlay();
+    mpListenSelf();
+    mpListenPlayersLive();
+    mpListenSessionDoc(mpState.code,'play');
+    mpStartExamTimer();
+    mpHeartbeatStart();
+  }catch(e){ alert('Gagal main ulang: '+(e&&e.message||e)); }
 }
 
 // ═══ Lacak semua sesi yang pernah diikuti/dibikin (buat Lobby Pribadi) — lokal per HP ═══
@@ -10568,11 +10603,15 @@ function mpSaveHistoryList(list){
 function mpSaveHistoryIfNew(){
   if(!mpState.code || !mpState.playerId) return;
   var hist = mpLoadHistory();
-  var already = hist.some(function(h){ return h.code===mpState.code && h.playerId===mpState.playerId; });
+  var myAttempt = mpState.attempt||0;
+  // Dedupe per (code, playerId, attempt) — bukan cuma (code, playerId) — biar tiap kali
+  // "Coba Lagi" dipakai, hasilnya tersimpen sebagai entri riwayat baru, bukan ke-skip.
+  var already = hist.some(function(h){ return h.code===mpState.code && h.playerId===mpState.playerId && (h.attempt||0)===myAttempt; });
   if(already) return;
   var entry = {
     code: mpState.code,
     playerId: mpState.playerId,
+    attempt: myAttempt,
     date: Date.now(),
     level: mpState.level,
     score: mpState.score,
@@ -10824,7 +10863,7 @@ function mpLeaveResult(){
   if(mpState.examTimerInterval){ clearInterval(mpState.examTimerInterval); }
   mpHeartbeatStop();
   localStorage.removeItem('mp_last_role'); localStorage.removeItem('mp_last_code');
-  mpState={code:null,isHost:false,playerId:null,playerName:null,questions:[],idx:0,score:0,correct:0,streak:0,answered:0,answerLog:[],
+  mpState={code:null,isHost:false,playerId:null,playerName:null,questions:[],idx:0,score:0,correct:0,streak:0,answered:0,answerLog:[],attempt:0,
     unsubLobby:null,unsubResult:null,unsubSelf:null,unsubSessionDoc:null,unsubLiveBoard:null,heartbeatInterval:null,level:null,_qStart:0,
     powerups:{ff:0,boost:0,shield:0,atk:0,freeze:0},shieldActive:false,boostActive:false,_lastAttackSeen:0,_usedFF:false,
     examDurationSec:180,examEndAt:0,examTimeLeft:180,examTimerInterval:null,_examOver:false,_liveRows:[]};
