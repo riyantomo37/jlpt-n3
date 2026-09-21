@@ -1104,7 +1104,7 @@ header:has(.user-menu.open) { z-index:1000; }
         <span class="user-name" id="user-name">...</span>
         <span id="level-badge" onclick="event.stopPropagation();gotoScreen('levelreward')" title="Level & Reward" style="font-size:10px;font-weight:800;background:linear-gradient(135deg,var(--gold),#c98a1f);color:white;padding:2px 7px;border-radius:8px;cursor:pointer;letter-spacing:.3px">Lv.1</span>
         <span class="sync-badge" id="sync-badge">● sync</span>
-        <span id="build-dot" title="Indikator update: warnanya ganti tiap ada versi baru dari Claude" style="display:inline-block;width:11px;height:11px;border-radius:50%;background:#c0392b;margin-left:6px;vertical-align:middle;border:2px solid white;box-shadow:0 0 0 1px rgba(0,0,0,.15)"></span>
+        <span id="build-dot" title="Indikator update: warnanya ganti tiap ada versi baru dari Claude" style="display:inline-block;width:11px;height:11px;border-radius:50%;background:#2d7a4f;margin-left:6px;vertical-align:middle;border:2px solid white;box-shadow:0 0 0 1px rgba(0,0,0,.15)"></span>
         <!-- 🔴🟢 CLAUDE: WAJIB toggle warna build-dot di atas SETIAP kali file ini dikirim ulang —
              merah #c0392b <-> hijau #2da050 gantian. Ini satu-satunya cara Riyan verifikasi
              upload-nya beneran ke-deploy. JANGAN LUPA, cek baris ini di awal SETIAP delivery. -->
@@ -9112,7 +9112,9 @@ function mpKotobaQuestions(words, count){
       q: w.jp+'（'+w.rom+'）artinya apa?',
       choices: choices,
       answer: choices.indexOf(w.id_),
-      section: '単語 Kotoba'
+      section: '単語 Kotoba',
+      meaning: w.id_,
+      expl: '「'+w.jp+'」（'+w.rom+'）artinya "'+w.id_+'".'
     });
   });
   return out;
@@ -9133,7 +9135,9 @@ function mpBunpouQuestions(words, count){
       q: '「'+w.jp+'」 — arti/pemakaian pola ini?',
       choices: choices,
       answer: choices.indexOf(w.id_),
-      section: '📖 Bunpou'
+      section: '📖 Bunpou',
+      meaning: w.id_,
+      expl: '「'+w.jp+'」 — '+w.id_+'.'
     });
   });
   return out;
@@ -9177,11 +9181,16 @@ function mpKeiseiQuestions(count, levels){
     if(distract.length<3) continue;
     var choices=[correct].concat(distract);
     shuffle(choices);
+    var meaning=(fam.arti && fam.arti[k]) || '';
+    var sampleW=fam.sample && fam.sample[k];
+    var expl='「'+k+'」 dibaca "'+correct+'" (onyomi), artinya "'+meaning+'".'+(sampleW?(' Contoh kata: 「'+sampleW.jp+'」（'+sampleW.rom+'）= "'+sampleW.arti+'".'):'');
     out.push({
       q: '「'+k+'」 ini dibaca (onyomi) apa? Komponen fonetik: '+fam.phon+' — kanji sekomponen biasanya bunyinya mirip',
       choices: choices,
       answer: choices.indexOf(correct),
-      section: '🔊 Bunyi Kanji'
+      section: '🔊 Bunyi Kanji',
+      meaning: meaning,
+      expl: expl
     });
   }
   return out;
@@ -9219,7 +9228,9 @@ function mpKonjugasiQuestions(count){
       q: '「'+v.jp+'」（'+v.rom+' = '+v.id+'） — bentuk '+f.jp+' ('+f.id+')?',
       choices: choices,
       answer: choices.indexOf(correct),
-      section: '活用 Konjugasi'
+      section: '活用 Konjugasi',
+      meaning: v.id,
+      expl: '「'+v.jp+'」 artinya "'+v.id+'". Bentuk '+f.jp+' ('+f.id+') dari kata ini adalah "'+correct+'".'
     });
   }
   return out;
@@ -9242,7 +9253,9 @@ function mpKanjiQuestions(words, count, dir){
         q: '「'+w.rom+'」 ('+w.id_+') — kanji yang benar?',
         choices: choices,
         answer: choices.indexOf(w.jp),
-        section: '🈁 Cari Kanji'
+        section: '🈁 Cari Kanji',
+        meaning: w.id_,
+        expl: '「'+w.jp+'」 dibaca "'+w.rom+'", artinya "'+w.id_+'".'
       });
     } else {
       // Dikasih kanji, cari bacaannya (default: baca kanji)
@@ -9254,7 +9267,9 @@ function mpKanjiQuestions(words, count, dir){
         q: '「'+w.jp+'」 — bacaan yang benar?',
         choices: choicesR,
         answer: choicesR.indexOf(w.rom),
-        section: '🈁 Baca Kanji'
+        section: '🈁 Baca Kanji',
+        meaning: w.id_,
+        expl: '「'+w.jp+'」 dibaca "'+w.rom+'", artinya "'+w.id_+'".'
       });
     }
   });
@@ -10458,7 +10473,8 @@ function mpFinalizeAnswer(choiceIdx){
   if(!Array.isArray(mpState.answerLog)) mpState.answerLog=[];
   mpState.answerLog.push({
     q:q.q, choices:q.choices, answer:q.answer, chosen:choiceIdx, correct:isCorrect,
-    section:q.section||'', passage:q.passage||null, underline:q.underline||null, instr:q.instr||null, gained:gained
+    section:q.section||'', passage:q.passage||null, underline:q.underline||null, instr:q.instr||null,
+    meaning:q.meaning||null, expl:q.expl||null, gained:gained
   });
   mpState.idx++; mpState.answered=mpState.idx;
   var fb=document.getElementById('mp-play-feedback');
@@ -10695,6 +10711,7 @@ function mpOpenHistoryDetail(idx){
             return '<div style="padding:8px 10px;margin-bottom:5px;border:1.5px solid '+bc+';border-radius:8px;background:'+bg+';font-size:13px">'+mpEsc(c)+(extra?'<span style="color:var(--mist);font-size:11px">'+extra+'</span>':'')+'</div>';
           }).join('')
         + (timedOut?'<div style="margin-top:6px;font-size:11px;color:var(--mist)">⏰ Tidak dijawab (waktu habis)</div>':'')
+        + (a.expl?('<div style="margin-top:10px;padding:10px 12px;border-radius:8px;background:rgba(44,62,122,.06);border:1px solid rgba(44,62,122,.15);font-size:12px;line-height:1.6;color:var(--ink)"><b style="color:var(--indigo)">💡 Pembahasan:</b> '+mpEsc(a.expl)+'</div>'):'')
         + '</div>';
     }).join('') || '<div style="text-align:center;padding:20px;color:var(--mist);font-size:13px">Detail pembahasan soal untuk riwayat ini tidak tersedia.</div>';
   }
@@ -10725,6 +10742,7 @@ function mpExportHistoryPDF(){
       + '<div style="font-weight:600;margin-bottom:6px;white-space:pre-wrap">'+(i+1)+'. '+mpQuestionTextHTML(a)+'</div>'
       + choicesHtml
       + (timedOut?'<div style="margin-top:4px;font-size:11px;color:#888">⏰ Tidak dijawab (waktu habis)</div>':'')
+      + (a.expl?('<div style="margin-top:8px;padding:8px 10px;border-radius:6px;background:#eef0fa;border:1px solid #ccd2ef;font-size:12px;line-height:1.6"><b style="color:#2c3e7a">💡 Pembahasan:</b> '+mpEsc(a.expl)+'</div>'):'')
       + '</div>';
   }).join('');
   var w=window.open('','_blank');
