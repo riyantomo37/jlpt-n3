@@ -1104,7 +1104,7 @@ header:has(.user-menu.open) { z-index:1000; }
         <span class="user-name" id="user-name">...</span>
         <span id="level-badge" onclick="event.stopPropagation();gotoScreen('levelreward')" title="Level & Reward" style="font-size:10px;font-weight:800;background:linear-gradient(135deg,var(--gold),#c98a1f);color:white;padding:2px 7px;border-radius:8px;cursor:pointer;letter-spacing:.3px">Lv.1</span>
         <span class="sync-badge" id="sync-badge">● sync</span>
-        <span id="build-dot" title="Indikator update: warnanya ganti tiap ada versi baru dari Claude" style="display:inline-block;width:11px;height:11px;border-radius:50%;background:#2d7a4f;margin-left:6px;vertical-align:middle;border:2px solid white;box-shadow:0 0 0 1px rgba(0,0,0,.15)"></span>
+        <span id="build-dot" title="Indikator update: warnanya ganti tiap ada versi baru dari Claude" style="display:inline-block;width:11px;height:11px;border-radius:50%;background:#c0392b;margin-left:6px;vertical-align:middle;border:2px solid white;box-shadow:0 0 0 1px rgba(0,0,0,.15)"></span>
         <!-- 🔴🟢 CLAUDE: WAJIB toggle warna build-dot di atas SETIAP kali file ini dikirim ulang —
              merah #c0392b <-> hijau #2da050 gantian. Ini satu-satunya cara Riyan verifikasi
              upload-nya beneran ke-deploy. JANGAN LUPA, cek baris ini di awal SETIAP delivery. -->
@@ -9023,6 +9023,17 @@ var MP_POWERUP_DEFS = {
 };
 
 function mpEsc(s){ return String(s==null?'':s).replace(/[&<>"']/g, function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];}); }
+function mpBuildPembahasanText(a){
+  // Gabungin penjelasan jawaban benar + (kalau salah) penjelasan pilihan sendiri, biar
+  // pembahasannya bandingin dua-duanya — bukan cuma nunjukkin yang benar doang.
+  if(!a || !a.expl) return '';
+  var text=a.expl;
+  var wasAnswered = a.chosen!==-1 && a.chosen!==undefined && a.chosen!==null;
+  if(!a.correct && wasAnswered && Array.isArray(a.choiceMeta) && a.choiceMeta[a.chosen] && a.chosen!==a.answer){
+    text += ' Pilihanmu ("'+a.choices[a.chosen]+'") itu '+a.choiceMeta[a.chosen]+'.';
+  }
+  return text;
+}
 function mpQuestionTextHTML(q){
   // Kalau ada tebakan kata yang diuji (dari mpGuessUnderline), garis-bawahi biar jelas
   var text=(q&&q.q)||'';
@@ -9104,14 +9115,17 @@ function mpKotobaQuestions(words, count){
   var picks=pool.slice(0, Math.max(0, Math.min(count, pool.length)));
   var out=[];
   picks.forEach(function(w){
-    var distractors=mpShuffleCopy(pool.filter(function(x){return x.id_!==w.id_;})).slice(0,3).map(function(x){return x.id_;});
-    while(distractors.length<3) distractors.push('—');
-    var choices=distractors.concat([w.id_]);
-    shuffle(choices);
+    var distractorWords=mpShuffleCopy(pool.filter(function(x){return x.id_!==w.id_;})).slice(0,3);
+    while(distractorWords.length<3) distractorWords.push({jp:'—',rom:'—',id_:'—'});
+    var allWords=distractorWords.concat([w]);
+    shuffle(allWords);
+    var choices=allWords.map(function(x){return x.id_;});
+    var choiceMeta=allWords.map(function(x){return '「'+x.jp+'」（'+x.rom+'）';});
     out.push({
       q: w.jp+'（'+w.rom+'）artinya apa?',
       choices: choices,
       answer: choices.indexOf(w.id_),
+      choiceMeta: choiceMeta,
       section: '単語 Kotoba',
       meaning: w.id_,
       expl: '「'+w.jp+'」（'+w.rom+'）artinya "'+w.id_+'".'
@@ -9127,14 +9141,17 @@ function mpBunpouQuestions(words, count){
   var picks=pool.slice(0, Math.max(0, Math.min(count, pool.length)));
   var out=[];
   picks.forEach(function(w){
-    var distractors=mpShuffleCopy(pool.filter(function(x){return x.id_!==w.id_;})).slice(0,3).map(function(x){return x.id_;});
-    while(distractors.length<3) distractors.push('—');
-    var choices=distractors.concat([w.id_]);
-    shuffle(choices);
+    var distractorWords=mpShuffleCopy(pool.filter(function(x){return x.id_!==w.id_;})).slice(0,3);
+    while(distractorWords.length<3) distractorWords.push({jp:'—',id_:'—'});
+    var allWords=distractorWords.concat([w]);
+    shuffle(allWords);
+    var choices=allWords.map(function(x){return x.id_;});
+    var choiceMeta=allWords.map(function(x){return '「'+x.jp+'」';});
     out.push({
       q: '「'+w.jp+'」 — arti/pemakaian pola ini?',
       choices: choices,
       answer: choices.indexOf(w.id_),
+      choiceMeta: choiceMeta,
       section: '📖 Bunpou',
       meaning: w.id_,
       expl: '「'+w.jp+'」 — '+w.id_+'.'
@@ -9168,7 +9185,7 @@ function mpKeiseiQuestions(count, levels){
     var correct=fam.read;
     var shuffledAllK=allK.slice(); shuffle(shuffledAllK);
     var seen={}; seen[correct.toLowerCase()]=true;
-    var distract=[];
+    var distract=[]; // {reading, kanji, meaning}
     for(var i=0;i<shuffledAllK.length && distract.length<3;i++){
       var kk=shuffledAllK[i];
       if(fam.kanji.indexOf(kk)>=0) continue;
@@ -9176,18 +9193,21 @@ function mpKeiseiQuestions(count, levels){
       if(!rd||!rd[0]||!rd[0].length) continue;
       var r=rd[0][0]; if(!r) continue;
       var rl=r.toLowerCase(); if(seen[rl]) continue; seen[rl]=true;
-      distract.push(r);
+      distract.push({reading:r, kanji:kk, meaning:rd[2]||''});
     }
     if(distract.length<3) continue;
-    var choices=[correct].concat(distract);
-    shuffle(choices);
     var meaning=(fam.arti && fam.arti[k]) || '';
     var sampleW=fam.sample && fam.sample[k];
+    var allOpts=distract.concat([{reading:correct, kanji:k, meaning:meaning}]);
+    shuffle(allOpts);
+    var choices=allOpts.map(function(o){return o.reading;});
+    var choiceMeta=allOpts.map(function(o){return '「'+o.kanji+'」 = "'+o.meaning+'"';});
     var expl='「'+k+'」 dibaca "'+correct+'" (onyomi), artinya "'+meaning+'".'+(sampleW?(' Contoh kata: 「'+sampleW.jp+'」（'+sampleW.rom+'）= "'+sampleW.arti+'".'):'');
     out.push({
       q: '「'+k+'」 ini dibaca (onyomi) apa? Komponen fonetik: '+fam.phon+' — kanji sekomponen biasanya bunyinya mirip',
       choices: choices,
       answer: choices.indexOf(correct),
+      choiceMeta: choiceMeta,
       section: '🔊 Bunyi Kanji',
       meaning: meaning,
       expl: expl
@@ -9210,24 +9230,27 @@ function mpKonjugasiQuestions(count){
     if(used[key]) continue; used[key]=true;
     var correct=v.f && v.f[f.k];
     if(!correct) continue;
-    var distractors=[];
+    var distract=[]; // {text, verb, form}
     var otherVerbs=mpShuffleCopy(verbs.filter(function(x){return x.jp!==v.jp;}));
-    for(var i=0;i<otherVerbs.length && distractors.length<2;i++){
+    for(var i=0;i<otherVerbs.length && distract.length<2;i++){
       var d=otherVerbs[i].f && otherVerbs[i].f[f.k];
-      if(d && d!==correct && distractors.indexOf(d)<0) distractors.push(d);
+      if(d && d!==correct && !distract.some(function(o){return o.text===d;})) distract.push({text:d, verb:otherVerbs[i], form:f});
     }
     var otherForms=mpShuffleCopy(forms.filter(function(x){return x.k!==f.k;}));
-    for(var j=0;j<otherForms.length && distractors.length<3;j++){
+    for(var j=0;j<otherForms.length && distract.length<3;j++){
       var d2=v.f && v.f[otherForms[j].k];
-      if(d2 && d2!==correct && distractors.indexOf(d2)<0) distractors.push(d2);
+      if(d2 && d2!==correct && !distract.some(function(o){return o.text===d2;})) distract.push({text:d2, verb:v, form:otherForms[j]});
     }
-    if(distractors.length<3) continue;
-    var choices=[correct].concat(distractors.slice(0,3));
-    shuffle(choices);
+    if(distract.length<3) continue;
+    var allOpts=distract.slice(0,3).concat([{text:correct, verb:v, form:f}]);
+    shuffle(allOpts);
+    var choices=allOpts.map(function(o){return o.text;});
+    var choiceMeta=allOpts.map(function(o){return '「'+o.verb.jp+'」（'+o.verb.id+'） bentuk '+o.form.jp+' ('+o.form.id+')';});
     out.push({
       q: '「'+v.jp+'」（'+v.rom+' = '+v.id+'） — bentuk '+f.jp+' ('+f.id+')?',
       choices: choices,
       answer: choices.indexOf(correct),
+      choiceMeta: choiceMeta,
       section: '活用 Konjugasi',
       meaning: v.id,
       expl: '「'+v.jp+'」 artinya "'+v.id+'". Bentuk '+f.jp+' ('+f.id+') dari kata ini adalah "'+correct+'".'
@@ -9245,28 +9268,34 @@ function mpKanjiQuestions(words, count, dir){
   picks.forEach(function(w){
     if(dir==='find'){
       // Dikasih bacaan + arti, cari kanjinya
-      var distractors=mpShuffleCopy(pool.filter(function(x){return x.jp!==w.jp;})).slice(0,3).map(function(x){return x.jp;});
-      while(distractors.length<3) distractors.push('—');
-      var choices=distractors.concat([w.jp]);
-      shuffle(choices);
+      var distractorWords=mpShuffleCopy(pool.filter(function(x){return x.jp!==w.jp;})).slice(0,3);
+      while(distractorWords.length<3) distractorWords.push({jp:'—',rom:'—',id_:'—'});
+      var allWords=distractorWords.concat([w]);
+      shuffle(allWords);
+      var choices=allWords.map(function(x){return x.jp;});
+      var choiceMeta=allWords.map(function(x){return 'dibaca "'+x.rom+'", artinya "'+x.id_+'"';});
       out.push({
         q: '「'+w.rom+'」 ('+w.id_+') — kanji yang benar?',
         choices: choices,
         answer: choices.indexOf(w.jp),
+        choiceMeta: choiceMeta,
         section: '🈁 Cari Kanji',
         meaning: w.id_,
         expl: '「'+w.jp+'」 dibaca "'+w.rom+'", artinya "'+w.id_+'".'
       });
     } else {
       // Dikasih kanji, cari bacaannya (default: baca kanji)
-      var distractorsR=mpShuffleCopy(pool.filter(function(x){return x.rom!==w.rom;})).slice(0,3).map(function(x){return x.rom;});
-      while(distractorsR.length<3) distractorsR.push('—');
-      var choicesR=distractorsR.concat([w.rom]);
-      shuffle(choicesR);
+      var distractorWordsR=mpShuffleCopy(pool.filter(function(x){return x.rom!==w.rom;})).slice(0,3);
+      while(distractorWordsR.length<3) distractorWordsR.push({jp:'—',rom:'—',id_:'—'});
+      var allWordsR=distractorWordsR.concat([w]);
+      shuffle(allWordsR);
+      var choicesR=allWordsR.map(function(x){return x.rom;});
+      var choiceMetaR=allWordsR.map(function(x){return '「'+x.jp+'」, artinya "'+x.id_+'"';});
       out.push({
         q: '「'+w.jp+'」 — bacaan yang benar?',
         choices: choicesR,
         answer: choicesR.indexOf(w.rom),
+        choiceMeta: choiceMetaR,
         section: '🈁 Baca Kanji',
         meaning: w.id_,
         expl: '「'+w.jp+'」 dibaca "'+w.rom+'", artinya "'+w.id_+'".'
@@ -10474,7 +10503,7 @@ function mpFinalizeAnswer(choiceIdx){
   mpState.answerLog.push({
     q:q.q, choices:q.choices, answer:q.answer, chosen:choiceIdx, correct:isCorrect,
     section:q.section||'', passage:q.passage||null, underline:q.underline||null, instr:q.instr||null,
-    meaning:q.meaning||null, expl:q.expl||null, gained:gained
+    meaning:q.meaning||null, expl:q.expl||null, choiceMeta:q.choiceMeta||null, gained:gained
   });
   mpState.idx++; mpState.answered=mpState.idx;
   var fb=document.getElementById('mp-play-feedback');
@@ -10711,7 +10740,7 @@ function mpOpenHistoryDetail(idx){
             return '<div style="padding:8px 10px;margin-bottom:5px;border:1.5px solid '+bc+';border-radius:8px;background:'+bg+';font-size:13px">'+mpEsc(c)+(extra?'<span style="color:var(--mist);font-size:11px">'+extra+'</span>':'')+'</div>';
           }).join('')
         + (timedOut?'<div style="margin-top:6px;font-size:11px;color:var(--mist)">⏰ Tidak dijawab (waktu habis)</div>':'')
-        + (a.expl?('<div style="margin-top:10px;padding:10px 12px;border-radius:8px;background:rgba(44,62,122,.06);border:1px solid rgba(44,62,122,.15);font-size:12px;line-height:1.6;color:var(--ink)"><b style="color:var(--indigo)">💡 Pembahasan:</b> '+mpEsc(a.expl)+'</div>'):'')
+        + (a.expl?('<div style="margin-top:10px;padding:10px 12px;border-radius:8px;background:rgba(44,62,122,.06);border:1px solid rgba(44,62,122,.15);font-size:12px;line-height:1.6;color:var(--ink)"><b style="color:var(--indigo)">💡 Pembahasan:</b> '+mpEsc(mpBuildPembahasanText(a))+'</div>'):'')
         + '</div>';
     }).join('') || '<div style="text-align:center;padding:20px;color:var(--mist);font-size:13px">Detail pembahasan soal untuk riwayat ini tidak tersedia.</div>';
   }
@@ -10742,7 +10771,7 @@ function mpExportHistoryPDF(){
       + '<div style="font-weight:600;margin-bottom:6px;white-space:pre-wrap">'+(i+1)+'. '+mpQuestionTextHTML(a)+'</div>'
       + choicesHtml
       + (timedOut?'<div style="margin-top:4px;font-size:11px;color:#888">⏰ Tidak dijawab (waktu habis)</div>':'')
-      + (a.expl?('<div style="margin-top:8px;padding:8px 10px;border-radius:6px;background:#eef0fa;border:1px solid #ccd2ef;font-size:12px;line-height:1.6"><b style="color:#2c3e7a">💡 Pembahasan:</b> '+mpEsc(a.expl)+'</div>'):'')
+      + (a.expl?('<div style="margin-top:8px;padding:8px 10px;border-radius:6px;background:#eef0fa;border:1px solid #ccd2ef;font-size:12px;line-height:1.6"><b style="color:#2c3e7a">💡 Pembahasan:</b> '+mpEsc(mpBuildPembahasanText(a))+'</div>'):'')
       + '</div>';
   }).join('');
   var w=window.open('','_blank');
