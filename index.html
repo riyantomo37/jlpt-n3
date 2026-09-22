@@ -1104,7 +1104,7 @@ header:has(.user-menu.open) { z-index:1000; }
         <span class="user-name" id="user-name">...</span>
         <span id="level-badge" onclick="event.stopPropagation();gotoScreen('levelreward')" title="Level & Reward" style="font-size:10px;font-weight:800;background:linear-gradient(135deg,var(--gold),#c98a1f);color:white;padding:2px 7px;border-radius:8px;cursor:pointer;letter-spacing:.3px">Lv.1</span>
         <span class="sync-badge" id="sync-badge">● sync</span>
-        <span id="build-dot" title="Indikator update: warnanya ganti tiap ada versi baru dari Claude" style="display:inline-block;width:11px;height:11px;border-radius:50%;background:#2d7a4f;margin-left:6px;vertical-align:middle;border:2px solid white;box-shadow:0 0 0 1px rgba(0,0,0,.15)"></span>
+        <span id="build-dot" title="Indikator update: warnanya ganti tiap ada versi baru dari Claude" style="display:inline-block;width:11px;height:11px;border-radius:50%;background:#c0392b;margin-left:6px;vertical-align:middle;border:2px solid white;box-shadow:0 0 0 1px rgba(0,0,0,.15)"></span>
         <!-- 🔴🟢 CLAUDE: WAJIB toggle warna build-dot di atas SETIAP kali file ini dikirim ulang —
              merah #c0392b <-> hijau #2da050 gantian. Ini satu-satunya cara Riyan verifikasi
              upload-nya beneran ke-deploy. JANGAN LUPA, cek baris ini di awal SETIAP delivery. -->
@@ -9199,7 +9199,7 @@ function mpKeiseiQuestions(count, levels){
     if(allDistractCandidates.length<3) continue;
     // Prioritasin distractor yang bacaannya MIRIP sama jawaban benar (panjang/awalan sama)
     // biar lebih menjebak daripada asal random beda jauh.
-    var distract=mpPickSmartDistractors(allDistractCandidates, 3, function(o){ return mpReadingSimScore(correct, o.reading); });
+    var distract=mpPickSmartDistractors(allDistractCandidates, 3, function(o){ return mpReadingSimScore(correct, o.reading); }, function(o){ return mpReadingShape(o.reading)===mpReadingShape(correct); });
     var meaning=(fam.arti && fam.arti[k]) || '';
     var sampleW=fam.sample && fam.sample[k];
     var allOpts=distract.concat([{reading:correct, kanji:k, meaning:meaning}]);
@@ -9264,28 +9264,54 @@ function mpKonjugasiQuestions(count){
 }
 
 // ── Pemilih distractor "pintar" — daripada asal random (gampang banget ditebak karena gak
-// nyambung sama sekali), prioritasin pilihan yang genuinely menjebak: kanji yang share
-// karakter (keliatan mirip), atau bacaan yang mirip panjang/awalan/ejaannya. ──
+// nyambung sama sekali, atau ketauan dari BENTUKNYA doang — misal cuma jawaban benar yang
+// ada "する"-nya atau ada hiragana di belakang, jadi ketebak tanpa perlu tau artinya sama
+// sekali), maksa distractor punya BENTUK PERMUKAAN yang sama (semua する, semua ada
+// okurigana, atau semua kanji polos) DULU sebelum baru dipilih berdasar kemiripan lain. ──
+function mpWordShape(jp){
+  if(!jp) return 'pure';
+  if(jp.length>=2 && jp.slice(-2)==='する') return 'suru';
+  var last=jp[jp.length-1];
+  if(/[\u3041-\u3096\u30a1-\u30f6]/.test(last)) return 'okurigana'; // ada hiragana/katakana nempel di akhir
+  return 'pure';
+}
+function mpReadingShape(rom){
+  if(!rom) return 'plain';
+  var t=rom.trim();
+  if(/ suru$/i.test(t) || /^suru$/i.test(t)) return 'suru';
+  if(t.indexOf(' ')>=0) return 'compound'; // bacaan lebih dari 1 kata (ada spasi) — bentuknya beda dari bacaan polos
+  return 'plain';
+}
 function mpSharedCharScore(a, b){
   if(!a || !b) return 0;
   var setA={}; for(var i=0;i<a.length;i++) setA[a[i]]=true;
   var score=0;
   for(var j=0;j<b.length;j++){ if(setA[b[j]]) score+=3; }
   if(a.length===b.length) score+=1;
+  if(mpWordShape(a)===mpWordShape(b)) score+=8;
   return score;
 }
 function mpReadingSimScore(a, b){
   if(!a || !b) return 0;
   var score=0;
+  if(mpReadingShape(a)===mpReadingShape(b)) score+=8;
   if(a.length===b.length) score+=2;
   if(a[0]===b[0]) score+=2;
   var minLen=Math.min(a.length,b.length);
   for(var i=0;i<minLen;i++){ if(a[i]===b[i]) score+=1; }
   return score;
 }
-function mpPickSmartDistractors(pool, count, similarityFn){
-  // pool udah dikecualikan si jawaban benar sendiri di pemanggilnya
-  var scored=pool.map(function(x){ return {item:x, score:similarityFn(x)}; });
+function mpPickSmartDistractors(pool, count, similarityFn, hardFilterFn){
+  // pool udah dikecualikan si jawaban benar sendiri di pemanggilnya.
+  // hardFilterFn (opsional): saring dulu ke kandidat yang BENTUKNYA sama kayak jawaban benar
+  // (misal sama-sama ada "する") — biar gak ketauan dari bentuk doang. Kalau kandidat yang
+  // lolos filter ini kurang dari yang dibutuhkan, baru fallback pakai pool penuh.
+  var candidates=pool;
+  if(hardFilterFn){
+    var filtered=pool.filter(hardFilterFn);
+    if(filtered.length>=count) candidates=filtered;
+  }
+  var scored=candidates.map(function(x){ return {item:x, score:similarityFn(x)}; });
   scored.sort(function(a,b){ return b.score-a.score; });
   // ambil dari kandidat paling mirip (top ~60%, minimal secukupnya) trus diacak urutannya —
   // biar menjebak tapi gak SELALU pilihan paling mirip persis tiap kali (variasi)
@@ -9306,7 +9332,7 @@ function mpKanjiQuestions(words, count, dir){
       // Dikasih bacaan + arti, cari kanjinya — distractor diprioritasin yang KANJI-nya
       // share karakter sama jawaban benar (keliatan mirip pas dibaca sekilas)
       var candidates=pool.filter(function(x){return x.jp!==w.jp;});
-      var distractorWords=mpPickSmartDistractors(candidates, 3, function(x){ return mpSharedCharScore(w.jp, x.jp); });
+      var distractorWords=mpPickSmartDistractors(candidates, 3, function(x){ return mpSharedCharScore(w.jp, x.jp); }, function(x){ return mpWordShape(x.jp)===mpWordShape(w.jp); });
       while(distractorWords.length<3) distractorWords.push({jp:'—',rom:'—',id_:'—'});
       var allWords=distractorWords.concat([w]);
       shuffle(allWords);
@@ -9325,7 +9351,7 @@ function mpKanjiQuestions(words, count, dir){
       // Dikasih kanji, cari bacaannya (default: baca kanji) — distractor diprioritasin yang
       // BACAANNYA mirip (panjang sama, awalan sama) biar gak langsung ketebak dari sekilas beda jauh
       var candidatesR=pool.filter(function(x){return x.rom!==w.rom;});
-      var distractorWordsR=mpPickSmartDistractors(candidatesR, 3, function(x){ return mpReadingSimScore(w.rom, x.rom); });
+      var distractorWordsR=mpPickSmartDistractors(candidatesR, 3, function(x){ return mpReadingSimScore(w.rom, x.rom); }, function(x){ return mpReadingShape(x.rom)===mpReadingShape(w.rom); });
       while(distractorWordsR.length<3) distractorWordsR.push({jp:'—',rom:'—',id_:'—'});
       var allWordsR=distractorWordsR.concat([w]);
       shuffle(allWordsR);
