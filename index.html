@@ -1104,7 +1104,7 @@ header:has(.user-menu.open) { z-index:1000; }
         <span class="user-name" id="user-name">...</span>
         <span id="level-badge" onclick="event.stopPropagation();gotoScreen('levelreward')" title="Level & Reward" style="font-size:10px;font-weight:800;background:linear-gradient(135deg,var(--gold),#c98a1f);color:white;padding:2px 7px;border-radius:8px;cursor:pointer;letter-spacing:.3px">Lv.1</span>
         <span class="sync-badge" id="sync-badge">● sync</span>
-        <span id="build-dot" title="Indikator update: warnanya ganti tiap ada versi baru dari Claude" style="display:inline-block;width:11px;height:11px;border-radius:50%;background:#c0392b;margin-left:6px;vertical-align:middle;border:2px solid white;box-shadow:0 0 0 1px rgba(0,0,0,.15)"></span>
+        <span id="build-dot" title="Indikator update: warnanya ganti tiap ada versi baru dari Claude" style="display:inline-block;width:11px;height:11px;border-radius:50%;background:#2d7a4f;margin-left:6px;vertical-align:middle;border:2px solid white;box-shadow:0 0 0 1px rgba(0,0,0,.15)"></span>
         <!-- 🔴🟢 CLAUDE: WAJIB toggle warna build-dot di atas SETIAP kali file ini dikirim ulang —
              merah #c0392b <-> hijau #2da050 gantian. Ini satu-satunya cara Riyan verifikasi
              upload-nya beneran ke-deploy. JANGAN LUPA, cek baris ini di awal SETIAP delivery. -->
@@ -9185,19 +9185,21 @@ function mpKeiseiQuestions(count, levels){
   for(var ci=0; ci<candidates.length && out.length<count; ci++){
     var fam=candidates[ci].fam, k=candidates[ci].k;
     var correct=fam.read;
-    var shuffledAllK=allK.slice(); shuffle(shuffledAllK);
     var seen={}; seen[correct.toLowerCase()]=true;
-    var distract=[]; // {reading, kanji, meaning}
-    for(var i=0;i<shuffledAllK.length && distract.length<3;i++){
-      var kk=shuffledAllK[i];
+    var allDistractCandidates=[]; // {reading, kanji, meaning} — kumpulin SEMUA kandidat valid dulu
+    for(var i=0;i<allK.length;i++){
+      var kk=allK[i];
       if(fam.kanji.indexOf(kk)>=0) continue;
       var rd=KANJI_READ[kk];
       if(!rd||!rd[0]||!rd[0].length) continue;
       var r=rd[0][0]; if(!r) continue;
       var rl=r.toLowerCase(); if(seen[rl]) continue; seen[rl]=true;
-      distract.push({reading:r, kanji:kk, meaning:rd[2]||''});
+      allDistractCandidates.push({reading:r, kanji:kk, meaning:rd[2]||''});
     }
-    if(distract.length<3) continue;
+    if(allDistractCandidates.length<3) continue;
+    // Prioritasin distractor yang bacaannya MIRIP sama jawaban benar (panjang/awalan sama)
+    // biar lebih menjebak daripada asal random beda jauh.
+    var distract=mpPickSmartDistractors(allDistractCandidates, 3, function(o){ return mpReadingSimScore(correct, o.reading); });
     var meaning=(fam.arti && fam.arti[k]) || '';
     var sampleW=fam.sample && fam.sample[k];
     var allOpts=distract.concat([{reading:correct, kanji:k, meaning:meaning}]);
@@ -9261,6 +9263,38 @@ function mpKonjugasiQuestions(count){
   return out;
 }
 
+// ── Pemilih distractor "pintar" — daripada asal random (gampang banget ditebak karena gak
+// nyambung sama sekali), prioritasin pilihan yang genuinely menjebak: kanji yang share
+// karakter (keliatan mirip), atau bacaan yang mirip panjang/awalan/ejaannya. ──
+function mpSharedCharScore(a, b){
+  if(!a || !b) return 0;
+  var setA={}; for(var i=0;i<a.length;i++) setA[a[i]]=true;
+  var score=0;
+  for(var j=0;j<b.length;j++){ if(setA[b[j]]) score+=3; }
+  if(a.length===b.length) score+=1;
+  return score;
+}
+function mpReadingSimScore(a, b){
+  if(!a || !b) return 0;
+  var score=0;
+  if(a.length===b.length) score+=2;
+  if(a[0]===b[0]) score+=2;
+  var minLen=Math.min(a.length,b.length);
+  for(var i=0;i<minLen;i++){ if(a[i]===b[i]) score+=1; }
+  return score;
+}
+function mpPickSmartDistractors(pool, count, similarityFn){
+  // pool udah dikecualikan si jawaban benar sendiri di pemanggilnya
+  var scored=pool.map(function(x){ return {item:x, score:similarityFn(x)}; });
+  scored.sort(function(a,b){ return b.score-a.score; });
+  // ambil dari kandidat paling mirip (top ~60%, minimal secukupnya) trus diacak urutannya —
+  // biar menjebak tapi gak SELALU pilihan paling mirip persis tiap kali (variasi)
+  var topN=Math.max(count, Math.ceil(scored.length*0.6));
+  var topPool=scored.slice(0, topN).map(function(s){ return s.item; });
+  shuffle(topPool);
+  return topPool.slice(0, count);
+}
+
 function mpKanjiQuestions(words, count, dir){
   // Hanya kata yang benar-benar mengandung kanji (bukan cuma hiragana/katakana)
   var pool=(words||[]).filter(function(w){ return w && w.jp && w.rom && /[\u4e00-\u9fff]/.test(w.jp); });
@@ -9269,8 +9303,10 @@ function mpKanjiQuestions(words, count, dir){
   var out=[];
   picks.forEach(function(w){
     if(dir==='find'){
-      // Dikasih bacaan + arti, cari kanjinya
-      var distractorWords=mpShuffleCopy(pool.filter(function(x){return x.jp!==w.jp;})).slice(0,3);
+      // Dikasih bacaan + arti, cari kanjinya — distractor diprioritasin yang KANJI-nya
+      // share karakter sama jawaban benar (keliatan mirip pas dibaca sekilas)
+      var candidates=pool.filter(function(x){return x.jp!==w.jp;});
+      var distractorWords=mpPickSmartDistractors(candidates, 3, function(x){ return mpSharedCharScore(w.jp, x.jp); });
       while(distractorWords.length<3) distractorWords.push({jp:'—',rom:'—',id_:'—'});
       var allWords=distractorWords.concat([w]);
       shuffle(allWords);
@@ -9286,8 +9322,10 @@ function mpKanjiQuestions(words, count, dir){
         expl: '「'+w.jp+'」 dibaca "'+w.rom+'", artinya "'+w.id_+'".'
       });
     } else {
-      // Dikasih kanji, cari bacaannya (default: baca kanji)
-      var distractorWordsR=mpShuffleCopy(pool.filter(function(x){return x.rom!==w.rom;})).slice(0,3);
+      // Dikasih kanji, cari bacaannya (default: baca kanji) — distractor diprioritasin yang
+      // BACAANNYA mirip (panjang sama, awalan sama) biar gak langsung ketebak dari sekilas beda jauh
+      var candidatesR=pool.filter(function(x){return x.rom!==w.rom;});
+      var distractorWordsR=mpPickSmartDistractors(candidatesR, 3, function(x){ return mpReadingSimScore(w.rom, x.rom); });
       while(distractorWordsR.length<3) distractorWordsR.push({jp:'—',rom:'—',id_:'—'});
       var allWordsR=distractorWordsR.concat([w]);
       shuffle(allWordsR);
