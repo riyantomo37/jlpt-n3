@@ -2229,6 +2229,7 @@ header:has(.user-menu.open) { z-index:1000; }
   <div class="section-title" style="margin-bottom:6px">📋 Pembahasan</div>
   <div id="mp-histdet-header" style="background:white;border:1px solid var(--border);border-radius:12px;padding:16px;margin-bottom:14px"></div>
   <button onclick="mpExportHistoryPDF()" style="width:100%;margin-bottom:14px;padding:12px;border:none;border-radius:10px;background:var(--ink);color:white;cursor:pointer;font-weight:700">📄 Unduh PDF</button>
+  <div id="mp-histdet-filter" style="display:flex;gap:6px;margin-bottom:14px;overflow-x:auto"></div>
   <div id="mp-histdet-questions"></div>
   <button onclick="gotoScreen('mphistory')" style="width:100%;margin-top:8px;padding:12px;border:none;border-radius:10px;background:transparent;color:var(--mist);cursor:pointer;font-weight:600">← Kembali ke Riwayat</button>
 </div>
@@ -10252,7 +10253,20 @@ function mpRenderPlay(){
       +'<span style="font-size:14px;line-height:1.6">'+mpEsc(c)+'</span></div>';
   });
   html+='</div><div id="mp-play-feedback"></div>';
+  if(i<qs.length-1){
+    html+='<button onclick="mpSkipQuestion()" style="width:100%;margin-top:6px;padding:10px;border:1.5px dashed var(--border);border-radius:10px;background:transparent;color:var(--mist);cursor:pointer;font-weight:700;font-size:12px">⏭️ Lewati Soal Ini (muncul lagi di akhir)</button>';
+  }
   if(box){ box.innerHTML=html; box.scrollTop=0; }
+}
+
+function mpSkipQuestion(){
+  var choicesEl=document.getElementById('mp-play-choices');
+  if(choicesEl && choicesEl.dataset.locked==='1') return; // udah dijawab, gak bisa di-skip lagi
+  if(mpState.idx>=mpState.questions.length-1) return; // ini soal terakhir, skip gak ada gunanya
+  var skipped=mpState.questions.splice(mpState.idx,1)[0];
+  mpState.questions.push(skipped);
+  mpToast('⏭️ Soal dilewati — bakal muncul lagi di paling akhir', 'info');
+  mpRenderPlay();
 }
 
 function mpStartExamTimer(){
@@ -10742,11 +10756,14 @@ function mpOpenLatestHistoryDetail(){
   mpOpenHistoryDetail(idx>=0?idx:0);
 }
 
+var mpHistDetFilter='all';
+
 function mpOpenHistoryDetail(idx){
   var hist=mpLoadHistory();
   var h=hist[idx];
   if(!h){ gotoScreen('mphistory'); return; }
   window._mpHistDetIdx=idx;
+  mpHistDetFilter='all';
   var d=new Date(h.date);
   var dateStr = d.toLocaleDateString('id-ID', {day:'numeric', month:'long', year:'numeric'}) + ' · ' + d.toLocaleTimeString('id-ID', {hour:'2-digit', minute:'2-digit'});
   var pct = h.total? Math.round(h.correct/h.total*100) : 0;
@@ -10760,30 +10777,78 @@ function mpOpenHistoryDetail(idx){
       + '<div><div style="font-size:11px;color:var(--mist)">Persentase</div><div style="font-weight:800;font-size:20px">'+pct+'%</div></div>'
       + '</div>';
   }
-  var qEl=document.getElementById('mp-histdet-questions');
-  if(qEl){
-    qEl.innerHTML = (h.answers||[]).map(function(a,i){
-      var timedOut = a.chosen===-1 || a.chosen===undefined;
-      return '<div style="background:white;border:1px solid var(--border);border-radius:12px;padding:14px;margin-bottom:10px">'
-        + (a.section?('<div style="font-size:10px;color:var(--red);font-weight:700;text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px">'+mpEsc(a.section)+'</div>'):'')
-        + (a.instr?('<div style="font-size:11px;color:var(--mist);line-height:1.5;margin-bottom:8px;font-style:italic">'+mpEsc(a.instr)+'</div>'):'')
-        + (a.passage?('<div style="background:var(--paper);border:1px solid var(--border);border-radius:8px;padding:10px;margin-bottom:8px;font-size:13px;white-space:pre-wrap">'+mpEsc(a.passage)+'</div>'):'')
-        + '<div style="font-weight:600;font-size:14px;margin-bottom:8px;white-space:pre-wrap">'+(i+1)+'. '+mpQuestionTextHTML(a)+'</div>'
-        + (a.choices||[]).map(function(c,ci){
-            var isAns=ci===a.answer, isChosen=ci===a.chosen;
-            var bg='white', bc='var(--border)', extra='';
-            if(isAns){ bg='rgba(45,122,79,.08)'; bc='var(--jade)'; }
-            if(isChosen && !isAns){ bg='rgba(192,57,43,.08)'; bc='var(--red)'; }
-            if(isChosen) extra = ' ← jawabanmu';
-            if(isAns) extra += (isChosen?'':' (jawaban benar)');
-            return '<div style="padding:8px 10px;margin-bottom:5px;border:1.5px solid '+bc+';border-radius:8px;background:'+bg+';font-size:13px">'+mpEsc(c)+(extra?'<span style="color:var(--mist);font-size:11px">'+extra+'</span>':'')+'</div>';
-          }).join('')
-        + (timedOut?'<div style="margin-top:6px;font-size:11px;color:var(--mist)">⏰ Tidak dijawab (waktu habis)</div>':'')
-        + (a.expl?('<div style="margin-top:10px;padding:10px 12px;border-radius:8px;background:rgba(44,62,122,.06);border:1px solid rgba(44,62,122,.15);font-size:12px;line-height:1.6;color:var(--ink)"><b style="color:var(--indigo)">💡 Pembahasan:</b> '+mpEsc(mpBuildPembahasanText(a))+'</div>'):'')
-        + '</div>';
-    }).join('') || '<div style="text-align:center;padding:20px;color:var(--mist);font-size:13px">Detail pembahasan soal untuk riwayat ini tidak tersedia.</div>';
-  }
+  mpRenderHistDetFilterBar(h);
+  mpRenderHistDetQuestions(h);
   gotoScreen('mphistorydetail');
+}
+
+function mpHistDetMatchFilter(a, filter){
+  var timedOut = a.chosen===-1 || a.chosen===undefined;
+  if(filter==='wrong') return !a.correct && !timedOut;
+  if(filter==='correct') return !!a.correct;
+  if(filter==='unanswered') return timedOut;
+  return true;
+}
+
+function mpSetHistDetFilter(filter){
+  mpHistDetFilter=filter;
+  var hist=mpLoadHistory();
+  var h=hist[window._mpHistDetIdx];
+  if(!h) return;
+  mpRenderHistDetFilterBar(h);
+  mpRenderHistDetQuestions(h);
+}
+
+function mpRenderHistDetFilterBar(h){
+  var el=document.getElementById('mp-histdet-filter');
+  if(!el) return;
+  var answers=h.answers||[];
+  var counts={
+    all: answers.length,
+    correct: answers.filter(function(a){return mpHistDetMatchFilter(a,'correct');}).length,
+    wrong: answers.filter(function(a){return mpHistDetMatchFilter(a,'wrong');}).length,
+    unanswered: answers.filter(function(a){return mpHistDetMatchFilter(a,'unanswered');}).length
+  };
+  var defs=[
+    {k:'all', label:'Semua', color:'var(--ink)'},
+    {k:'wrong', label:'❌ Salah', color:'var(--red)'},
+    {k:'correct', label:'✅ Benar', color:'var(--jade)'},
+    {k:'unanswered', label:'⏰ Tak Dijawab', color:'var(--mist)'}
+  ];
+  el.innerHTML=defs.map(function(d){
+    var active = mpHistDetFilter===d.k;
+    return '<button onclick="mpSetHistDetFilter(&apos;'+d.k+'&apos;)" style="flex-shrink:0;padding:8px 14px;border-radius:20px;border:1.5px solid '+(active?d.color:'var(--border)')+';background:'+(active?d.color:'white')+';color:'+(active?'white':'var(--ink)')+';font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap">'+d.label+' ('+counts[d.k]+')</button>';
+  }).join('');
+}
+
+function mpRenderHistDetQuestions(h){
+  var qEl=document.getElementById('mp-histdet-questions');
+  if(!qEl) return;
+  var answers=(h.answers||[]);
+  var filtered=answers.map(function(a,i){ return {a:a, origIdx:i}; }).filter(function(x){ return mpHistDetMatchFilter(x.a, mpHistDetFilter); });
+  if(!answers.length){ qEl.innerHTML='<div style="text-align:center;padding:20px;color:var(--mist);font-size:13px">Detail pembahasan soal untuk riwayat ini tidak tersedia.</div>'; return; }
+  if(!filtered.length){ qEl.innerHTML='<div style="text-align:center;padding:20px;color:var(--mist);font-size:13px">Gak ada soal yang cocok filter ini.</div>'; return; }
+  qEl.innerHTML = filtered.map(function(x){
+    var a=x.a, i=x.origIdx;
+    var timedOut = a.chosen===-1 || a.chosen===undefined;
+    return '<div style="background:white;border:1px solid var(--border);border-radius:12px;padding:14px;margin-bottom:10px">'
+      + (a.section?('<div style="font-size:10px;color:var(--red);font-weight:700;text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px">'+mpEsc(a.section)+'</div>'):'')
+      + (a.instr?('<div style="font-size:11px;color:var(--mist);line-height:1.5;margin-bottom:8px;font-style:italic">'+mpEsc(a.instr)+'</div>'):'')
+      + (a.passage?('<div style="background:var(--paper);border:1px solid var(--border);border-radius:8px;padding:10px;margin-bottom:8px;font-size:13px;white-space:pre-wrap">'+mpEsc(a.passage)+'</div>'):'')
+      + '<div style="font-weight:600;font-size:14px;margin-bottom:8px;white-space:pre-wrap">'+(i+1)+'. '+mpQuestionTextHTML(a)+'</div>'
+      + (a.choices||[]).map(function(c,ci){
+          var isAns=ci===a.answer, isChosen=ci===a.chosen;
+          var bg='white', bc='var(--border)', extra='';
+          if(isAns){ bg='rgba(45,122,79,.08)'; bc='var(--jade)'; }
+          if(isChosen && !isAns){ bg='rgba(192,57,43,.08)'; bc='var(--red)'; }
+          if(isChosen) extra = ' ← jawabanmu';
+          if(isAns) extra += (isChosen?'':' (jawaban benar)');
+          return '<div style="padding:8px 10px;margin-bottom:5px;border:1.5px solid '+bc+';border-radius:8px;background:'+bg+';font-size:13px">'+mpEsc(c)+(extra?'<span style="color:var(--mist);font-size:11px">'+extra+'</span>':'')+'</div>';
+        }).join('')
+      + (timedOut?'<div style="margin-top:6px;font-size:11px;color:var(--mist)">⏰ Tidak dijawab (waktu habis)</div>':'')
+      + (a.expl?('<div style="margin-top:10px;padding:10px 12px;border-radius:8px;background:rgba(44,62,122,.06);border:1px solid rgba(44,62,122,.15);font-size:12px;line-height:1.6;color:var(--ink)"><b style="color:var(--indigo)">💡 Pembahasan:</b> '+mpEsc(mpBuildPembahasanText(a))+'</div>'):'')
+      + '</div>';
+  }).join('');
 }
 
 function mpExportHistoryPDF(){
