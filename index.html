@@ -1104,7 +1104,7 @@ header:has(.user-menu.open) { z-index:1000; }
         <span class="user-name" id="user-name">...</span>
         <span id="level-badge" onclick="event.stopPropagation();gotoScreen('levelreward')" title="Level & Reward" style="font-size:10px;font-weight:800;background:linear-gradient(135deg,var(--gold),#c98a1f);color:white;padding:2px 7px;border-radius:8px;cursor:pointer;letter-spacing:.3px">Lv.1</span>
         <span class="sync-badge" id="sync-badge">● sync</span>
-        <span id="build-dot" title="Indikator update: warnanya ganti tiap ada versi baru dari Claude" style="display:inline-block;width:11px;height:11px;border-radius:50%;background:#c0392b;margin-left:6px;vertical-align:middle;border:2px solid white;box-shadow:0 0 0 1px rgba(0,0,0,.15)"></span>
+        <span id="build-dot" title="Indikator update: warnanya ganti tiap ada versi baru dari Claude" style="display:inline-block;width:11px;height:11px;border-radius:50%;background:#2d7a4f;margin-left:6px;vertical-align:middle;border:2px solid white;box-shadow:0 0 0 1px rgba(0,0,0,.15)"></span>
         <!-- 🔴🟢 CLAUDE: WAJIB toggle warna build-dot di atas SETIAP kali file ini dikirim ulang —
              merah #c0392b <-> hijau #2da050 gantian. Ini satu-satunya cara Riyan verifikasi
              upload-nya beneran ke-deploy. JANGAN LUPA, cek baris ini di awal SETIAP delivery. -->
@@ -9117,7 +9117,14 @@ function mpKotobaQuestions(words, count){
   var picks=pool.slice(0, Math.max(0, Math.min(count, pool.length)));
   var out=[];
   picks.forEach(function(w){
-    var distractorWords=mpShuffleCopy(pool.filter(function(x){return x.id_!==w.id_;})).slice(0,3);
+    // Distractor diprioritasin yang kata Jepang-nya mirip (kanji share karakter dan/atau
+    // bacaan mirip) — bukan asal random, biar beneran nguji apa hafal artinya, bukan cuma
+    // nebak dari eliminasi arti yang jelas-jelas gak nyambung.
+    var candidates=pool.filter(function(x){return x.id_!==w.id_;});
+    var distractorWords=mpPickSmartDistractors(candidates, 3,
+      function(x){ return mpSharedCharScore(w.jp,x.jp) + mpReadingSimScore(w.rom,x.rom); },
+      function(x){ return mpWordShape(x.jp)===mpWordShape(w.jp); }
+    );
     while(distractorWords.length<3) distractorWords.push({jp:'—',rom:'—',id_:'—'});
     var allWords=distractorWords.concat([w]);
     shuffle(allWords);
@@ -9143,7 +9150,11 @@ function mpBunpouQuestions(words, count){
   var picks=pool.slice(0, Math.max(0, Math.min(count, pool.length)));
   var out=[];
   picks.forEach(function(w){
-    var distractorWords=mpShuffleCopy(pool.filter(function(x){return x.id_!==w.id_;})).slice(0,3);
+    var candidates=pool.filter(function(x){return x.id_!==w.id_;});
+    var distractorWords=mpPickSmartDistractors(candidates, 3,
+      function(x){ return mpSharedCharScore(w.jp,x.jp) + mpReadingSimScore(w.rom||'',x.rom||''); },
+      function(x){ return mpWordShape(x.jp)===mpWordShape(w.jp); }
+    );
     while(distractorWords.length<3) distractorWords.push({jp:'—',id_:'—'});
     var allWords=distractorWords.concat([w]);
     shuffle(allWords);
@@ -9311,14 +9322,16 @@ function mpPickSmartDistractors(pool, count, similarityFn, hardFilterFn){
     var filtered=pool.filter(hardFilterFn);
     if(filtered.length>=count) candidates=filtered;
   }
+  // Acak dulu SEBELUM diranking — biar kalau ada beberapa kandidat dengan skor kemiripan
+  // yang sama persis, urutan mereka gak selalu sama tiap kali. Setelah itu, ambil LANGSUNG
+  // yang skornya paling tinggi (paling mirip) — TANPA diacak lagi setelahnya — karena kalau
+  // "top sekian persen lalu diacak lagi" ternyata kandidat lemah masih sering kepilih pas
+  // pool-nya kecil (dan pool per soal emang biasanya kecil). Variasi cukup didapat dari kata
+  // target yang beda-beda tiap soal, bukan dari distractor yang di-random ulang.
   var scored=candidates.map(function(x){ return {item:x, score:similarityFn(x)}; });
+  shuffle(scored);
   scored.sort(function(a,b){ return b.score-a.score; });
-  // ambil dari kandidat paling mirip (top ~60%, minimal secukupnya) trus diacak urutannya —
-  // biar menjebak tapi gak SELALU pilihan paling mirip persis tiap kali (variasi)
-  var topN=Math.max(count, Math.ceil(scored.length*0.6));
-  var topPool=scored.slice(0, topN).map(function(s){ return s.item; });
-  shuffle(topPool);
-  return topPool.slice(0, count);
+  return scored.slice(0, count).map(function(s){ return s.item; });
 }
 
 function mpKanjiQuestions(words, count, dir){
