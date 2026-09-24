@@ -1104,7 +1104,7 @@ header:has(.user-menu.open) { z-index:1000; }
         <span class="user-name" id="user-name">...</span>
         <span id="level-badge" onclick="event.stopPropagation();gotoScreen('levelreward')" title="Level & Reward" style="font-size:10px;font-weight:800;background:linear-gradient(135deg,var(--gold),#c98a1f);color:white;padding:2px 7px;border-radius:8px;cursor:pointer;letter-spacing:.3px">Lv.1</span>
         <span class="sync-badge" id="sync-badge">● sync</span>
-        <span id="build-dot" title="Indikator update: warnanya ganti tiap ada versi baru dari Claude" style="display:inline-block;width:11px;height:11px;border-radius:50%;background:#c0392b;margin-left:6px;vertical-align:middle;border:2px solid white;box-shadow:0 0 0 1px rgba(0,0,0,.15)"></span>
+        <span id="build-dot" title="Indikator update: warnanya ganti tiap ada versi baru dari Claude" style="display:inline-block;width:11px;height:11px;border-radius:50%;background:#2d7a4f;margin-left:6px;vertical-align:middle;border:2px solid white;box-shadow:0 0 0 1px rgba(0,0,0,.15)"></span>
         <!-- 🔴🟢 CLAUDE: WAJIB toggle warna build-dot di atas SETIAP kali file ini dikirim ulang —
              merah #c0392b <-> hijau #2da050 gantian. Ini satu-satunya cara Riyan verifikasi
              upload-nya beneran ke-deploy. JANGAN LUPA, cek baris ini di awal SETIAP delivery. -->
@@ -1923,14 +1923,17 @@ header:has(.user-menu.open) { z-index:1000; }
 
 <div id="screen-custom" class="screen">
   <div class="section-title" style="margin-bottom:6px">📚 Set Custom</div>
-  <p style="font-size:13px;color:var(--mist);margin-bottom:18px;line-height:1.6">Kumpulin kata-kata yang mau kamu fokusin ke satu <b>set sendiri</b>, terus belajar pakai Flashcard-nya sendiri di sini. Set ini <b>gak ngaruh ke menu lain</b> (Flashcard biasa, Kanji Flashcard, dll tetap jalan normal seperti biasa) — dan boleh campur kata dari level berapa aja, gak akan bentrok kalau kamu ganti level di menu lain.</p>
+  <p style="font-size:13px;color:var(--mist);margin-bottom:18px;line-height:1.6">Bikin set kosakata sebanyak yang kamu mau, terus belajar pakai Flashcard sendiri di sini. Set ini <b>gak ngaruh ke menu lain</b> (Flashcard biasa, Kanji Flashcard, dll tetap jalan normal) — boleh campur kata dari level berapa aja, gak akan bentrok kalau kamu ganti level di menu lain.</p>
 
-  <div style="font-size:12px;font-weight:800;color:var(--mist);letter-spacing:.4px;margin-bottom:8px">🎚️ CARI KATA DARI LEVEL</div>
-  <div id="custom-level-pills" style="display:flex;gap:6px;margin-bottom:20px;flex-wrap:wrap"></div>
+  <div style="font-size:12px;font-weight:800;color:var(--mist);letter-spacing:.4px;margin-bottom:8px">📂 SET KAMU</div>
+  <div id="custom-set-pills" style="display:flex;gap:6px;margin-bottom:20px;flex-wrap:wrap"></div>
 
   <div id="custom-status" style="background:white;border:1px solid var(--border);border-radius:12px;padding:14px;margin-bottom:16px"></div>
 
   <div id="custom-picked-chips" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:14px"></div>
+
+  <div style="font-size:12px;font-weight:800;color:var(--mist);letter-spacing:.4px;margin-bottom:8px">🎚️ CARI KATA DARI LEVEL</div>
+  <div id="custom-level-pills" style="display:flex;gap:6px;margin-bottom:16px;flex-wrap:wrap"></div>
 
   <div style="position:sticky;top:52px;background:var(--paper);padding:8px 0;z-index:5">
     <input id="custom-search" type="text" placeholder="🔍 Cari kata (bahasa Jepang / romaji / arti)..." oninput="renderCustomWordList();renderCustomBulkMenu();" style="width:100%;padding:11px 14px;border:1.5px solid var(--border);border-radius:10px;font-family:inherit;font-size:14px;box-sizing:border-box">
@@ -1941,7 +1944,7 @@ header:has(.user-menu.open) { z-index:1000; }
   <div id="custom-word-list" style="margin-top:8px"></div>
   <button id="custom-loadmore" onclick="_customListLimit+=60;renderCustomWordList()" style="display:none;width:100%;padding:11px;border:1.5px solid var(--border);border-radius:10px;background:white;color:var(--mist);font-family:inherit;font-size:12.5px;font-weight:700;cursor:pointer;margin-top:8px">Tampilkan lebih banyak ▾</button>
 
-  <button onclick="csResetAll()" style="width:100%;padding:12px;border:1.5px solid var(--border);border-radius:10px;background:white;color:var(--mist);font-family:inherit;font-size:13px;font-weight:700;cursor:pointer;margin-top:20px">🔄 Kosongkan Set Custom</button>
+  <button onclick="csResetAll()" style="width:100%;padding:12px;border:1.5px solid var(--border);border-radius:10px;background:white;color:var(--mist);font-family:inherit;font-size:13px;font-weight:700;cursor:pointer;margin-top:20px">🔄 Kosongkan Isi Set Ini</button>
 </div>
 
 <div id="screen-jalur" class="screen">
@@ -8858,60 +8861,139 @@ function applyCustomSkip(words){
   return words.filter(function(w){ return idSet[w.id]; });
 }
 
-// ── SET CUSTOM — pengganti mekanisme di atas untuk layar "Custom Belajar". Beda total:
+// ── SET CUSTOM — pengganti mekanisme allowlist global lama. Beda total:
 // ini BUKAN filter global (gak nyentuh Flashcard/Kanji Flashcard/menu lain sama sekali),
-// tapi kumpulan kata milik sendiri yang cuma dipakai kalau user tap "Mulai Flashcard" di
-// layar ini. Boleh campur kata dari level manapun (tiap kata nyimpen level asalnya sendiri,
-// _csLevel), jadi ganti level di menu lain TIDAK PERNAH bentrok/ngerusak set ini. ──
-var customStudySelection = (function(){
-  try{ return JSON.parse(localStorage.getItem('n3_customStudySelection')||'[]'); }catch(e){ return []; }
+// tapi kumpulan SET BERNAMA milik sendiri (bisa lebih dari satu, bikin/hapus bebas), yang
+// cuma dipakai kalau user tap "Mulai Flashcard" di layar ini. Boleh campur kata dari level
+// manapun (tiap kata nyimpen level asalnya sendiri, _csLevel), jadi ganti level di menu lain
+// TIDAK PERNAH bentrok/ngerusak set manapun. Tiap set bisa dipelajari 2 model: Kotoba (kanji+
+// bacaan+arti sekaligus) atau Baca Kanji (kanji doang di depan, mirip Kanji Flashcard biasa). ──
+var customStudySets = (function(){
+  try{
+    var raw = JSON.parse(localStorage.getItem('n3_customStudySets')||'null');
+    if(raw && typeof raw==='object' && !Array.isArray(raw)) return raw;
+  }catch(e){}
+  return {};
 })();
-function _saveCustomStudySelection(){
-  try{ localStorage.setItem('n3_customStudySelection', JSON.stringify(customStudySelection)); }catch(e){}
+var customStudyActiveSet = (function(){
+  try{ return localStorage.getItem('n3_customStudyActiveSet')||''; }catch(e){ return ''; }
+})();
+(function(){ // migrasi satu kali dari versi sebelumnya (satu set flat tanpa nama)
+  try{
+    var old = JSON.parse(localStorage.getItem('n3_customStudySelection')||'null');
+    if(Array.isArray(old) && old.length && !Object.keys(customStudySets).length){
+      customStudySets['Set 1'] = old;
+      customStudyActiveSet = 'Set 1';
+      localStorage.setItem('n3_customStudySets', JSON.stringify(customStudySets));
+      localStorage.setItem('n3_customStudyActiveSet', customStudyActiveSet);
+    }
+    localStorage.removeItem('n3_customStudySelection');
+  }catch(e){}
+})();
+if(!customStudyActiveSet || !customStudySets[customStudyActiveSet]){
+  var _csFirstKey = Object.keys(customStudySets)[0];
+  customStudyActiveSet = _csFirstKey || '';
 }
+function _saveCustomStudySets(){
+  try{ localStorage.setItem('n3_customStudySets', JSON.stringify(customStudySets)); }catch(e){}
+  try{ localStorage.setItem('n3_customStudyActiveSet', customStudyActiveSet); }catch(e){}
+}
+function csActiveSetWords(){ return customStudySets[customStudyActiveSet] || []; }
 function _csKeyOf(w){ return (w._csLevel||currentJLPT)+'::'+w.id; }
 function csIsPicked(w){
   var key = currentJLPT+'::'+w.id;
-  return customStudySelection.some(function(x){ return _csKeyOf(x)===key; });
+  return csActiveSetWords().some(function(x){ return _csKeyOf(x)===key; });
+}
+function csCreateSet(){
+  var name = prompt('Nama set baru (misal: "Kosakata Ujian Besok"):');
+  if(!name) return;
+  name = name.trim();
+  if(!name) return;
+  if(customStudySets[name]){ alert('Udah ada set dengan nama itu. Pilih nama lain.'); return; }
+  customStudySets[name] = [];
+  customStudyActiveSet = name;
+  _saveCustomStudySets();
+  renderCustomMenu();
+}
+function csDeleteSet(name){
+  if(!customStudySets[name]) return;
+  if(!confirm('Hapus set "'+name+'" ('+customStudySets[name].length+' kata)? Gak bisa dibatalin.')) return;
+  delete customStudySets[name];
+  if(customStudyActiveSet===name){
+    var remaining = Object.keys(customStudySets);
+    customStudyActiveSet = remaining[0]||'';
+  }
+  _saveCustomStudySets();
+  renderCustomMenu();
+}
+function csSwitchSet(name){
+  if(!customStudySets[name]) return;
+  customStudyActiveSet = name;
+  _saveCustomStudySets();
+  renderCustomMenu();
+}
+function csRenameActiveSet(){
+  if(!customStudyActiveSet) return;
+  var newName = prompt('Ganti nama set "'+customStudyActiveSet+'" jadi:', customStudyActiveSet);
+  if(!newName) return;
+  newName = newName.trim();
+  if(!newName || newName===customStudyActiveSet) return;
+  if(customStudySets[newName]){ alert('Udah ada set dengan nama itu.'); return; }
+  customStudySets[newName] = customStudySets[customStudyActiveSet];
+  delete customStudySets[customStudyActiveSet];
+  customStudyActiveSet = newName;
+  _saveCustomStudySets();
+  renderCustomMenu();
 }
 function csToggleWord(w){
+  if(!customStudyActiveSet){ csCreateSet(); if(!customStudyActiveSet) return; }
+  var words = csActiveSetWords();
   var withLevel = Object.assign({}, w, {_csLevel: currentJLPT});
   var key = _csKeyOf(withLevel);
-  var idx = customStudySelection.findIndex(function(x){ return _csKeyOf(x)===key; });
-  if(idx>=0) customStudySelection.splice(idx,1);
-  else customStudySelection.push(withLevel);
-  _saveCustomStudySelection();
+  var idx = words.findIndex(function(x){ return _csKeyOf(x)===key; });
+  if(idx>=0) words.splice(idx,1);
+  else words.push(withLevel);
+  customStudySets[customStudyActiveSet] = words;
+  _saveCustomStudySets();
   renderCustomMenu();
 }
 function csRemoveOne(level, id){
-  var idx = customStudySelection.findIndex(function(x){ return (x._csLevel===level) && x.id===id; });
-  if(idx>=0){ customStudySelection.splice(idx,1); _saveCustomStudySelection(); renderCustomMenu(); }
+  var words = csActiveSetWords();
+  var idx = words.findIndex(function(x){ return x._csLevel===level && x.id===id; });
+  if(idx>=0){ words.splice(idx,1); customStudySets[customStudyActiveSet]=words; _saveCustomStudySets(); renderCustomMenu(); }
 }
 function csResetAll(){
-  if(!customStudySelection.length) return;
-  if(!confirm('Kosongkan Set Custom? '+customStudySelection.length+' kata yang udah dikumpulin bakal dihapus (bukan dihafus dari kosakata, cuma dari set ini).')) return;
-  customStudySelection = [];
-  _saveCustomStudySelection();
+  var words = csActiveSetWords();
+  if(!words.length) return;
+  if(!confirm('Kosongkan isi set "'+customStudyActiveSet+'"? ('+words.length+' kata bakal dihapus dari set ini — set-nya sendiri gak dihapus, cuma isinya.)')) return;
+  customStudySets[customStudyActiveSet] = [];
+  _saveCustomStudySets();
   renderCustomMenu();
 }
 function csBulkAdd(matches){
-  var existingKeys = {}; customStudySelection.forEach(function(x){ existingKeys[_csKeyOf(x)]=true; });
+  if(!customStudyActiveSet){ csCreateSet(); if(!customStudyActiveSet) return; }
+  var words = csActiveSetWords();
+  var existingKeys = {}; words.forEach(function(x){ existingKeys[_csKeyOf(x)]=true; });
   matches.forEach(function(w){
     var withLevel = Object.assign({}, w, {_csLevel: currentJLPT});
     var key = _csKeyOf(withLevel);
-    if(!existingKeys[key]){ customStudySelection.push(withLevel); existingKeys[key]=true; }
+    if(!existingKeys[key]){ words.push(withLevel); existingKeys[key]=true; }
   });
-  _saveCustomStudySelection();
+  customStudySets[customStudyActiveSet] = words;
+  _saveCustomStudySets();
   renderCustomMenu();
 }
-function startCustomStudyFlash(){
-  if(!customStudySelection.length){ alert('Set Custom kamu masih kosong. Pilih dulu kata-katanya di bawah (tap kata, atau pakai Pilih Cepat).'); return; }
+// mode: 'kotoba' (default, kanji+bacaan+arti sekaligus) atau 'kanji' (Baca Kanji — kanji doang di depan)
+function startCustomStudyFlash(mode){
+  var words = csActiveSetWords();
+  if(!words.length){ alert('Set "'+(customStudyActiveSet||'ini')+'" masih kosong. Pilih dulu kata-katanya di bawah (tap kata, atau pakai Pilih Cepat).'); return; }
+  if(mode==='kanji'){ startCustomStudyKanjiFlash(words); return; }
   sessionCat='customstudy'; sessionReviewed=0; sessionMastered=0; revealed=false; sessionHistory=[];
-  var pool = orderPoolByMode(customStudySelection.slice(), function(w){ return w.rom||''; });
+  var pool = orderPoolByMode(words.slice(), function(w){ return w.rom||''; });
   sessionQueue = pool; // Set Custom = milik user sendiri, sengaja TANPA batas SESSION_SIZE
   sessionIdx=0;
-  document.getElementById('flash-category-title').textContent='📚 Set Custom Kamu';
-  document.getElementById('flash-subtitle').textContent=pool.length+' kata di set custom';
+  document.getElementById('flash-category-title').textContent='📚 '+customStudyActiveSet;
+  document.getElementById('flash-subtitle').textContent=pool.length+' kata di set ini';
   document.querySelectorAll('.screen').forEach(function(s){s.classList.remove('active');});
   document.getElementById('screen-flash').classList.add('active');
   document.querySelectorAll('nav button').forEach(function(b){b.classList.remove('active');});
@@ -8919,6 +9001,23 @@ function startCustomStudyFlash(){
   document.getElementById('flash-active').style.display='block';
   try{ var _sb=document.getElementById('flash-settings-bar'); if(_sb) _sb.innerHTML=''; }catch(e){}
   showCard();
+}
+function startCustomStudyKanjiFlash(words){
+  words = words || csActiveSetWords();
+  if(!words.length){ alert('Set "'+(customStudyActiveSet||'ini')+'" masih kosong. Pilih dulu kata-katanya di bawah.'); return; }
+  kfCat='customstudy'; kfReviewed=0; kfMastered=0; kfRevealed=false; kfHistory=[];
+  var pool = orderPoolByMode(words.slice(), function(w){ return w.rom||''; });
+  kfQueue = pool;
+  kfIdx=0;
+  document.getElementById('kf-title').textContent='📚 '+customStudyActiveSet;
+  document.getElementById('kf-subtitle').textContent=pool.length+' kata di set ini';
+  document.querySelectorAll('.screen').forEach(function(s){s.classList.remove('active');});
+  document.getElementById('screen-kanjiflash').classList.add('active');
+  document.querySelectorAll('nav button').forEach(function(b){b.classList.remove('active');});
+  document.getElementById('kf-done-panel').style.display='none';
+  document.getElementById('kf-active').style.display='block';
+  try{ var _sb2=document.getElementById('kf-settings-bar'); if(_sb2) _sb2.innerHTML=''; }catch(e){}
+  showKanjiCard();
 }
 
 // Versi MENTAH (tanpa filter Custom Pick) — dipakai buat SRS review & "Tingkat Hafalan" dashboard,
@@ -11875,6 +11974,21 @@ function revealKanjiCard() {
 
 function markKanjiFlash(hafal) {
   var w = kfQueue[kfIdx];
+  // Sesi Set Custom (kanji-mode): mastery disimpan sendiri, dikunci level-asal-kata+id
+  // (bukan cuma id doang) biar gak ketuker antar level yang idnya kebetulan sama.
+  if (kfCat === 'customstudy') {
+    var csKey = (w._csLevel||currentJLPT)+'::'+w.id;
+    if (!mastered['customstudy']) mastered['customstudy'] = {};
+    var wasCS = !!mastered['customstudy'][csKey];
+    kfHistory.push({idx:kfIdx, wordId:csKey, wasMastered:wasCS, cat:'customstudy', customstudy:true});
+    if (kfHistory.length>20) kfHistory.shift();
+    if (hafal) { mastered['customstudy'][csKey]=true; if(!wasCS){ kfMastered++; todayCount++; } }
+    else delete mastered['customstudy'][csKey];
+    var todayCS=new Date().toDateString();
+    if(lastStudyDate!==todayCS){var yCS=new Date(Date.now()-86400000).toDateString();streak=(lastStudyDate===yCS)?streak+1:1;lastStudyDate=todayCS;}
+    save(); kfReviewed++; kfIdx++; updateKfUndoBtn(); showKanjiCard();
+    return;
+  }
   var wCat = w.cat || 'vocab';
   var wasMastered = kfIsMastered(w.id, wCat);
   // Push undo history
@@ -11900,6 +12014,17 @@ function markKanjiFlash(hafal) {
 function undoKanjiCard() {
   if (!kfHistory.length) return;
   var last = kfHistory.pop();
+  if (last.customstudy) {
+    if (!mastered['customstudy']) mastered['customstudy'] = {};
+    if (last.wasMastered) mastered['customstudy'][last.wordId] = true;
+    else delete mastered['customstudy'][last.wordId];
+    kfIdx = last.idx;
+    if (kfReviewed>0) kfReviewed--;
+    save();
+    updateKfUndoBtn();
+    showKanjiCard();
+    return;
+  }
   kfSetMastered(last.wordId, last.wasMastered, last.cat);
   kfIdx = last.idx;
   if (kfReviewed>0) kfReviewed--;
@@ -11924,6 +12049,7 @@ function endKanjiFlash() {
 
 function continueKanjiFlash() {
   if (kfCat==='bunpo') startKanjiFlashBunpo();
+  else if (kfCat==='customstudy') startCustomStudyKanjiFlash();
   else if (typeof kfCat==='string' && kfCat.indexOf('pos_')===0) startKanjiFlashPos(kfCat.slice(4));
   else startKanjiFlash(kfCat);
 }
@@ -16595,6 +16721,17 @@ function kbFinish(){
 var _customListLimit = 60;
 function renderCustomMenu(){
   _customListLimit = 60;
+  var setBox = document.getElementById('custom-set-pills');
+  if(setBox){
+    var names = Object.keys(customStudySets);
+    var html = names.map(function(name){
+      var active = name===customStudyActiveSet;
+      var cnt = (customStudySets[name]||[]).length;
+      return '<button onclick="csSwitchSet(\''+name.replace(/'/g,"\\'")+'\')" style="padding:9px 14px;border-radius:20px;border:1.5px solid '+(active?'#8b5a2b':'var(--border)')+';background:'+(active?'#8b5a2b':'white')+';color:'+(active?'#fff':'var(--mist)')+';font-family:inherit;font-size:13px;font-weight:700;cursor:pointer">'+mpEsc(name)+' ('+cnt+')</button>';
+    }).join('');
+    html += '<button onclick="csCreateSet()" style="padding:9px 14px;border-radius:20px;border:1.5px dashed var(--border);background:white;color:var(--mist);font-family:inherit;font-size:13px;font-weight:700;cursor:pointer">+ Set Baru</button>';
+    setBox.innerHTML = html;
+  }
   var lvBox = document.getElementById('custom-level-pills');
   if(lvBox){
     var levels = ['N5','N4','N3','N2','N1','SSW'];
@@ -16606,11 +16743,22 @@ function renderCustomMenu(){
   }
   var statusBox = document.getElementById('custom-status');
   if(statusBox){
-    var n = customStudySelection.length;
-    statusBox.innerHTML = n
-      ? ('<div style="font-size:12px;color:var(--mist);margin-bottom:8px">Set Custom kamu:</div><div style="font-family:\'DM Mono\',monospace;font-size:22px;font-weight:800;color:#8b5a2b;margin-bottom:10px">'+n+' kata</div>'
-        + '<button onclick="startCustomStudyFlash()" style="width:100%;padding:12px;border:none;border-radius:10px;background:#8b5a2b;color:#fff;font-family:inherit;font-size:14px;font-weight:700;cursor:pointer">▶ Mulai Flashcard ('+n+' kata)</button>')
-      : '<div style="font-size:12px;color:var(--mist)">Set Custom masih kosong. Cari &amp; tap kata di bawah, atau pakai "Pilih Cepat" buat nambah banyak sekaligus.</div>';
+    if(!customStudyActiveSet){
+      statusBox.innerHTML = '<div style="font-size:12px;color:var(--mist)">Belum ada set. Tap "+ Set Baru" di atas buat mulai.</div>';
+    } else {
+      var n = csActiveSetWords().length;
+      var head = '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">'
+        + '<div style="font-size:13px;font-weight:800">'+mpEsc(customStudyActiveSet)+'</div>'
+        + '<div><span onclick="csRenameActiveSet()" style="cursor:pointer;font-size:11px;color:var(--mist);margin-right:10px">✏️ Ganti Nama</span><span onclick="csDeleteSet(\''+customStudyActiveSet.replace(/'/g,"\\'")+'\')" style="cursor:pointer;font-size:11px;color:var(--red)">🗑️ Hapus Set</span></div>'
+        + '</div>';
+      statusBox.innerHTML = n
+        ? (head + '<div style="font-family:\'DM Mono\',monospace;font-size:22px;font-weight:800;color:#8b5a2b;margin-bottom:10px">'+n+' kata</div>'
+          + '<div style="display:flex;gap:8px">'
+          + '<button onclick="startCustomStudyFlash(\'kotoba\')" style="flex:1;padding:12px;border:none;border-radius:10px;background:#8b5a2b;color:#fff;font-family:inherit;font-size:13px;font-weight:700;cursor:pointer">▶ Kotoba</button>'
+          + '<button onclick="startCustomStudyFlash(\'kanji\')" style="flex:1;padding:12px;border:none;border-radius:10px;background:var(--ink);color:#fff;font-family:inherit;font-size:13px;font-weight:700;cursor:pointer">▶ Baca Kanji</button>'
+          + '</div>')
+        : (head + '<div style="font-size:12px;color:var(--mist)">Set ini masih kosong. Cari &amp; tap kata di bawah, atau pakai "Pilih Cepat" buat nambah banyak sekaligus.</div>');
+    }
   }
   renderCustomPickedChips();
   renderCustomBulkMenu();
@@ -16676,8 +16824,9 @@ function renderCustomBulkMenu(){
 function renderCustomPickedChips(){
   var box = document.getElementById('custom-picked-chips');
   if(!box) return;
-  if(!customStudySelection.length){ box.innerHTML=''; return; }
-  box.innerHTML = customStudySelection.map(function(w){
+  var words = csActiveSetWords();
+  if(!words.length){ box.innerHTML=''; return; }
+  box.innerHTML = words.map(function(w){
     var label = (w.jp||'').split(/[;；]/)[0];
     return '<span onclick="csRemoveOne(\''+(w._csLevel||'')+'\',\''+w.id+'\')" style="cursor:pointer;padding:5px 10px;border-radius:16px;background:#8b5a2b;color:#fff;font-size:12px;font-weight:700;display:inline-flex;align-items:center;gap:5px">'+(w._csLevel?('<span style="opacity:.7;font-size:10px">'+w._csLevel+'</span> '):'')+label+' <span style="opacity:.8">✕</span></span>';
   }).join('');
