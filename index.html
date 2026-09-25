@@ -9637,6 +9637,46 @@ function mpMeaningPeluluhanRoots(s){
   if((m=s.match(/^me(.+)$/))){ out.push(m[1]); }
   return out;
 }
+// Sinonim yang beda kata sama sekali (bukan typo/imbuhan, jadi gak bisa ketebak dari
+// bentuk hurufnya) — sengaja WHITELIST manual, bukan tebakan longgar, biar gak salah
+// nge-benerin jawaban yang beneran beda arti. Kunci = jawaban baku di data (setelah
+// dinormalisasi, arti dalam kurung dibuang), value = daftar sinonim/serapan yang diterima.
+// Tambahin baris baru di sini tiap ketemu kasus serupa (laporin ke Claude buat ditambahin).
+var MP_MEANING_SYNONYMS = {
+  'buku harian': ['diari','diary'],
+  // Serapan bahasa Jepang yang udah umum dipakai apa adanya oleh pembelajar JLPT di
+  // Indonesia (ketimbang istilah Indonesia panjangnya) — kata dalam kurung di data
+  // aslinya ke-strip pas normalisasi, jadi perlu didaftar ulang di sini:
+  'bekal kotak': ['bento'],
+  'kecap asin': ['shoyu'],
+  'penginapan ala jepang': ['ryokan'],
+  // Singkatan/istilah Inggris yang juga ke-strip dari dalam kurung:
+  'ac': ['pendingin ruangan'],
+  'pom bensin': ['spbu'],
+  'mesin ketik': ['word processor'],
+  'roti lapis': ['sandwich'],
+  'pena tinta': ['fountain pen'],
+  // Jenjang sekolah — sebagian data nyimpen versi singkatan, sebagian versi lengkap,
+  // jadi dua arahnya perlu diterima:
+  'sma': ['sekolah menengah atas'],
+  'smp': ['sekolah menengah pertama'],
+  'sekolah dasar': ['sd'],
+  // Kata sehari-hari dengan padanan/ejaan informal yang sangat umum dipakai di Indonesia:
+  'uang': ['duit'],
+  'universitas': ['kampus'],
+  'rumah sakit': ['rs'],
+  'foto': ['potret'],
+  'toilet': ['wc'],
+  'telepon': ['telpon'],
+  'laki-laki': ['cowok','pria'],
+  'perempuan': ['cewek','wanita'],
+  'orang tua': ['ortu'],
+  'ingin': ['pengen','kepingin'],
+  'bagaimana': ['gimana'],
+  'kenapa': ['napa'],
+  'besar': ['gede'],
+  'sangat': ['banget','bgt']
+};
 function mpCheckTypedAnswer(userText, q){
   if(!userText) return false;
   if(q.answerType==='reading'){
@@ -9660,6 +9700,13 @@ function mpCheckTypedAnswer(userText, q){
       var r=roots[ri]; if(!r) continue;
       if(r===v) return true;
       if(Math.min(r.length,v.length)>=3 && (r.indexOf(v)>=0 || v.indexOf(r)>=0)) return true;
+    }
+    // Sinonim beda kata (whitelist manual) — mis. "diari" buat "buku harian".
+    var syns=MP_MEANING_SYNONYMS[v];
+    if(syns){
+      for(var si=0; si<syns.length; si++){
+        if(userNorm===mpNormalizeMeaningAnswer(syns[si])) return true;
+      }
     }
   }
   return false;
@@ -10675,7 +10722,7 @@ function mpRenderPlay(){
   html+='<div style="font-size:'+(isTypedQ?'40px':'20px')+';font-weight:600;line-height:1.8;margin-bottom:16px;white-space:pre-wrap;text-align:'+(isTypedQ?'center':'left')+'">'+mpQuestionTextHTML(q)+'</div>';
   html+='<div id="mp-play-choices">';
   if(isTypedQ){
-    var placeholder = q.answerType==='reading' ? 'Ketik cara bacanya (romaji atau ひらがな)…' : 'Ketik artinya (Bahasa Indonesia)…';
+    var placeholder = q.answerType==='reading' ? 'Ketik cara bacanya (romaji atau ひらがな)…' : 'Ketik artinya (Indonesia atau Inggris)…';
     html+='<input id="mp-typed-input" type="text" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="'+placeholder+'" onkeydown="if(event.key===\'Enter\'){mpSubmitTypedAnswer();}" style="width:100%;padding:13px 14px;border:2px solid var(--border);border-radius:10px;font-family:inherit;font-size:17px;margin-bottom:10px">'
       +'<button onclick="mpSubmitTypedAnswer()" style="width:100%;padding:13px;border:none;border-radius:10px;background:var(--red);color:white;font-weight:700;font-size:14px;cursor:pointer">✅ Jawab</button>';
   } else {
