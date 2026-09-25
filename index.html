@@ -1935,6 +1935,9 @@ header:has(.user-menu.open) { z-index:1000; }
   <div style="font-size:12px;font-weight:800;color:var(--mist);letter-spacing:.4px;margin-bottom:8px">🎚️ CARI KATA DARI LEVEL</div>
   <div id="custom-level-pills" style="display:flex;gap:6px;margin-bottom:16px;flex-wrap:wrap"></div>
 
+  <div style="font-size:12px;font-weight:800;color:var(--mist);letter-spacing:.4px;margin-bottom:8px">📊 STATUS HAFALAN</div>
+  <div id="custom-mastery-pills" style="display:flex;gap:6px;margin-bottom:16px;flex-wrap:wrap"></div>
+
   <div style="position:sticky;top:52px;background:var(--paper);padding:8px 0;z-index:5">
     <input id="custom-search" type="text" placeholder="🔍 Cari kata (bahasa Jepang / romaji / arti)..." oninput="renderCustomWordList();renderCustomBulkMenu();" style="width:100%;padding:11px 14px;border:1.5px solid var(--border);border-radius:10px;font-family:inherit;font-size:14px;box-sizing:border-box">
   </div>
@@ -2269,6 +2272,27 @@ header:has(.user-menu.open) { z-index:1000; }
       <option value="1800">30 menit</option><option value="3600">60 menit</option>
       <option value="5400">90 menit</option><option value="7200">120 menit</option>
     </select>
+  </div>
+  <div style="background:white;border:1px solid var(--border);border-radius:12px;padding:16px;margin-bottom:14px">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px">
+      <label style="font-size:12px;font-weight:700;color:var(--mist)">🔍 Tambah Soal dari Bank Kata (opsional)</label>
+      <span id="mpc-pick-count" style="font-size:11px;color:#7a5cc4;font-weight:700">0 kata dipilih</span>
+    </div>
+    <div style="font-size:11px;color:var(--mist);margin-bottom:10px">Cari &amp; tap kata, filter level/status hafalan kalau perlu, lalu generate jadi soal — hasilnya masuk ke Daftar Soal di bawah dan tetap bisa diedit sebelum bikin sesi.</div>
+    <div id="mpc-pick-levels" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px"></div>
+    <div id="mpc-pick-mastery" style="display:flex;gap:6px;margin-bottom:10px"></div>
+    <input id="mpc-pick-search" type="text" placeholder="🔍 Cari kata (bahasa Jepang / romaji / arti)..." oninput="mpcRenderWordList()" style="width:100%;padding:10px 12px;border:1.5px solid var(--border);border-radius:10px;font-family:inherit;font-size:13px;box-sizing:border-box;margin-bottom:10px">
+    <div id="mpc-pick-list" style="max-height:260px;overflow-y:auto;border:1px solid var(--border);border-radius:10px;margin-bottom:10px"></div>
+    <button id="mpc-pick-loadmore" onclick="mpcListLimit+=60;mpcRenderWordList()" style="display:none;width:100%;padding:9px;border:1.5px solid var(--border);border-radius:8px;background:white;color:var(--mist);font-family:inherit;font-size:11.5px;font-weight:700;cursor:pointer;margin-bottom:10px">Tampilkan lebih banyak ▾</button>
+    <div style="display:flex;gap:8px;margin-bottom:10px">
+      <label style="flex:1;display:flex;align-items:center;gap:6px;padding:9px;border:1.5px solid var(--border);border-radius:8px;cursor:pointer">
+        <input type="radio" name="mpc-pickdir" value="arti" checked> <span style="font-size:12px">📖 Jadi Soal Arti</span>
+      </label>
+      <label style="flex:1;display:flex;align-items:center;gap:6px;padding:9px;border:1.5px solid var(--border);border-radius:8px;cursor:pointer">
+        <input type="radio" name="mpc-pickdir" value="baca"> <span style="font-size:12px">🈶 Jadi Soal Baca Kanji</span>
+      </label>
+    </div>
+    <button onclick="mpcAddPickedAsQuestions()" style="width:100%;padding:11px;border:1.5px dashed #7a5cc4;border-radius:10px;background:rgba(122,92,196,.06);color:#7a5cc4;font-family:inherit;font-size:13px;font-weight:700;cursor:pointer">+ Generate Soal dari Kata Terpilih</button>
   </div>
   <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
     <span style="font-size:12px;font-weight:700;color:var(--mist)">DAFTAR SOAL</span>
@@ -5605,6 +5629,14 @@ async function loadFromFirestore() {
       var VALID_LVL = ['N5','N4','N3','N2','N1','SSW'];
       if (data.currentJLPT && VALID_LVL.indexOf(data.currentJLPT) >= 0) currentJLPT = data.currentJLPT;
       if (data.customPick) customPick = {ids:data.customPick.ids||[]};
+      if (data.customStudySets && typeof data.customStudySets==='object') {
+        customStudySets = data.customStudySets;
+        _saveCustomStudySetsLocalOnly();
+      }
+      if (typeof data.customStudyActiveSet==='string' && data.customStudyActiveSet) {
+        customStudyActiveSet = data.customStudyActiveSet;
+        _saveCustomStudySetsLocalOnly();
+      }
       if (Array.isArray(data.kalimatBuatan)) kalimatBuatan = data.kalimatBuatan;
       progressPrivate = !!data.private;
       try{ localStorage.setItem('progressPrivate', progressPrivate?'1':'0'); }catch(e){}
@@ -5684,6 +5716,8 @@ async function saveToFirestore() {
       dailyChecklist: dailyChecklist,
       currentJLPT: currentJLPT,
       customPick: customPick,
+      customStudySets: customStudySets,
+      customStudyActiveSet: customStudyActiveSet,
       kalimatBuatan: (kalimatBuatan||[]).slice(-60), // cap 60 biar gak nabrak limit dokumen 1MB
       lastSeen: firebase.firestore.FieldValue.serverTimestamp(),
     }, { merge: true });
@@ -8904,9 +8938,19 @@ if(!customStudyActiveSet || !customStudySets[customStudyActiveSet]){
   var _csFirstKey = Object.keys(customStudySets)[0];
   customStudyActiveSet = _csFirstKey || '';
 }
-function _saveCustomStudySets(){
+function _saveCustomStudySetsLocalOnly(){
   try{ localStorage.setItem('n3_customStudySets', JSON.stringify(customStudySets)); }catch(e){}
   try{ localStorage.setItem('n3_customStudyActiveSet', customStudyActiveSet); }catch(e){}
+}
+// Simpen lokal (instant) + jadwalin sync ke cloud (debounce 1.5 detik, sama kayak save() global)
+// biar Set Custom Belajar nyambung lintas HP, bukan cuma nyangkut di localStorage device ini.
+function _saveCustomStudySets(){
+  _saveCustomStudySetsLocalOnly();
+  try{ localStorage.setItem('n3_dirty','1'); }catch(e){}
+  if (typeof syncTimeout!=='undefined'){
+    if (syncTimeout) clearTimeout(syncTimeout);
+    syncTimeout = setTimeout(function(){ if(typeof saveToFirestore==='function') saveToFirestore(); }, 1500);
+  }
 }
 function csActiveSetWords(){ return customStudySets[customStudyActiveSet] || []; }
 function _csKeyOf(w){ return (w._csLevel||currentJLPT)+'::'+w.id; }
@@ -9861,6 +9905,11 @@ function mpGoCustomSetup(){
   var titleEl=document.getElementById('mp-custom-title'); if(titleEl) titleEl.value='';
   gotoScreen('mpcustomsetup');
   mpCustomAddQuestion(); // mulai dengan 1 baris soal kosong
+  mpcPickedWords=[]; mpcMasteryFilter='all'; mpcListLimit=60;
+  var searchEl=document.getElementById('mpc-pick-search'); if(searchEl) searchEl.value='';
+  var cEl=document.getElementById('mpc-pick-count'); if(cEl) cEl.textContent='0 kata dipilih';
+  mpcRenderMasteryPills();
+  mpcSwitchPickLevel((currentJLPT && MP_LEVELS.indexOf(currentJLPT)>=0) ? currentJLPT : 'N3');
 }
 
 function mpCustomAddQuestion(){
@@ -16834,8 +16883,31 @@ function kbFinish(){
 // ── ⚙️ CUSTOM: layar pengaturan skip materi, berlaku global ke semua menu ──
 // ── ⚙️ CUSTOM: pemilih kata satu-satu (pengganti skip kategori lama, lebih presisi) ──
 var _customListLimit = 60;
+var _customMasteryFilter = 'all'; // 'all' | 'no' (belum hafal) | 'yes' (sudah hafal)
+function csSetMasteryFilter(f){
+  _customMasteryFilter = f; _customListLimit = 60;
+  csRenderMasteryPills(); renderCustomBulkMenu(); renderCustomWordList();
+}
+function csRenderMasteryPills(){
+  var el = document.getElementById('custom-mastery-pills');
+  if(!el) return;
+  var defs = [['all','Semua'],['no','😕 Belum Hafal'],['yes','✅ Sudah Hafal']];
+  el.innerHTML = defs.map(function(d){
+    var active = _customMasteryFilter===d[0];
+    return '<button onclick="csSetMasteryFilter(\''+d[0]+'\')" style="padding:9px 14px;border-radius:20px;border:1.5px solid '+(active?'#8b5a2b':'var(--border)')+';background:'+(active?'#8b5a2b':'white')+';color:'+(active?'#fff':'var(--mist)')+';font-family:inherit;font-size:12.5px;font-weight:700;cursor:pointer">'+d[1]+'</button>';
+  }).join('');
+}
+// Terapin filter status hafalan (di atas hasil filter level yang udah ada) ke pool kata manapun
+function csApplyMasteryFilter(pool){
+  if(_customMasteryFilter==='all') return pool;
+  return pool.filter(function(w){
+    var done = wordDone(w);
+    return _customMasteryFilter==='yes' ? done : !done;
+  });
+}
 function renderCustomMenu(){
   _customListLimit = 60;
+  csRenderMasteryPills();
   var setBox = document.getElementById('custom-set-pills');
   if(setBox){
     var names = Object.keys(customStudySets);
@@ -16883,7 +16955,7 @@ function renderCustomMenu(){
 // atau seluruh level) — TANPA perlu centang satu-satu. Cuma NAMBAH ke Set Custom yang udah ada
 // (gabung/union), gak nge-reset; buat hapus per-kata tetap pakai tap di daftar/chip seperti biasa. ──
 function bulkPickCategory(kind){
-  var pool = posLevelWordsRaw();
+  var pool = csApplyMasteryFilter(posLevelWordsRaw());
   var matches;
   if(kind==='SEARCH'){
     var q = ((document.getElementById('custom-search')||{}).value||'').trim().toLowerCase();
@@ -16902,7 +16974,7 @@ function bulkPickCategory(kind){
 function renderCustomBulkMenu(){
   var el = document.getElementById('custom-bulk-menu');
   if(!el) return;
-  var pool = posLevelWordsRaw();
+  var pool = csApplyMasteryFilter(posLevelWordsRaw());
   var counts = {meishi:0,doushi:0,keiyoushi:0,fukushi:0,setsuzoku:0,pola:0};
   pool.forEach(function(w){ var p=posOf(w); if(counts.hasOwnProperty(p)) counts[p]++; });
   var defs = [
@@ -16951,7 +17023,7 @@ function renderCustomWordList(){
   if(!box) return;
   var q = (document.getElementById('custom-search')||{}).value || '';
   q = q.trim().toLowerCase();
-  var pool = posLevelWordsRaw();
+  var pool = csApplyMasteryFilter(posLevelWordsRaw());
   var filtered = pool.filter(function(w){
     if(!q) return true;
     var jp=(w.jp||'').toLowerCase(), rom=(w.rom||'').toLowerCase(), arti=(w.id_||'').toLowerCase();
@@ -16960,12 +17032,14 @@ function renderCustomWordList(){
   var shown = filtered.slice(0, _customListLimit);
   box.innerHTML = shown.map(function(w){
     var picked = csIsPicked(w);
+    var done = wordDone(w);
     var head=(w.jp||'').split(/[;；]/)[0];
     return '<div onclick="csToggleWord(JSON.parse(this.dataset.w))" data-w=\''+JSON.stringify({id:w.id,jp:w.jp,rom:w.rom,id_:w.id_,cat:w.cat||''}).replace(/'/g,"&#39;")+'\' style="display:flex;align-items:center;gap:10px;padding:10px 8px;border-bottom:1px solid var(--border);cursor:pointer">'
       + '<div style="width:20px;height:20px;border-radius:6px;border:2px solid '+(picked?'#8b5a2b':'var(--border)')+';background:'+(picked?'#8b5a2b':'white')+';display:flex;align-items:center;justify-content:center;color:#fff;font-size:12px;flex-shrink:0">'+(picked?'✓':'')+'</div>'
       + '<div style="flex:1;min-width:0">'
       + '<span style="font-weight:700;font-size:15px">'+head+'</span>'
       + '<span style="font-size:11px;color:var(--mist);margin-left:6px">'+(w.rom||'')+'</span>'
+      + '<span style="font-size:11px;margin-left:6px">'+(done?'✅':'😕')+'</span>'
       + '<div style="font-size:11px;color:var(--mist)">'+(w.id_||'')+'</div>'
       + '</div>'
       + '</div>';
