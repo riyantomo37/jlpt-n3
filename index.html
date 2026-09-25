@@ -9598,10 +9598,36 @@ function mpLevenshtein(a,b){
   for(i=1;i<=m;i++) for(j=1;j<=n;j++){ dp[i][j]=Math.min(dp[i-1][j]+1, dp[i][j-1]+1, dp[i-1][j-1]+(a[i-1]===b[j-1]?0:1)); }
   return dp[m][n];
 }
+// Field 'rom' di data kata TERNYATA gak konsisten: N3 (ALL_WORDS, embedded) isinya romaji
+// asli ("aru", "sagyou suru"), tapi N4/N5/N2/N1 (bank/Kotoba/*.json, eksternal) isinya malah
+// HIRAGANA ("せん" buat 線, bukan "sen"). Jadi konversi ke romaji harus jalan di DUA sisi —
+// kunci jawaban maupun input user — bukan cuma input user doang, biar kombinasi manapun
+// (kunci romaji/kana × input romaji/kana) tetap ketemu.
+function mpToRomajiIfKana(s){
+  s = String(s||'');
+  if(/[\u3041-\u3096\u30a1-\u30f6]/.test(s) && typeof toRomaji==='function'){
+    try{ return toRomaji(s); }catch(e){ return s; }
+  }
+  return s;
+}
+// Cocokin jawaban bacaan — terima romaji ATAU hiragana/katakana di kedua sisi (dikonversi
+// pakai toRomaji() yang udah ada di app), dan toleransi typo kecil (1 huruf beda / kurang
+// spasi) buat bacaan yang cukup panjang, biar salah ketik dikit gak otomatis disalahin.
+function mpCheckReadingAnswer(userText, correctRaw){
+  var target = mpNormalizeReadingAnswer(mpToRomajiIfKana(correctRaw));
+  var raw = String(userText||'').trim();
+  var candidates = [ mpNormalizeReadingAnswer(raw), mpNormalizeReadingAnswer(mpToRomajiIfKana(raw)) ];
+  for(var ci=0;ci<candidates.length;ci++){
+    var c=candidates[ci]; if(!c) continue;
+    if(c===target) return true;
+    if(c.length>=4 && target.length>=4 && mpLevenshtein(c,target)<=1) return true;
+  }
+  return false;
+}
 function mpCheckTypedAnswer(userText, q){
   if(!userText) return false;
   if(q.answerType==='reading'){
-    return mpNormalizeReadingAnswer(userText)===mpNormalizeReadingAnswer(q.answer);
+    return mpCheckReadingAnswer(userText, q.answer);
   }
   var userNorm=mpNormalizeMeaningAnswer(userText);
   if(!userNorm) return false;
@@ -10624,7 +10650,7 @@ function mpRenderPlay(){
   html+='<div style="font-size:'+(isTypedQ?'40px':'20px')+';font-weight:600;line-height:1.8;margin-bottom:16px;white-space:pre-wrap;text-align:'+(isTypedQ?'center':'left')+'">'+mpQuestionTextHTML(q)+'</div>';
   html+='<div id="mp-play-choices">';
   if(isTypedQ){
-    var placeholder = q.answerType==='reading' ? 'Ketik cara bacanya…' : 'Ketik artinya (Bahasa Indonesia)…';
+    var placeholder = q.answerType==='reading' ? 'Ketik cara bacanya (romaji atau ひらがな)…' : 'Ketik artinya (Bahasa Indonesia)…';
     html+='<input id="mp-typed-input" type="text" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="'+placeholder+'" onkeydown="if(event.key===\'Enter\'){mpSubmitTypedAnswer();}" style="width:100%;padding:13px 14px;border:2px solid var(--border);border-radius:10px;font-family:inherit;font-size:17px;margin-bottom:10px">'
       +'<button onclick="mpSubmitTypedAnswer()" style="width:100%;padding:13px;border:none;border-radius:10px;background:var(--red);color:white;font-weight:700;font-size:14px;cursor:pointer">✅ Jawab</button>';
   } else {
