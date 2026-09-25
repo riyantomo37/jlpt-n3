@@ -9624,6 +9624,19 @@ function mpCheckReadingAnswer(userText, correctRaw){
   }
   return false;
 }
+// Imbuhan "meN-" di Bahasa Indonesia sering "meluluhkan" huruf awal akar kata (k/t/s/p
+// hilang, diganti bunyi sengau) — jadi gak selalu bisa ketemu lewat substring biasa:
+// menulis (bukan "mentulis"), mengirim (bukan "mengkirim"), menyikat, memukul. Fungsi ini
+// nebak balik kemungkinan akar katanya buat tiap pola peluluhan yang umum.
+function mpMeaningPeluluhanRoots(s){
+  var out=[]; var m;
+  if((m=s.match(/^meng(.+)$/))){ out.push(m[1]); out.push('k'+m[1]); }
+  if((m=s.match(/^meny(.+)$/))){ out.push('s'+m[1]); }
+  if((m=s.match(/^men(.+)$/))){ out.push(m[1]); out.push('t'+m[1]); }
+  if((m=s.match(/^mem(.+)$/))){ out.push(m[1]); out.push('p'+m[1]); }
+  if((m=s.match(/^me(.+)$/))){ out.push(m[1]); }
+  return out;
+}
 function mpCheckTypedAnswer(userText, q){
   if(!userText) return false;
   if(q.answerType==='reading'){
@@ -9636,6 +9649,18 @@ function mpCheckTypedAnswer(userText, q){
     var v=variants[i]; if(!v) continue;
     if(userNorm===v) return true;
     if(v.length>=4 && userNorm.length>=4 && mpLevenshtein(userNorm,v)<=1) return true;
+    // Toleransi imbuhan Bahasa Indonesia (ber-/me-/ter-/pe-/se-/di- + -kan/-i/-an dst) —
+    // ini beda dari typo (bukan cuma 1 huruf salah, tapi ada awalan/akhiran nempel), jadi
+    // dicek terpisah: kalau salah satu jawaban utuh ketemu sebagai bagian dari yang lain
+    // (mis. "renang" ada di dalam "berenang"), dianggap benar.
+    if(Math.min(v.length,userNorm.length)>=4 && (userNorm.indexOf(v)>=0 || v.indexOf(userNorm)>=0)) return true;
+    // Kasus peluluhan meN- (menulis/tulis, mengirim/kirim, dst) — substring biasa gak nangkep ini.
+    var roots=mpMeaningPeluluhanRoots(userNorm);
+    for(var ri=0; ri<roots.length; ri++){
+      var r=roots[ri]; if(!r) continue;
+      if(r===v) return true;
+      if(Math.min(r.length,v.length)>=3 && (r.indexOf(v)>=0 || v.indexOf(r)>=0)) return true;
+    }
   }
   return false;
 }
