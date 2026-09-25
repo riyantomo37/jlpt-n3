@@ -2361,8 +2361,11 @@ header:has(.user-menu.open) { z-index:1000; }
         <label style="flex:1;min-width:130px;display:flex;align-items:center;gap:6px;padding:10px;border:1.5px solid var(--border);border-radius:10px;cursor:pointer">
           <input type="checkbox" name="mp-kanjidir" value="typemeaning"> <span style="font-size:12px">✍️ Ketik Arti</span>
         </label>
+        <label style="flex:1;min-width:130px;display:flex;align-items:center;gap:6px;padding:10px;border:1.5px solid var(--border);border-radius:10px;cursor:pointer">
+          <input type="checkbox" name="mp-kanjidir" value="typeeither"> <span style="font-size:12px">✍️ Ketik Bebas (Bacaan/Arti)</span>
+        </label>
       </div>
-      <div style="font-size:11px;color:var(--mist);margin-top:6px">✍️ Ketik = soal cuma nampilin kanjinya doang (gak ada petunjuk bacaan/arti), jawabnya diketik sendiri — bukan pilihan ganda.</div>
+      <div style="font-size:11px;color:var(--mist);margin-top:6px">✍️ Ketik = soal cuma nampilin kanjinya doang (gak ada petunjuk bacaan/arti), jawabnya diketik sendiri — bukan pilihan ganda. "Ketik Bebas" nerima jawaban bacaan ATAU arti, mana aja yang kamu tulis.</div>
     </div>
     <label style="font-size:12px;font-weight:700;color:var(--mist);display:block;margin-bottom:6px">🎮 Mode Mulai Sesi</label>
     <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:16px">
@@ -9252,6 +9255,12 @@ var MP_POWERUP_DEFS = {
 };
 
 function mpEsc(s){ return String(s==null?'':s).replace(/[&<>"']/g, function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];}); }
+// Buat nampilin "jawaban benar" di layar hasil/pembahasan/PDF — soal mode 'either' (Ketik
+// Bebas) punya dua kemungkinan benar (bacaan & arti), jadi ditampilin dua-duanya sekaligus.
+function mpTypedCorrectDisplay(a){
+  if(a && a.answerType==='either') return (a.answer||'')+' / '+(a.answerMeaning||'');
+  return a ? a.answer : '';
+}
 function mpBuildPembahasanText(a){
   // Gabungin penjelasan jawaban benar + (kalau salah) penjelasan pilihan sendiri, biar
   // pembahasannya bandingin dua-duanya — bukan cuma nunjukkin yang benar doang.
@@ -9677,14 +9686,12 @@ var MP_MEANING_SYNONYMS = {
   'besar': ['gede'],
   'sangat': ['banget','bgt']
 };
-function mpCheckTypedAnswer(userText, q){
-  if(!userText) return false;
-  if(q.answerType==='reading'){
-    return mpCheckReadingAnswer(userText, q.answer);
-  }
+// Dipisah jadi fungsi sendiri (bukan cuma inline di mpCheckTypedAnswer) biar bisa dipakai
+// ulang buat soal mode 'either' (Ketik Bebas), yang nerima bacaan ATAU arti.
+function mpCheckMeaningAnswer(userText, correctMeaning){
   var userNorm=mpNormalizeMeaningAnswer(userText);
   if(!userNorm) return false;
-  var variants=mpMeaningAnswerVariants(q.answer);
+  var variants=mpMeaningAnswerVariants(correctMeaning);
   for(var i=0;i<variants.length;i++){
     var v=variants[i]; if(!v) continue;
     if(userNorm===v) return true;
@@ -9710,6 +9717,17 @@ function mpCheckTypedAnswer(userText, q){
     }
   }
   return false;
+}
+function mpCheckTypedAnswer(userText, q){
+  if(!userText) return false;
+  if(q.answerType==='reading'){
+    return mpCheckReadingAnswer(userText, q.answer);
+  }
+  if(q.answerType==='either'){
+    // Ketik Bebas — bacaan ATAU arti, mana aja yang dijawab dicek dua-duanya.
+    return mpCheckReadingAnswer(userText, q.answer) || mpCheckMeaningAnswer(userText, q.answerMeaning);
+  }
+  return mpCheckMeaningAnswer(userText, q.answer);
 }
 
 function mpKanjiQuestions(words, count, dir){
@@ -9738,16 +9756,19 @@ function mpKanjiQuestions(words, count, dir){
         meaning: w.id_,
         expl: '「'+w.jp+'」 dibaca "'+w.rom+'", artinya "'+w.id_+'".'
       });
-    } else if(dir==='typeread' || dir==='typemeaning'){
+    } else if(dir==='typeread' || dir==='typemeaning' || dir==='typeeither'){
       // Soal jawab-ketik — cuma nampilin kanjinya doang, gak ada pilihan ganda & gak ada
       // petunjuk apapun (bacaan/arti) di teks soal, biar beneran ngetes ingatan.
       var isReadType = dir==='typeread';
+      var isEitherType = dir==='typeeither';
       out.push({
         q: w.jp,
         mode: 'typed',
-        answerType: isReadType ? 'reading' : 'meaning',
-        answer: isReadType ? w.rom : w.id_,
-        section: isReadType ? '✍️ Ketik Bacaan' : '✍️ Ketik Arti',
+        answerType: isEitherType ? 'either' : (isReadType ? 'reading' : 'meaning'),
+        // 'either': answer nyimpen bacaan, answerMeaning nyimpen arti — dua-duanya diterima.
+        answer: (isReadType || isEitherType) ? w.rom : w.id_,
+        answerMeaning: isEitherType ? w.id_ : undefined,
+        section: isEitherType ? '✍️ Ketik Bebas (Bacaan/Arti)' : (isReadType ? '✍️ Ketik Bacaan' : '✍️ Ketik Arti'),
         meaning: w.id_,
         expl: '「'+w.jp+'」 dibaca "'+w.rom+'", artinya "'+w.id_+'".'
       });
@@ -10722,7 +10743,9 @@ function mpRenderPlay(){
   html+='<div style="font-size:'+(isTypedQ?'40px':'20px')+';font-weight:600;line-height:1.8;margin-bottom:16px;white-space:pre-wrap;text-align:'+(isTypedQ?'center':'left')+'">'+mpQuestionTextHTML(q)+'</div>';
   html+='<div id="mp-play-choices">';
   if(isTypedQ){
-    var placeholder = q.answerType==='reading' ? 'Ketik cara bacanya (romaji atau ひらがな)…' : 'Ketik artinya (Indonesia atau Inggris)…';
+    var placeholder = q.answerType==='reading' ? 'Ketik cara bacanya (romaji atau ひらがな)…'
+      : q.answerType==='either' ? 'Ketik bacaan ATAU artinya, bebas pilih salah satu…'
+      : 'Ketik artinya (Indonesia atau Inggris)…';
     html+='<input id="mp-typed-input" type="text" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="'+placeholder+'" onkeydown="if(event.key===\'Enter\'){mpSubmitTypedAnswer();}" style="width:100%;padding:13px 14px;border:2px solid var(--border);border-radius:10px;font-family:inherit;font-size:17px;margin-bottom:10px">'
       +'<button onclick="mpSubmitTypedAnswer()" style="width:100%;padding:13px;border:none;border-radius:10px;background:var(--red);color:white;font-weight:700;font-size:14px;cursor:pointer">✅ Jawab</button>';
   } else {
@@ -11030,12 +11053,12 @@ function mpFinalizeAnswer(choiceIdx, typedText){
     q:q.q, choices:q.choices||null, answer:q.answer, chosen:chosenValue, correct:isCorrect,
     section:q.section||'', passage:q.passage||null, underline:q.underline||null, instr:q.instr||null,
     meaning:q.meaning||null, expl:q.expl||null, choiceMeta:q.choiceMeta||null, gained:gained,
-    mode:q.mode||null, answerType:q.answerType||null
+    mode:q.mode||null, answerType:q.answerType||null, answerMeaning:q.answerMeaning||null
   });
   mpState.idx++; mpState.answered=mpState.idx;
   var fb=document.getElementById('mp-play-feedback');
   if(fb){
-    var correctDisplay = isTypedQ ? q.answer : (q.choices?q.choices[q.answer]:'');
+    var correctDisplay = isTypedQ ? (q.answerType==='either' ? (q.answer+' / '+q.answerMeaning) : q.answer) : (q.choices?q.choices[q.answer]:'');
     var label = isCorrect?('✅ Benar! +'+gained+' poin'+(speedBonus>0?' (termasuk +'+speedBonus+' bonus cepat)':'')+(wasBoost?' (⚡2x!)':'')):('❌ Salah — jawaban benar: '+mpEsc(correctDisplay));
     fb.innerHTML='<div style="margin-top:10px;padding:12px;border-radius:10px;text-align:center;font-weight:700;background:'+(isCorrect?'rgba(45,122,79,.1)':'rgba(192,57,43,.1)')+';color:'+(isCorrect?'var(--jade)':'var(--red)')+'">'
       +label+'</div>';
@@ -11347,7 +11370,7 @@ function mpRenderHistDetQuestions(h){
       + '<div style="font-weight:600;font-size:17px;line-height:1.6;margin-bottom:10px;white-space:pre-wrap">'+(i+1)+'. '+mpQuestionTextHTML(a)+'</div>'
       + (a.mode==='typed'
           ? ('<div style="padding:9px 10px;margin-bottom:6px;border:1.5px solid '+(a.correct?'var(--jade)':'var(--red)')+';border-radius:8px;background:'+(a.correct?'rgba(45,122,79,.08)':'rgba(192,57,43,.08)')+';font-size:15px">Jawabanmu: '+mpEsc(a.chosen||'(kosong)')+'</div>'
-            + (a.correct?'':'<div style="padding:9px 10px;margin-bottom:6px;border:1.5px solid var(--jade);border-radius:8px;background:rgba(45,122,79,.08);font-size:15px">Jawaban benar: '+mpEsc(a.answer)+'</div>'))
+            + (a.correct?'':'<div style="padding:9px 10px;margin-bottom:6px;border:1.5px solid var(--jade);border-radius:8px;background:rgba(45,122,79,.08);font-size:15px">Jawaban benar: '+mpEsc(mpTypedCorrectDisplay(a))+'</div>'))
           : (a.choices||[]).map(function(c,ci){
               var isAns=ci===a.answer, isChosen=ci===a.chosen;
               var bg='white', bc='var(--border)', extra='';
@@ -11377,7 +11400,7 @@ function mpExportHistoryPDF(){
     if(a.mode==='typed'){
       var ok=a.correct;
       choicesHtml = '<div style="padding:6px 10px;margin-bottom:4px;border:1px solid '+(ok?'#2d7a4f':'#c0392b')+';border-radius:6px;background:'+(ok?'#e8f5e9':'#fdecea')+'">Jawabanmu: '+mpEsc(a.chosen||'(kosong)')+'</div>'
-        + (ok?'':'<div style="padding:6px 10px;margin-bottom:4px;border:1px solid #2d7a4f;border-radius:6px;background:#e8f5e9;font-weight:600">Jawaban benar: '+mpEsc(a.answer)+'</div>');
+        + (ok?'':'<div style="padding:6px 10px;margin-bottom:4px;border:1px solid #2d7a4f;border-radius:6px;background:#e8f5e9;font-weight:600">Jawaban benar: '+mpEsc(mpTypedCorrectDisplay(a))+'</div>');
     } else {
       choicesHtml = (a.choices||[]).map(function(c,ci){
         var isAns=ci===a.answer, isChosen=ci===a.chosen;
