@@ -10880,11 +10880,8 @@ function mpRenderPowerupBar(){
     var n=mpState.powerups[k]||0;
     var oneShotUsed=(k==='ff'&&mpState._usedFF);
     var statusActive=(k==='boost'&&mpState.boostActive)||(k==='shield'&&mpState.shieldActive);
-    // 'redo' beda dari yang lain: gak bisa dipakai kapan aja dari bar ini — cuma aktif pas
-    // momen abis jawab salah (tombolnya muncul di feedback). Di sini cuma nampilin stoknya.
-    var isRedo=(k==='redo');
-    var usable = !isRedo && n>0 && !oneShotUsed && !statusActive;
-    return '<button onclick="'+(isRedo?'':'mpUsePowerup(&apos;'+k+'&apos;)')+'" '+((usable)?'':'disabled')+' style="flex:1;padding:9px 4px;border:1.5px solid '+(statusActive?'var(--jade)':'var(--border)')+';border-radius:10px;background:'+(usable?'white':'rgba(26,26,46,.04)')+';cursor:'+(usable?'pointer':'default')+';font-family:inherit;position:relative">'
+    var usable = n>0 && !oneShotUsed && !statusActive;
+    return '<button onclick="mpUsePowerup(&apos;'+k+'&apos;)" '+((usable)?'':'disabled')+' style="flex:1;padding:9px 4px;border:1.5px solid '+(statusActive?'var(--jade)':'var(--border)')+';border-radius:10px;background:'+(usable?'white':'rgba(26,26,46,.04)')+';cursor:'+(usable?'pointer':'default')+';font-family:inherit;position:relative">'
       +'<div style="font-size:16px;opacity:'+(n>0?1:.35)+'">'+def.emo+'</div>'
       +'<div style="font-size:9px;font-weight:700;color:var(--mist);margin-top:2px">'+def.label+'</div>'
       +'<div style="position:absolute;top:-6px;right:-6px;background:var(--red);color:white;font-size:10px;font-weight:800;border-radius:50%;width:17px;height:17px;display:flex;align-items:center;justify-content:center">'+n+'</div>'
@@ -10930,7 +10927,19 @@ function mpAwardPowerupIfStreak(){
 function mpUsePowerup(key){
   var choicesEl=document.getElementById('mp-play-choices');
   var alreadyLocked = choicesEl && choicesEl.dataset.locked==='1';
-  if((mpState.powerups[key]||0)<=0 || alreadyLocked) return;
+  if((mpState.powerups[key]||0)<=0) return;
+  if(key==='redo'){
+    // Beda dari skill lain: 'redo' JUSTRU cuma berguna pas soal lagi "locked" (abis dijawab
+    // salah) — jadi jangan ikut pengecekan alreadyLocked di atas, itu penyebab bug-nya gak
+    // pernah bisa kepake dari tombol di bar.
+    if(!mpState._redoAvailable){
+      mpToast('🔁 Skill ini baru aktif abis kamu jawab salah, buat ngulang soal itu', 'info');
+      return;
+    }
+    mpRedoWrongQuestion();
+    return;
+  }
+  if(alreadyLocked) return;
   if(key==='ff'){
     if(mpState._usedFF) return;
     mpApply5050();
