@@ -9243,7 +9243,7 @@ function shuffle(arr) {
 var mpState = { code:null, isHost:false, playerId:null, playerName:null,
   questions:[], idx:0, score:0, correct:0, streak:0, answered:0, answerLog:[], attempt:0,
   unsubLobby:null, unsubResult:null, unsubSelf:null, unsubSessionDoc:null, unsubLiveBoard:null, heartbeatInterval:null, level:null, _qStart:0,
-  powerups:{ff:0,boost:0,shield:0,atk:0,freeze:0}, shieldActive:false, boostActive:false,
+  powerups:{ff:0,boost:0,shield:0,atk:0,freeze:0,redo:0}, shieldActive:false, boostActive:false,
   _lastAttackSeen:0, _usedFF:false, examDurationSec:180, examEndAt:0, examTimeLeft:180, examTimerInterval:null, _examOver:false, _liveRows:[] };
 var MP_LEVELS = ['N5','N4','N3','N2','N1'];
 var MP_POWERUP_DEFS = {
@@ -9251,7 +9251,8 @@ var MP_POWERUP_DEFS = {
   boost:{emo:'⚡', label:'2x Poin'},
   shield:{emo:'🛡️', label:'Shield'},
   atk:  {emo:'⚔️', label:'Serang'},
-  freeze: {emo:'⏱️', label:'Time Stop'}
+  freeze: {emo:'⏱️', label:'Time Stop'},
+  redo: {emo:'🔁', label:'Ulangi Soal'}
 };
 
 function mpEsc(s){ return String(s==null?'':s).replace(/[&<>"']/g, function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];}); }
@@ -9345,6 +9346,19 @@ function mpWordPool(level){
 async function mpEnsureWords(level){
   if(level!=='N3' && !kotobaLoaded(level)){ try{ await loadKotoba(level); }catch(e){} }
   return mpWordPool(level);
+}
+// Gabungan kata dari SEMUA level (N5-N1), khusus buat sumber DISTRAKTOR (bukan target soal) —
+// biar milih pengecoh gak kebatasin cuma dari level yang lagi dipilih. Mis. buat cari kata
+// lain yang berakhiran sama (~きる dst), kadang gak cukup kalau cuma nyari di 1 level doang.
+// Di-cache biar gak reload berulang dalam 1 sesi generate soal.
+var _mpAllLevelWordsCache=null;
+async function mpEnsureAllLevelWords(){
+  if(_mpAllLevelWordsCache) return _mpAllLevelWordsCache;
+  await Promise.all(MP_LEVELS.map(function(lv){ return mpEnsureWords(lv); }));
+  var combined=[];
+  MP_LEVELS.forEach(function(lv){ combined=combined.concat(mpWordPool(lv)); });
+  _mpAllLevelWordsCache=combined;
+  return combined;
 }
 
 function mpKotobaQuestions(words, count){
@@ -9530,6 +9544,19 @@ function mpWordShape(jp){
   if(/[\u3041-\u3096\u30a1-\u30f6]/.test(last)) return 'okurigana'; // ada hiragana/katakana nempel di akhir
   return 'pure';
 }
+// Hitung berapa karakter di AKHIR jp yang hiragana/katakana (okurigana, mis. きる di 生きる).
+// Kalau seluruh kata hiragana/katakana (gak ada kanji sama sekali), balikin 0 — bukan kasus
+// kanji+okurigana yang dimaksud di sini.
+function mpOkuriganaLen(jp){
+  if(!jp) return 0;
+  var n=0;
+  for(var i=jp.length-1;i>=0;i--){
+    if(/[\u3041-\u3096\u30a1-\u30f6]/.test(jp[i])) n++;
+    else break;
+  }
+  if(n>=jp.length) return 0;
+  return n;
+}
 function mpReadingShape(rom){
   if(!rom) return 'plain';
   var t=rom.trim();
@@ -9630,6 +9657,11 @@ function mpCheckReadingAnswer(userText, correctRaw){
     var c=candidates[ci]; if(!c) continue;
     if(c===target) return true;
     if(c.length>=4 && target.length>=4 && mpLevenshtein(c,target)<=1) return true;
+    // Toleransi kata benda+"する" (verba majemuk, super umum di kosakata JLPT: 心配する,
+    // 勉強する, dst) — kalau bedanya cuma akhiran "suru" ilang/nambah, tetep diterima
+    // (mis. jawab "shinpai" buat kata yang bacaan lengkapnya "shinpai suru").
+    if(target.length>c.length && target.indexOf(c)===0 && target.slice(c.length)==='suru') return true;
+    if(c.length>target.length && c.indexOf(target)===0 && c.slice(target.length)==='suru') return true;
   }
   return false;
 }
@@ -9730,9 +9762,13 @@ function mpCheckTypedAnswer(userText, q){
   return mpCheckMeaningAnswer(userText, q.answer);
 }
 
-function mpKanjiQuestions(words, count, dir){
-  // Hanya kata yang benar-benar mengandung kanji (bukan cuma hiragana/katakana)
+function mpKanjiQuestions(words, count, dir, distractorPool){
+  // Hanya kata yang benar-benar mengandung kanji (bukan cuma hiragana/katakana).
+  // Target soal tetap dari `words` (level yang dipilih host), tapi sumber PENGECOH boleh
+  // lebih luas (distractorPool, gabungan semua level) — dikasih parameter opsional, kalau
+  // gak dikasih ya fallback pakai `words` juga kayak dulu (biar tetep kompatibel).
   var pool=(words||[]).filter(function(w){ return w && w.jp && w.rom && /[\u4e00-\u9fff]/.test(w.jp); });
+  var dpool=(distractorPool||words||[]).filter(function(w){ return w && w.jp && w.rom && /[\u4e00-\u9fff]/.test(w.jp); });
   shuffle(pool);
   var picks=pool.slice(0, Math.max(0, Math.min(count, pool.length)));
   var out=[];
@@ -9740,7 +9776,7 @@ function mpKanjiQuestions(words, count, dir){
     if(dir==='find'){
       // Dikasih bacaan + arti, cari kanjinya — distractor diprioritasin yang KANJI-nya
       // share karakter sama jawaban benar (keliatan mirip pas dibaca sekilas)
-      var candidates=pool.filter(function(x){return x.jp!==w.jp;});
+      var candidates=dpool.filter(function(x){return x.jp!==w.jp;});
       var distractorWords=mpPickSmartDistractors(candidates, 3, function(x){ return mpSharedCharScore(w.jp, x.jp); }, function(x){ return mpWordShape(x.jp)===mpWordShape(w.jp); });
       while(distractorWords.length<3) distractorWords.push({jp:'—',rom:'—',id_:'—'});
       var allWords=distractorWords.concat([w]);
@@ -9775,8 +9811,30 @@ function mpKanjiQuestions(words, count, dir){
     } else {
       // Dikasih kanji, cari bacaannya (default: baca kanji) — distractor diprioritasin yang
       // BACAANNYA mirip (panjang sama, awalan sama) biar gak langsung ketebak dari sekilas beda jauh
-      var candidatesR=pool.filter(function(x){return x.rom!==w.rom;});
-      var distractorWordsR=mpPickSmartDistractors(candidatesR, 3, function(x){ return mpReadingSimScore(w.rom, x.rom); }, function(x){ return mpReadingShape(x.rom)===mpReadingShape(w.rom); });
+      var candidatesR=dpool.filter(function(x){return x.rom!==w.rom;});
+      var okuLen=mpOkuriganaLen(w.jp);
+      var distractorWordsR;
+      if(okuLen>0 && w.rom && w.rom.length>okuLen){
+        // Kata verba/adjektiva ber-okurigana (kanji+akhiran hiragana, kayak 生きる/食べる) —
+        // kalau akhirannya dibiarin beda-beda antar pilihan (きる/く/い/る dst), orang bisa
+        // nebak dari POLA akhirannya doang tanpa perlu tau bacaan kanjinya. Jadi di sini semua
+        // pilihan DIPAKSA punya akhiran (okurigana) yang SAMA PERSIS kayak jawaban benar, dan
+        // yang divariasikan cuma bagian bacaan kanjinya (bagian depan) — biar bener2 nguji
+        // apakah hafal bacaan kanji itu, bukan pola akhirannya.
+        var targetSuffix=w.rom.slice(-okuLen);
+        var targetStem=w.rom.slice(0,-okuLen);
+        distractorWordsR=mpPickSmartDistractors(candidatesR, 3,
+          function(x){
+            if(x.rom && x.rom.length>okuLen && x.rom.slice(-okuLen)===targetSuffix){
+              return mpReadingSimScore(targetStem, x.rom.slice(0,-okuLen))+5; // bonus biar diprioritasin drpd fallback yg akhirannya beda
+            }
+            return mpReadingSimScore(w.rom, x.rom);
+          },
+          function(x){ return x.rom && x.rom.length>okuLen && x.rom.slice(-okuLen)===targetSuffix; }
+        );
+      } else {
+        distractorWordsR=mpPickSmartDistractors(candidatesR, 3, function(x){ return mpReadingSimScore(w.rom, x.rom); }, function(x){ return mpReadingShape(x.rom)===mpReadingShape(w.rom); });
+      }
       while(distractorWordsR.length<3) distractorWordsR.push({jp:'—',rom:'—',id_:'—'});
       var allWordsR=distractorWordsR.concat([w]);
       shuffle(allWordsR);
@@ -9969,7 +10027,7 @@ async function mpBuildQuestionPool(sources, levels, count, kanjiDirs){
     if(want<=0) return [];
     if(spec.type==='bank') return await mpBankQuestions(spec.level, want);
     if(spec.type==='kotoba'){ var words=await mpEnsureWords(spec.level); return mpKotobaQuestions(words, want); }
-    if(spec.type==='kanji'){ var kwords=await mpEnsureWords(spec.level); return mpKanjiQuestions(kwords, want, spec.dir||'read'); }
+    if(spec.type==='kanji'){ var kwords=await mpEnsureWords(spec.level); var allLvlWords=await mpEnsureAllLevelWords(); return mpKanjiQuestions(kwords, want, spec.dir||'read', allLvlWords); }
     if(spec.type==='bunpou'){ var gwords=await mpEnsureWords(spec.level); return mpBunpouQuestions(gwords, want); }
     if(spec.type==='keisei') return mpKeiseiQuestions(want, lvlList);
     if(spec.type==='konjugasi') return mpKonjugasiQuestions(want);
@@ -10281,7 +10339,7 @@ async function mpHostJoinAsPlayer(){
       var hostName = (currentUser && currentUser.displayName) ? currentUser.displayName.split(' ')[0] : 'Host';
       pdata = {name: hostName+' 👑', score:0, correct:0, answered:0, streak:0,
         totalQuestions:(sdata.questions||mpState.questions||[]).length, finished:false, attempt:0,
-        powerups:{ff:0,boost:0,shield:0,atk:0,freeze:0}, shieldActive:false, boostActive:false, lastAttack:null, answerLog:[],
+        powerups:{ff:0,boost:0,shield:0,atk:0,freeze:0,redo:0}, shieldActive:false, boostActive:false, lastAttack:null, answerLog:[],
         examEndAt: sdata.examEndAt || (Date.now()+(mpState.examDurationSec||180)*1000)};
       await pref.set(Object.assign({}, pdata, {
         joinedAt: firebase.firestore.FieldValue.serverTimestamp(),
@@ -10294,7 +10352,7 @@ async function mpHostJoinAsPlayer(){
     mpState.idx=pdata.answered||0; mpState.score=pdata.score||0; mpState.correct=pdata.correct||0; mpState.streak=pdata.streak||0;
     mpState.answerLog = pdata.answerLog || [];
     mpState.attempt = pdata.attempt||0;
-    mpState.powerups=Object.assign({ff:0,boost:0,shield:0,atk:0,freeze:0}, pdata.powerups||{});
+    mpState.powerups=Object.assign({ff:0,boost:0,shield:0,atk:0,freeze:0,redo:0}, pdata.powerups||{});
     mpState.shieldActive=!!pdata.shieldActive; mpState.boostActive=!!pdata.boostActive;
     mpState._lastAttackSeen=(pdata.lastAttack&&pdata.lastAttack.ts)||0;
     mpState.examEndAt = pdata.examEndAt || sdata.examEndAt || (Date.now()+(mpState.examDurationSec||180)*1000);
@@ -10604,7 +10662,7 @@ async function mpJoinSession(){
       var initExamEndAt = (startMode==='free') ? (Date.now()+examDurationSec*1000) : (sdata.status==='active' ? sdata.examEndAt : null);
       pdata = {name:name, score:0, correct:0, answered:0, streak:0,
         totalQuestions:(sdata.questions||[]).length, finished:false, attempt:0,
-        powerups:{ff:0,boost:0,shield:0,atk:0,freeze:0}, shieldActive:false, boostActive:false, lastAttack:null, answerLog:[],
+        powerups:{ff:0,boost:0,shield:0,atk:0,freeze:0,redo:0}, shieldActive:false, boostActive:false, lastAttack:null, answerLog:[],
         examEndAt: initExamEndAt};
       await pref.set(Object.assign({}, pdata, {
         joinedAt: firebase.firestore.FieldValue.serverTimestamp(),
@@ -10620,7 +10678,7 @@ async function mpJoinSession(){
     mpState.idx=pdata.answered||0; mpState.score=pdata.score||0; mpState.correct=pdata.correct||0; mpState.streak=pdata.streak||0;
     mpState.answerLog = pdata.answerLog || [];
     mpState.attempt = pdata.attempt||0;
-    mpState.powerups=Object.assign({ff:0,boost:0,shield:0,atk:0,freeze:0}, pdata.powerups||{});
+    mpState.powerups=Object.assign({ff:0,boost:0,shield:0,atk:0,freeze:0,redo:0}, pdata.powerups||{});
     mpState.shieldActive=!!pdata.shieldActive; mpState.boostActive=!!pdata.boostActive;
     mpState._lastAttackSeen=(pdata.lastAttack&&pdata.lastAttack.ts)||0;
     mpState._examOver=false;
@@ -10680,7 +10738,7 @@ function mpLeaveWaiting(silent){
   if(!silent){
     mpState={code:null,isHost:false,playerId:null,playerName:null,questions:[],idx:0,score:0,correct:0,streak:0,answered:0,answerLog:[],attempt:0,
       unsubLobby:null,unsubResult:null,unsubSelf:null,unsubSessionDoc:null,unsubLiveBoard:null,heartbeatInterval:null,level:null,_qStart:0,
-      powerups:{ff:0,boost:0,shield:0,atk:0,freeze:0},shieldActive:false,boostActive:false,_lastAttackSeen:0,_usedFF:false,
+      powerups:{ff:0,boost:0,shield:0,atk:0,freeze:0,redo:0},shieldActive:false,boostActive:false,_lastAttackSeen:0,_usedFF:false,
       examDurationSec:180,examEndAt:0,examTimeLeft:180,examTimerInterval:null,_examOver:false};
     gotoScreen('mphome');
   }
@@ -10730,6 +10788,8 @@ function mpRenderPlay(){
   if(scoreEl) scoreEl.textContent=mpState.score+' pts · 🔥'+mpState.streak+(mpState.boostActive?' · ⚡2x AKTIF':'')+(mpState.shieldActive?' · 🛡️':'');
   if(i>=qs.length){ mpShowResult(); return; }
   mpState._usedFF=false;
+  mpState._redoAvailable=null;
+  if(mpState._autoAdvanceTimer){ clearTimeout(mpState._autoAdvanceTimer); mpState._autoAdvanceTimer=null; }
   var atkPanel=document.getElementById('mp-attack-panel'); if(atkPanel) atkPanel.style.display='none';
   mpRenderPowerupBar();
   var q=qs[i];
@@ -10814,14 +10874,17 @@ function mpExamTimeUp(){
 function mpRenderPowerupBar(){
   var el=document.getElementById('mp-powerup-bar');
   if(!el) return;
-  var keys=['ff','boost','shield','atk','freeze'];
+  var keys=['ff','boost','shield','atk','freeze','redo'];
   el.innerHTML=keys.map(function(k){
     var def=MP_POWERUP_DEFS[k];
     var n=mpState.powerups[k]||0;
     var oneShotUsed=(k==='ff'&&mpState._usedFF);
     var statusActive=(k==='boost'&&mpState.boostActive)||(k==='shield'&&mpState.shieldActive);
-    var usable = n>0 && !oneShotUsed && !statusActive;
-    return '<button onclick="mpUsePowerup(&apos;'+k+'&apos;)" '+(usable?'':'disabled')+' style="flex:1;padding:9px 4px;border:1.5px solid '+(statusActive?'var(--jade)':'var(--border)')+';border-radius:10px;background:'+(usable?'white':'rgba(26,26,46,.04)')+';cursor:'+(usable?'pointer':'default')+';font-family:inherit;position:relative">'
+    // 'redo' beda dari yang lain: gak bisa dipakai kapan aja dari bar ini — cuma aktif pas
+    // momen abis jawab salah (tombolnya muncul di feedback). Di sini cuma nampilin stoknya.
+    var isRedo=(k==='redo');
+    var usable = !isRedo && n>0 && !oneShotUsed && !statusActive;
+    return '<button onclick="'+(isRedo?'':'mpUsePowerup(&apos;'+k+'&apos;)')+'" '+((usable)?'':'disabled')+' style="flex:1;padding:9px 4px;border:1.5px solid '+(statusActive?'var(--jade)':'var(--border)')+';border-radius:10px;background:'+(usable?'white':'rgba(26,26,46,.04)')+';cursor:'+(usable?'pointer':'default')+';font-family:inherit;position:relative">'
       +'<div style="font-size:16px;opacity:'+(n>0?1:.35)+'">'+def.emo+'</div>'
       +'<div style="font-size:9px;font-weight:700;color:var(--mist);margin-top:2px">'+def.label+'</div>'
       +'<div style="position:absolute;top:-6px;right:-6px;background:var(--red);color:white;font-size:10px;font-weight:800;border-radius:50%;width:17px;height:17px;display:flex;align-items:center;justify-content:center">'+n+'</div>'
@@ -10854,7 +10917,7 @@ async function mpPersistPowerups(extra){
 
 function mpAwardPowerupIfStreak(){
   if(mpState.streak>0 && mpState.streak%3===0){
-    var weights=[['ff',25],['boost',25],['shield',20],['atk',20],['freeze',10]];
+    var weights=[['ff',20],['boost',20],['shield',15],['atk',15],['freeze',10],['redo',20]];
     var total=weights.reduce(function(s,w){return s+w[1];},0);
     var r=Math.random()*total, key=weights[0][0];
     for(var i=0;i<weights.length;i++){ if(r<weights[i][1]){ key=weights[i][0]; break;} r-=weights[i][1]; }
@@ -11038,6 +11101,7 @@ function mpFinalizeAnswer(choiceIdx, typedText){
   }
   var gained=0, wasBoost=false, speedBonus=0;
   if(isCorrect){
+    mpState._redoAvailable=null;
     mpState.streak++;
     var elapsedSec=(Date.now()-mpState._qStart)/1000;
     speedBonus=Math.max(0, Math.round(30-elapsedSec));
@@ -11045,6 +11109,10 @@ function mpFinalizeAnswer(choiceIdx, typedText){
     if(mpState.boostActive){ gained*=2; wasBoost=true; mpState.boostActive=false; }
     mpState.score+=gained; mpState.correct++;
   } else {
+    // Skill "Ulangi Soal Ini" — simpen snapshot streak/boost SEBELUM direset, biar kalau
+    // di-redo, soal ini kerasa kayak belum pernah dijawab sama sekali (bukan cuma dapet
+    // kesempatan jawab lagi, tapi state-nya beneran dibalikin).
+    mpState._redoAvailable = { qIdx: mpState.idx, streak: mpState.streak, boostActive: mpState.boostActive };
     mpState.streak=0;
     if(mpState.boostActive){ mpState.boostActive=false; } // boost habis walau salah
   }
@@ -11060,15 +11128,37 @@ function mpFinalizeAnswer(choiceIdx, typedText){
   if(fb){
     var correctDisplay = isTypedQ ? (q.answerType==='either' ? (q.answer+' / '+q.answerMeaning) : q.answer) : (q.choices?q.choices[q.answer]:'');
     var label = isCorrect?('✅ Benar! +'+gained+' poin'+(speedBonus>0?' (termasuk +'+speedBonus+' bonus cepat)':'')+(wasBoost?' (⚡2x!)':'')):('❌ Salah — jawaban benar: '+mpEsc(correctDisplay));
+    var redoStock=(mpState.powerups.redo||0);
+    var redoBtn = (isCorrect || redoStock<=0) ? '' : '<button onclick="mpRedoWrongQuestion()" style="margin-top:8px;width:100%;padding:11px;border:none;border-radius:10px;background:var(--indigo);color:white;font-weight:700;font-size:13px;cursor:pointer">🔁 Pakai Skill: Ulangi Soal Ini ('+redoStock+' tersisa)</button>';
     fb.innerHTML='<div style="margin-top:10px;padding:12px;border-radius:10px;text-align:center;font-weight:700;background:'+(isCorrect?'rgba(45,122,79,.1)':'rgba(192,57,43,.1)')+';color:'+(isCorrect?'var(--jade)':'var(--red)')+'">'
-      +label+'</div>';
+      +label+'</div>'+redoBtn;
   }
   if(isCorrect) mpAwardPowerupIfStreak();
   mpSaveProgress();
-  // Ujian kilat: otomatis lanjut ke soal berikutnya tanpa perlu tap, kecuali waktu ujian udah habis
+  // Ujian kilat: otomatis lanjut ke soal berikutnya tanpa perlu tap, kecuali waktu ujian udah
+  // habis. Kalau salah, kasih waktu lebih lama (biar sempet baca & mutusin mau pencet Ulangi
+  // Soal Ini atau enggak) — timer-nya disimpen biar bisa dibatalin kalau tombol itu diklik.
   if(!mpState._examOver){
-    setTimeout(function(){ if(!mpState._examOver) mpRenderPlay(); }, 1100);
+    var advanceDelay = isCorrect ? 1100 : 2600;
+    mpState._autoAdvanceTimer=setTimeout(function(){ if(!mpState._examOver) mpRenderPlay(); }, advanceDelay);
   }
+}
+function mpRedoWrongQuestion(){
+  var snap=mpState._redoAvailable;
+  if(!snap || (mpState.powerups.redo||0)<=0) return;
+  if(mpState._autoAdvanceTimer){ clearTimeout(mpState._autoAdvanceTimer); mpState._autoAdvanceTimer=null; }
+  mpState.powerups.redo--;
+  // Batalin catatan jawaban salah barusan & balikin state persis kayak soal ini belum
+  // pernah dijawab — bukan cuma "boleh coba lagi", tapi beneran di-undo.
+  if(Array.isArray(mpState.answerLog) && mpState.answerLog.length) mpState.answerLog.pop();
+  mpState.idx=snap.qIdx;
+  mpState.answered=mpState.idx;
+  mpState.streak=snap.streak;
+  mpState.boostActive=snap.boostActive;
+  mpState._redoAvailable=null;
+  mpSaveProgress();
+  mpRenderPlay();
+  mpToast('🔁 Skill dipakai — soal diulang, coba lagi!', 'info');
 }
 
 async function mpSaveProgress(){
@@ -11109,12 +11199,12 @@ async function mpRetrySession(){
     var pref=sref.collection('players').doc(mpState.playerId);
     await pref.update({
       score:0, correct:0, answered:0, streak:0, finished:false, finishedAt:null, attempt:newAttempt,
-      powerups:{ff:0,boost:0,shield:0,atk:0,freeze:0}, shieldActive:false, boostActive:false,
+      powerups:{ff:0,boost:0,shield:0,atk:0,freeze:0,redo:0}, shieldActive:false, boostActive:false,
       answerLog:[], examEndAt:newExamEndAt
     });
     mpState.questions=sdata.questions||mpState.questions;
     mpState.idx=0; mpState.score=0; mpState.correct=0; mpState.streak=0; mpState.answerLog=[];
-    mpState.powerups={ff:0,boost:0,shield:0,atk:0,freeze:0}; mpState.shieldActive=false; mpState.boostActive=false;
+    mpState.powerups={ff:0,boost:0,shield:0,atk:0,freeze:0,redo:0}; mpState.shieldActive=false; mpState.boostActive=false;
     mpState.examEndAt=newExamEndAt; mpState.attempt=newAttempt; mpState._examOver=false;
     gotoScreen('mpplay');
     mpRenderPlay();
@@ -11473,7 +11563,7 @@ function mpLeaveResult(){
   localStorage.removeItem('mp_last_role'); localStorage.removeItem('mp_last_code');
   mpState={code:null,isHost:false,playerId:null,playerName:null,questions:[],idx:0,score:0,correct:0,streak:0,answered:0,answerLog:[],attempt:0,
     unsubLobby:null,unsubResult:null,unsubSelf:null,unsubSessionDoc:null,unsubLiveBoard:null,heartbeatInterval:null,level:null,_qStart:0,
-    powerups:{ff:0,boost:0,shield:0,atk:0,freeze:0},shieldActive:false,boostActive:false,_lastAttackSeen:0,_usedFF:false,
+    powerups:{ff:0,boost:0,shield:0,atk:0,freeze:0,redo:0},shieldActive:false,boostActive:false,_lastAttackSeen:0,_usedFF:false,
     examDurationSec:180,examEndAt:0,examTimeLeft:180,examTimerInterval:null,_examOver:false,_liveRows:[]};
   gotoScreen('overview');
 }
