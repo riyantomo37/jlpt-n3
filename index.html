@@ -1935,7 +1935,7 @@ header:has(.user-menu.open) { z-index:1000; }
   <div style="font-size:12px;font-weight:800;color:var(--mist);letter-spacing:.4px;margin-bottom:8px">🎚️ CARI KATA DARI LEVEL</div>
   <div id="custom-level-pills" style="display:flex;gap:6px;margin-bottom:16px;flex-wrap:wrap"></div>
 
-  <div style="font-size:12px;font-weight:800;color:var(--mist);letter-spacing:.4px;margin-bottom:8px">📊 STATUS HAFALAN</div>
+  <div style="font-size:12px;font-weight:800;color:var(--mist);letter-spacing:.4px;margin-bottom:8px">📊 STATUS HAFALAN (dari belajar biasa)</div>
   <div id="custom-mastery-pills" style="display:flex;gap:6px;margin-bottom:16px;flex-wrap:wrap"></div>
 
   <div style="position:sticky;top:52px;background:var(--paper);padding:8px 0;z-index:5">
@@ -9040,40 +9040,68 @@ function csBulkAdd(matches){
   _saveCustomStudySets();
   renderCustomMenu();
 }
+// Status hafal kata di Set Custom — disimpen di store TERPISAH (mastered.customstudy, kunci = level::id),
+// sama persis kayak yang dipakai tombol Hafal/Belum di flashcard Set Custom.
+function _csDone(w){ return !!((mastered['customstudy']||{})[_csKeyOf(w)]); }
+// Bar urutan (Acak/Urut あ→わ) + filter status (Semua/Belum hafal/Sudah hafal) buat layar flashcard biasa
+// (screen-flash) — versi generik dari renderKfSettingsBarGeneric (yang itu khusus screen-kanjiflash).
+function renderFlashSettingsBarGeneric(restartCall){
+  var el = document.getElementById('flash-settings-bar');
+  if(!el) return;
+  function ob(mode,label){ var a=studyOrderMode===mode; return '<button onclick="setStudyOrderMode(\''+mode+'\');'+restartCall+'" style="padding:5px 10px;border-radius:12px;border:1.5px solid '+(a?'var(--ink)':'var(--border)')+';background:'+(a?'var(--ink)':'white')+';color:'+(a?'#fff':'var(--mist)')+';font-family:inherit;font-size:10.5px;font-weight:700;cursor:pointer">'+label+'</button>'; }
+  function fb(mode,label){ var a=kfFilterMode===mode; return '<button onclick="setKfFilterMode(\''+mode+'\');'+restartCall+'" style="padding:5px 10px;border-radius:12px;border:1.5px solid '+(a?'#8b5a2b':'var(--border)')+';background:'+(a?'#8b5a2b':'white')+';color:'+(a?'#fff':'var(--mist)')+';font-family:inherit;font-size:10.5px;font-weight:700;cursor:pointer">'+label+'</button>'; }
+  el.innerHTML = '<div style="display:flex;gap:5px;flex-wrap:wrap;margin-bottom:6px">'+ob('acak','🔀 Acak')+ob('urut','🔤 Urut あ→わ')+'</div>'
+    + '<div style="display:flex;gap:5px;flex-wrap:wrap">'+fb('semua','Semua')+fb('belum','Belum hafal')+fb('sudah','Sudah hafal')+'</div>';
+}
 // mode: 'kotoba' (default, kanji+bacaan+arti sekaligus) atau 'kanji' (Baca Kanji — kanji doang di depan)
 function startCustomStudyFlash(mode){
   var words = csActiveSetWords();
   if(!words.length){ alert('Set "'+(customStudyActiveSet||'ini')+'" masih kosong. Pilih dulu kata-katanya di bawah (tap kata, atau pakai Pilih Cepat).'); return; }
   if(mode==='kanji'){ startCustomStudyKanjiFlash(words); return; }
   sessionCat='customstudy'; sessionReviewed=0; sessionMastered=0; revealed=false; sessionHistory=[];
-  var pool = orderPoolByMode(words.slice(), function(w){ return w.rom||''; });
+  // Sama kayak flashcard biasa: dukung urutan (acak/gojuon) + filter status hafal (semua/belum/sudah)
+  var csUn = words.filter(function(w){return !_csDone(w);});
+  var csDn = words.filter(function(w){return _csDone(w);});
+  var pool;
+  if(kfFilterMode==='belum') pool = csUn.slice();
+  else if(kfFilterMode==='sudah') pool = csDn.slice();
+  else pool = csUn.concat(csDn);
+  pool = orderPoolByMode(pool, function(w){ return w.rom||''; });
   sessionQueue = pool; // Set Custom = milik user sendiri, sengaja TANPA batas SESSION_SIZE
   sessionIdx=0;
   document.getElementById('flash-category-title').textContent='📚 '+customStudyActiveSet;
-  document.getElementById('flash-subtitle').textContent=pool.length+' kata di set ini';
+  document.getElementById('flash-subtitle').textContent=csUn.length+' belum hafal · '+csDn.length+' sudah hafal';
   document.querySelectorAll('.screen').forEach(function(s){s.classList.remove('active');});
   document.getElementById('screen-flash').classList.add('active');
   document.querySelectorAll('nav button').forEach(function(b){b.classList.remove('active');});
   document.getElementById('session-done-panel').style.display='none';
   document.getElementById('flash-active').style.display='block';
-  try{ var _sb=document.getElementById('flash-settings-bar'); if(_sb) _sb.innerHTML=''; }catch(e){}
+  try{ renderFlashSettingsBarGeneric('startCustomStudyFlash()'); }catch(e){}
+  if(!sessionQueue.length){ document.getElementById('flash-subtitle').textContent='Gak ada kata di set ini yang cocok sama filter ini'; }
   showCard();
 }
 function startCustomStudyKanjiFlash(words){
   words = words || csActiveSetWords();
   if(!words.length){ alert('Set "'+(customStudyActiveSet||'ini')+'" masih kosong. Pilih dulu kata-katanya di bawah.'); return; }
   kfCat='customstudy'; kfReviewed=0; kfMastered=0; kfRevealed=false; kfHistory=[];
-  var pool = orderPoolByMode(words.slice(), function(w){ return w.rom||''; });
+  var csUn2 = words.filter(function(w){return !_csDone(w);});
+  var csDn2 = words.filter(function(w){return _csDone(w);});
+  var pool;
+  if(kfFilterMode==='belum') pool = csUn2.slice();
+  else if(kfFilterMode==='sudah') pool = csDn2.slice();
+  else pool = csUn2.concat(csDn2);
+  pool = orderPoolByMode(pool, function(w){ return w.rom||''; });
   kfQueue = pool;
   kfIdx=0;
   document.getElementById('kf-title').textContent='📚 '+customStudyActiveSet;
-  document.getElementById('kf-subtitle').textContent=pool.length+' kata di set ini';
+  document.getElementById('kf-subtitle').textContent=csUn2.length+' belum · '+csDn2.length+' sudah';
   document.querySelectorAll('.screen').forEach(function(s){s.classList.remove('active');});
   document.getElementById('screen-kanjiflash').classList.add('active');
   document.querySelectorAll('nav button').forEach(function(b){b.classList.remove('active');});
   document.getElementById('kf-done-panel').style.display='none';
   document.getElementById('kf-active').style.display='block';
-  try{ var _sb2=document.getElementById('kf-settings-bar'); if(_sb2) _sb2.innerHTML=''; }catch(e){}
+  try{ renderKfSettingsBarGeneric('startCustomStudyKanjiFlash()'); }catch(e){}
+  if(!kfQueue.length){ document.getElementById('kf-subtitle').textContent='Gak ada kata di set ini yang cocok sama filter ini'; }
   showKanjiCard();
 }
 
@@ -10788,13 +10816,13 @@ function mpRenderPlay(){
   if(scoreEl) scoreEl.textContent=mpState.score+' pts · 🔥'+mpState.streak+(mpState.boostActive?' · ⚡2x AKTIF':'')+(mpState.shieldActive?' · 🛡️':'');
   if(i>=qs.length){ mpShowResult(); return; }
   mpState._usedFF=false;
-  mpState._redoAvailable=null;
   if(mpState._autoAdvanceTimer){ clearTimeout(mpState._autoAdvanceTimer); mpState._autoAdvanceTimer=null; }
   var atkPanel=document.getElementById('mp-attack-panel'); if(atkPanel) atkPanel.style.display='none';
   mpRenderPowerupBar();
-  var q=qs[i];
+  var redoCtx=mpState._redoing||null;
+  var q=redoCtx ? redoCtx.q : qs[i];
   mpState._qStart=Date.now();
-  if(prog) prog.textContent='Soal '+(i+1)+' / '+qs.length;
+  if(prog) prog.textContent = redoCtx ? '🔁 Ulangi soal salah (skill)' : 'Soal '+(i+1)+' / '+qs.length;
   var html='';
   if(q.section) html+='<div style="font-size:11px;color:var(--red);font-weight:700;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px">'+mpEsc(q.section)+'</div>';
   if(q.instr) html+='<div style="font-size:12px;color:var(--mist);line-height:1.6;margin-bottom:10px;font-style:italic">'+mpEsc(q.instr)+'</div>';
@@ -10816,7 +10844,7 @@ function mpRenderPlay(){
     });
   }
   html+='</div><div id="mp-play-feedback"></div>';
-  if(i<qs.length-1){
+  if(i<qs.length-1 && !redoCtx){
     html+='<button onclick="mpSkipQuestion()" style="width:100%;margin-top:6px;padding:10px;border:1.5px dashed var(--border);border-radius:10px;background:transparent;color:var(--mist);cursor:pointer;font-weight:700;font-size:12px">⏭️ Lewati Soal Ini (muncul lagi di akhir)</button>';
   }
   if(box){ box.innerHTML=html; box.scrollTop=0; }
@@ -10928,18 +10956,9 @@ function mpUsePowerup(key){
   var choicesEl=document.getElementById('mp-play-choices');
   var alreadyLocked = choicesEl && choicesEl.dataset.locked==='1';
   if((mpState.powerups[key]||0)<=0) return;
-  if(key==='redo'){
-    // Beda dari skill lain: 'redo' JUSTRU cuma berguna pas soal lagi "locked" (abis dijawab
-    // salah) — jadi jangan ikut pengecekan alreadyLocked di atas, itu penyebab bug-nya gak
-    // pernah bisa kepake dari tombol di bar.
-    if(!mpState._redoAvailable){
-      mpToast('🔁 Skill ini baru aktif abis kamu jawab salah, buat ngulang soal itu', 'info');
-      return;
-    }
-    mpRedoWrongQuestion();
-    return;
-  }
+  if(mpState._redoing){ mpToast('🔁 Selesaiin dulu soal ulangannya', 'info'); return; }
   if(alreadyLocked) return;
+  if(key==='redo'){ mpOpenRedoPicker(); return; } // stok baru berkurang pas soalnya beneran dipilih
   if(key==='ff'){
     if(mpState._usedFF) return;
     mpApply5050();
@@ -11081,7 +11100,8 @@ function mpSubmitTypedAnswer(){
 function mpFinalizeAnswer(choiceIdx, typedText){
   var choicesEl=document.getElementById('mp-play-choices');
   if(choicesEl) choicesEl.dataset.locked='1';
-  var q=mpState.questions[mpState.idx];
+  var redoCtx=mpState._redoing||null; // lagi ngerjain ulang soal salah lama (skill Ulangi Soal)?
+  var q = redoCtx ? redoCtx.q : mpState.questions[mpState.idx];
   var isTypedQ = q.mode==='typed';
   var isCorrect, chosenValue;
   if(isTypedQ){
@@ -11108,9 +11128,30 @@ function mpFinalizeAnswer(choiceIdx, typedText){
       }
     }
   }
+  if(redoCtx){
+    // Skill Ulangi Soal: hasilnya cuma benerin catatan soal LAMA itu — soal yang lagi berjalan,
+    // streak, dan urutan soal gak disentuh sama sekali.
+    var eLog=(mpState.answerLog||[])[redoCtx.logIdx];
+    var gainedR=0;
+    if(isCorrect){
+      gainedR=100; mpState.score+=gainedR; mpState.correct++;
+      if(eLog){ eLog.correct=true; eLog.chosen=isTypedQ?chosenValue:eLog.answer; eLog.gained=gainedR; eLog.redone=true; }
+    } else if(eLog){ eLog.redone=true; }
+    mpState._redoing=null;
+    var fbR=document.getElementById('mp-play-feedback');
+    if(fbR){
+      var cdR = isTypedQ ? (q.answerType==='either' ? (q.answer+' / '+q.answerMeaning) : q.answer) : (q.choices?q.choices[q.answer]:'');
+      var labelR = isCorrect ? ('✅ Benar! Soal salah tadi sekarang tercatat benar, +'+gainedR+' poin') : ('❌ Masih salah — jawaban benar: '+mpEsc(cdR)+' (skill terpakai, soal itu tetap tercatat salah)');
+      fbR.innerHTML='<div style="margin-top:10px;padding:12px;border-radius:10px;text-align:center;font-weight:700;background:'+(isCorrect?'rgba(45,122,79,.1)':'rgba(192,57,43,.1)')+';color:'+(isCorrect?'var(--jade)':'var(--red)')+'">'+labelR+'</div>';
+    }
+    mpSaveProgress();
+    if(!mpState._examOver){
+      mpState._autoAdvanceTimer=setTimeout(function(){ if(!mpState._examOver) mpRenderPlay(); }, isCorrect?1800:3000);
+    }
+    return;
+  }
   var gained=0, wasBoost=false, speedBonus=0;
   if(isCorrect){
-    mpState._redoAvailable=null;
     mpState.streak++;
     var elapsedSec=(Date.now()-mpState._qStart)/1000;
     speedBonus=Math.max(0, Math.round(30-elapsedSec));
@@ -11118,10 +11159,6 @@ function mpFinalizeAnswer(choiceIdx, typedText){
     if(mpState.boostActive){ gained*=2; wasBoost=true; mpState.boostActive=false; }
     mpState.score+=gained; mpState.correct++;
   } else {
-    // Skill "Ulangi Soal Ini" — simpen snapshot streak/boost SEBELUM direset, biar kalau
-    // di-redo, soal ini kerasa kayak belum pernah dijawab sama sekali (bukan cuma dapet
-    // kesempatan jawab lagi, tapi state-nya beneran dibalikin).
-    mpState._redoAvailable = { qIdx: mpState.idx, streak: mpState.streak, boostActive: mpState.boostActive };
     mpState.streak=0;
     if(mpState.boostActive){ mpState.boostActive=false; } // boost habis walau salah
   }
@@ -11137,37 +11174,61 @@ function mpFinalizeAnswer(choiceIdx, typedText){
   if(fb){
     var correctDisplay = isTypedQ ? (q.answerType==='either' ? (q.answer+' / '+q.answerMeaning) : q.answer) : (q.choices?q.choices[q.answer]:'');
     var label = isCorrect?('✅ Benar! +'+gained+' poin'+(speedBonus>0?' (termasuk +'+speedBonus+' bonus cepat)':'')+(wasBoost?' (⚡2x!)':'')):('❌ Salah — jawaban benar: '+mpEsc(correctDisplay));
-    var redoStock=(mpState.powerups.redo||0);
-    var redoBtn = (isCorrect || redoStock<=0) ? '' : '<button onclick="mpRedoWrongQuestion()" style="margin-top:8px;width:100%;padding:11px;border:none;border-radius:10px;background:var(--indigo);color:white;font-weight:700;font-size:13px;cursor:pointer">🔁 Pakai Skill: Ulangi Soal Ini ('+redoStock+' tersisa)</button>';
     fb.innerHTML='<div style="margin-top:10px;padding:12px;border-radius:10px;text-align:center;font-weight:700;background:'+(isCorrect?'rgba(45,122,79,.1)':'rgba(192,57,43,.1)')+';color:'+(isCorrect?'var(--jade)':'var(--red)')+'">'
-      +label+'</div>'+redoBtn;
+      +label+'</div>';
   }
   if(isCorrect) mpAwardPowerupIfStreak();
   mpSaveProgress();
-  // Ujian kilat: otomatis lanjut ke soal berikutnya tanpa perlu tap, kecuali waktu ujian udah
-  // habis. Kalau salah, kasih waktu lebih lama (biar sempet baca & mutusin mau pencet Ulangi
-  // Soal Ini atau enggak) — timer-nya disimpen biar bisa dibatalin kalau tombol itu diklik.
+  // Ujian kilat: otomatis lanjut ke soal berikutnya tanpa perlu tap, kecuali waktu ujian udah habis
   if(!mpState._examOver){
-    var advanceDelay = isCorrect ? 1100 : 2600;
-    mpState._autoAdvanceTimer=setTimeout(function(){ if(!mpState._examOver) mpRenderPlay(); }, advanceDelay);
+    mpState._autoAdvanceTimer=setTimeout(function(){ if(!mpState._examOver) mpRenderPlay(); }, 1100);
   }
 }
-function mpRedoWrongQuestion(){
-  var snap=mpState._redoAvailable;
-  if(!snap || (mpState.powerups.redo||0)<=0) return;
-  if(mpState._autoAdvanceTimer){ clearTimeout(mpState._autoAdvanceTimer); mpState._autoAdvanceTimer=null; }
+// ── Skill "Ulangi Soal": pilih 1 dari 3 soal salah LAMA buat dikerjain ulang. Soal salah yang
+// paling baru sengaja dilewatin (penjelasannya biasanya masih kebayang), kecuali cuma itu satu-satunya.
+function mpCloseRedoPicker(){ var el=document.getElementById('mp-redo-panel'); if(el) el.style.display='none'; }
+function mpOpenRedoPicker(){
+  var log=mpState.answerLog||[];
+  var wrongIdx=[];
+  log.forEach(function(e,i){ if(e && !e.correct && !e.redone) wrongIdx.push(i); });
+  if(!wrongIdx.length){ mpToast('🔁 Belum ada soal salah yang bisa diperbaiki', 'info'); return; }
+  var pool = wrongIdx.length>1 ? wrongIdx.slice(0,-1) : wrongIdx.slice();
+  shuffle(pool);
+  var options=pool.slice(0,3);
+  var el=document.getElementById('mp-redo-panel');
+  if(!el){ el=document.createElement('div'); el.id='mp-redo-panel'; document.body.appendChild(el); }
+  el.style.cssText='position:fixed;left:0;top:0;right:0;bottom:0;background:rgba(26,26,46,.55);z-index:10000;display:flex;align-items:flex-end;justify-content:center';
+  var items=options.map(function(li){
+    var e=log[li];
+    var txt=String(e.q==null?'':e.q).replace(/\s+/g,' ').slice(0,80);
+    return '<div onclick="mpPickRedo('+li+')" style="padding:13px 14px;margin-bottom:9px;border:2px solid var(--border);border-radius:10px;cursor:pointer;background:white">'
+      +(e.section?'<div style="font-size:10px;color:var(--red);font-weight:700;text-transform:uppercase;letter-spacing:1px;margin-bottom:4px">'+mpEsc(e.section)+'</div>':'')
+      +'<div style="font-size:16px;line-height:1.6">'+mpEsc(txt)+'</div></div>';
+  }).join('');
+  el.innerHTML='<div style="background:white;width:100%;max-width:560px;border-radius:18px 18px 0 0;padding:18px 16px 24px;max-height:80vh;overflow:auto">'
+    +'<div style="font-weight:800;font-size:15px;margin-bottom:4px">🔁 Ulangi Soal — pilih 1 soal yang mau diperbaiki</div>'
+    +'<div style="font-size:11px;color:var(--mist);margin-bottom:12px">Kalau kali ini benar, soal itu tercatat benar + 100 poin. Streak & soal yang lagi jalan gak berubah.</div>'
+    +items
+    +'<button onclick="mpCloseRedoPicker()" style="width:100%;margin-top:4px;padding:12px;border:none;border-radius:10px;background:transparent;color:var(--mist);font-weight:700;cursor:pointer">Batal (skill gak kepakai)</button>'
+    +'</div>';
+}
+function mpPickRedo(logIdx){
+  mpCloseRedoPicker();
+  var e=(mpState.answerLog||[])[logIdx];
+  if(!e || (mpState.powerups.redo||0)<=0 || mpState._redoing) return;
+  var choices=null, meta=null, ans=e.answer;
+  if(e.choices && e.choices.length){
+    // urutan pilihan diacak ulang, biar gak sekadar inget posisi jawabannya
+    var order=e.choices.map(function(_,i){return i;}); shuffle(order);
+    choices=order.map(function(i){return e.choices[i];});
+    meta=Array.isArray(e.choiceMeta) ? order.map(function(i){return e.choiceMeta[i];}) : null;
+    ans=order.indexOf(e.answer);
+  }
   mpState.powerups.redo--;
-  // Batalin catatan jawaban salah barusan & balikin state persis kayak soal ini belum
-  // pernah dijawab — bukan cuma "boleh coba lagi", tapi beneran di-undo.
-  if(Array.isArray(mpState.answerLog) && mpState.answerLog.length) mpState.answerLog.pop();
-  mpState.idx=snap.qIdx;
-  mpState.answered=mpState.idx;
-  mpState.streak=snap.streak;
-  mpState.boostActive=snap.boostActive;
-  mpState._redoAvailable=null;
+  mpState._redoing={ logIdx:logIdx, q:{ q:e.q, choices:choices, answer:ans, section:e.section, passage:e.passage, underline:e.underline, instr:e.instr, meaning:e.meaning, expl:e.expl, choiceMeta:meta, mode:e.mode, answerType:e.answerType, answerMeaning:e.answerMeaning } };
   mpSaveProgress();
   mpRenderPlay();
-  mpToast('🔁 Skill dipakai — soal diulang, coba lagi!', 'info');
+  mpToast('🔁 Skill dipakai — kerjain ulang soal pilihanmu', 'info');
 }
 
 async function mpSaveProgress(){
@@ -11213,7 +11274,7 @@ async function mpRetrySession(){
     });
     mpState.questions=sdata.questions||mpState.questions;
     mpState.idx=0; mpState.score=0; mpState.correct=0; mpState.streak=0; mpState.answerLog=[];
-    mpState.powerups={ff:0,boost:0,shield:0,atk:0,freeze:0,redo:0}; mpState.shieldActive=false; mpState.boostActive=false;
+    mpState.powerups={ff:0,boost:0,shield:0,atk:0,freeze:0,redo:0}; mpState.shieldActive=false; mpState.boostActive=false; mpState._redoing=null;
     mpState.examEndAt=newExamEndAt; mpState.attempt=newAttempt; mpState._examOver=false;
     gotoScreen('mpplay');
     mpRenderPlay();
