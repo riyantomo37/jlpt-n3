@@ -1104,7 +1104,7 @@ header:has(.user-menu.open) { z-index:1000; }
         <span class="user-name" id="user-name">...</span>
         <span id="level-badge" onclick="event.stopPropagation();gotoScreen('levelreward')" title="Level & Reward" style="font-size:10px;font-weight:800;background:linear-gradient(135deg,var(--gold),#c98a1f);color:white;padding:2px 7px;border-radius:8px;cursor:pointer;letter-spacing:.3px">Lv.1</span>
         <span class="sync-badge" id="sync-badge">● sync</span>
-        <span id="build-dot" title="Indikator update: warnanya ganti tiap ada versi baru dari Claude" style="display:inline-block;width:11px;height:11px;border-radius:50%;background:#2d7a4f;margin-left:6px;vertical-align:middle;border:2px solid white;box-shadow:0 0 0 1px rgba(0,0,0,.15)"></span>
+        <span id="build-dot" title="Indikator update: warnanya ganti tiap ada versi baru dari Claude" style="display:inline-block;width:11px;height:11px;border-radius:50%;background:#2da050;margin-left:6px;vertical-align:middle;border:2px solid white;box-shadow:0 0 0 1px rgba(0,0,0,.15)"></span>
         <!-- 🔴🟢 CLAUDE: WAJIB toggle warna build-dot di atas SETIAP kali file ini dikirim ulang —
              merah #c0392b <-> hijau #2da050 gantian. Ini satu-satunya cara Riyan verifikasi
              upload-nya beneran ke-deploy. JANGAN LUPA, cek baris ini di awal SETIAP delivery. -->
@@ -11097,6 +11097,17 @@ function mpSubmitTypedAnswer(){
   mpFinalizeAnswer(-1, val);
 }
 
+// Penjelasan soal di feedback langsung (abis jawab) — tampil untuk jawaban BENAR maupun SALAH,
+// bukan cuma di layar hasil. Kalau salah, mpBuildPembahasanText nambahin perbandingan "Pilihanmu ...".
+function mpFeedbackExplHTML(a){
+  if(!a || !a.expl) return '';
+  return '<div style="margin-top:8px;padding:10px 12px;border-radius:8px;background:rgba(44,62,122,.06);border:1px solid rgba(44,62,122,.15);font-size:12px;line-height:1.6;color:var(--ink);text-align:left"><b style="color:var(--indigo)">💡 Penjelasan:</b> '+mpEsc(mpBuildPembahasanText(a))+'</div>'
+    +'<button onclick="mpAdvanceNow()" style="margin-top:8px;width:100%;padding:11px;border:none;border-radius:10px;background:var(--indigo);color:white;font-weight:700;font-size:13px;cursor:pointer">Lanjut ▶</button>';
+}
+function mpAdvanceNow(){
+  if(mpState._autoAdvanceTimer){ clearTimeout(mpState._autoAdvanceTimer); mpState._autoAdvanceTimer=null; }
+  if(!mpState._examOver) mpRenderPlay();
+}
 function mpFinalizeAnswer(choiceIdx, typedText){
   var choicesEl=document.getElementById('mp-play-choices');
   if(choicesEl) choicesEl.dataset.locked='1';
@@ -11142,11 +11153,12 @@ function mpFinalizeAnswer(choiceIdx, typedText){
     if(fbR){
       var cdR = isTypedQ ? (q.answerType==='either' ? (q.answer+' / '+q.answerMeaning) : q.answer) : (q.choices?q.choices[q.answer]:'');
       var labelR = isCorrect ? ('✅ Benar! Soal salah tadi sekarang tercatat benar, +'+gainedR+' poin') : ('❌ Masih salah — jawaban benar: '+mpEsc(cdR)+' (skill terpakai, soal itu tetap tercatat salah)');
-      fbR.innerHTML='<div style="margin-top:10px;padding:12px;border-radius:10px;text-align:center;font-weight:700;background:'+(isCorrect?'rgba(45,122,79,.1)':'rgba(192,57,43,.1)')+';color:'+(isCorrect?'var(--jade)':'var(--red)')+'">'+labelR+'</div>';
+      var aR={expl:q.expl, correct:isCorrect, chosen:(isTypedQ?chosenValue:choiceIdx), answer:q.answer, choices:q.choices, choiceMeta:q.choiceMeta};
+      fbR.innerHTML='<div style="margin-top:10px;padding:12px;border-radius:10px;text-align:center;font-weight:700;background:'+(isCorrect?'rgba(45,122,79,.1)':'rgba(192,57,43,.1)')+';color:'+(isCorrect?'var(--jade)':'var(--red)')+'">'+labelR+'</div>'+mpFeedbackExplHTML(aR);
     }
     mpSaveProgress();
     if(!mpState._examOver){
-      mpState._autoAdvanceTimer=setTimeout(function(){ if(!mpState._examOver) mpRenderPlay(); }, isCorrect?1800:3000);
+      mpState._autoAdvanceTimer=setTimeout(function(){ if(!mpState._examOver) mpRenderPlay(); }, q.expl?6000:(isCorrect?1800:3000));
     }
     return;
   }
@@ -11175,13 +11187,15 @@ function mpFinalizeAnswer(choiceIdx, typedText){
     var correctDisplay = isTypedQ ? (q.answerType==='either' ? (q.answer+' / '+q.answerMeaning) : q.answer) : (q.choices?q.choices[q.answer]:'');
     var label = isCorrect?('✅ Benar! +'+gained+' poin'+(speedBonus>0?' (termasuk +'+speedBonus+' bonus cepat)':'')+(wasBoost?' (⚡2x!)':'')):('❌ Salah — jawaban benar: '+mpEsc(correctDisplay));
     fb.innerHTML='<div style="margin-top:10px;padding:12px;border-radius:10px;text-align:center;font-weight:700;background:'+(isCorrect?'rgba(45,122,79,.1)':'rgba(192,57,43,.1)')+';color:'+(isCorrect?'var(--jade)':'var(--red)')+'">'
-      +label+'</div>';
+      +label+'</div>'+mpFeedbackExplHTML(mpState.answerLog[mpState.answerLog.length-1]);
   }
   if(isCorrect) mpAwardPowerupIfStreak();
   mpSaveProgress();
-  // Ujian kilat: otomatis lanjut ke soal berikutnya tanpa perlu tap, kecuali waktu ujian udah habis
+  // Ujian kilat: otomatis lanjut ke soal berikutnya, kecuali waktu ujian udah habis. Kalau soal punya
+  // penjelasan, kasih waktu baca lebih lama (+ tombol Lanjut buat yang mau langsung next).
   if(!mpState._examOver){
-    mpState._autoAdvanceTimer=setTimeout(function(){ if(!mpState._examOver) mpRenderPlay(); }, 1100);
+    var hasExpl=!!q.expl;
+    mpState._autoAdvanceTimer=setTimeout(function(){ if(!mpState._examOver) mpRenderPlay(); }, hasExpl?6000:1100);
   }
 }
 // ── Skill "Ulangi Soal": pilih 1 dari 3 soal salah LAMA buat dikerjain ulang. Soal salah yang
