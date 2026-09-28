@@ -9405,7 +9405,8 @@ function mpKotobaQuestions(words, count){
     var candidates=pool.filter(function(x){return x.id_!==w.id_ && x.jp!==w.jp;});
     var distractorWords=mpPickSmartDistractors(candidates, 3,
       function(x){ return mpSharedCharScore(w.jp,x.jp) + mpReadingSimScore(w.rom,x.rom); },
-      function(x){ return mpWordShape(x.jp)===mpWordShape(w.jp); }
+      function(x){ return mpWordShape(x.jp)===mpWordShape(w.jp); },
+      function(x){ return x.id_; }
     );
     while(distractorWords.length<3) distractorWords.push({jp:'—',rom:'—',id_:'—'});
     var allWords=distractorWords.concat([w]);
@@ -9439,7 +9440,8 @@ function mpBunpouQuestions(words, count){
     var candidates=pool.filter(function(x){return x.id_!==w.id_ && x.jp!==w.jp;});
     var distractorWords=mpPickSmartDistractors(candidates, 3,
       function(x){ return mpSharedCharScore(w.jp,x.jp) + mpReadingSimScore(w.rom||'',x.rom||''); },
-      function(x){ return mpWordShape(x.jp)===mpWordShape(w.jp); }
+      function(x){ return mpWordShape(x.jp)===mpWordShape(w.jp); },
+      function(x){ return x.id_; }
     );
     while(distractorWords.length<3) distractorWords.push({jp:'—',id_:'—'});
     var allWords=distractorWords.concat([w]);
@@ -9611,7 +9613,7 @@ function mpReadingSimScore(a, b){
   for(var i=0;i<minLen;i++){ if(a[i]===b[i]) score+=1; }
   return score;
 }
-function mpPickSmartDistractors(pool, count, similarityFn, hardFilterFn){
+function mpPickSmartDistractors(pool, count, similarityFn, hardFilterFn, keyFn){
   // pool udah dikecualikan si jawaban benar sendiri di pemanggilnya.
   // hardFilterFn (opsional): saring dulu ke kandidat yang BENTUKNYA sama kayak jawaban benar
   // (misal sama-sama ada "する") — biar gak ketauan dari bentuk doang. Kalau kandidat yang
@@ -9630,7 +9632,25 @@ function mpPickSmartDistractors(pool, count, similarityFn, hardFilterFn){
   var scored=candidates.map(function(x){ return {item:x, score:similarityFn(x)}; });
   shuffle(scored);
   scored.sort(function(a,b){ return b.score-a.score; });
-  return scored.slice(0, count).map(function(s){ return s.item; });
+  if(!keyFn) return scored.slice(0, count).map(function(s){ return s.item; });
+  // keyFn (opsional): teks yang bakal ditampilin sebagai pilihan (rom/jp/id_ tergantung mode
+  // soal). Dua kandidat beda kata tapi kebetulan sama bacaannya (homofon, misalnya taeru bisa
+  // dari dua kanji berbeda) bisa punya key sama -- kalau lolos dua-duanya, pilihan ganda jadi
+  // keliatan dobel. Di sini skip kandidat yang key-nya udah kepake sama kandidat berskor
+  // lebih tinggi.
+  var out=[]; var usedKeys={};
+  for(var i=0;i<scored.length && out.length<count;i++){
+    var it=scored[i].item, k=keyFn(it);
+    if(k && usedKeys[k]) continue;
+    if(k) usedKeys[k]=true;
+    out.push(it);
+  }
+  if(out.length<count){
+    for(var j=0;j<scored.length && out.length<count;j++){
+      if(out.indexOf(scored[j].item)<0) out.push(scored[j].item);
+    }
+  }
+  return out;
 }
 
 // ── Penilaian soal "Ketik" (bukan pilihan ganda) — bacaan dicocokin ke bentuk romaji
@@ -9805,7 +9825,7 @@ function mpKanjiQuestions(words, count, dir, distractorPool){
       // Dikasih bacaan + arti, cari kanjinya — distractor diprioritasin yang KANJI-nya
       // share karakter sama jawaban benar (keliatan mirip pas dibaca sekilas)
       var candidates=dpool.filter(function(x){return x.jp!==w.jp;});
-      var distractorWords=mpPickSmartDistractors(candidates, 3, function(x){ return mpSharedCharScore(w.jp, x.jp); }, function(x){ return mpWordShape(x.jp)===mpWordShape(w.jp); });
+      var distractorWords=mpPickSmartDistractors(candidates, 3, function(x){ return mpSharedCharScore(w.jp, x.jp); }, function(x){ return mpWordShape(x.jp)===mpWordShape(w.jp); }, function(x){ return x.jp; });
       while(distractorWords.length<3) distractorWords.push({jp:'—',rom:'—',id_:'—'});
       var allWords=distractorWords.concat([w]);
       shuffle(allWords);
@@ -9858,10 +9878,11 @@ function mpKanjiQuestions(words, count, dir, distractorPool){
             }
             return mpReadingSimScore(w.rom, x.rom);
           },
-          function(x){ return x.rom && x.rom.length>okuLen && x.rom.slice(-okuLen)===targetSuffix; }
+          function(x){ return x.rom && x.rom.length>okuLen && x.rom.slice(-okuLen)===targetSuffix; },
+          function(x){ return x.rom; }
         );
       } else {
-        distractorWordsR=mpPickSmartDistractors(candidatesR, 3, function(x){ return mpReadingSimScore(w.rom, x.rom); }, function(x){ return mpReadingShape(x.rom)===mpReadingShape(w.rom); });
+        distractorWordsR=mpPickSmartDistractors(candidatesR, 3, function(x){ return mpReadingSimScore(w.rom, x.rom); }, function(x){ return mpReadingShape(x.rom)===mpReadingShape(w.rom); }, function(x){ return x.rom; });
       }
       while(distractorWordsR.length<3) distractorWordsR.push({jp:'—',rom:'—',id_:'—'});
       var allWordsR=distractorWordsR.concat([w]);
@@ -11219,10 +11240,14 @@ function mpOpenRedoPicker(){
       +(e.section?'<div style="font-size:10px;color:var(--red);font-weight:700;text-transform:uppercase;letter-spacing:1px;margin-bottom:4px">'+mpEsc(e.section)+'</div>':'')
       +'<div style="font-size:16px;line-height:1.6">'+mpEsc(txt)+'</div></div>';
   }).join('');
+  var rerollBtn = pool.length>options.length
+    ? '<button onclick="mpOpenRedoPicker()" style="width:100%;margin-bottom:9px;padding:11px;border:1.5px dashed var(--border);border-radius:10px;background:white;color:var(--ink);font-weight:700;cursor:pointer">🔀 Acak Ulang Pilihan (gratis, gak makan stok)</button>'
+    : '';
   el.innerHTML='<div style="background:white;width:100%;max-width:560px;border-radius:18px 18px 0 0;padding:18px 16px 24px;max-height:80vh;overflow:auto">'
     +'<div style="font-weight:800;font-size:15px;margin-bottom:4px">🔁 Ulangi Soal — pilih 1 soal yang mau diperbaiki</div>'
     +'<div style="font-size:11px;color:var(--mist);margin-bottom:12px">Kalau kali ini benar, soal itu tercatat benar + 100 poin. Streak & soal yang lagi jalan gak berubah.</div>'
     +items
+    +rerollBtn
     +'<button onclick="mpCloseRedoPicker()" style="width:100%;margin-top:4px;padding:12px;border:none;border-radius:10px;background:transparent;color:var(--mist);font-weight:700;cursor:pointer">Batal (skill gak kepakai)</button>'
     +'</div>';
 }
