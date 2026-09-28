@@ -1104,7 +1104,7 @@ header:has(.user-menu.open) { z-index:1000; }
         <span class="user-name" id="user-name">...</span>
         <span id="level-badge" onclick="event.stopPropagation();gotoScreen('levelreward')" title="Level & Reward" style="font-size:10px;font-weight:800;background:linear-gradient(135deg,var(--gold),#c98a1f);color:white;padding:2px 7px;border-radius:8px;cursor:pointer;letter-spacing:.3px">Lv.1</span>
         <span class="sync-badge" id="sync-badge">● sync</span>
-        <span id="build-dot" title="Indikator update: warnanya ganti tiap ada versi baru dari Claude" style="display:inline-block;width:11px;height:11px;border-radius:50%;background:#c0392b;margin-left:6px;vertical-align:middle;border:2px solid white;box-shadow:0 0 0 1px rgba(0,0,0,.15)"></span>
+        <span id="build-dot" title="Indikator update: warnanya ganti tiap ada versi baru dari Claude" style="display:inline-block;width:11px;height:11px;border-radius:50%;background:#2da050;margin-left:6px;vertical-align:middle;border:2px solid white;box-shadow:0 0 0 1px rgba(0,0,0,.15)"></span>
         <!-- 🔴🟢 CLAUDE: WAJIB toggle warna build-dot di atas SETIAP kali file ini dikirim ulang —
              merah #c0392b <-> hijau #2da050 gantian. Ini satu-satunya cara Riyan verifikasi
              upload-nya beneran ke-deploy. JANGAN LUPA, cek baris ini di awal SETIAP delivery. -->
@@ -2364,8 +2364,14 @@ header:has(.user-menu.open) { z-index:1000; }
         <label style="flex:1;min-width:130px;display:flex;align-items:center;gap:6px;padding:10px;border:1.5px solid var(--border);border-radius:10px;cursor:pointer">
           <input type="checkbox" name="mp-kanjidir" value="typeeither"> <span style="font-size:12px">✍️ Ketik Bebas (Bacaan/Arti)</span>
         </label>
+        <label style="flex:1;min-width:130px;display:flex;align-items:center;gap:6px;padding:10px;border:1.5px solid var(--border);border-radius:10px;cursor:pointer">
+          <input type="checkbox" name="mp-kanjidir" value="pg2"> <span style="font-size:12px">🈶🔤 PG Dua Sisi (Arti+Bacaan)</span>
+        </label>
+        <label style="flex:1;min-width:130px;display:flex;align-items:center;gap:6px;padding:10px;border:1.5px solid var(--border);border-radius:10px;cursor:pointer">
+          <input type="checkbox" name="mp-kanjidir" value="typeboth"> <span style="font-size:12px">✍️ Ketik Dua-duanya (Bacaan+Arti)</span>
+        </label>
       </div>
-      <div style="font-size:11px;color:var(--mist);margin-top:6px">✍️ Ketik = soal cuma nampilin kanjinya doang (gak ada petunjuk bacaan/arti), jawabnya diketik sendiri — bukan pilihan ganda. "Ketik Bebas" nerima jawaban bacaan ATAU arti, mana aja yang kamu tulis.</div>
+      <div style="font-size:11px;color:var(--mist);margin-top:6px">✍️ Ketik = soal cuma nampilin kanjinya doang (gak ada petunjuk bacaan/arti), jawabnya diketik sendiri — bukan pilihan ganda. "Ketik Bebas" nerima jawaban bacaan ATAU arti, mana aja yang kamu tulis. "PG Dua Sisi" & "Ketik Dua-duanya" beda — WAJIB jawab bacaan DAN arti, dua-duanya harus benar.</div>
     </div>
     <label style="font-size:12px;font-weight:700;color:var(--mist);display:block;margin-bottom:6px">🎮 Mode Mulai Sesi</label>
     <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:16px">
@@ -9287,7 +9293,11 @@ function mpEsc(s){ return String(s==null?'':s).replace(/[&<>"']/g, function(c){r
 // Buat nampilin "jawaban benar" di layar hasil/pembahasan/PDF — soal mode 'either' (Ketik
 // Bebas) punya dua kemungkinan benar (bacaan & arti), jadi ditampilin dua-duanya sekaligus.
 function mpTypedCorrectDisplay(a){
-  if(a && a.answerType==='either') return (a.answer||'')+' / '+(a.answerMeaning||'');
+  if(a && a.mode==='pg2'){
+    var rt=(a.choicesReading||[])[a.answerReadingIdx], mt=(a.choicesMeaning||[])[a.answerMeaningIdx];
+    return (rt||'')+' / '+(mt||'');
+  }
+  if(a && (a.answerType==='either' || a.answerType==='both')) return (a.answer||'')+' / '+(a.answerMeaning||'');
   return a ? a.answer : '';
 }
 function mpBuildPembahasanText(a){
@@ -9807,9 +9817,66 @@ function mpCheckTypedAnswer(userText, q){
     // Ketik Bebas — bacaan ATAU arti, mana aja yang dijawab dicek dua-duanya.
     return mpCheckReadingAnswer(userText, q.answer) || mpCheckMeaningAnswer(userText, q.answerMeaning);
   }
+  if(q.answerType==='both'){
+    // Ketik Dua-duanya — WAJIB bacaan DAN arti dua-duanya benar. userText di sini objek
+    // {reading, meaning}, bukan string tunggal kayak mode lain.
+    if(!userText.reading || !userText.meaning) return false;
+    return mpCheckReadingAnswer(userText.reading, q.answer) && mpCheckMeaningAnswer(userText.meaning, q.answerMeaning);
+  }
   return mpCheckMeaningAnswer(userText, q.answer);
 }
 
+function mpBuildBacaanChoices(w, dpool){
+  // Dipisah dari mpKanjiQuestions biar bisa dipakai bareng sama mode "Baca Kanji" (PG) dan
+  // "PG Dua Sisi" — balikin {choices, answer, choiceMeta} 4 pilihan BACAAN (termasuk benar).
+  var candidatesR=dpool.filter(function(x){return x.rom!==w.rom;});
+  var okuLen=mpOkuriganaLen(w.jp);
+  var distractorWordsR;
+  if(okuLen>0 && w.rom && w.rom.length>okuLen){
+    // Kata verba/adjektiva ber-okurigana (kanji+akhiran hiragana, kayak 生きる/食べる) —
+    // kalau akhirannya dibiarin beda-beda antar pilihan (きる/く/い/る dst), orang bisa
+    // nebak dari POLA akhirannya doang tanpa perlu tau bacaan kanjinya. Jadi di sini semua
+    // pilihan DIPAKSA punya akhiran (okurigana) yang SAMA PERSIS kayak jawaban benar, dan
+    // yang divariasikan cuma bagian bacaan kanjinya (bagian depan) — biar bener2 nguji
+    // apakah hafal bacaan kanji itu, bukan pola akhirannya.
+    var targetSuffix=w.rom.slice(-okuLen);
+    var targetStem=w.rom.slice(0,-okuLen);
+    distractorWordsR=mpPickSmartDistractors(candidatesR, 3,
+      function(x){
+        if(x.rom && x.rom.length>okuLen && x.rom.slice(-okuLen)===targetSuffix){
+          return mpReadingSimScore(targetStem, x.rom.slice(0,-okuLen))+5; // bonus biar diprioritasin drpd fallback yg akhirannya beda
+        }
+        return mpReadingSimScore(w.rom, x.rom);
+      },
+      function(x){ return x.rom && x.rom.length>okuLen && x.rom.slice(-okuLen)===targetSuffix; },
+      function(x){ return x.rom; }
+    );
+  } else {
+    distractorWordsR=mpPickSmartDistractors(candidatesR, 3, function(x){ return mpReadingSimScore(w.rom, x.rom); }, function(x){ return mpReadingShape(x.rom)===mpReadingShape(w.rom); }, function(x){ return x.rom; });
+  }
+  while(distractorWordsR.length<3) distractorWordsR.push({jp:'—',rom:'—',id_:'—'});
+  var allWordsR=distractorWordsR.concat([w]);
+  shuffle(allWordsR);
+  var choicesR=allWordsR.map(function(x){return x.rom;});
+  var choiceMetaR=allWordsR.map(function(x){return '「'+x.jp+'」, artinya "'+x.id_+'"';});
+  return { choices:choicesR, answer:choicesR.indexOf(w.rom), choiceMeta:choiceMetaR };
+}
+// Sama kayak di atas tapi buat sisi ARTI — dipakai bareng mpKotobaQuestions-style distractor
+// (share karakter kanji + bacaan mirip) dan khusus buat mode "PG Dua Sisi".
+function mpBuildArtiChoices(w, dpool){
+  var candidates=dpool.filter(function(x){return x.id_!==w.id_ && x.jp!==w.jp;});
+  var distractorWords=mpPickSmartDistractors(candidates, 3,
+    function(x){ return mpSharedCharScore(w.jp,x.jp) + mpReadingSimScore(w.rom,x.rom); },
+    function(x){ return mpWordShape(x.jp)===mpWordShape(w.jp); },
+    function(x){ return x.id_; }
+  );
+  while(distractorWords.length<3) distractorWords.push({jp:'—',rom:'—',id_:'—'});
+  var allWords=distractorWords.concat([w]);
+  shuffle(allWords);
+  var choicesA=allWords.map(function(x){return x.id_;});
+  var choiceMetaA=allWords.map(function(x){return '「'+x.jp+'」 dibaca "'+x.rom+'"';});
+  return { choices:choicesA, answer:choicesA.indexOf(w.id_), choiceMeta:choiceMetaA };
+}
 function mpKanjiQuestions(words, count, dir, distractorPool){
   // Hanya kata yang benar-benar mengandung kanji (bukan cuma hiragana/katakana).
   // Target soal tetap dari `words` (level yang dipilih host), tapi sumber PENGECOH boleh
@@ -9840,60 +9907,47 @@ function mpKanjiQuestions(words, count, dir, distractorPool){
         meaning: w.id_,
         expl: '「'+w.jp+'」 dibaca "'+w.rom+'", artinya "'+w.id_+'".'
       });
-    } else if(dir==='typeread' || dir==='typemeaning' || dir==='typeeither'){
+    } else if(dir==='typeread' || dir==='typemeaning' || dir==='typeeither' || dir==='typeboth'){
       // Soal jawab-ketik — cuma nampilin kanjinya doang, gak ada pilihan ganda & gak ada
       // petunjuk apapun (bacaan/arti) di teks soal, biar beneran ngetes ingatan.
       var isReadType = dir==='typeread';
       var isEitherType = dir==='typeeither';
+      var isBothType = dir==='typeboth';
       out.push({
         q: w.jp,
         mode: 'typed',
-        answerType: isEitherType ? 'either' : (isReadType ? 'reading' : 'meaning'),
-        // 'either': answer nyimpen bacaan, answerMeaning nyimpen arti — dua-duanya diterima.
-        answer: (isReadType || isEitherType) ? w.rom : w.id_,
-        answerMeaning: isEitherType ? w.id_ : undefined,
-        section: isEitherType ? '✍️ Ketik Bebas (Bacaan/Arti)' : (isReadType ? '✍️ Ketik Bacaan' : '✍️ Ketik Arti'),
+        answerType: isBothType ? 'both' : (isEitherType ? 'either' : (isReadType ? 'reading' : 'meaning')),
+        // 'either'/'both': answer nyimpen bacaan, answerMeaning nyimpen arti. 'either' nerima
+        // salah satu, 'both' WAJIB dua-duanya bener.
+        answer: (isReadType || isEitherType || isBothType) ? w.rom : w.id_,
+        answerMeaning: (isEitherType || isBothType) ? w.id_ : undefined,
+        section: isBothType ? '✍️ Ketik Dua-duanya (Bacaan+Arti)' : (isEitherType ? '✍️ Ketik Bebas (Bacaan/Arti)' : (isReadType ? '✍️ Ketik Bacaan' : '✍️ Ketik Arti')),
+        meaning: w.id_,
+        expl: '「'+w.jp+'」 dibaca "'+w.rom+'", artinya "'+w.id_+'".'
+      });
+    } else if(dir==='pg2'){
+      // PG Dua Sisi — soal cuma nampilin kanjinya, tapi harus jawab DUA sisi sekaligus:
+      // arti (kolom kiri) DAN bacaan (kolom kanan). Dua-duanya harus benar.
+      var bc = mpBuildBacaanChoices(w, dpool);
+      var ac = mpBuildArtiChoices(w, dpool);
+      out.push({
+        q: w.jp,
+        mode: 'pg2',
+        choicesReading: bc.choices, answerReadingIdx: bc.answer, choiceMetaReading: bc.choiceMeta,
+        choicesMeaning: ac.choices, answerMeaningIdx: ac.answer, choiceMetaMeaning: ac.choiceMeta,
+        section: '🈶🔤 PG Dua Sisi (Arti+Bacaan)',
         meaning: w.id_,
         expl: '「'+w.jp+'」 dibaca "'+w.rom+'", artinya "'+w.id_+'".'
       });
     } else {
       // Dikasih kanji, cari bacaannya (default: baca kanji) — distractor diprioritasin yang
       // BACAANNYA mirip (panjang sama, awalan sama) biar gak langsung ketebak dari sekilas beda jauh
-      var candidatesR=dpool.filter(function(x){return x.rom!==w.rom;});
-      var okuLen=mpOkuriganaLen(w.jp);
-      var distractorWordsR;
-      if(okuLen>0 && w.rom && w.rom.length>okuLen){
-        // Kata verba/adjektiva ber-okurigana (kanji+akhiran hiragana, kayak 生きる/食べる) —
-        // kalau akhirannya dibiarin beda-beda antar pilihan (きる/く/い/る dst), orang bisa
-        // nebak dari POLA akhirannya doang tanpa perlu tau bacaan kanjinya. Jadi di sini semua
-        // pilihan DIPAKSA punya akhiran (okurigana) yang SAMA PERSIS kayak jawaban benar, dan
-        // yang divariasikan cuma bagian bacaan kanjinya (bagian depan) — biar bener2 nguji
-        // apakah hafal bacaan kanji itu, bukan pola akhirannya.
-        var targetSuffix=w.rom.slice(-okuLen);
-        var targetStem=w.rom.slice(0,-okuLen);
-        distractorWordsR=mpPickSmartDistractors(candidatesR, 3,
-          function(x){
-            if(x.rom && x.rom.length>okuLen && x.rom.slice(-okuLen)===targetSuffix){
-              return mpReadingSimScore(targetStem, x.rom.slice(0,-okuLen))+5; // bonus biar diprioritasin drpd fallback yg akhirannya beda
-            }
-            return mpReadingSimScore(w.rom, x.rom);
-          },
-          function(x){ return x.rom && x.rom.length>okuLen && x.rom.slice(-okuLen)===targetSuffix; },
-          function(x){ return x.rom; }
-        );
-      } else {
-        distractorWordsR=mpPickSmartDistractors(candidatesR, 3, function(x){ return mpReadingSimScore(w.rom, x.rom); }, function(x){ return mpReadingShape(x.rom)===mpReadingShape(w.rom); }, function(x){ return x.rom; });
-      }
-      while(distractorWordsR.length<3) distractorWordsR.push({jp:'—',rom:'—',id_:'—'});
-      var allWordsR=distractorWordsR.concat([w]);
-      shuffle(allWordsR);
-      var choicesR=allWordsR.map(function(x){return x.rom;});
-      var choiceMetaR=allWordsR.map(function(x){return '「'+x.jp+'」, artinya "'+x.id_+'"';});
+      var b = mpBuildBacaanChoices(w, dpool);
       out.push({
         q: '「'+w.jp+'」 — bacaan yang benar?',
-        choices: choicesR,
-        answer: choicesR.indexOf(w.rom),
-        choiceMeta: choiceMetaR,
+        choices: b.choices,
+        answer: b.answer,
+        choiceMeta: b.choiceMeta,
         section: '🈁 Baca Kanji',
         meaning: w.id_,
         expl: '「'+w.jp+'」 dibaca "'+w.rom+'", artinya "'+w.id_+'".'
@@ -10849,14 +10903,34 @@ function mpRenderPlay(){
   if(q.instr) html+='<div style="font-size:12px;color:var(--mist);line-height:1.6;margin-bottom:10px;font-style:italic">'+mpEsc(q.instr)+'</div>';
   if(q.passage) html+='<div style="background:var(--paper);border:1px solid var(--border);border-radius:10px;padding:14px;margin-bottom:14px;font-size:17px;line-height:2;white-space:pre-wrap">'+mpEsc(q.passage)+'</div>';
   var isTypedQ = q.mode==='typed';
-  html+='<div style="font-size:'+(isTypedQ?'40px':'20px')+';font-weight:600;line-height:1.8;margin-bottom:16px;white-space:pre-wrap;text-align:'+(isTypedQ?'center':'left')+'">'+mpQuestionTextHTML(q)+'</div>';
+  var isPg2Q = q.mode==='pg2';
+  html+='<div style="font-size:'+((isTypedQ||isPg2Q)?'40px':'20px')+';font-weight:600;line-height:1.8;margin-bottom:16px;white-space:pre-wrap;text-align:'+((isTypedQ||isPg2Q)?'center':'left')+'">'+mpQuestionTextHTML(q)+'</div>';
   html+='<div id="mp-play-choices">';
-  if(isTypedQ){
+  if(isPg2Q){
+    mpState._pg2Sel={reading:null, meaning:null};
+    var pg2Col=function(list, side){
+      return list.map(function(c,idx){
+        return '<div onclick="mpPg2Select(&apos;'+side+'&apos;,'+idx+')" data-idx="'+idx+'" style="padding:10px 8px;margin-bottom:6px;border:2px solid var(--border);border-radius:10px;cursor:pointer;background:white;font-size:13px;line-height:1.5;text-align:center">'+mpEsc(c)+'</div>';
+      }).join('');
+    };
+    html+='<div style="display:flex;gap:10px;margin-bottom:10px">'
+      +'<div style="flex:1;min-width:0"><div style="font-size:11px;font-weight:700;color:var(--mist);margin-bottom:6px;text-align:center">📖 ARTINYA</div><div id="mp-pg2-meaning">'+pg2Col(q.choicesMeaning,'meaning')+'</div></div>'
+      +'<div style="flex:1;min-width:0"><div style="font-size:11px;font-weight:700;color:var(--mist);margin-bottom:6px;text-align:center">🔤 BACAANNYA</div><div id="mp-pg2-reading">'+pg2Col(q.choicesReading,'reading')+'</div></div>'
+      +'</div>'
+      +'<button id="mp-pg2-submit" onclick="mpSubmitPg2Answer()" disabled style="width:100%;padding:13px;border:none;border-radius:10px;background:var(--border);color:white;font-weight:700;font-size:13px;cursor:not-allowed">✅ Jawab (pilih arti & bacaan dulu)</button>';
+  } else if(isTypedQ){
     var placeholder = q.answerType==='reading' ? 'Ketik cara bacanya (romaji atau ひらがな)…'
       : q.answerType==='either' ? 'Ketik bacaan ATAU artinya, bebas pilih salah satu…'
+      : q.answerType==='both' ? '' /* pakai 2 kotak terpisah di bawah */
       : 'Ketik artinya (Indonesia atau Inggris)…';
-    html+='<input id="mp-typed-input" type="text" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="'+placeholder+'" onkeydown="if(event.key===\'Enter\'){mpSubmitTypedAnswer();}" style="width:100%;padding:13px 14px;border:2px solid var(--border);border-radius:10px;font-family:inherit;font-size:17px;margin-bottom:10px">'
-      +'<button onclick="mpSubmitTypedAnswer()" style="width:100%;padding:13px;border:none;border-radius:10px;background:var(--red);color:white;font-weight:700;font-size:14px;cursor:pointer">✅ Jawab</button>';
+    if(q.answerType==='both'){
+      html+='<input id="mp-typed-input-read" type="text" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="Ketik cara bacanya (romaji atau ひらがな)…" style="width:100%;padding:13px 14px;border:2px solid var(--border);border-radius:10px;font-family:inherit;font-size:16px;margin-bottom:8px">'
+        +'<input id="mp-typed-input-mean" type="text" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="Ketik artinya (Indonesia atau Inggris)…" onkeydown="if(event.key===\'Enter\'){mpSubmitTypedAnswer();}" style="width:100%;padding:13px 14px;border:2px solid var(--border);border-radius:10px;font-family:inherit;font-size:16px;margin-bottom:10px">'
+        +'<button onclick="mpSubmitTypedAnswer()" style="width:100%;padding:13px;border:none;border-radius:10px;background:var(--red);color:white;font-weight:700;font-size:14px;cursor:pointer">✅ Jawab (Bacaan + Arti)</button>';
+    } else {
+      html+='<input id="mp-typed-input" type="text" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="'+placeholder+'" onkeydown="if(event.key===\'Enter\'){mpSubmitTypedAnswer();}" style="width:100%;padding:13px 14px;border:2px solid var(--border);border-radius:10px;font-family:inherit;font-size:17px;margin-bottom:10px">'
+        +'<button onclick="mpSubmitTypedAnswer()" style="width:100%;padding:13px;border:none;border-radius:10px;background:var(--red);color:white;font-weight:700;font-size:14px;cursor:pointer">✅ Jawab</button>';
+    }
   } else {
     (q.choices||[]).forEach(function(c,idx){
       html+='<div onclick="mpAnswer('+idx+')" style="display:flex;gap:10px;align-items:flex-start;padding:13px 14px;margin-bottom:9px;border:2px solid var(--border);border-radius:10px;cursor:pointer;background:white;transition:all .12s">'
@@ -10869,7 +10943,7 @@ function mpRenderPlay(){
     html+='<button onclick="mpSkipQuestion()" style="width:100%;margin-top:6px;padding:10px;border:1.5px dashed var(--border);border-radius:10px;background:transparent;color:var(--mist);cursor:pointer;font-weight:700;font-size:12px">⏭️ Lewati Soal Ini (muncul lagi di akhir)</button>';
   }
   if(box){ box.innerHTML=html; box.scrollTop=0; }
-  if(isTypedQ){ var tIn=document.getElementById('mp-typed-input'); if(tIn) tIn.focus(); }
+  if(isTypedQ){ var tIn=document.getElementById(q.answerType==='both' ? 'mp-typed-input-read' : 'mp-typed-input'); if(tIn) tIn.focus(); }
 }
 
 function mpSkipQuestion(){
@@ -11112,10 +11186,54 @@ function mpAnswer(choiceIdx){
 function mpSubmitTypedAnswer(){
   var choicesEl=document.getElementById('mp-play-choices');
   if(!choicesEl || choicesEl.dataset.locked==='1') return;
+  var redoCtx=mpState._redoing||null;
+  var q = redoCtx ? redoCtx.q : mpState.questions[mpState.idx];
+  if(q && q.answerType==='both'){
+    var readEl=document.getElementById('mp-typed-input-read');
+    var meanEl=document.getElementById('mp-typed-input-mean');
+    var rv=readEl?readEl.value.trim():'', mv=meanEl?meanEl.value.trim():'';
+    if(!rv){ if(readEl) readEl.focus(); return; }
+    if(!mv){ if(meanEl) meanEl.focus(); return; }
+    mpFinalizeAnswer(-1, {both:true, reading:rv, meaning:mv});
+    return;
+  }
   var inputEl=document.getElementById('mp-typed-input');
   var val=inputEl?inputEl.value.trim():'';
   if(!val){ if(inputEl) inputEl.focus(); return; }
   mpFinalizeAnswer(-1, val);
+}
+// ── Skill/soal mode "PG Dua Sisi" — pilih 1 dari kolom Arti DAN 1 dari kolom Bacaan sebelum
+// bisa nge-submit. Seleksi disimpen di mpState._pg2Sel dan tombolnya baru aktif kalau dua-duanya
+// udah kepilih.
+function mpPg2Select(side, idx){
+  var choicesEl=document.getElementById('mp-play-choices');
+  if(!choicesEl || choicesEl.dataset.locked==='1') return;
+  if(!mpState._pg2Sel) mpState._pg2Sel={reading:null, meaning:null};
+  mpState._pg2Sel[side]=idx;
+  var container=document.getElementById(side==='reading' ? 'mp-pg2-reading' : 'mp-pg2-meaning');
+  if(container){
+    var kids=container.children;
+    for(var i=0;i<kids.length;i++){
+      var sel=(i===idx);
+      kids[i].style.borderColor = sel ? 'var(--indigo)' : 'var(--border)';
+      kids[i].style.background = sel ? 'rgba(44,62,122,.08)' : 'white';
+    }
+  }
+  var ready = mpState._pg2Sel.reading!=null && mpState._pg2Sel.meaning!=null;
+  var btn=document.getElementById('mp-pg2-submit');
+  if(btn){
+    btn.disabled=!ready;
+    btn.style.background = ready ? 'var(--red)' : 'var(--border)';
+    btn.style.cursor = ready ? 'pointer' : 'not-allowed';
+    btn.textContent = ready ? '✅ Jawab' : '✅ Jawab (pilih arti & bacaan dulu)';
+  }
+}
+function mpSubmitPg2Answer(){
+  var choicesEl=document.getElementById('mp-play-choices');
+  if(!choicesEl || choicesEl.dataset.locked==='1') return;
+  var sel=mpState._pg2Sel;
+  if(!sel || sel.reading==null || sel.meaning==null) return;
+  mpFinalizeAnswer(null, {pg2:true, reading:sel.reading, meaning:sel.meaning});
 }
 
 // Penjelasan soal di feedback langsung (abis jawab) — tampil untuk jawaban BENAR maupun SALAH,
@@ -11135,15 +11253,41 @@ function mpFinalizeAnswer(choiceIdx, typedText){
   var redoCtx=mpState._redoing||null; // lagi ngerjain ulang soal salah lama (skill Ulangi Soal)?
   var q = redoCtx ? redoCtx.q : mpState.questions[mpState.idx];
   var isTypedQ = q.mode==='typed';
+  var isPg2Q = q.mode==='pg2';
   var isCorrect, chosenValue;
-  if(isTypedQ){
+  if(isPg2Q){
+    var sel = (typedText && typedText.pg2) ? typedText : {reading:null, meaning:null};
+    isCorrect = sel.reading===q.answerReadingIdx && sel.meaning===q.answerMeaningIdx;
+    chosenValue = (q.choicesReading[sel.reading]||'?') + ' / ' + (q.choicesMeaning[sel.meaning]||'?');
+    [ {id:'mp-pg2-meaning', ans:q.answerMeaningIdx, chosen:sel.meaning}, {id:'mp-pg2-reading', ans:q.answerReadingIdx, chosen:sel.reading} ].forEach(function(grp){
+      var cont=document.getElementById(grp.id); if(!cont) return;
+      var kids=cont.children;
+      for(var k=0;k<kids.length;k++){
+        kids[k].style.pointerEvents='none';
+        if(k===grp.ans){ kids[k].style.borderColor='var(--jade)'; kids[k].style.background='rgba(45,122,79,.08)'; }
+        if(k===grp.chosen && k!==grp.ans){ kids[k].style.borderColor='var(--red)'; kids[k].style.background='rgba(192,57,43,.08)'; }
+      }
+    });
+    var pg2Btn=document.getElementById('mp-pg2-submit'); if(pg2Btn) pg2Btn.disabled=true;
+  } else if(isTypedQ){
     chosenValue = typedText || null;
     isCorrect = !!chosenValue && mpCheckTypedAnswer(chosenValue, q);
-    var inputEl=document.getElementById('mp-typed-input');
-    if(inputEl){
-      inputEl.disabled=true;
-      inputEl.style.borderColor = isCorrect?'var(--jade)':'var(--red)';
-      inputEl.style.background = isCorrect?'rgba(45,122,79,.08)':'rgba(192,57,43,.08)';
+    if(q.answerType==='both' && chosenValue){
+      chosenValue = chosenValue.reading + ' / ' + chosenValue.meaning; // buat log/riwayat, disimpen sbg teks
+      var readEl=document.getElementById('mp-typed-input-read'), meanEl=document.getElementById('mp-typed-input-mean');
+      [readEl, meanEl].forEach(function(el){
+        if(!el) return;
+        el.disabled=true;
+        el.style.borderColor = isCorrect?'var(--jade)':'var(--red)';
+        el.style.background = isCorrect?'rgba(45,122,79,.08)':'rgba(192,57,43,.08)';
+      });
+    } else {
+      var inputEl=document.getElementById('mp-typed-input');
+      if(inputEl){
+        inputEl.disabled=true;
+        inputEl.style.borderColor = isCorrect?'var(--jade)':'var(--red)';
+        inputEl.style.background = isCorrect?'rgba(45,122,79,.08)':'rgba(192,57,43,.08)';
+      }
     }
     if(choicesEl){
       var btn=choicesEl.querySelector('button'); if(btn) btn.disabled=true;
@@ -11160,6 +11304,10 @@ function mpFinalizeAnswer(choiceIdx, typedText){
       }
     }
   }
+  // Tampilan "jawaban benar yang bener" buat feedback & pembahasan — beda bentuk tergantung mode soal.
+  var correctDisplay = isPg2Q ? ((q.choicesReading[q.answerReadingIdx])+' / '+(q.choicesMeaning[q.answerMeaningIdx]))
+    : isTypedQ ? ((q.answerType==='either'||q.answerType==='both') ? (q.answer+' / '+q.answerMeaning) : q.answer)
+    : (q.choices?q.choices[q.answer]:'');
   if(redoCtx){
     // Skill Ulangi Soal: hasilnya cuma benerin catatan soal LAMA itu — soal yang lagi berjalan,
     // streak, dan urutan soal gak disentuh sama sekali.
@@ -11167,14 +11315,13 @@ function mpFinalizeAnswer(choiceIdx, typedText){
     var gainedR=0;
     if(isCorrect){
       gainedR=100; mpState.score+=gainedR; mpState.correct++;
-      if(eLog){ eLog.correct=true; eLog.chosen=isTypedQ?chosenValue:eLog.answer; eLog.gained=gainedR; eLog.redone=true; }
+      if(eLog){ eLog.correct=true; eLog.chosen=(isTypedQ||isPg2Q)?chosenValue:eLog.answer; eLog.gained=gainedR; eLog.redone=true; }
     } else if(eLog){ eLog.redone=true; }
     mpState._redoing=null;
     var fbR=document.getElementById('mp-play-feedback');
     if(fbR){
-      var cdR = isTypedQ ? (q.answerType==='either' ? (q.answer+' / '+q.answerMeaning) : q.answer) : (q.choices?q.choices[q.answer]:'');
-      var labelR = isCorrect ? ('✅ Benar! Soal salah tadi sekarang tercatat benar, +'+gainedR+' poin') : ('❌ Masih salah — jawaban benar: '+mpEsc(cdR)+' (skill terpakai, soal itu tetap tercatat salah)');
-      var aR={expl:q.expl, correct:isCorrect, chosen:(isTypedQ?chosenValue:choiceIdx), answer:q.answer, choices:q.choices, choiceMeta:q.choiceMeta};
+      var labelR = isCorrect ? ('✅ Benar! Soal salah tadi sekarang tercatat benar, +'+gainedR+' poin') : ('❌ Masih salah — jawaban benar: '+mpEsc(correctDisplay)+' (skill terpakai, soal itu tetap tercatat salah)');
+      var aR={expl:q.expl, correct:isCorrect, chosen:(isTypedQ||isPg2Q)?chosenValue:choiceIdx, answer:q.answer, choices:q.choices, choiceMeta:q.choiceMeta};
       fbR.innerHTML='<div style="margin-top:10px;padding:12px;border-radius:10px;text-align:center;font-weight:700;background:'+(isCorrect?'rgba(45,122,79,.1)':'rgba(192,57,43,.1)')+';color:'+(isCorrect?'var(--jade)':'var(--red)')+'">'+labelR+'</div>'+mpFeedbackExplHTML(aR);
     }
     mpSaveProgress();
@@ -11200,12 +11347,13 @@ function mpFinalizeAnswer(choiceIdx, typedText){
     q:q.q, choices:q.choices||null, answer:q.answer, chosen:chosenValue, correct:isCorrect,
     section:q.section||'', passage:q.passage||null, underline:q.underline||null, instr:q.instr||null,
     meaning:q.meaning||null, expl:q.expl||null, choiceMeta:q.choiceMeta||null, gained:gained,
-    mode:q.mode||null, answerType:q.answerType||null, answerMeaning:q.answerMeaning||null
+    mode:q.mode||null, answerType:q.answerType||null, answerMeaning:q.answerMeaning||null,
+    choicesReading:q.choicesReading||null, answerReadingIdx:(q.answerReadingIdx!=null?q.answerReadingIdx:null),
+    choicesMeaning:q.choicesMeaning||null, answerMeaningIdx:(q.answerMeaningIdx!=null?q.answerMeaningIdx:null)
   });
   mpState.idx++; mpState.answered=mpState.idx;
   var fb=document.getElementById('mp-play-feedback');
   if(fb){
-    var correctDisplay = isTypedQ ? (q.answerType==='either' ? (q.answer+' / '+q.answerMeaning) : q.answer) : (q.choices?q.choices[q.answer]:'');
     var label = isCorrect?('✅ Benar! +'+gained+' poin'+(speedBonus>0?' (termasuk +'+speedBonus+' bonus cepat)':'')+(wasBoost?' (⚡2x!)':'')):('❌ Salah — jawaban benar: '+mpEsc(correctDisplay));
     fb.innerHTML='<div style="margin-top:10px;padding:12px;border-radius:10px;text-align:center;font-weight:700;background:'+(isCorrect?'rgba(45,122,79,.1)':'rgba(192,57,43,.1)')+';color:'+(isCorrect?'var(--jade)':'var(--red)')+'">'
       +label+'</div>'+mpFeedbackExplHTML(mpState.answerLog[mpState.answerLog.length-1]);
@@ -11256,7 +11404,20 @@ function mpPickRedo(logIdx){
   var e=(mpState.answerLog||[])[logIdx];
   if(!e || (mpState.powerups.redo||0)<=0 || mpState._redoing) return;
   var choices=null, meta=null, ans=e.answer;
-  if(e.choices && e.choices.length){
+  var choicesReading=null, answerReadingIdx=null, choicesMeaning=null, answerMeaningIdx=null;
+  if(e.mode==='pg2'){
+    // Dua sisi diacak ULANG SECARA TERPISAH, biar posisi jawabannya beneran acak lagi.
+    if(e.choicesReading && e.choicesReading.length){
+      var orderR=e.choicesReading.map(function(_,i){return i;}); shuffle(orderR);
+      choicesReading=orderR.map(function(i){return e.choicesReading[i];});
+      answerReadingIdx=orderR.indexOf(e.answerReadingIdx);
+    }
+    if(e.choicesMeaning && e.choicesMeaning.length){
+      var orderM=e.choicesMeaning.map(function(_,i){return i;}); shuffle(orderM);
+      choicesMeaning=orderM.map(function(i){return e.choicesMeaning[i];});
+      answerMeaningIdx=orderM.indexOf(e.answerMeaningIdx);
+    }
+  } else if(e.choices && e.choices.length){
     // urutan pilihan diacak ulang, biar gak sekadar inget posisi jawabannya
     var order=e.choices.map(function(_,i){return i;}); shuffle(order);
     choices=order.map(function(i){return e.choices[i];});
@@ -11264,7 +11425,7 @@ function mpPickRedo(logIdx){
     ans=order.indexOf(e.answer);
   }
   mpState.powerups.redo--;
-  mpState._redoing={ logIdx:logIdx, q:{ q:e.q, choices:choices, answer:ans, section:e.section, passage:e.passage, underline:e.underline, instr:e.instr, meaning:e.meaning, expl:e.expl, choiceMeta:meta, mode:e.mode, answerType:e.answerType, answerMeaning:e.answerMeaning } };
+  mpState._redoing={ logIdx:logIdx, q:{ q:e.q, choices:choices, answer:ans, section:e.section, passage:e.passage, underline:e.underline, instr:e.instr, meaning:e.meaning, expl:e.expl, choiceMeta:meta, mode:e.mode, answerType:e.answerType, answerMeaning:e.answerMeaning, choicesReading:choicesReading, answerReadingIdx:answerReadingIdx, choicesMeaning:choicesMeaning, answerMeaningIdx:answerMeaningIdx } };
   mpSaveProgress();
   mpRenderPlay();
   mpToast('🔁 Skill dipakai — kerjain ulang soal pilihanmu', 'info');
@@ -11567,7 +11728,7 @@ function mpRenderHistDetQuestions(h){
       + (a.instr?('<div style="font-size:11px;color:var(--mist);line-height:1.5;margin-bottom:8px;font-style:italic">'+mpEsc(a.instr)+'</div>'):'')
       + (a.passage?('<div style="background:var(--paper);border:1px solid var(--border);border-radius:8px;padding:10px;margin-bottom:8px;font-size:15px;line-height:1.8;white-space:pre-wrap">'+mpEsc(a.passage)+'</div>'):'')
       + '<div style="font-weight:600;font-size:17px;line-height:1.6;margin-bottom:10px;white-space:pre-wrap">'+(i+1)+'. '+mpQuestionTextHTML(a)+'</div>'
-      + (a.mode==='typed'
+      + ((a.mode==='typed'||a.mode==='pg2')
           ? ('<div style="padding:9px 10px;margin-bottom:6px;border:1.5px solid '+(a.correct?'var(--jade)':'var(--red)')+';border-radius:8px;background:'+(a.correct?'rgba(45,122,79,.08)':'rgba(192,57,43,.08)')+';font-size:15px">Jawabanmu: '+mpEsc(a.chosen||'(kosong)')+'</div>'
             + (a.correct?'':'<div style="padding:9px 10px;margin-bottom:6px;border:1.5px solid var(--jade);border-radius:8px;background:rgba(45,122,79,.08);font-size:15px">Jawaban benar: '+mpEsc(mpTypedCorrectDisplay(a))+'</div>'))
           : (a.choices||[]).map(function(c,ci){
@@ -11596,7 +11757,7 @@ function mpExportHistoryPDF(){
   var qHtml = (h.answers||[]).map(function(a,i){
     var timedOut = a.chosen===-1 || a.chosen===undefined;
     var choicesHtml;
-    if(a.mode==='typed'){
+    if(a.mode==='typed'||a.mode==='pg2'){
       var ok=a.correct;
       choicesHtml = '<div style="padding:6px 10px;margin-bottom:4px;border:1px solid '+(ok?'#2d7a4f':'#c0392b')+';border-radius:6px;background:'+(ok?'#e8f5e9':'#fdecea')+'">Jawabanmu: '+mpEsc(a.chosen||'(kosong)')+'</div>'
         + (ok?'':'<div style="padding:6px 10px;margin-bottom:4px;border:1px solid #2d7a4f;border-radius:6px;background:#e8f5e9;font-weight:600">Jawaban benar: '+mpEsc(mpTypedCorrectDisplay(a))+'</div>');
