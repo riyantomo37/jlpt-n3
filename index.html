@@ -1104,7 +1104,7 @@ header:has(.user-menu.open) { z-index:1000; }
         <span class="user-name" id="user-name">...</span>
         <span id="level-badge" onclick="event.stopPropagation();gotoScreen('levelreward')" title="Level & Reward" style="font-size:10px;font-weight:800;background:linear-gradient(135deg,var(--gold),#c98a1f);color:white;padding:2px 7px;border-radius:8px;cursor:pointer;letter-spacing:.3px">Lv.1</span>
         <span class="sync-badge" id="sync-badge">● sync</span>
-        <span id="build-dot" title="Indikator update: warnanya ganti tiap ada versi baru dari Claude" style="display:inline-block;width:11px;height:11px;border-radius:50%;background:#2da050;margin-left:6px;vertical-align:middle;border:2px solid white;box-shadow:0 0 0 1px rgba(0,0,0,.15)"></span>
+        <span id="build-dot" title="Indikator update: warnanya ganti tiap ada versi baru dari Claude" style="display:inline-block;width:11px;height:11px;border-radius:50%;background:#c0392b;margin-left:6px;vertical-align:middle;border:2px solid white;box-shadow:0 0 0 1px rgba(0,0,0,.15)"></span>
         <!-- 🔴🟢 CLAUDE: WAJIB toggle warna build-dot di atas SETIAP kali file ini dikirim ulang —
              merah #c0392b <-> hijau #2da050 gantian. Ini satu-satunya cara Riyan verifikasi
              upload-nya beneran ke-deploy. JANGAN LUPA, cek baris ini di awal SETIAP delivery. -->
@@ -2270,7 +2270,7 @@ header:has(.user-menu.open) { z-index:1000; }
       <option value="120">2 menit</option><option value="180" selected>3 menit</option>
       <option value="300">5 menit</option><option value="600">10 menit</option><option value="900">15 menit</option>
       <option value="1800">30 menit</option><option value="3600">60 menit</option>
-      <option value="5400">90 menit</option><option value="7200">120 menit</option>
+      <option value="5400">90 menit</option><option value="7200">120 menit</option><option value="9000">150 menit</option><option value="10800">180 menit</option>
     </select>
   </div>
   <div style="background:white;border:1px solid var(--border);border-radius:12px;padding:16px;margin-bottom:14px">
@@ -2390,14 +2390,14 @@ header:has(.user-menu.open) { z-index:1000; }
       <option value="5">5 soal</option><option value="10" selected>10 soal</option>
       <option value="15">15 soal</option><option value="20">20 soal</option><option value="30">30 soal</option>
       <option value="50">50 soal</option><option value="100">100 soal</option>
-      <option value="150">150 soal</option><option value="200">200 soal</option>
+      <option value="150">150 soal</option><option value="200">200 soal</option><option value="300">300 soal</option><option value="400">400 soal</option><option value="500">500 soal</option>
     </select>
     <label style="font-size:12px;font-weight:700;color:var(--mist);display:block;margin-bottom:6px">⏱️ Waktu Ujian (total, bukan per soal)</label>
     <select id="mp-host-time" style="width:100%;padding:11px;border:1.5px solid var(--border);border-radius:10px;font-family:inherit;font-size:14px">
       <option value="120">2 menit</option><option value="180" selected>3 menit</option>
       <option value="300">5 menit</option><option value="600">10 menit</option><option value="900">15 menit</option>
       <option value="1800">30 menit</option><option value="3600">60 menit</option>
-      <option value="5400">90 menit</option><option value="7200">120 menit</option>
+      <option value="5400">90 menit</option><option value="7200">120 menit</option><option value="9000">150 menit</option><option value="10800">180 menit</option>
     </select>
   </div>
   <div id="mp-host-status" style="display:none;text-align:center;padding:10px;color:var(--mist);font-size:13px;margin-bottom:8px"></div>
