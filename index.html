@@ -1104,7 +1104,7 @@ header:has(.user-menu.open) { z-index:1000; }
         <span class="user-name" id="user-name">...</span>
         <span id="level-badge" onclick="event.stopPropagation();gotoScreen('levelreward')" title="Level & Reward" style="font-size:10px;font-weight:800;background:linear-gradient(135deg,var(--gold),#c98a1f);color:white;padding:2px 7px;border-radius:8px;cursor:pointer;letter-spacing:.3px">Lv.1</span>
         <span class="sync-badge" id="sync-badge">● sync</span>
-        <span id="build-dot" title="Indikator update: warnanya ganti tiap ada versi baru dari Claude" style="display:inline-block;width:11px;height:11px;border-radius:50%;background:#2da050;margin-left:6px;vertical-align:middle;border:2px solid white;box-shadow:0 0 0 1px rgba(0,0,0,.15)"></span>
+        <span id="build-dot" title="Indikator update: warnanya ganti tiap ada versi baru dari Claude" style="display:inline-block;width:11px;height:11px;border-radius:50%;background:#c0392b;margin-left:6px;vertical-align:middle;border:2px solid white;box-shadow:0 0 0 1px rgba(0,0,0,.15)"></span>
         <!-- 🔴🟢 CLAUDE: WAJIB toggle warna build-dot di atas SETIAP kali file ini dikirim ulang —
              merah #c0392b <-> hijau #2da050 gantian. Ini satu-satunya cara Riyan verifikasi
              upload-nya beneran ke-deploy. JANGAN LUPA, cek baris ini di awal SETIAP delivery. -->
@@ -2467,6 +2467,7 @@ header:has(.user-menu.open) { z-index:1000; }
       <button onclick="mpExitPlay()" title="Keluar" style="border:1px solid var(--border);background:white;color:var(--mist);cursor:pointer;font-size:11px;font-weight:700;line-height:1;padding:5px 10px;border-radius:8px">✕ Keluar</button>
     </div>
   </div>
+  <div id="mp-score-repair"></div>
   <button id="mp-host-panel-btn" onclick="mpGoHostLobby()" style="display:none;width:100%;margin-bottom:10px;padding:8px;border:1.5px solid var(--gold);border-radius:10px;background:rgba(212,160,23,.08);font-family:inherit;font-size:12px;font-weight:700;color:var(--ink);cursor:pointer">👑 Lihat Panel Host</button>
   <div id="mp-examtimer-wrap" style="margin-bottom:10px">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
@@ -10881,6 +10882,39 @@ function mpLeaveLiveBoard(){
   if(mpState.unsubLiveBoard){ try{mpState.unsubLiveBoard();}catch(e){} mpState.unsubLiveBoard=null; }
 }
 
+// ── Perbaikan buat sesi yang udah kejadian kena bug "skor ke-sync turun asal-asalan" (lihat
+// komentar di mpListenSelf) SEBELUM fix ini kepasang. Skor yang bener dihitung ulang dari
+// jumlah `gained` di answerLog (itu tersimpen apa adanya per jawaban, gak kena bug ini) —
+// kalau beda cukup jauh dari skor yang lagi kepake, tawarin buat diperbaiki manual.
+function mpComputeScoreFromLog(){
+  return (mpState.answerLog||[]).reduce(function(sum,a){ return sum+(a.gained||0); }, 0);
+}
+function mpRenderScoreRepairNotice(){
+  var el=document.getElementById('mp-score-repair');
+  if(!el) return;
+  var fromLog=mpComputeScoreFromLog();
+  // Selisih ditoleransi dikit (misal emang lagi kena/abis nyerang beneran, itu sah beda dari
+  // jumlah gained) — cuma tawarin perbaikan kalau bedanya BESAR & signifikan.
+  var diff=fromLog-mpState.score;
+  if(diff>150){
+    el.innerHTML='<div style="margin-bottom:10px;padding:10px 12px;border:1.5px solid #d4a017;border-radius:10px;background:rgba(212,160,23,.08);font-size:12px;line-height:1.5">'
+      +'⚠️ Kedeteksi skor kamu ('+mpState.score+') lebih rendah dari total poin yang seharusnya udah kekumpul dari jawaban benar ('+fromLog+') — kemungkinan kena bug sinkronisasi lama. '
+      +'<button onclick="mpRepairScore()" style="display:block;width:100%;margin-top:8px;padding:9px;border:none;border-radius:8px;background:#d4a017;color:white;font-weight:700;font-size:12px;cursor:pointer">🔧 Perbaiki jadi '+fromLog+' poin</button>'
+      +'</div>';
+  } else {
+    el.innerHTML='';
+  }
+}
+function mpRepairScore(){
+  var fromLog=mpComputeScoreFromLog();
+  if(!confirm('Ganti skor kamu ke '+fromLog+' poin (dihitung ulang dari riwayat jawaban benar)? Ini gak menghitung poin dari serangan yang mungkin pernah terjadi.')) return;
+  mpState.score=fromLog;
+  var scoreEl=document.getElementById('mp-play-score');
+  if(scoreEl) scoreEl.textContent=mpState.score+' pts · 🔥'+mpState.streak+(mpState.boostActive?' · ⚡2x AKTIF':'')+(mpState.shieldActive?' · 🛡️':'');
+  mpSaveProgress();
+  var el=document.getElementById('mp-score-repair'); if(el) el.innerHTML='';
+  mpToast('✅ Skor diperbaiki jadi '+fromLog+' poin', 'ok');
+}
 function mpRenderPlay(){
   var qs=mpState.questions||[];
   var i=mpState.idx;
@@ -10889,6 +10923,7 @@ function mpRenderPlay(){
   var scoreEl=document.getElementById('mp-play-score');
   var hostPanelBtn=document.getElementById('mp-host-panel-btn'); if(hostPanelBtn) hostPanelBtn.style.display = mpState.isHost ? 'block' : 'none';
   if(scoreEl) scoreEl.textContent=mpState.score+' pts · 🔥'+mpState.streak+(mpState.boostActive?' · ⚡2x AKTIF':'')+(mpState.shieldActive?' · 🛡️':'');
+  mpRenderScoreRepairNotice();
   if(i>=qs.length){ mpShowResult(); return; }
   mpState._usedFF=false;
   if(mpState._autoAdvanceTimer){ clearTimeout(mpState._autoAdvanceTimer); mpState._autoAdvanceTimer=null; }
@@ -11167,9 +11202,20 @@ function mpListenSelf(){
     .onSnapshot(function(doc){
       if(!doc.exists) return;
       var d=doc.data();
-      if(typeof d.score==='number' && d.score<mpState.score){ mpState.score=d.score; var se=document.getElementById('mp-play-score'); if(se) se.textContent=mpState.score+' pts · 🔥'+mpState.streak; }
+      // BUG LAMA: kode ini dulu percaya "skor di server < skor lokal" = "pasti abis diserang",
+      // terus langsung nurunin mpState.score. Padahal onSnapshot bisa aja nembak data yang
+      // BASI/telat (race pas koneksi sempat putus-nyambung, tab di-background, dll) — begitu
+      // ke-trigger, skor lokal keturunan PERMANEN dan gak pernah balik lagi, padahal streak &
+      // skill (powerups) gak kena sinkron serupa jadi tetep nambah normal. Itu penyebab skor
+      // kelihatan jomplang banget sama jumlah skill yang udah kekumpul. Sekarang skor cuma
+      // boleh disinkron turun kalau itu BENERAN dipicu serangan baru (ada event lastAttack
+      // segar), bukan asal angkanya lebih kecil.
+      var isNewAttack = d.lastAttack && d.lastAttack.ts && d.lastAttack.ts>mpState._lastAttackSeen;
+      if(isNewAttack && typeof d.score==='number' && d.score<mpState.score){
+        mpState.score=d.score; var se=document.getElementById('mp-play-score'); if(se) se.textContent=mpState.score+' pts · 🔥'+mpState.streak;
+      }
       if(d.shieldActive===false && mpState.shieldActive){ mpState.shieldActive=false; mpRenderPowerupBar(); }
-      if(d.lastAttack && d.lastAttack.ts && d.lastAttack.ts>mpState._lastAttackSeen){
+      if(isNewAttack){
         mpState._lastAttackSeen=d.lastAttack.ts;
         if(d.lastAttack.blocked) mpToast('🛡️ Shield-mu menahan serangan dari '+d.lastAttack.by+'!', 'ok');
         else mpToast('😱 Diserang '+d.lastAttack.by+'! -'+d.lastAttack.amount+' poin', 'bad');
