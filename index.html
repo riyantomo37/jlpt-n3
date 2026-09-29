@@ -1104,7 +1104,7 @@ header:has(.user-menu.open) { z-index:1000; }
         <span class="user-name" id="user-name">...</span>
         <span id="level-badge" onclick="event.stopPropagation();gotoScreen('levelreward')" title="Level & Reward" style="font-size:10px;font-weight:800;background:linear-gradient(135deg,var(--gold),#c98a1f);color:white;padding:2px 7px;border-radius:8px;cursor:pointer;letter-spacing:.3px">Lv.1</span>
         <span class="sync-badge" id="sync-badge">● sync</span>
-        <span id="build-dot" title="Indikator update: warnanya ganti tiap ada versi baru dari Claude" style="display:inline-block;width:11px;height:11px;border-radius:50%;background:#2da050;margin-left:6px;vertical-align:middle;border:2px solid white;box-shadow:0 0 0 1px rgba(0,0,0,.15)"></span>
+        <span id="build-dot" title="Indikator update: warnanya ganti tiap ada versi baru dari Claude" style="display:inline-block;width:11px;height:11px;border-radius:50%;background:#c0392b;margin-left:6px;vertical-align:middle;border:2px solid white;box-shadow:0 0 0 1px rgba(0,0,0,.15)"></span>
         <!-- 🔴🟢 CLAUDE: WAJIB toggle warna build-dot di atas SETIAP kali file ini dikirim ulang —
              merah #c0392b <-> hijau #2da050 gantian. Ini satu-satunya cara Riyan verifikasi
              upload-nya beneran ke-deploy. JANGAN LUPA, cek baris ini di awal SETIAP delivery. -->
@@ -10503,6 +10503,13 @@ function mpPlayerRowHTML(r, opts){
   var lastMs = (r.lastActive && typeof r.lastActive.toMillis==='function') ? r.lastActive.toMillis() : 0;
   var online = (now-lastMs) < 20000;
   var isMe = opts.myId && r.id===opts.myId;
+  // Selama lagi main, skor "kamu" yang paling akurat itu mpState.score (lokal, update instan
+  // tiap jawab) — bukan r.score dari Firestore, yang bisa ketinggalan beberapa jawaban selama
+  // penyimpanan ke server belum kelar (apalagi kalau sempat retry karena jaringan lemot). Dua
+  // angka beda di layar yang sama (header vs papan peringkat) bikin bingung, jadi disamain di
+  // sini. opts.myLiveScore cuma dikasih pas render papan peringkat SELAMA main (bukan di lobi
+  // atau hasil akhir, di situ r.score dari server emang yang seharusnya dipercaya).
+  var scoreDisplay = (isMe && opts.myLiveScore!=null) ? opts.myLiveScore : (r.score||0);
   var statusTxt = r.finished ? '✅ Selesai' : ((r.answered||0)+' soal dijawab');
   return '<div style="display:flex;align-items:center;justify-content:space-between;padding:9px 11px;border:1.5px solid '+(isMe?'var(--red)':'var(--border)')+';border-radius:9px;margin-bottom:6px;background:'+(isMe?'rgba(192,57,43,.05)':'white')+'">'
     +'<div style="display:flex;align-items:center;gap:8px;min-width:0">'
@@ -10511,7 +10518,7 @@ function mpPlayerRowHTML(r, opts){
     +'<div style="font-weight:700;font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+(opts.rank?opts.rank+'. ':'')+mpEsc(r.name||'Pemain')+(isMe?' (kamu)':'')+'</div>'
     +(opts.showStatus?'<div style="font-size:11px;color:var(--mist)">'+statusTxt+'</div>':'')
     +'</div></div>'
-    +'<div style="font-weight:800;color:var(--red);flex-shrink:0;margin-left:8px">'+(r.score||0)+'</div></div>';
+    +'<div style="font-weight:800;color:var(--red);flex-shrink:0;margin-left:8px">'+scoreDisplay+'</div></div>';
 }
 
 function mpListenPlayerList(code, prefix){
@@ -10859,7 +10866,7 @@ function mpToggleLiveBoard(){
 function mpRenderLiveBoard(rows){
   var panel=document.getElementById('mp-liveboard-panel');
   if(panel && panel.style.display==='block'){
-    panel.innerHTML = rows.length ? rows.map(function(r,i){ return mpPlayerRowHTML(r, {rank:i+1, myId:mpState.playerId, showStatus:false}); }).join('')
+    panel.innerHTML = rows.length ? rows.map(function(r,i){ return mpPlayerRowHTML(r, {rank:i+1, myId:mpState.playerId, showStatus:false, myLiveScore:mpState.score}); }).join('')
       : '<div style="text-align:center;color:var(--mist);font-size:12px;padding:8px">Belum ada pemain lain.</div>';
   }
 }
