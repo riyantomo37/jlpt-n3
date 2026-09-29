@@ -1104,7 +1104,7 @@ header:has(.user-menu.open) { z-index:1000; }
         <span class="user-name" id="user-name">...</span>
         <span id="level-badge" onclick="event.stopPropagation();gotoScreen('levelreward')" title="Level & Reward" style="font-size:10px;font-weight:800;background:linear-gradient(135deg,var(--gold),#c98a1f);color:white;padding:2px 7px;border-radius:8px;cursor:pointer;letter-spacing:.3px">Lv.1</span>
         <span class="sync-badge" id="sync-badge">● sync</span>
-        <span id="build-dot" title="Indikator update: warnanya ganti tiap ada versi baru dari Claude" style="display:inline-block;width:11px;height:11px;border-radius:50%;background:#c0392b;margin-left:6px;vertical-align:middle;border:2px solid white;box-shadow:0 0 0 1px rgba(0,0,0,.15)"></span>
+        <span id="build-dot" title="Indikator update: warnanya ganti tiap ada versi baru dari Claude" style="display:inline-block;width:11px;height:11px;border-radius:50%;background:#2da050;margin-left:6px;vertical-align:middle;border:2px solid white;box-shadow:0 0 0 1px rgba(0,0,0,.15)"></span>
         <!-- 🔴🟢 CLAUDE: WAJIB toggle warna build-dot di atas SETIAP kali file ini dikirim ulang —
              merah #c0392b <-> hijau #2da050 gantian. Ini satu-satunya cara Riyan verifikasi
              upload-nya beneran ke-deploy. JANGAN LUPA, cek baris ini di awal SETIAP delivery. -->
@@ -11477,19 +11477,35 @@ function mpPickRedo(logIdx){
   mpToast('🔁 Skill dipakai — kerjain ulang soal pilihanmu', 'info');
 }
 
-async function mpSaveProgress(){
+async function mpSaveProgress(retryCount){
   if(!db || !mpState.code || !mpState.playerId) return;
   var finished = mpState.idx>=mpState.questions.length;
+  var payload = {
+    score: mpState.score, correct: mpState.correct, streak: mpState.streak,
+    answered: mpState.idx, finished: finished, attempt: mpState.attempt||0,
+    powerups: mpState.powerups, shieldActive: mpState.shieldActive, boostActive: mpState.boostActive,
+    examEndAt: mpState.examEndAt, answerLog: mpState.answerLog||[],
+    lastActive: firebase.firestore.FieldValue.serverTimestamp(),
+    finishedAt: finished ? firebase.firestore.FieldValue.serverTimestamp() : null
+  };
   try{
-    await db.collection('mpSessions').doc(mpState.code).collection('players').doc(mpState.playerId).update({
-      score: mpState.score, correct: mpState.correct, streak: mpState.streak,
-      answered: mpState.idx, finished: finished, attempt: mpState.attempt||0,
-      powerups: mpState.powerups, shieldActive: mpState.shieldActive, boostActive: mpState.boostActive,
-      examEndAt: mpState.examEndAt, answerLog: mpState.answerLog||[],
-      lastActive: firebase.firestore.FieldValue.serverTimestamp(),
-      finishedAt: finished ? firebase.firestore.FieldValue.serverTimestamp() : null
-    });
-  }catch(e){ console.error('mpSaveProgress', e); }
+    await db.collection('mpSessions').doc(mpState.code).collection('players').doc(mpState.playerId).update(payload);
+    mpState._lastSaveFailed=false;
+  }catch(e){
+    // DULU error di sini ditelan diam-diam (cuma console.error) — kalau gagal (misal jaringan
+    // sempet putus), skor/progress lokal jalan terus tapi gak pernah nyampe ke server, dan
+    // baru ketauan belakangan pas skor kelihatan gak nyambung. Sekarang: retry otomatis 2x
+    // (jeda 1.5 detik), dan kalau tetep gagal baru kasih tau lewat toast + tandain biar
+    // mpRenderScoreRepairNotice bisa ngingetin user.
+    console.error('mpSaveProgress', e);
+    var n=retryCount||0;
+    if(n<2){
+      setTimeout(function(){ mpSaveProgress(n+1); }, 1500);
+    } else {
+      mpState._lastSaveFailed=true;
+      mpToast('⚠️ Gagal nyimpen progress ke server (cek koneksi) — coba jawab lagi biar disimpen ulang', 'bad');
+    }
+  }
 }
 
 function mpShowResult(){
