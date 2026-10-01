@@ -1104,7 +1104,7 @@ header:has(.user-menu.open) { z-index:1000; }
         <span class="user-name" id="user-name">...</span>
         <span id="level-badge" onclick="event.stopPropagation();gotoScreen('levelreward')" title="Level & Reward" style="font-size:10px;font-weight:800;background:linear-gradient(135deg,var(--gold),#c98a1f);color:white;padding:2px 7px;border-radius:8px;cursor:pointer;letter-spacing:.3px">Lv.1</span>
         <span class="sync-badge" id="sync-badge">● sync</span>
-        <span id="build-dot" title="Indikator update: warnanya ganti tiap ada versi baru dari Claude" style="display:inline-block;width:11px;height:11px;border-radius:50%;background:#2da050;margin-left:6px;vertical-align:middle;border:2px solid white;box-shadow:0 0 0 1px rgba(0,0,0,.15)"></span>
+        <span id="build-dot" title="Indikator update: warnanya ganti tiap ada versi baru dari Claude" style="display:inline-block;width:11px;height:11px;border-radius:50%;background:#c0392b;margin-left:6px;vertical-align:middle;border:2px solid white;box-shadow:0 0 0 1px rgba(0,0,0,.15)"></span>
         <!-- 🔴🟢 CLAUDE: WAJIB toggle warna build-dot di atas SETIAP kali file ini dikirim ulang —
              merah #c0392b <-> hijau #2da050 gantian. Ini satu-satunya cara Riyan verifikasi
              upload-nya beneran ke-deploy. JANGAN LUPA, cek baris ini di awal SETIAP delivery. -->
@@ -2323,6 +2323,9 @@ header:has(.user-menu.open) { z-index:1000; }
       </label>
       <label style="display:flex;align-items:center;gap:6px;padding:9px 12px;border:1.5px solid var(--border);border-radius:10px;cursor:pointer">
         <input type="checkbox" name="mp-level" value="N1"> <span style="font-size:13px">N1</span>
+      </label>
+      <label style="display:flex;align-items:center;gap:6px;padding:9px 12px;border:1.5px solid var(--border);border-radius:10px;cursor:pointer">
+        <input type="checkbox" name="mp-level" value="SSW"> <span style="font-size:13px">SSW</span>
       </label>
     </div>
     <label style="font-size:12px;font-weight:700;color:var(--mist);display:block;margin-bottom:6px">Sumber Soal (bisa pilih lebih dari satu, di-mix)</label>
@@ -9281,7 +9284,7 @@ var mpState = { code:null, isHost:false, playerId:null, playerName:null,
   unsubLobby:null, unsubResult:null, unsubSelf:null, unsubSessionDoc:null, unsubLiveBoard:null, heartbeatInterval:null, level:null, _qStart:0,
   powerups:{ff:0,boost:0,shield:0,atk:0,freeze:0,redo:0}, shieldActive:false, boostActive:false,
   _lastAttackSeen:0, _usedFF:false, examDurationSec:180, examEndAt:0, examTimeLeft:180, examTimerInterval:null, _examOver:false, _liveRows:[] };
-var MP_LEVELS = ['N5','N4','N3','N2','N1'];
+var MP_LEVELS = ['N5','N4','N3','N2','N1','SSW'];
 var MP_POWERUP_DEFS = {
   ff:   {emo:'🎯', label:'50:50'},
   boost:{emo:'⚡', label:'2x Poin'},
