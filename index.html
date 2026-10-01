@@ -1104,7 +1104,7 @@ header:has(.user-menu.open) { z-index:1000; }
         <span class="user-name" id="user-name">...</span>
         <span id="level-badge" onclick="event.stopPropagation();gotoScreen('levelreward')" title="Level & Reward" style="font-size:10px;font-weight:800;background:linear-gradient(135deg,var(--gold),#c98a1f);color:white;padding:2px 7px;border-radius:8px;cursor:pointer;letter-spacing:.3px">Lv.1</span>
         <span class="sync-badge" id="sync-badge">● sync</span>
-        <span id="build-dot" title="Indikator update: warnanya ganti tiap ada versi baru dari Claude" style="display:inline-block;width:11px;height:11px;border-radius:50%;background:#c0392b;margin-left:6px;vertical-align:middle;border:2px solid white;box-shadow:0 0 0 1px rgba(0,0,0,.15)"></span>
+        <span id="build-dot" title="Indikator update: warnanya ganti tiap ada versi baru dari Claude" style="display:inline-block;width:11px;height:11px;border-radius:50%;background:#2da050;margin-left:6px;vertical-align:middle;border:2px solid white;box-shadow:0 0 0 1px rgba(0,0,0,.15)"></span>
         <!-- 🔴🟢 CLAUDE: WAJIB toggle warna build-dot di atas SETIAP kali file ini dikirim ulang —
              merah #c0392b <-> hijau #2da050 gantian. Ini satu-satunya cara Riyan verifikasi
              upload-nya beneran ke-deploy. JANGAN LUPA, cek baris ini di awal SETIAP delivery. -->
@@ -3296,7 +3296,7 @@ async function showUserPreview(uid){
   }
   function lvlKanji(lv){ return (u.kfMasteredAll||{})[lv]||0; }
   var LEVELS=['N5','N4','N3','SSW'];
-  var LEVELTOTAL={N5:718,N4:668,N3:771,SSW:109};
+  var LEVELTOTAL={N5:718,N4:668,N3:771,SSW:124};
 
   // Current-level breakdown
   var curWords = lvlWords(currentJLPT);
@@ -3614,7 +3614,7 @@ function bankBasePath(){ return 'bank/' + currentJLPT.toLowerCase() + '/'; }
 // ===== BANK KOTOBA — kosakata per level dimuat on-demand (pola bank soal) =====
 // N3 tetap inline (ALL_WORDS). Level lain: bank/kotoba/<level>.json
 var _kotobaLoading={};   // in-flight guard per level
-var KOTOBA_VER='v4';     // naikkan jika format data berubah (invalidate cache) — v4: translate ~350 kata N1/N2 dari Inggris ke Indonesia
+var KOTOBA_VER='v5';     // naikkan jika format data berubah (invalidate cache) — v5: SSW 109→124 kata, tambah kategori kouteikanri (製造工程管理)
 try{Object.keys(localStorage).forEach(function(k){if(k.indexOf('kotoba_')===0&&k.indexOf('_v3')<0)localStorage.removeItem(k);});}catch(e){} // bersihkan cache versi lama
 function kotobaLoaded(level){
   return level==='N3' || (JLPT_DATA[level] && JLPT_DATA[level].length>0);
@@ -7795,7 +7795,8 @@ function updateFlashMenu() {
         {k:'eisei', jp:'衛生', id:'Higiene & Sanitasi', emo:'🧼'},
         {k:'kigai', jp:'危害要因', id:'Faktor Bahaya', emo:'🦠'},
         {k:'haccp', jp:'HACCP', id:'Manajemen HACCP', emo:'📋'},
-        {k:'anzen', jp:'労働安全', id:'Keselamatan Kerja', emo:'⚠️'}
+        {k:'anzen', jp:'労働安全', id:'Keselamatan Kerja', emo:'⚠️'},
+        {k:'kouteikanri', jp:'製造工程管理', id:'Manajemen Proses & Mutu', emo:'📦'}
       ];
       var lvlMastS=mastered['SSW']||{};
       var allS=JLPT_DATA['SSW']||[];
@@ -9224,8 +9225,8 @@ function startStudy(cat) {
   } else {
     var allWords=JLPT_DATA[currentJLPT]||[];
     var lvlMast=mastered[currentJLPT]||{};
-    // SSW: filter by topic category (eisei/kigai/haccp/anzen)
-    var SSW_TOPICS=['eisei','kigai','haccp','anzen'];
+    // SSW: filter by topic category (eisei/kigai/haccp/anzen/kouteikanri)
+    var SSW_TOPICS=['eisei','kigai','haccp','anzen','kouteikanri'];
     if (currentJLPT==='SSW' && SSW_TOPICS.indexOf(cat)>=0) {
       words=allWords.filter(function(w){return w.cat===cat;});
       unmastered=words.filter(function(w){return !lvlMast[w.id];});
@@ -9233,7 +9234,7 @@ function startStudy(cat) {
       shuffle(unmastered); shuffle(done);
       sessionQueue=unmastered.concat(done).slice(0,SESSION_SIZE);
       sessionIdx=0;
-      var sswTitles={eisei:'衛生 Higiene',kigai:'危害要因 Faktor Bahaya',haccp:'HACCP',anzen:'労働安全 Keselamatan Kerja'};
+      var sswTitles={eisei:'衛生 Higiene',kigai:'危害要因 Faktor Bahaya',haccp:'HACCP',anzen:'労働安全 Keselamatan Kerja',kouteikanri:'製造工程管理 Manajemen Proses'};
       document.getElementById('flash-category-title').textContent=sswTitles[cat]||cat;
       gotoScreenRaw('flash'); showCard(); return;
     }
@@ -18577,7 +18578,7 @@ const JLPT_DATA = {
 
 
 
-const JLPT_TOTALS = { N5:718, N4:668, N3:771, N2:1748, N1:2699, SSW:109 };
+const JLPT_TOTALS = { N5:718, N4:668, N3:771, N2:1748, N1:2699, SSW:124 };
 
 const N3_BANK = {
   mondai1:[{q:'この映画は去年の__秋__に公開されました。\n「秋」の読み方はどれですか。',c:['あき','なつ','はる','ふゆ'],a:0,e:'「秋」はあき(aki)と読みます。季節の一つです。'},{q:'彼女は__親切__な人です。\n「親切」の読み方はどれですか。',c:['しんせつ','したしさ','おやきり','しんきり'],a:0,e:'「親切」はしんせつ(shinsetsu)と読みます。意味：優しくて助けてくれること。'},{q:'この問題は__簡単__ではありません。\n「簡単」の読み方はどれですか。',c:['かんたん','かんじゅ','かんがん','かんそう'],a:0,e:'「簡単」はかんたん(kantan)と読みます。意味：易しい、難しくない。'},{q:'駅まで__歩いて__10分かかります。\n「歩いて」の読み方はどれですか。',c:['あるいて','およいで','はしって','とんで'],a:0,e:'「歩いて」はあるいて(aruite)と読みます。'},{q:'この本は__難しい__です。\n「難しい」の読み方はどれですか。',c:['むずかしい','やさしい','おもしろい','たのしい'],a:0,e:'「難しい」はむずかしい(muzukashii)と読みます。'},{q:'毎朝__新聞__を読みます。\n「新聞」の読み方はどれですか。',c:['しんぶん','きゅうぶん','しんもん','さんぶん'],a:0,e:'「新聞」はしんぶん(shinbun)と読みます。'},{q:'この店は__安い__です。\n「安い」の読み方はどれですか。',c:['やすい','たかい','ひくい','ひろい'],a:0,e:'「安い」はやすい(yasui)と読みます。意味：値段が低い。'},{q:'彼は__医者__です。\n「医者」の読み方はどれですか。',c:['いしゃ','かしゃ','にしゃ','みしゃ'],a:0,e:'「医者」はいしゃ(isha)と読みます。意味：病気を治す専門家。'},{q:'山本さんはクラスの代表に選ばれた。\n「代表」の読み方はどれですか。',c:['たいひょう','だいひょ','だいひょう','たいひょ'],a:2,e:'「代表」は「だいひょう」と読みます。'},{q:'３日前から雨が続いている。\n「続いて」の読み方はどれですか。',c:['ういて','うごいて','ついて','つづいて'],a:3,e:'「続いて」は「つづいて」と読みます。'}],
@@ -18620,7 +18621,7 @@ const JLPT_CAT_COUNTS = {
   N5: {kanji:52, vocab:595, grammar:71},
   N4: {kanji:68, vocab:570, grammar:30},
   N3: {kanji:242, vocab:389, grammar:140},
-  SSW: {eisei:32, kigai:30, haccp:18, anzen:29},
+  SSW: {eisei:34, kigai:30, haccp:18, anzen:29, kouteikanri:13},
 };
 // Hitung jumlah kata per kategori LIVE dari data (bukan tabel statis),
 // agar selalu akurat setelah kata dipindah antar kategori.
