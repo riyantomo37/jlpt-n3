@@ -1104,7 +1104,7 @@ header:has(.user-menu.open) { z-index:1000; }
         <span class="user-name" id="user-name">...</span>
         <span id="level-badge" onclick="event.stopPropagation();gotoScreen('levelreward')" title="Level & Reward" style="font-size:10px;font-weight:800;background:linear-gradient(135deg,var(--gold),#c98a1f);color:white;padding:2px 7px;border-radius:8px;cursor:pointer;letter-spacing:.3px">Lv.1</span>
         <span class="sync-badge" id="sync-badge">● sync</span>
-        <span id="build-dot" title="Indikator update: warnanya ganti tiap ada versi baru dari Claude" style="display:inline-block;width:11px;height:11px;border-radius:50%;background:#c0392b;margin-left:6px;vertical-align:middle;border:2px solid white;box-shadow:0 0 0 1px rgba(0,0,0,.15)"></span>
+        <span id="build-dot" title="Indikator update: warnanya ganti tiap ada versi baru dari Claude" style="display:inline-block;width:11px;height:11px;border-radius:50%;background:#2da050;margin-left:6px;vertical-align:middle;border:2px solid white;box-shadow:0 0 0 1px rgba(0,0,0,.15)"></span>
         <!-- 🔴🟢 CLAUDE: WAJIB toggle warna build-dot di atas SETIAP kali file ini dikirim ulang —
              merah #c0392b <-> hijau #2da050 gantian. Ini satu-satunya cara Riyan verifikasi
              upload-nya beneran ke-deploy. JANGAN LUPA, cek baris ini di awal SETIAP delivery. -->
@@ -2265,6 +2265,15 @@ header:has(.user-menu.open) { z-index:1000; }
         <input type="radio" name="mpc-visibility" value="public"> <span style="font-size:13px">🌐 Publik — muncul di Public Lobby</span>
       </label>
     </div>
+    <label style="font-size:12px;font-weight:700;color:var(--mist);display:block;margin-bottom:6px">⏳ Link/Kode Aktif Sampai</label>
+    <select id="mpc-host-expiry" style="width:100%;padding:11px;border:1.5px solid var(--border);border-radius:10px;font-family:inherit;font-size:14px;margin-bottom:16px">
+      <option value="1">1 hari</option>
+      <option value="3" selected>3 hari</option>
+      <option value="7">7 hari</option>
+      <option value="14">14 hari</option>
+      <option value="30">30 hari</option>
+      <option value="90">90 hari</option>
+    </select>
     <label style="font-size:12px;font-weight:700;color:var(--mist);display:block;margin-bottom:6px">⏱️ Waktu Ujian (total)</label>
     <select id="mpc-host-time" style="width:100%;padding:11px;border:1.5px solid var(--border);border-radius:10px;font-family:inherit;font-size:14px">
       <option value="120">2 menit</option><option value="180" selected>3 menit</option>
@@ -2376,6 +2385,24 @@ header:has(.user-menu.open) { z-index:1000; }
       </div>
       <div style="font-size:11px;color:var(--mist);margin-top:6px">✍️ Ketik = soal cuma nampilin kanjinya doang (gak ada petunjuk bacaan/arti), jawabnya diketik sendiri — bukan pilihan ganda. "Ketik Bebas" nerima jawaban bacaan ATAU arti, mana aja yang kamu tulis. "PG Dua Sisi" & "Ketik Dua-duanya" beda — WAJIB jawab bacaan DAN arti, dua-duanya harus benar.</div>
     </div>
+    <div id="mp-posfilter-wrap" style="display:none;margin-bottom:16px">
+      <label style="font-size:12px;font-weight:700;color:var(--mist);display:block;margin-bottom:6px">Jenis Kata (opsional — kosongin biar semua jenis kepake)</label>
+      <div style="display:flex;flex-wrap:wrap;gap:8px">
+        <label style="flex:1;min-width:110px;display:flex;align-items:center;gap:6px;padding:9px;border:1.5px solid var(--border);border-radius:10px;cursor:pointer">
+          <input type="checkbox" name="mp-posfilter" value="meishi"> <span style="font-size:12px">📦 Kata Benda</span>
+        </label>
+        <label style="flex:1;min-width:110px;display:flex;align-items:center;gap:6px;padding:9px;border:1.5px solid var(--border);border-radius:10px;cursor:pointer">
+          <input type="checkbox" name="mp-posfilter" value="doushi"> <span style="font-size:12px">🏃 Kata Kerja</span>
+        </label>
+        <label style="flex:1;min-width:110px;display:flex;align-items:center;gap:6px;padding:9px;border:1.5px solid var(--border);border-radius:10px;cursor:pointer">
+          <input type="checkbox" name="mp-posfilter" value="keiyoushi"> <span style="font-size:12px">🎨 Kata Sifat</span>
+        </label>
+        <label style="flex:1;min-width:110px;display:flex;align-items:center;gap:6px;padding:9px;border:1.5px solid var(--border);border-radius:10px;cursor:pointer">
+          <input type="checkbox" name="mp-posfilter" value="fukushi"> <span style="font-size:12px">⏱️ Kata Keterangan</span>
+        </label>
+      </div>
+      <div style="font-size:11px;color:var(--mist);margin-top:6px">Berlaku buat sumber 単語 Kotoba & 🈁 Kanji. Bisa centang lebih dari satu (di-mix). Kalau gak dicentang sama sekali, semua jenis kata kepake seperti biasa.</div>
+    </div>
     <label style="font-size:12px;font-weight:700;color:var(--mist);display:block;margin-bottom:6px">🎮 Mode Mulai Sesi</label>
     <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:16px">
       <label style="display:flex;align-items:center;gap:8px;padding:11px;border:1.5px solid var(--border);border-radius:10px;cursor:pointer">
@@ -2394,6 +2421,15 @@ header:has(.user-menu.open) { z-index:1000; }
         <input type="radio" name="mp-visibility" value="public"> <span style="font-size:13px">🌐 Publik — muncul di Public Lobby, siapa aja boleh gabung</span>
       </label>
     </div>
+    <label style="font-size:12px;font-weight:700;color:var(--mist);display:block;margin-bottom:6px">⏳ Link/Kode Aktif Sampai</label>
+    <select id="mp-host-expiry" style="width:100%;padding:11px;border:1.5px solid var(--border);border-radius:10px;font-family:inherit;font-size:14px;margin-bottom:16px">
+      <option value="1">1 hari</option>
+      <option value="3" selected>3 hari</option>
+      <option value="7">7 hari</option>
+      <option value="14">14 hari</option>
+      <option value="30">30 hari</option>
+      <option value="90">90 hari</option>
+    </select>
     <label style="font-size:12px;font-weight:700;color:var(--mist);display:block;margin-bottom:6px">Jumlah Soal</label>
     <select id="mp-host-count" style="width:100%;padding:11px;border:1.5px solid var(--border);border-radius:10px;font-family:inherit;font-size:14px;margin-bottom:16px">
       <option value="5">5 soal</option><option value="10" selected>10 soal</option>
@@ -10102,14 +10138,22 @@ async function mpBankQuestions(level, count){
   }catch(e){ return []; }
 }
 
-async function mpBuildQuestionPool(sources, levels, count, kanjiDirs){
+async function mpBuildQuestionPool(sources, levels, count, kanjiDirs, posFilters){
   // sources: array ['bank','kotoba','kanji'...]; levels: array ['N5','N3',...]; kanjiDirs: array ['read','find']
+  // posFilters (opsional): array ['meishi','doushi',...] — kalau dikasih, cuma kata dengan
+  // jenis itu yang dijadiin TARGET soal (bukan pengecoh — pengecoh tetep dari pool lengkap biar
+  // tetap gampang nyari yang mirip, terutama buat mode Baca Kanji yang udah ketat nyarinya).
   var srcList = Array.isArray(sources) ? sources.slice() : [sources];
   if(!srcList.length) srcList=['bank'];
   var lvlList = Array.isArray(levels) ? levels.slice() : [levels];
   if(!lvlList.length) lvlList=['N3'];
   var dirList = Array.isArray(kanjiDirs) ? kanjiDirs.slice() : [kanjiDirs||'read'];
   if(!dirList.length) dirList=['read'];
+  var posList = Array.isArray(posFilters) ? posFilters.slice() : (posFilters ? [posFilters] : []);
+  function applyPosFilter(words){
+    if(!posList.length) return words;
+    return (words||[]).filter(function(w){ return posList.indexOf(posOf(w))>=0; });
+  }
 
   // Pecah jadi daftar "spec" — tiap kombinasi sumber x level (x arah kanji kalau sumbernya kanji)
   var specs=[];
@@ -10134,8 +10178,8 @@ async function mpBuildQuestionPool(sources, levels, count, kanjiDirs){
   async function fetchSpec(spec, want){
     if(want<=0) return [];
     if(spec.type==='bank') return await mpBankQuestions(spec.level, want);
-    if(spec.type==='kotoba'){ var words=await mpEnsureWords(spec.level); return mpKotobaQuestions(words, want); }
-    if(spec.type==='kanji'){ var kwords=await mpEnsureWords(spec.level); var allLvlWords=await mpEnsureAllLevelWords(); return mpKanjiQuestions(kwords, want, spec.dir||'read', allLvlWords); }
+    if(spec.type==='kotoba'){ var words=await mpEnsureWords(spec.level); return mpKotobaQuestions(applyPosFilter(words), want); }
+    if(spec.type==='kanji'){ var kwords=await mpEnsureWords(spec.level); var allLvlWords=await mpEnsureAllLevelWords(); return mpKanjiQuestions(applyPosFilter(kwords), want, spec.dir||'read', allLvlWords); }
     if(spec.type==='bunpou'){ var gwords=await mpEnsureWords(spec.level); return mpBunpouQuestions(gwords, want); }
     if(spec.type==='keisei') return mpKeiseiQuestions(want, lvlList);
     if(spec.type==='konjugasi') return mpKonjugasiQuestions(want);
@@ -10178,6 +10222,9 @@ function mpToggleKanjiDir(){
   var kanjiEl=document.querySelector('input[name="mp-source"][value="kanji"]');
   var wrap=document.getElementById('mp-kanjidir-wrap');
   if(wrap) wrap.style.display = (kanjiEl && kanjiEl.checked) ? 'block' : 'none';
+  var kotobaEl=document.querySelector('input[name="mp-source"][value="kotoba"]');
+  var posWrap=document.getElementById('mp-posfilter-wrap');
+  if(posWrap) posWrap.style.display = ((kanjiEl && kanjiEl.checked) || (kotobaEl && kotobaEl.checked)) ? 'block' : 'none';
 }
 
 // ══ Sesi Custom — host tulis soal & jawaban sendiri (bukan generate dari sumber bawaan) ══
@@ -10275,6 +10322,7 @@ async function mpCreateCustomSession(){
   var visEl=document.querySelector('input[name="mpc-visibility"]:checked');
   var visibility=visEl?visEl.value:'private';
   var examDurationSec=parseInt(document.getElementById('mpc-host-time').value,10)||180;
+  var expiryDays=parseInt(document.getElementById('mpc-host-expiry').value,10)||3;
   var btn=document.getElementById('mpc-create-btn');
   if(btn) btn.disabled=true;
   try{
@@ -10294,7 +10342,7 @@ async function mpCreateCustomSession(){
       examDurationSec: examDurationSec,
       status: initStatus,
       createdAt: firebase.firestore.FieldValue.serverTimestamp(),
-      expiresAt: new Date(Date.now()+24*3600*1000)
+      expiresAt: new Date(Date.now()+expiryDays*24*3600*1000)
     };
     await db.collection('mpSessions').doc(code).set(sessionDoc);
     mpState.code=code; mpState.isHost=true; mpState.level=[title]; mpState.questions=result.questions; mpState.examDurationSec=examDurationSec;
@@ -10333,18 +10381,21 @@ async function mpCreateSession(){
   var kdirEls=document.querySelectorAll('input[name="mp-kanjidir"]:checked');
   var kanjiDirs=[]; kdirEls.forEach(function(el){ kanjiDirs.push(el.value); });
   if(sources.indexOf('kanji')>=0 && !kanjiDirs.length){ alert('Pilih minimal 1 arah soal kanji.'); return; }
+  var posEls=document.querySelectorAll('input[name="mp-posfilter"]:checked');
+  var posFilters=[]; posEls.forEach(function(el){ posFilters.push(el.value); });
   var smEl=document.querySelector('input[name="mp-startmode"]:checked');
   var startMode = smEl ? smEl.value : 'host';
   var visEl=document.querySelector('input[name="mp-visibility"]:checked');
   var visibility = visEl ? visEl.value : 'private';
   var count = parseInt(document.getElementById('mp-host-count').value,10)||10;
   var examDurationSec = parseInt(document.getElementById('mp-host-time').value,10)||180;
+  var expiryDays = parseInt(document.getElementById('mp-host-expiry').value,10)||3;
   var btn=document.getElementById('mp-host-create-btn');
   var statusEl=document.getElementById('mp-host-status');
   if(btn) btn.disabled=true;
   if(statusEl){statusEl.textContent='⏳ Menyiapkan '+count+' soal…'; statusEl.style.display='block';}
   try{
-    var questions = await mpBuildQuestionPool(sources, levels, count, kanjiDirs);
+    var questions = await mpBuildQuestionPool(sources, levels, count, kanjiDirs, posFilters);
     if(questions.length<3){
       alert('Gagal menyiapkan soal (hanya '+questions.length+' soal ditemukan untuk '+mpLevelsLabel(levels)+'). Coba level atau sumber lain.');
       return;
@@ -10358,6 +10409,7 @@ async function mpCreateSession(){
       level: levels,
       source: sources,
       kanjiDir: kanjiDirs,
+      posFilter: posFilters,
       startMode: startMode,
       visibility: visibility,
       questions: questions,
@@ -10365,7 +10417,7 @@ async function mpCreateSession(){
       examDurationSec: examDurationSec,
       status: initStatus,
       createdAt: firebase.firestore.FieldValue.serverTimestamp(),
-      expiresAt: new Date(Date.now()+24*3600*1000)
+      expiresAt: new Date(Date.now()+expiryDays*24*3600*1000)
     };
     await db.collection('mpSessions').doc(code).set(sessionDoc);
     mpState.code=code; mpState.isHost=true; mpState.level=levels; mpState.questions=questions; mpState.examDurationSec=examDurationSec;
@@ -10758,6 +10810,15 @@ async function mpJoinSession(){
     if(!sdoc.exists) throw new Error('Kode tidak ditemukan.');
     var sdata=sdoc.data();
     if(sdata.status==='closed') throw new Error('Sesi ini sudah ditutup.');
+    // Batas waktu link: cuma nolak JOIN BARU (belum pernah gabung sebelumnya). Yang udah
+    // pernah main di sesi ini (pid-nya kesimpen di localStorage) tetap boleh lanjut/resume
+    // walau linknya udah lewat masa aktif — expiry ini soal "link-nya masih bisa dipakai
+    // orang baru apa enggak", bukan ngusir yang lagi di tengah ngerjain.
+    if(sdata.expiresAt){
+      var expMs = sdata.expiresAt.toMillis ? sdata.expiresAt.toMillis() : (sdata.expiresAt.seconds ? sdata.expiresAt.seconds*1000 : sdata.expiresAt);
+      var alreadyJoined = localStorage.getItem('mp_pid_'+code);
+      if(!alreadyJoined && expMs && Date.now()>expMs) throw new Error('Link/kode sesi ini udah kedaluwarsa — minta host bikin sesi baru.');
+    }
     var startMode = sdata.startMode || 'host';
     localStorage.setItem('mp_name', name);
     var examDurationSec = sdata.examDurationSec || 180;
@@ -11102,6 +11163,12 @@ function mpUsePowerup(key){
   if(key==='redo'){ mpOpenRedoPicker(); return; } // stok baru berkurang pas soalnya beneran dipilih
   if(key==='ff'){
     if(mpState._usedFF) return;
+    var ffQ = mpState._redoing ? mpState._redoing.q : mpState.questions[mpState.idx];
+    var ffApplicable = ffQ && ((ffQ.choices && ffQ.choices.length) || ffQ.mode==='pg2');
+    if(!ffApplicable){
+      mpToast('🎯 50:50 cuma berlaku buat soal pilihan ganda — soal ketik gak punya pilihan buat disembunyikan', 'info');
+      return; // stok gak kepotong, skill gak hangus percuma
+    }
     mpApply5050();
     mpState.powerups.ff--; mpState._usedFF=true;
     mpPersistPowerups(); mpRenderPowerupBar();
@@ -11129,9 +11196,35 @@ function mpUsePowerup(key){
 }
 
 function mpApply5050(){
+  // BUG LAMA: fungsi ini cuma ngerti soal pilihan-ganda biasa (q.choices array langsung jadi
+  // children #mp-play-choices). Begitu muncul mode baru (PG Dua Sisi — 2 kolom terpisah; Ketik
+  // Bacaan/Arti/Bebas/Dua-duanya — gak ada pilihan sama sekali), kodenya tetep "jalan" tanpa
+  // error tapi gak nyentuh apa-apa (q.choices kosong), jadi keliatan kayak skill rusak padahal
+  // sebenarnya salah sasaran. Juga BUG kedua: dulu selalu baca mpState.questions[mpState.idx],
+  // padahal pas lagi pakai skill Ulangi Soal, soal yang BENERAN aktif itu mpState._redoing.q —
+  // jadi 50:50 bisa nyasar ke soal berikutnya yang belum dijawab, bukan soal yang lagi diulang.
+  var redoCtx=mpState._redoing||null;
+  var q = redoCtx ? redoCtx.q : mpState.questions[mpState.idx];
+  if(!q) return;
+  if(q.mode==='pg2'){
+    // Dua keputusan terpisah (arti & bacaan) — 50:50 diterapin ke MASING-MASING sisi, bukan
+    // cuma satu, biar bener-bener setara manfaatnya kayak di soal pilihan-ganda biasa.
+    [['mp-pg2-meaning', q.answerMeaningIdx], ['mp-pg2-reading', q.answerReadingIdx]].forEach(function(pair){
+      var cont=document.getElementById(pair[0]);
+      if(!cont) return;
+      var ansIdx=pair[1];
+      var wrongIdx=[]; for(var i=0;i<cont.children.length;i++){ if(i!==ansIdx) wrongIdx.push(i); }
+      shuffle(wrongIdx);
+      wrongIdx.slice(0,2).forEach(function(idx){
+        var el=cont.children[idx];
+        if(el){ el.style.opacity='.2'; el.style.pointerEvents='none'; }
+      });
+    });
+    mpToast('🎯 50:50 dipakai — 2 pilihan salah disembunyikan di tiap sisi', 'info');
+    return;
+  }
   var choicesEl=document.getElementById('mp-play-choices');
   if(!choicesEl) return;
-  var q=mpState.questions[mpState.idx];
   var wrongIdx=[]; for(var i=0;i<(q.choices||[]).length;i++){ if(i!==q.answer) wrongIdx.push(i); }
   shuffle(wrongIdx);
   var toHide=wrongIdx.slice(0,2);
@@ -11488,8 +11581,14 @@ function mpPickRedo(logIdx){
   mpToast('🔁 Skill dipakai — kerjain ulang soal pilihanmu', 'info');
 }
 
-async function mpSaveProgress(retryCount){
+async function mpSaveProgress(retryCount, seq){
   if(!db || !mpState.code || !mpState.playerId) return;
+  // Setiap panggilan BARU (bukan retry — seq belum dikasih) dapet nomor urut baru. Ini jaga-jaga
+  // kalau jawaban berikutnya udah masuk & manggil mpSaveProgress lagi SEBELUM retry yang lama
+  // kelar — tanpa ini, retry yang lama bisa aja sukses BELAKANGAN dan nimpa data yang udah lebih
+  // baru dengan data yang lebih lama (race condition antar beberapa percobaan simpan yang tumpang
+  // tindih).
+  if(seq==null) seq = (mpState._saveSeq = (mpState._saveSeq||0) + 1);
   var finished = mpState.idx>=mpState.questions.length;
   var payload = {
     score: mpState.score, correct: mpState.correct, streak: mpState.streak,
@@ -11507,14 +11606,21 @@ async function mpSaveProgress(retryCount){
     // sempet putus), skor/progress lokal jalan terus tapi gak pernah nyampe ke server, dan
     // baru ketauan belakangan pas skor kelihatan gak nyambung. Sekarang: retry otomatis 2x
     // (jeda 1.5 detik), dan kalau tetep gagal baru kasih tau lewat toast + tandain biar
-    // mpRenderScoreRepairNotice bisa ngingetin user.
+    // mpRenderScoreRepairNotice bisa ngingetin user. Kode errornya ditampilin juga biar kalau
+    // masih kejadian lagi, penyebabnya (network vs izin Firestore vs lainnya) kelihatan jelas.
     console.error('mpSaveProgress', e);
+    if(seq!==mpState._saveSeq){
+      // Udah ada jawaban BARU yang nyusul & bakal nyimpen data yang lebih update — percobaan
+      // simpan versi lama ini dihentikan di sini, jangan retry lagi (lihat komentar di atas).
+      return;
+    }
     var n=retryCount||0;
     if(n<2){
-      setTimeout(function(){ mpSaveProgress(n+1); }, 1500);
+      setTimeout(function(){ mpSaveProgress(n+1, seq); }, 1500);
     } else {
       mpState._lastSaveFailed=true;
-      mpToast('⚠️ Gagal nyimpen progress ke server (cek koneksi) — coba jawab lagi biar disimpen ulang', 'bad');
+      var code = (e && (e.code||e.message)) || 'cek koneksi';
+      mpToast('⚠️ Gagal nyimpen progress ke server ('+code+') — coba jawab lagi biar disimpen ulang', 'bad');
     }
   }
 }
