@@ -1104,7 +1104,7 @@ header:has(.user-menu.open) { z-index:1000; }
         <span class="user-name" id="user-name">...</span>
         <span id="level-badge" onclick="event.stopPropagation();gotoScreen('levelreward')" title="Level & Reward" style="font-size:10px;font-weight:800;background:linear-gradient(135deg,var(--gold),#c98a1f);color:white;padding:2px 7px;border-radius:8px;cursor:pointer;letter-spacing:.3px">Lv.1</span>
         <span class="sync-badge" id="sync-badge">● sync</span>
-        <span id="build-dot" title="Indikator update: warnanya ganti tiap ada versi baru dari Claude" style="display:inline-block;width:11px;height:11px;border-radius:50%;background:#c0392b;margin-left:6px;vertical-align:middle;border:2px solid white;box-shadow:0 0 0 1px rgba(0,0,0,.15)"></span>
+        <span id="build-dot" title="Indikator update: warnanya ganti tiap ada versi baru dari Claude" style="display:inline-block;width:11px;height:11px;border-radius:50%;background:#2da050;margin-left:6px;vertical-align:middle;border:2px solid white;box-shadow:0 0 0 1px rgba(0,0,0,.15)"></span>
         <!-- 🔴🟢 CLAUDE: WAJIB toggle warna build-dot di atas SETIAP kali file ini dikirim ulang —
              merah #c0392b <-> hijau #2da050 gantian. Ini satu-satunya cara Riyan verifikasi
              upload-nya beneran ke-deploy. JANGAN LUPA, cek baris ini di awal SETIAP delivery. -->
@@ -9101,8 +9101,9 @@ function renderFlashSettingsBarGeneric(restartCall){
   if(!el) return;
   function ob(mode,label){ var a=studyOrderMode===mode; return '<button onclick="setStudyOrderMode(\''+mode+'\');'+restartCall+'" style="padding:5px 10px;border-radius:12px;border:1.5px solid '+(a?'var(--ink)':'var(--border)')+';background:'+(a?'var(--ink)':'white')+';color:'+(a?'#fff':'var(--mist)')+';font-family:inherit;font-size:10.5px;font-weight:700;cursor:pointer">'+label+'</button>'; }
   function fb(mode,label){ var a=kfFilterMode===mode; return '<button onclick="setKfFilterMode(\''+mode+'\');'+restartCall+'" style="padding:5px 10px;border-radius:12px;border:1.5px solid '+(a?'#8b5a2b':'var(--border)')+';background:'+(a?'#8b5a2b':'white')+';color:'+(a?'#fff':'var(--mist)')+';font-family:inherit;font-size:10.5px;font-weight:700;cursor:pointer">'+label+'</button>'; }
-  el.innerHTML = '<div style="display:flex;gap:5px;flex-wrap:wrap;margin-bottom:6px">'+ob('acak','🔀 Acak')+ob('urut','🔤 Urut あ→わ')+'</div>'
-    + '<div style="display:flex;gap:5px;flex-wrap:wrap">'+fb('semua','Semua')+fb('belum','Belum hafal')+fb('sudah','Sudah hafal')+'</div>';
+  el.innerHTML = '<div style="display:flex;gap:5px;flex-wrap:wrap;margin-bottom:6px">'+ob('acak','🔀 Acak')+ob('urut','🔤 Urut あ→わ')+ob('akhiran','🔚 Urut akhiran')+'</div>'
+    + '<div style="display:flex;gap:5px;flex-wrap:wrap">'+fb('semua','Semua')+fb('belum','Belum hafal')+fb('sudah','Sudah hafal')+'</div>'
+    + studyEndingRowHTML(restartCall);
 }
 // mode: 'kotoba' (default, kanji+bacaan+arti sekaligus) atau 'kanji' (Baca Kanji — kanji doang di depan)
 function startCustomStudyFlash(mode){
@@ -9253,8 +9254,9 @@ function renderKfSettingsBar2(pos){
   if(!el) return;
   function ob(mode,label){ var a=studyOrderMode===mode; return '<button onclick="setStudyOrderMode(\''+mode+'\');startStudyPos(\''+pos+'\')" style="padding:5px 10px;border-radius:12px;border:1.5px solid '+(a?'var(--ink)':'var(--border)')+';background:'+(a?'var(--ink)':'white')+';color:'+(a?'#fff':'var(--mist)')+';font-family:inherit;font-size:10.5px;font-weight:700;cursor:pointer">'+label+'</button>'; }
   function fb(mode,label){ var a=kfFilterMode===mode; return '<button onclick="setKfFilterMode(\''+mode+'\');startStudyPos(\''+pos+'\')" style="padding:5px 10px;border-radius:12px;border:1.5px solid '+(a?'#8b5a2b':'var(--border)')+';background:'+(a?'#8b5a2b':'white')+';color:'+(a?'#fff':'var(--mist)')+';font-family:inherit;font-size:10.5px;font-weight:700;cursor:pointer">'+label+'</button>'; }
-  el.innerHTML = '<div style="display:flex;gap:5px;flex-wrap:wrap;margin-bottom:6px">'+ob('acak','🔀 Acak')+ob('urut','🔤 Urut あ→わ')+'</div>'
-    + '<div style="display:flex;gap:5px;flex-wrap:wrap">'+fb('semua','Semua')+fb('belum','Belum hafal')+fb('sudah','Sudah hafal')+'</div>';
+  el.innerHTML = '<div style="display:flex;gap:5px;flex-wrap:wrap;margin-bottom:6px">'+ob('acak','🔀 Acak')+ob('urut','🔤 Urut あ→わ')+ob('akhiran','🔚 Urut akhiran')+'</div>'
+    + '<div style="display:flex;gap:5px;flex-wrap:wrap">'+fb('semua','Semua')+fb('belum','Belum hafal')+fb('sudah','Sudah hafal')+'</div>'
+    + studyEndingRowHTML("startStudyPos('"+pos+"')");
 }
 
 function startStudy(cat) {
@@ -12031,6 +12033,30 @@ function setStudyOrderMode(mode){
   studyOrderMode = mode;
   try{ localStorage.setItem('n3_studyOrder', mode); }catch(e){}
 }
+// ── Filter AKHIRAN di flashcard (u, tsu, ru, mu, nu, bu, ku, gu, su, suru, i, lainnya) ──
+// Dipasang di orderPoolByMode, jadi otomatis berlaku di SEMUA flashcard yang punya bar
+// Acak/Urut + Semua/Belum/Sudah (flashcard jenis kata, kanji, dan Set Custom). Sengaja gak
+// disimpen ke localStorage (reset tiap buka ulang app) biar gak bikin flashcard kosong
+// diam-diam di kategori lain. Logika akhirannya sama kayak di picker Custom (csWordEnding).
+var studyEndingSet = [];
+var _studyEndingCounts = {};
+function studyToggleEnding(k){
+  var i=studyEndingSet.indexOf(k);
+  if(i>=0) studyEndingSet.splice(i,1); else studyEndingSet.push(k);
+}
+function studyClearEnding(){ studyEndingSet=[]; }
+function studyEndingRowHTML(restartCall){
+  function btn(label, js, active, dim){
+    return '<button onclick="'+js+';'+restartCall+'" style="padding:5px 10px;border-radius:12px;border:1.5px solid '+(active?'#0a7d6b':'var(--border)')+';background:'+(active?'#0a7d6b':'white')+';color:'+(active?'#fff':'var(--mist)')+';font-family:inherit;font-size:10.5px;font-weight:700;cursor:pointer;opacity:'+(dim?'.4':'1')+'">'+label+'</button>';
+  }
+  var html = '<div style="font-size:10px;font-weight:800;color:var(--mist);letter-spacing:.4px;margin:8px 0 4px">🔚 AKHIRAN <span style="font-weight:600;letter-spacing:0">(bisa lebih dari satu)</span></div><div style="display:flex;gap:5px;flex-wrap:wrap">';
+  html += btn('Semua','studyClearEnding()',!studyEndingSet.length,false);
+  CS_ENDING_DEFS.forEach(function(d){
+    var n=_studyEndingCounts[d[0]]||0, a=studyEndingSet.indexOf(d[0])>=0;
+    html += btn(d[1]+' '+n,"studyToggleEnding('"+d[0]+"')",a,(!n&&!a));
+  });
+  return html+'</div>';
+}
 var GOJUON_BASE_JS = "あいうえおかきくけこさしすせそたちつてとなにぬねのはひふへほまみむめもやゆよらりるれろわをん";
 var GOJUON_DAKUTEN_JS = {
   'が':['か',1],'ぎ':['き',1],'ぐ':['く',1],'げ':['け',1],'ご':['こ',1],
@@ -12066,7 +12092,24 @@ function gojuonSortKey(reading){
 // readingFn(item) harus balikin string bacaan (hiragana/katakana) buat item itu.
 function orderPoolByMode(pool, readingFn){
   var arr = pool.slice();
-  if(studyOrderMode === 'urut'){
+  // Jumlah kata per akhiran dihitung dari pool yang masuk (udah lolos filter status hafal),
+  // SEBELUM difilter akhiran — dipakai buat angka di tombol 🔚 AKHIRAN.
+  _studyEndingCounts = {};
+  arr.forEach(function(w){ var k=csWordEnding(w); _studyEndingCounts[k]=(_studyEndingCounts[k]||0)+1; });
+  if(studyEndingSet.length){
+    arr = arr.filter(function(w){ return studyEndingSet.indexOf(csWordEnding(w))>=0; });
+  }
+  if(studyOrderMode === 'akhiran'){
+    // Dikelompokin per akhiran (urutan: u, tsu, ru, mu, nu, bu, ku, gu, su, suru, i, lainnya),
+    // di dalam tiap kelompok diurut gojuon.
+    var endOrder = CS_ENDING_DEFS.map(function(d){ return d[0]; });
+    arr.sort(function(a,b){
+      var ea = endOrder.indexOf(csWordEnding(a)), eb = endOrder.indexOf(csWordEnding(b));
+      if(ea!==eb) return ea-eb;
+      var ka = gojuonSortKey(readingFn(a)), kb = gojuonSortKey(readingFn(b));
+      return ka<kb ? -1 : (ka>kb ? 1 : 0);
+    });
+  } else if(studyOrderMode === 'urut'){
     arr.sort(function(a,b){
       var ka = gojuonSortKey(readingFn(a)), kb = gojuonSortKey(readingFn(b));
       return ka<kb ? -1 : (ka>kb ? 1 : 0);
@@ -12586,8 +12629,9 @@ function renderKfSettingsBarGeneric(restartCall){
   if(!el) return;
   function ob(mode,label){ var a=studyOrderMode===mode; return '<button onclick="setStudyOrderMode(\''+mode+'\');'+restartCall+'" style="padding:5px 10px;border-radius:12px;border:1.5px solid '+(a?'var(--ink)':'var(--border)')+';background:'+(a?'var(--ink)':'white')+';color:'+(a?'#fff':'var(--mist)')+';font-family:inherit;font-size:10.5px;font-weight:700;cursor:pointer">'+label+'</button>'; }
   function fb(mode,label){ var a=kfFilterMode===mode; return '<button onclick="setKfFilterMode(\''+mode+'\');'+restartCall+'" style="padding:5px 10px;border-radius:12px;border:1.5px solid '+(a?'#8b5a2b':'var(--border)')+';background:'+(a?'#8b5a2b':'white')+';color:'+(a?'#fff':'var(--mist)')+';font-family:inherit;font-size:10.5px;font-weight:700;cursor:pointer">'+label+'</button>'; }
-  el.innerHTML = '<div style="display:flex;gap:5px;flex-wrap:wrap;margin-bottom:6px">'+ob('acak','🔀 Acak')+ob('urut','🔤 Urut あ→わ')+'</div>'
-    + '<div style="display:flex;gap:5px;flex-wrap:wrap">'+fb('semua','Semua')+fb('belum','Belum hafal')+fb('sudah','Sudah hafal')+'</div>';
+  el.innerHTML = '<div style="display:flex;gap:5px;flex-wrap:wrap;margin-bottom:6px">'+ob('acak','🔀 Acak')+ob('urut','🔤 Urut あ→わ')+ob('akhiran','🔚 Urut akhiran')+'</div>'
+    + '<div style="display:flex;gap:5px;flex-wrap:wrap">'+fb('semua','Semua')+fb('belum','Belum hafal')+fb('sudah','Sudah hafal')+'</div>'
+    + studyEndingRowHTML(restartCall);
 }
 
 // Render kartu jenis kata (baca kanji) di kanjimenu.
@@ -12695,8 +12739,9 @@ function renderKfSettingsBar(cat){
   var acak = studyOrderMode!=='urut';
   function ob(mode,label){ var a=studyOrderMode===mode; return '<button onclick="setStudyOrderMode(\''+mode+'\');startKanjiFlash(\''+cat+'\')" style="padding:5px 10px;border-radius:12px;border:1.5px solid '+(a?'var(--ink)':'var(--border)')+';background:'+(a?'var(--ink)':'white')+';color:'+(a?'#fff':'var(--mist)')+';font-family:inherit;font-size:10.5px;font-weight:700;cursor:pointer">'+label+'</button>'; }
   function fb(mode,label){ var a=kfFilterMode===mode; return '<button onclick="setKfFilterMode(\''+mode+'\');startKanjiFlash(\''+cat+'\')" style="padding:5px 10px;border-radius:12px;border:1.5px solid '+(a?'#8b5a2b':'var(--border)')+';background:'+(a?'#8b5a2b':'white')+';color:'+(a?'#fff':'var(--mist)')+';font-family:inherit;font-size:10.5px;font-weight:700;cursor:pointer">'+label+'</button>'; }
-  el.innerHTML = '<div style="display:flex;gap:5px;flex-wrap:wrap;margin-bottom:6px">'+ob('acak','🔀 Acak')+ob('urut','🔤 Urut あ→わ')+'</div>'
-    + '<div style="display:flex;gap:5px;flex-wrap:wrap">'+fb('semua','Semua')+fb('belum','Belum hafal')+fb('sudah','Sudah hafal')+'</div>';
+  el.innerHTML = '<div style="display:flex;gap:5px;flex-wrap:wrap;margin-bottom:6px">'+ob('acak','🔀 Acak')+ob('urut','🔤 Urut あ→わ')+ob('akhiran','🔚 Urut akhiran')+'</div>'
+    + '<div style="display:flex;gap:5px;flex-wrap:wrap">'+fb('semua','Semua')+fb('belum','Belum hafal')+fb('sudah','Sudah hafal')+'</div>'
+    + studyEndingRowHTML("startKanjiFlash('"+cat+"')");
 }
 
 function showKanjiCard() {
