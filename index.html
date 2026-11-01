@@ -1104,7 +1104,7 @@ header:has(.user-menu.open) { z-index:1000; }
         <span class="user-name" id="user-name">...</span>
         <span id="level-badge" onclick="event.stopPropagation();gotoScreen('levelreward')" title="Level & Reward" style="font-size:10px;font-weight:800;background:linear-gradient(135deg,var(--gold),#c98a1f);color:white;padding:2px 7px;border-radius:8px;cursor:pointer;letter-spacing:.3px">Lv.1</span>
         <span class="sync-badge" id="sync-badge">● sync</span>
-        <span id="build-dot" title="Indikator update: warnanya ganti tiap ada versi baru dari Claude" style="display:inline-block;width:11px;height:11px;border-radius:50%;background:#2da050;margin-left:6px;vertical-align:middle;border:2px solid white;box-shadow:0 0 0 1px rgba(0,0,0,.15)"></span>
+        <span id="build-dot" title="Indikator update: warnanya ganti tiap ada versi baru dari Claude" style="display:inline-block;width:11px;height:11px;border-radius:50%;background:#c0392b;margin-left:6px;vertical-align:middle;border:2px solid white;box-shadow:0 0 0 1px rgba(0,0,0,.15)"></span>
         <!-- 🔴🟢 CLAUDE: WAJIB toggle warna build-dot di atas SETIAP kali file ini dikirim ulang —
              merah #c0392b <-> hijau #2da050 gantian. Ini satu-satunya cara Riyan verifikasi
              upload-nya beneran ke-deploy. JANGAN LUPA, cek baris ini di awal SETIAP delivery. -->
@@ -1937,6 +1937,10 @@ header:has(.user-menu.open) { z-index:1000; }
 
   <div style="font-size:12px;font-weight:800;color:var(--mist);letter-spacing:.4px;margin-bottom:8px">📊 STATUS HAFALAN (dari belajar biasa)</div>
   <div id="custom-mastery-pills" style="display:flex;gap:6px;margin-bottom:16px;flex-wrap:wrap"></div>
+
+  <div style="font-size:12px;font-weight:800;color:var(--mist);letter-spacing:.4px;margin-bottom:8px">🔚 AKHIRAN KATA <span style="font-weight:600;letter-spacing:0">(bisa pilih lebih dari satu)</span></div>
+  <div id="custom-ending-pills" style="display:flex;gap:6px;margin-bottom:6px;flex-wrap:wrap"></div>
+  <div style="font-size:10.5px;color:var(--mist);margin-bottom:16px">Berdasarkan bacaan kata (bukan tulisannya). Cocok buat ngelompokin kata kerja per akhiran: う・つ・る・む・ぬ・ぶ・く・ぐ・す・する. Akhiran う juga nangkep kata benda berbunyi panjang kayak 勉強 (べんきょう), jadi kalau mau kata kerja doang, kombinasikan sama "Pilih Cepat → Kata Kerja".</div>
 
   <div style="position:sticky;top:52px;background:var(--paper);padding:8px 0;z-index:5">
     <input id="custom-search" type="text" placeholder="🔍 Cari kata (bahasa Jepang / romaji / arti)..." oninput="renderCustomWordList();renderCustomBulkMenu();" style="width:100%;padding:11px 14px;border:1.5px solid var(--border);border-radius:10px;font-family:inherit;font-size:14px;box-sizing:border-box">
@@ -17546,7 +17550,7 @@ var _customListLimit = 60;
 var _customMasteryFilter = 'all'; // 'all' | 'no' (belum hafal) | 'yes' (sudah hafal)
 function csSetMasteryFilter(f){
   _customMasteryFilter = f; _customListLimit = 60;
-  csRenderMasteryPills(); renderCustomBulkMenu(); renderCustomWordList();
+  csRenderMasteryPills(); csRenderEndingPills(); renderCustomBulkMenu(); renderCustomWordList();
 }
 function csRenderMasteryPills(){
   var el = document.getElementById('custom-mastery-pills');
@@ -17565,9 +17569,67 @@ function csApplyMasteryFilter(pool){
     return _customMasteryFilter==='yes' ? done : !done;
   });
 }
+// ── Filter AKHIRAN kata (u, tsu, ru, mu, nu, bu, ku, gu, su, suru, i, lainnya) ──
+// Dihitung dari BACAAN kata. Data bacaan gak seragam: N3 disimpen romaji ("aru"), level lain
+// hiragana ("いきる") — jadi disamain dulu ke romaji lewat mpToRomajiIfKana, baru dicek akhirannya.
+var _customEndingSet = []; // kosong = semua akhiran
+var CS_ENDING_DEFS = [
+  ['u','う u'],['tsu','つ tsu'],['ru','る ru'],['mu','む mu'],['nu','ぬ nu'],['bu','ぶ bu'],
+  ['ku','く ku'],['gu','ぐ gu'],['su','す su'],['suru','する suru'],['i','い i'],['lain','lainnya']
+];
+var _csEndingCache = {};
+function csWordEnding(w){
+  var raw = String((w && w.rom) || '').split(/[;,\/・]/)[0];
+  if(!raw) raw = String((w && w.jp) || '').split(/[;,\/・]/)[0]; // bacaan kosong di data -> pakai tulisannya (kana di ujung kata kerja tetap kebaca)
+  if(_csEndingCache.hasOwnProperty(raw)) return _csEndingCache[raw];
+  var r = '';
+  try{ r = String(mpToRomajiIfKana(raw)||''); }catch(e){ r = raw; }
+  r = r.toLowerCase().replace(/[^a-z]/g,'');
+  var k;
+  if(/suru$/.test(r)) k='suru';
+  else if(/tsu$/.test(r)) k='tsu';
+  else if(/(ru|mu|nu|bu|ku|gu|su)$/.test(r)) k=r.slice(-2);
+  else if(/u$/.test(r)) k='u';
+  else if(/i$/.test(r)) k='i';
+  else k='lain';
+  _csEndingCache[raw]=k;
+  return k;
+}
+function csToggleEnding(k){
+  var i=_customEndingSet.indexOf(k);
+  if(i>=0) _customEndingSet.splice(i,1); else _customEndingSet.push(k);
+  _customListLimit = 60;
+  csRenderEndingPills(); renderCustomBulkMenu(); renderCustomWordList();
+}
+function csClearEnding(){
+  _customEndingSet = []; _customListLimit = 60;
+  csRenderEndingPills(); renderCustomBulkMenu(); renderCustomWordList();
+}
+function csRenderEndingPills(){
+  var el = document.getElementById('custom-ending-pills');
+  if(!el) return;
+  var base = csApplyMasteryFilter(posLevelWordsRaw()); // hitungan ngikutin filter level + status hafalan yang aktif
+  var counts = {}; base.forEach(function(w){ var k=csWordEnding(w); counts[k]=(counts[k]||0)+1; });
+  var allActive = !_customEndingSet.length;
+  var html = '<button onclick="csClearEnding()" style="padding:8px 13px;border-radius:20px;border:1.5px solid '+(allActive?'#8b5a2b':'var(--border)')+';background:'+(allActive?'#8b5a2b':'white')+';color:'+(allActive?'#fff':'var(--mist)')+';font-family:inherit;font-size:12.5px;font-weight:700;cursor:pointer">Semua</button>';
+  html += CS_ENDING_DEFS.map(function(d){
+    var n = counts[d[0]]||0;
+    var active = _customEndingSet.indexOf(d[0])>=0;
+    var dim = (!n && !active);
+    return '<button onclick="csToggleEnding(\''+d[0]+'\')" style="padding:8px 13px;border-radius:20px;border:1.5px solid '+(active?'#8b5a2b':'var(--border)')+';background:'+(active?'#8b5a2b':'white')+';color:'+(active?'#fff':'var(--mist)')+';font-family:inherit;font-size:12.5px;font-weight:700;cursor:pointer;opacity:'+(dim?'.4':'1')+'">'+d[1]+' <span style="font-weight:600;opacity:.8">'+n+'</span></button>';
+  }).join('');
+  el.innerHTML = html;
+}
+function csApplyEndingFilter(pool){
+  if(!_customEndingSet.length) return pool;
+  return pool.filter(function(w){ return _customEndingSet.indexOf(csWordEnding(w))>=0; });
+}
+// Gabungan semua filter Custom Belajar (status hafalan + akhiran) — dipakai daftar kata, Pilih Cepat, dan hitungannya
+function csApplyFilters(pool){ return csApplyEndingFilter(csApplyMasteryFilter(pool)); }
 function renderCustomMenu(){
   _customListLimit = 60;
   csRenderMasteryPills();
+  csRenderEndingPills();
   var setBox = document.getElementById('custom-set-pills');
   if(setBox){
     var names = Object.keys(customStudySets);
@@ -17615,7 +17677,7 @@ function renderCustomMenu(){
 // atau seluruh level) — TANPA perlu centang satu-satu. Cuma NAMBAH ke Set Custom yang udah ada
 // (gabung/union), gak nge-reset; buat hapus per-kata tetap pakai tap di daftar/chip seperti biasa. ──
 function bulkPickCategory(kind){
-  var pool = csApplyMasteryFilter(posLevelWordsRaw());
+  var pool = csApplyFilters(posLevelWordsRaw());
   var matches;
   if(kind==='SEARCH'){
     var q = ((document.getElementById('custom-search')||{}).value||'').trim().toLowerCase();
@@ -17634,7 +17696,7 @@ function bulkPickCategory(kind){
 function renderCustomBulkMenu(){
   var el = document.getElementById('custom-bulk-menu');
   if(!el) return;
-  var pool = csApplyMasteryFilter(posLevelWordsRaw());
+  var pool = csApplyFilters(posLevelWordsRaw());
   var counts = {meishi:0,doushi:0,keiyoushi:0,fukushi:0,setsuzoku:0,pola:0};
   pool.forEach(function(w){ var p=posOf(w); if(counts.hasOwnProperty(p)) counts[p]++; });
   var defs = [
@@ -17683,7 +17745,7 @@ function renderCustomWordList(){
   if(!box) return;
   var q = (document.getElementById('custom-search')||{}).value || '';
   q = q.trim().toLowerCase();
-  var pool = csApplyMasteryFilter(posLevelWordsRaw());
+  var pool = csApplyFilters(posLevelWordsRaw());
   var filtered = pool.filter(function(w){
     if(!q) return true;
     var jp=(w.jp||'').toLowerCase(), rom=(w.rom||'').toLowerCase(), arti=(w.id_||'').toLowerCase();
