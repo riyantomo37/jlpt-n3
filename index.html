@@ -1104,7 +1104,7 @@ header:has(.user-menu.open) { z-index:1000; }
         <span class="user-name" id="user-name">...</span>
         <span id="level-badge" onclick="event.stopPropagation();gotoScreen('levelreward')" title="Level & Reward" style="font-size:10px;font-weight:800;background:linear-gradient(135deg,var(--gold),#c98a1f);color:white;padding:2px 7px;border-radius:8px;cursor:pointer;letter-spacing:.3px">Lv.1</span>
         <span class="sync-badge" id="sync-badge">● sync</span>
-        <span id="build-dot" title="Indikator update: warnanya ganti tiap ada versi baru dari Claude" style="display:inline-block;width:11px;height:11px;border-radius:50%;background:#2da050;margin-left:6px;vertical-align:middle;border:2px solid white;box-shadow:0 0 0 1px rgba(0,0,0,.15)"></span>
+        <span id="build-dot" title="Indikator update: warnanya ganti tiap ada versi baru dari Claude" style="display:inline-block;width:11px;height:11px;border-radius:50%;background:#c0392b;margin-left:6px;vertical-align:middle;border:2px solid white;box-shadow:0 0 0 1px rgba(0,0,0,.15)"></span>
         <!-- 🔴🟢 CLAUDE: WAJIB toggle warna build-dot di atas SETIAP kali file ini dikirim ulang —
              merah #c0392b <-> hijau #2da050 gantian. Ini satu-satunya cara Riyan verifikasi
              upload-nya beneran ke-deploy. JANGAN LUPA, cek baris ini di awal SETIAP delivery. -->
@@ -1938,9 +1938,9 @@ header:has(.user-menu.open) { z-index:1000; }
   <div style="font-size:12px;font-weight:800;color:var(--mist);letter-spacing:.4px;margin-bottom:8px">📊 STATUS HAFALAN (dari belajar biasa)</div>
   <div id="custom-mastery-pills" style="display:flex;gap:6px;margin-bottom:16px;flex-wrap:wrap"></div>
 
-  <div style="font-size:12px;font-weight:800;color:var(--mist);letter-spacing:.4px;margin-bottom:8px">🔚 AKHIRAN KATA <span style="font-weight:600;letter-spacing:0">(bisa pilih lebih dari satu)</span></div>
+  <div style="font-size:12px;font-weight:800;color:var(--mist);letter-spacing:.4px;margin-bottom:8px">🔚 AKHIRAN KATA KERJA <span style="font-weight:600;letter-spacing:0">(bisa pilih lebih dari satu)</span></div>
   <div id="custom-ending-pills" style="display:flex;gap:6px;margin-bottom:6px;flex-wrap:wrap"></div>
-  <div style="font-size:10.5px;color:var(--mist);margin-bottom:16px">Berdasarkan bacaan kata (bukan tulisannya). Cocok buat ngelompokin kata kerja per akhiran: う・つ・る・む・ぬ・ぶ・く・ぐ・す・する. Akhiran う juga nangkep kata benda berbunyi panjang kayak 勉強 (べんきょう), jadi kalau mau kata kerja doang, kombinasikan sama "Pilih Cepat → Kata Kerja". Tombol "Detail akhiran" (eru, kiru, bosu, dst) cuma buat kata kerja.</div>
+  <div style="font-size:10.5px;color:var(--mist);margin-bottom:16px">Akhiran kata kerja bentuk kamus, sama kayak tabel master: kata kerja ichidan (一段) pakai 2 kana terakhir (～きる, ～ける, ～める, ～える, dst), godan (五段) pakai 1 kana terakhir (～る, ～う, ～す, ～む, dst), plus ～する. Hitungannya dari bacaan, bukan tulisan. Kata yang bukan kata kerja gak ikut kefilter (cuma muncul di "Semua").</div>
 
   <div style="position:sticky;top:52px;background:var(--paper);padding:8px 0;z-index:5">
     <input id="custom-search" type="text" placeholder="🔍 Cari kata (bahasa Jepang / romaji / arti)..." oninput="renderCustomWordList();renderCustomBulkMenu();" style="width:100%;padding:11px 14px;border:1.5px solid var(--border);border-radius:10px;font-family:inherit;font-size:14px;box-sizing:border-box">
@@ -12040,15 +12040,10 @@ function setStudyOrderMode(mode){
 // diam-diam di kategori lain. Logika akhirannya sama kayak di picker Custom (csWordEnding).
 var studyEndingSet = [];
 var _studyEndingCounts = {};
-var _studyFineCounts = {};
-var studyEndingDetailOpen = false;
-function studyToggleDetail(){ studyEndingDetailOpen = !studyEndingDetailOpen; }
-// Kata lolos filter kalau akhiran UMUM-nya (ru, su, ...) ATAU akhiran DETAIL-nya (kiru, bosu, ...) dipilih
+// Kata lolos filter kalau akhirannya (～きる, ～る, ...) termasuk yang dipilih
 function studyWordMatchesEnding(w){
   if(!studyEndingSet.length) return true;
-  if(studyEndingSet.indexOf(csWordEnding(w))>=0) return true;
-  var f = csWordFineEnding(w);
-  return !!f && studyEndingSet.indexOf(f)>=0;
+  return studyEndingSet.indexOf(csWordEnding(w))>=0;
 }
 function studyToggleEnding(k){
   var i=studyEndingSet.indexOf(k);
@@ -12056,39 +12051,17 @@ function studyToggleEnding(k){
 }
 function studyClearEnding(){ studyEndingSet=[]; }
 function studyEndingRowHTML(restartCall){
-  function btn(label, js, active, dim){
-    return '<button onclick="'+js+';'+restartCall+'" style="padding:5px 10px;border-radius:12px;border:1.5px solid '+(active?'#0a7d6b':'var(--border)')+';background:'+(active?'#0a7d6b':'white')+';color:'+(active?'#fff':'var(--mist)')+';font-family:inherit;font-size:10.5px;font-weight:700;cursor:pointer;opacity:'+(dim?'.4':'1')+'">'+label+'</button>';
+  function btn(label, js, active){
+    return '<button onclick="'+js+';'+restartCall+'" style="padding:5px 10px;border-radius:12px;border:1.5px solid '+(active?'#0a7d6b':'var(--border)')+';background:'+(active?'#0a7d6b':'white')+';color:'+(active?'#fff':'var(--mist)')+';font-family:inherit;font-size:10.5px;font-weight:700;cursor:pointer">'+label+'</button>';
   }
-  var html = '<div style="font-size:10px;font-weight:800;color:var(--mist);letter-spacing:.4px;margin:8px 0 4px">🔚 AKHIRAN <span style="font-weight:600;letter-spacing:0">(bisa lebih dari satu)</span></div><div style="display:flex;gap:5px;flex-wrap:wrap">';
-  html += btn('Semua','studyClearEnding()',!studyEndingSet.length,false);
-  CS_ENDING_DEFS.forEach(function(d){
-    var n=_studyEndingCounts[d[0]]||0, a=studyEndingSet.indexOf(d[0])>=0;
-    html += btn(d[1]+' '+n,"studyToggleEnding('"+d[0]+"')",a,(!n&&!a));
+  var keys = csEndingKeysToShow(_studyEndingCounts, studyEndingSet);
+  if(!keys.length) return ''; // flashcard ini gak isi kata kerja (mis. Kata Benda) -> baris akhiran disembunyiin
+  var html = '<div style="font-size:10px;font-weight:800;color:var(--mist);letter-spacing:.4px;margin:8px 0 4px">🔚 AKHIRAN KATA KERJA <span style="font-weight:600;letter-spacing:0">(bisa lebih dari satu)</span></div><div style="display:flex;gap:5px;flex-wrap:wrap">';
+  html += btn('Semua','studyClearEnding()',!studyEndingSet.length);
+  keys.forEach(function(k){
+    html += btn(csEndingLabel(k)+' '+(_studyEndingCounts[k]||0),"studyToggleEnding('"+k+"')",studyEndingSet.indexOf(k)>=0);
   });
-  html += '</div>';
-  // Baris DETAIL (2 suku kata terakhir kata kerja) — dilipat dulu biar bar gak kepanjangan
-  var generalKeys = CS_ENDING_DEFS.map(function(d){ return d[0]; });
-  var fineKeys = Object.keys(_studyFineCounts);
-  studyEndingSet.forEach(function(k){ if(generalKeys.indexOf(k)<0 && fineKeys.indexOf(k)<0) fineKeys.push(k); });
-  var fineSel = studyEndingSet.filter(function(k){ return generalKeys.indexOf(k)<0; }).length;
-  if(fineKeys.length){
-    fineKeys.sort(function(a,b){
-      var ga = CS_FINE_PARENT.indexOf(csFineParent(a)), gb = CS_FINE_PARENT.indexOf(csFineParent(b)); // urut ngikutin akhiran umumnya
-      if(ga!==gb) return ga-gb;
-      return a<b ? -1 : (a>b ? 1 : 0);
-    });
-    html += '<div style="margin-top:6px"><button onclick="studyToggleDetail();'+restartCall+'" style="padding:5px 10px;border-radius:12px;border:1.5px dashed var(--border);background:white;color:var(--mist);font-family:inherit;font-size:10.5px;font-weight:700;cursor:pointer">'
-      + (studyEndingDetailOpen?'▾':'▸')+' Detail akhiran kata kerja ('+fineKeys.length+')'+(fineSel?' · '+fineSel+' dipilih':'')+'</button></div>';
-    if(studyEndingDetailOpen){
-      html += '<div style="display:flex;gap:5px;flex-wrap:wrap;margin-top:6px">';
-      fineKeys.forEach(function(k){
-        var n=_studyFineCounts[k]||0, a=studyEndingSet.indexOf(k)>=0;
-        html += btn(k+' '+n,"studyToggleEnding('"+k+"')",a,(!n&&!a));
-      });
-      html += '</div>';
-    }
-  }
-  return html;
+  return html+'</div>';
 }
 var GOJUON_BASE_JS = "あいうえおかきくけこさしすせそたちつてとなにぬねのはひふへほまみむめもやゆよらりるれろわをん";
 var GOJUON_DAKUTEN_JS = {
@@ -12127,23 +12100,20 @@ function orderPoolByMode(pool, readingFn){
   var arr = pool.slice();
   // Jumlah kata per akhiran dihitung dari pool yang masuk (udah lolos filter status hafal),
   // SEBELUM difilter akhiran — dipakai buat angka di tombol 🔚 AKHIRAN.
-  _studyEndingCounts = {}; _studyFineCounts = {};
-  arr.forEach(function(w){
-    var k=csWordEnding(w); _studyEndingCounts[k]=(_studyEndingCounts[k]||0)+1;
-    var f=csWordFineEnding(w); if(f) _studyFineCounts[f]=(_studyFineCounts[f]||0)+1;
-  });
+  _studyEndingCounts = {};
+  arr.forEach(function(w){ var k=csWordEnding(w); if(k) _studyEndingCounts[k]=(_studyEndingCounts[k]||0)+1; });
   if(studyEndingSet.length){
     arr = arr.filter(studyWordMatchesEnding);
   }
   if(studyOrderMode === 'akhiran'){
-    // Dikelompokin per akhiran (urutan: u, tsu, ru, mu, nu, bu, ku, gu, su, suru, i, lainnya),
-    // di dalam tiap kelompok diurut gojuon.
+    // Dikelompokin per akhiran (urutan: ～う ～つ ～る ～む ～ぬ ～ぶ ～く ～ぐ ～す ～する, lalu ichidan
+    // ～える ～ける ... ～いる ～きる ...), di dalam tiap kelompok diurut gojuon. Kata tanpa akhiran
+    // (bukan kata kerja) ditaruh paling belakang.
     var endOrder = CS_ENDING_DEFS.map(function(d){ return d[0]; });
     arr.sort(function(a,b){
       var ea = endOrder.indexOf(csWordEnding(a)), eb = endOrder.indexOf(csWordEnding(b));
+      if(ea<0) ea=999; if(eb<0) eb=999;
       if(ea!==eb) return ea-eb;
-      var fa = csWordFineEnding(a), fb2 = csWordFineEnding(b); // di dalam satu kelompok: kelompokin lagi per akhiran detail (kiru, giru, ...)
-      if(fa!==fb2) return fa<fb2 ? -1 : 1;
       var ka = gojuonSortKey(readingFn(a)), kb = gojuonSortKey(readingFn(b));
       return ka<kb ? -1 : (ka>kb ? 1 : 0);
     });
@@ -17652,41 +17622,42 @@ function csApplyMasteryFilter(pool){
     return _customMasteryFilter==='yes' ? done : !done;
   });
 }
-// ── Filter AKHIRAN kata (u, tsu, ru, mu, nu, bu, ku, gu, su, suru, i, lainnya) ──
-// Dihitung dari BACAAN kata. Data bacaan gak seragam: N3 disimpen romaji ("aru"), level lain
-// hiragana ("いきる") — jadi disamain dulu ke romaji lewat mpToRomajiIfKana, baru dicek akhirannya.
+// ── Filter AKHIRAN kata kerja — mengikuti kolom "Akhiran" di tabel master JLPT N3 Kata Kerja ──
+// Dihitung dari BACAAN bentuk kamus (data bacaan gak seragam: N3 romaji "aru", level lain hiragana
+// "いきる" — disamain dulu ke romaji lewat mpToRomajiIfKana). Aturannya (cocok 210 dari 211 baris
+// tabel master):
+//   • ～する (愛する, 関する, ...)                                    → "suru"
+//   • berakhiran る & kana sebelum る berbaris い/え: DUA kana terakhir → ～きる ～ける ～める ～える ...
+//     (ichidan; termasuk godan yang "mirip ichidan" kayak 気に入る ～いる, 握る ～ぎる, 喋る ～べる)
+//   • selain itu (godan): SATU kana terakhir                          → ～る ～う ～く ～ぐ ～す ～つ ～ぬ ～ぶ ～む
+// Cuma buat kata kerja (posOf='doushi'). Kata benda/sifat/dll gak punya akhiran di sini (key '')
+// — jadi baris filternya otomatis ngilang di flashcard yang isinya bukan kata kerja.
 var _customEndingSet = []; // kosong = semua akhiran
-var CS_ENDING_DEFS = [
-  ['u','う u'],['tsu','つ tsu'],['ru','る ru'],['mu','む mu'],['nu','ぬ nu'],['bu','ぶ bu'],
-  ['ku','く ku'],['gu','ぐ gu'],['su','す su'],['suru','する suru'],['i','い i'],['lain','lainnya']
-];
-var _csEndingCache = {};
-function csWordEnding(w){
-  var raw = String((w && w.rom) || '').split(/[;,\/・]/)[0];
-  if(!raw) raw = String((w && w.jp) || '').split(/[;,\/・]/)[0]; // bacaan kosong di data -> pakai tulisannya (kana di ujung kata kerja tetap kebaca)
-  if(_csEndingCache.hasOwnProperty(raw)) return _csEndingCache[raw];
-  var r = '';
-  try{ r = String(mpToRomajiIfKana(raw)||''); }catch(e){ r = raw; }
-  r = r.toLowerCase().replace(/[^a-z]/g,'');
-  var k;
-  if(/suru$/.test(r)) k='suru';
-  else if(/tsu$/.test(r)) k='tsu';
-  else if(/(ru|mu|nu|bu|ku|gu|su)$/.test(r)) k=r.slice(-2);
-  else if(/u$/.test(r)) k='u';
-  else if(/i$/.test(r)) k='i';
-  else k='lain';
-  _csEndingCache[raw]=k;
-  return k;
+var CS_ENDING_DEFS = (function(){
+  var out=[];
+  [['u','う'],['tsu','つ'],['ru','る'],['mu','む'],['nu','ぬ'],['bu','ぶ'],['ku','く'],['gu','ぐ'],['su','す']].forEach(function(p){ out.push([p[0],'～'+p[1]+' '+p[0]]); });
+  out.push(['suru','～する suru']);
+  [['','え'],['k','け'],['g','げ'],['s','せ'],['z','ぜ'],['t','て'],['d','で'],['n','ね'],['h','へ'],['b','べ'],['p','ぺ'],['m','め'],['r','れ']].forEach(function(p){ out.push([p[0]+'eru','～'+p[1]+'る '+p[0]+'eru']); });
+  [['','い'],['k','き'],['g','ぎ'],['sh','し'],['j','じ'],['ch','ち'],['n','に'],['h','ひ'],['b','び'],['p','ぴ'],['m','み'],['r','り']].forEach(function(p){ out.push([p[0]+'iru','～'+p[1]+'る '+p[0]+'iru']); });
+  return out;
+})();
+// Label buat key yang gak ada di daftar di atas (jaga-jaga data aneh): tetap bisa dipilih
+function csEndingLabel(k){
+  for(var i=0;i<CS_ENDING_DEFS.length;i++){ if(CS_ENDING_DEFS[i][0]===k) return CS_ENDING_DEFS[i][1]; }
+  return '～'+k;
 }
-// ── Akhiran DETAIL: 2 suku kata terakhir kata kerja (eru, iru, kiru, giru, jiru, biru, keru, seru,
-// teru, beru, meru, reru, bosu, rosu, rasu, gosu, basu, masu, shimu, ...). Daftarnya DIBANGUN
-// OTOMATIS dari data, jadi gak perlu didaftar manual. Cuma buat kata kerja (posOf='doushi') yang
-// akhiran umumnya u/tsu/ru/mu/nu/bu/ku/gu/su — kata benda & kata kerja する gak ikut (akhiran
-// detailnya cuma bikin tombol numpuk tanpa guna).
+// Daftar key yang perlu ditampilin: yang ada isinya (count>0) atau lagi dipilih, urut sesuai CS_ENDING_DEFS, lalu sisanya
+function csEndingKeysToShow(counts, selected){
+  var keys=[];
+  CS_ENDING_DEFS.forEach(function(d){ if((counts[d[0]]||0)>0 || selected.indexOf(d[0])>=0) keys.push(d[0]); });
+  Object.keys(counts).forEach(function(k){ if(keys.indexOf(k)<0 && counts[k]>0) keys.push(k); });
+  selected.forEach(function(k){ if(keys.indexOf(k)<0) keys.push(k); });
+  return keys;
+}
 var _csRomCache = {};
 function csRomajiOf(w){
   var raw = String((w && w.rom) || '').split(/[;,\/・]/)[0];
-  if(!raw) raw = String((w && w.jp) || '').split(/[;,\/・]/)[0];
+  if(!raw) raw = String((w && w.jp) || '').split(/[;,\/・]/)[0]; // bacaan kosong di data -> pakai tulisannya
   if(_csRomCache.hasOwnProperty(raw)) return _csRomCache[raw];
   var r = '';
   try{ r = String(mpToRomajiIfKana(raw)||''); }catch(e){ r = raw; }
@@ -17694,22 +17665,22 @@ function csRomajiOf(w){
   _csRomCache[raw] = r;
   return r;
 }
-var CS_MORA = '(?:sh|ch|ts|ky|gy|ny|hy|by|py|my|ry|[kgsztdnhbpmyrwfj])?[aiueo]';
-var CS_FINE_RE = new RegExp(CS_MORA + CS_MORA + '$');
-var CS_FINE_PARENT = ['u','tsu','ru','mu','nu','bu','ku','gu','su'];
-function csFineParent(k){ if(/tsu$/.test(k)) return 'tsu'; var m=String(k).match(/(ru|mu|nu|bu|ku|gu|su)$/); return m?m[1]:'u'; }
-var _csFineCache = {};
-function csWordFineEnding(w){
+var CS_ICHI_RE = /((?:sh|ch|ts|ky|gy|ny|hy|by|py|my|ry|[kgsztdnhbpmyrwfj])?[ie])ru$/;
+var _csEndingCache = {};
+function csWordEnding(w){
   var ck = String((w && w.jp) || '') + '|' + String((w && w.rom) || '');
-  if(_csFineCache.hasOwnProperty(ck)) return _csFineCache[ck];
-  var res = '';
-  var g = csWordEnding(w);
-  if(CS_FINE_PARENT.indexOf(g)>=0 && posOf(w)==='doushi'){
-    var m = csRomajiOf(w).match(CS_FINE_RE);
-    if(m && m[0]!==g) res = m[0];
+  if(_csEndingCache.hasOwnProperty(ck)) return _csEndingCache[ck];
+  var k = '';
+  if(posOf(w)==='doushi'){
+    var r = csRomajiOf(w), m;
+    if(/suru$/.test(r)) k='suru';
+    else if((m = r.match(CS_ICHI_RE))) k=m[0];
+    else if(/tsu$/.test(r)) k='tsu';
+    else if(/(ru|mu|nu|bu|ku|gu|su)$/.test(r)) k=r.slice(-2);
+    else if(/u$/.test(r)) k='u';
   }
-  _csFineCache[ck] = res;
-  return res;
+  _csEndingCache[ck] = k;
+  return k;
 }
 function csToggleEnding(k){
   var i=_customEndingSet.indexOf(k);
@@ -17721,56 +17692,26 @@ function csClearEnding(){
   _customEndingSet = []; _customListLimit = 60;
   csRenderEndingPills(); renderCustomBulkMenu(); renderCustomWordList();
 }
-var _customEndingDetailOpen = false;
-function csToggleEndingDetail(){ _customEndingDetailOpen = !_customEndingDetailOpen; csRenderEndingPills(); }
-// Kata lolos kalau akhiran UMUM-nya (ru, su, ...) ATAU akhiran DETAIL-nya (kiru, bosu, ...) dipilih
+// Kata lolos kalau akhirannya (～きる, ～る, ...) termasuk yang dipilih
 function csWordMatchesCustomEnding(w){
   if(!_customEndingSet.length) return true;
-  if(_customEndingSet.indexOf(csWordEnding(w))>=0) return true;
-  var f = csWordFineEnding(w);
-  return !!f && _customEndingSet.indexOf(f)>=0;
+  return _customEndingSet.indexOf(csWordEnding(w))>=0;
 }
 function csRenderEndingPills(){
   var el = document.getElementById('custom-ending-pills');
   if(!el) return;
   var base = csApplyMasteryFilter(posLevelWordsRaw()); // hitungan ngikutin filter level + status hafalan yang aktif
-  var counts = {}, fineCounts = {};
-  base.forEach(function(w){
-    var k=csWordEnding(w); counts[k]=(counts[k]||0)+1;
-    var f=csWordFineEnding(w); if(f) fineCounts[f]=(fineCounts[f]||0)+1;
-  });
-  function pill(label, js, active, dim){
-    return '<button onclick="'+js+'" style="padding:8px 13px;border-radius:20px;border:1.5px solid '+(active?'#8b5a2b':'var(--border)')+';background:'+(active?'#8b5a2b':'white')+';color:'+(active?'#fff':'var(--mist)')+';font-family:inherit;font-size:12.5px;font-weight:700;cursor:pointer;opacity:'+(dim?'.4':'1')+'">'+label+'</button>';
+  var counts = {};
+  base.forEach(function(w){ var k=csWordEnding(w); if(k) counts[k]=(counts[k]||0)+1; });
+  function pill(label, js, active){
+    return '<button onclick="'+js+'" style="padding:8px 13px;border-radius:20px;border:1.5px solid '+(active?'#8b5a2b':'var(--border)')+';background:'+(active?'#8b5a2b':'white')+';color:'+(active?'#fff':'var(--mist)')+';font-family:inherit;font-size:12.5px;font-weight:700;cursor:pointer">'+label+'</button>';
   }
-  var allActive = !_customEndingSet.length;
-  var html = pill('Semua','csClearEnding()',allActive,false);
-  html += CS_ENDING_DEFS.map(function(d){
-    var n = counts[d[0]]||0, active = _customEndingSet.indexOf(d[0])>=0;
-    return pill(d[1]+' <span style="font-weight:600;opacity:.8">'+n+'</span>',"csToggleEnding('"+d[0]+"')",active,(!n && !active));
+  var keys = csEndingKeysToShow(counts, _customEndingSet);
+  var html = pill('Semua','csClearEnding()',!_customEndingSet.length);
+  html += keys.map(function(k){
+    return pill(csEndingLabel(k)+' <span style="font-weight:600;opacity:.8">'+(counts[k]||0)+'</span>',"csToggleEnding('"+k+"')",_customEndingSet.indexOf(k)>=0);
   }).join('');
-  // Baris DETAIL (2 suku kata terakhir kata kerja: eru, kiru, giru, keru, bosu, rasu, shimu, ...) —
-  // dibangun otomatis dari data, dilipat dulu biar gak kepanjangan
-  var generalKeys = CS_ENDING_DEFS.map(function(d){ return d[0]; });
-  var fineKeys = Object.keys(fineCounts);
-  _customEndingSet.forEach(function(k){ if(generalKeys.indexOf(k)<0 && fineKeys.indexOf(k)<0) fineKeys.push(k); });
-  var fineSel = _customEndingSet.filter(function(k){ return generalKeys.indexOf(k)<0; }).length;
-  if(fineKeys.length){
-    fineKeys.sort(function(a,b){
-      var ga=CS_FINE_PARENT.indexOf(csFineParent(a)), gb=CS_FINE_PARENT.indexOf(csFineParent(b));
-      if(ga!==gb) return ga-gb;
-      return a<b ? -1 : (a>b ? 1 : 0);
-    });
-    html += '<div style="flex-basis:100%;height:0"></div>';
-    html += '<button onclick="csToggleEndingDetail()" style="padding:7px 12px;border-radius:20px;border:1.5px dashed var(--border);background:white;color:var(--mist);font-family:inherit;font-size:12px;font-weight:700;cursor:pointer">'
-      + (_customEndingDetailOpen?'▾':'▸')+' Detail akhiran kata kerja ('+fineKeys.length+')'+(fineSel?' · '+fineSel+' dipilih':'')+'</button>';
-    if(_customEndingDetailOpen){
-      html += '<div style="flex-basis:100%;height:0"></div>';
-      html += fineKeys.map(function(k){
-        var n=fineCounts[k]||0, active=_customEndingSet.indexOf(k)>=0;
-        return pill(k+' <span style="font-weight:600;opacity:.8">'+n+'</span>',"csToggleEnding('"+k+"')",active,(!n && !active));
-      }).join('');
-    }
-  }
+  if(!keys.length) html += '<span style="font-size:11px;color:var(--mist);align-self:center">Gak ada kata kerja di daftar ini.</span>';
   el.innerHTML = html;
 }
 function csApplyEndingFilter(pool){
