@@ -1104,7 +1104,7 @@ header:has(.user-menu.open) { z-index:1000; }
         <span class="user-name" id="user-name">...</span>
         <span id="level-badge" onclick="event.stopPropagation();gotoScreen('levelreward')" title="Level & Reward" style="font-size:10px;font-weight:800;background:linear-gradient(135deg,var(--gold),#c98a1f);color:white;padding:2px 7px;border-radius:8px;cursor:pointer;letter-spacing:.3px">Lv.1</span>
         <span class="sync-badge" id="sync-badge">● sync</span>
-        <span id="build-dot" title="Indikator update: warnanya ganti tiap ada versi baru dari Claude" style="display:inline-block;width:11px;height:11px;border-radius:50%;background:#2da050;margin-left:6px;vertical-align:middle;border:2px solid white;box-shadow:0 0 0 1px rgba(0,0,0,.15)"></span>
+        <span id="build-dot" title="Indikator update: warnanya ganti tiap ada versi baru dari Claude" style="display:inline-block;width:11px;height:11px;border-radius:50%;background:#c0392b;margin-left:6px;vertical-align:middle;border:2px solid white;box-shadow:0 0 0 1px rgba(0,0,0,.15)"></span>
         <!-- 🔴🟢 CLAUDE: WAJIB toggle warna build-dot di atas SETIAP kali file ini dikirim ulang —
              merah #c0392b <-> hijau #2da050 gantian. Ini satu-satunya cara Riyan verifikasi
              upload-nya beneran ke-deploy. JANGAN LUPA, cek baris ini di awal SETIAP delivery. -->
@@ -12040,6 +12040,16 @@ function setStudyOrderMode(mode){
 // diam-diam di kategori lain. Logika akhirannya sama kayak di picker Custom (csWordEnding).
 var studyEndingSet = [];
 var _studyEndingCounts = {};
+var _studyFineCounts = {};
+var studyEndingDetailOpen = false;
+function studyToggleDetail(){ studyEndingDetailOpen = !studyEndingDetailOpen; }
+// Kata lolos filter kalau akhiran UMUM-nya (ru, su, ...) ATAU akhiran DETAIL-nya (kiru, bosu, ...) dipilih
+function studyWordMatchesEnding(w){
+  if(!studyEndingSet.length) return true;
+  if(studyEndingSet.indexOf(csWordEnding(w))>=0) return true;
+  var f = csWordFineEnding(w);
+  return !!f && studyEndingSet.indexOf(f)>=0;
+}
 function studyToggleEnding(k){
   var i=studyEndingSet.indexOf(k);
   if(i>=0) studyEndingSet.splice(i,1); else studyEndingSet.push(k);
@@ -12055,7 +12065,30 @@ function studyEndingRowHTML(restartCall){
     var n=_studyEndingCounts[d[0]]||0, a=studyEndingSet.indexOf(d[0])>=0;
     html += btn(d[1]+' '+n,"studyToggleEnding('"+d[0]+"')",a,(!n&&!a));
   });
-  return html+'</div>';
+  html += '</div>';
+  // Baris DETAIL (2 suku kata terakhir kata kerja) — dilipat dulu biar bar gak kepanjangan
+  var generalKeys = CS_ENDING_DEFS.map(function(d){ return d[0]; });
+  var fineKeys = Object.keys(_studyFineCounts);
+  studyEndingSet.forEach(function(k){ if(generalKeys.indexOf(k)<0 && fineKeys.indexOf(k)<0) fineKeys.push(k); });
+  var fineSel = studyEndingSet.filter(function(k){ return generalKeys.indexOf(k)<0; }).length;
+  if(fineKeys.length){
+    fineKeys.sort(function(a,b){
+      var ga = CS_FINE_PARENT.indexOf(csFineParent(a)), gb = CS_FINE_PARENT.indexOf(csFineParent(b)); // urut ngikutin akhiran umumnya
+      if(ga!==gb) return ga-gb;
+      return a<b ? -1 : (a>b ? 1 : 0);
+    });
+    html += '<div style="margin-top:6px"><button onclick="studyToggleDetail();'+restartCall+'" style="padding:5px 10px;border-radius:12px;border:1.5px dashed var(--border);background:white;color:var(--mist);font-family:inherit;font-size:10.5px;font-weight:700;cursor:pointer">'
+      + (studyEndingDetailOpen?'▾':'▸')+' Detail akhiran kata kerja ('+fineKeys.length+')'+(fineSel?' · '+fineSel+' dipilih':'')+'</button></div>';
+    if(studyEndingDetailOpen){
+      html += '<div style="display:flex;gap:5px;flex-wrap:wrap;margin-top:6px">';
+      fineKeys.forEach(function(k){
+        var n=_studyFineCounts[k]||0, a=studyEndingSet.indexOf(k)>=0;
+        html += btn(k+' '+n,"studyToggleEnding('"+k+"')",a,(!n&&!a));
+      });
+      html += '</div>';
+    }
+  }
+  return html;
 }
 var GOJUON_BASE_JS = "あいうえおかきくけこさしすせそたちつてとなにぬねのはひふへほまみむめもやゆよらりるれろわをん";
 var GOJUON_DAKUTEN_JS = {
@@ -12094,10 +12127,13 @@ function orderPoolByMode(pool, readingFn){
   var arr = pool.slice();
   // Jumlah kata per akhiran dihitung dari pool yang masuk (udah lolos filter status hafal),
   // SEBELUM difilter akhiran — dipakai buat angka di tombol 🔚 AKHIRAN.
-  _studyEndingCounts = {};
-  arr.forEach(function(w){ var k=csWordEnding(w); _studyEndingCounts[k]=(_studyEndingCounts[k]||0)+1; });
+  _studyEndingCounts = {}; _studyFineCounts = {};
+  arr.forEach(function(w){
+    var k=csWordEnding(w); _studyEndingCounts[k]=(_studyEndingCounts[k]||0)+1;
+    var f=csWordFineEnding(w); if(f) _studyFineCounts[f]=(_studyFineCounts[f]||0)+1;
+  });
   if(studyEndingSet.length){
-    arr = arr.filter(function(w){ return studyEndingSet.indexOf(csWordEnding(w))>=0; });
+    arr = arr.filter(studyWordMatchesEnding);
   }
   if(studyOrderMode === 'akhiran'){
     // Dikelompokin per akhiran (urutan: u, tsu, ru, mu, nu, bu, ku, gu, su, suru, i, lainnya),
@@ -12106,6 +12142,8 @@ function orderPoolByMode(pool, readingFn){
     arr.sort(function(a,b){
       var ea = endOrder.indexOf(csWordEnding(a)), eb = endOrder.indexOf(csWordEnding(b));
       if(ea!==eb) return ea-eb;
+      var fa = csWordFineEnding(a), fb2 = csWordFineEnding(b); // di dalam satu kelompok: kelompokin lagi per akhiran detail (kiru, giru, ...)
+      if(fa!==fb2) return fa<fb2 ? -1 : 1;
       var ka = gojuonSortKey(readingFn(a)), kb = gojuonSortKey(readingFn(b));
       return ka<kb ? -1 : (ka>kb ? 1 : 0);
     });
@@ -17639,6 +17677,39 @@ function csWordEnding(w){
   else k='lain';
   _csEndingCache[raw]=k;
   return k;
+}
+// ── Akhiran DETAIL: 2 suku kata terakhir kata kerja (eru, iru, kiru, giru, jiru, biru, keru, seru,
+// teru, beru, meru, reru, bosu, rosu, rasu, gosu, basu, masu, shimu, ...). Daftarnya DIBANGUN
+// OTOMATIS dari data, jadi gak perlu didaftar manual. Cuma buat kata kerja (posOf='doushi') yang
+// akhiran umumnya u/tsu/ru/mu/nu/bu/ku/gu/su — kata benda & kata kerja する gak ikut (akhiran
+// detailnya cuma bikin tombol numpuk tanpa guna).
+var _csRomCache = {};
+function csRomajiOf(w){
+  var raw = String((w && w.rom) || '').split(/[;,\/・]/)[0];
+  if(!raw) raw = String((w && w.jp) || '').split(/[;,\/・]/)[0];
+  if(_csRomCache.hasOwnProperty(raw)) return _csRomCache[raw];
+  var r = '';
+  try{ r = String(mpToRomajiIfKana(raw)||''); }catch(e){ r = raw; }
+  r = r.toLowerCase().replace(/[^a-z]/g,'');
+  _csRomCache[raw] = r;
+  return r;
+}
+var CS_MORA = '(?:sh|ch|ts|ky|gy|ny|hy|by|py|my|ry|[kgsztdnhbpmyrwfj])?[aiueo]';
+var CS_FINE_RE = new RegExp(CS_MORA + CS_MORA + '$');
+var CS_FINE_PARENT = ['u','tsu','ru','mu','nu','bu','ku','gu','su'];
+function csFineParent(k){ if(/tsu$/.test(k)) return 'tsu'; var m=String(k).match(/(ru|mu|nu|bu|ku|gu|su)$/); return m?m[1]:'u'; }
+var _csFineCache = {};
+function csWordFineEnding(w){
+  var ck = String((w && w.jp) || '') + '|' + String((w && w.rom) || '');
+  if(_csFineCache.hasOwnProperty(ck)) return _csFineCache[ck];
+  var res = '';
+  var g = csWordEnding(w);
+  if(CS_FINE_PARENT.indexOf(g)>=0 && posOf(w)==='doushi'){
+    var m = csRomajiOf(w).match(CS_FINE_RE);
+    if(m && m[0]!==g) res = m[0];
+  }
+  _csFineCache[ck] = res;
+  return res;
 }
 function csToggleEnding(k){
   var i=_customEndingSet.indexOf(k);
