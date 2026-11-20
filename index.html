@@ -1104,7 +1104,7 @@ header:has(.user-menu.open) { z-index:1000; }
         <span class="user-name" id="user-name">...</span>
         <span id="level-badge" onclick="event.stopPropagation();gotoScreen('levelreward')" title="Level & Reward" style="font-size:10px;font-weight:800;background:linear-gradient(135deg,var(--gold),#c98a1f);color:white;padding:2px 7px;border-radius:8px;cursor:pointer;letter-spacing:.3px">Lv.1</span>
         <span class="sync-badge" id="sync-badge">● sync</span>
-        <span id="build-dot" title="Indikator update: warnanya ganti tiap ada versi baru dari Claude" style="display:inline-block;width:11px;height:11px;border-radius:50%;background:#c0392b;margin-left:6px;vertical-align:middle;border:2px solid white;box-shadow:0 0 0 1px rgba(0,0,0,.15)"></span>
+        <span id="build-dot" title="Indikator update: warnanya ganti tiap ada versi baru dari Claude" style="display:inline-block;width:11px;height:11px;border-radius:50%;background:#2da050;margin-left:6px;vertical-align:middle;border:2px solid white;box-shadow:0 0 0 1px rgba(0,0,0,.15)"></span>
         <!-- 🔴🟢 CLAUDE: WAJIB toggle warna build-dot di atas SETIAP kali file ini dikirim ulang —
              merah #c0392b <-> hijau #2da050 gantian. Ini satu-satunya cara Riyan verifikasi
              upload-nya beneran ke-deploy. JANGAN LUPA, cek baris ini di awal SETIAP delivery. -->
@@ -1346,7 +1346,8 @@ header:has(.user-menu.open) { z-index:1000; }
     </div>
     <button onclick="exitStudy()" style="border:none;background:none;cursor:pointer;font-size:22px;color:var(--mist);padding:4px 8px;line-height:1">←</button>
   </div>
-  <div id="flash-settings-bar" style="padding:8px 16px 0"></div>
+  <div id="flash-size-bar" style="padding:8px 16px 0"></div>
+  <div id="flash-settings-bar" style="padding:0 16px 0"></div>
 
   <div class="flash-progress-bar">
     <div class="flash-progress-fill" id="flash-prog-fill" style="width:0%"></div>
@@ -1447,7 +1448,8 @@ header:has(.user-menu.open) { z-index:1000; }
     </div>
     <button onclick="exitKanjiFlash()" style="border:none;background:none;cursor:pointer;font-size:22px;color:var(--mist);padding:4px 8px;line-height:1">←</button>
   </div>
-  <div id="kf-settings-bar" style="padding:8px 16px 0"></div>
+  <div id="kf-size-bar" style="padding:8px 16px 0"></div>
+  <div id="kf-settings-bar" style="padding:0 16px 0"></div>
 
   <div class="flash-progress-bar">
     <div class="flash-progress-fill" id="kf-prog-fill" style="width:0%"></div>
@@ -3656,7 +3658,27 @@ let sessionIdx = 0;
 let sessionReviewed = 0;
 let sessionMastered = 0;
 let revealed = false;
-const SESSION_SIZE = 20;
+const SESSION_SIZE = 20; // default; ukuran aktif pakai flashSessSize()
+var _flashSizeMem = null;
+var _lastFlashStart = null;
+function flashSessRaw(){ var v=_flashSizeMem; if(v===null){ v=20; try{ var t=localStorage.getItem('flash_sess_size'); if(t!==null && !isNaN(parseInt(t,10))) v=parseInt(t,10); }catch(e){} } return v; }
+function flashSessSize(){ var v=flashSessRaw(); return v<=0 ? Infinity : v; }
+function flashSizeRowHTML(js){
+  var cur=flashSessRaw();
+  var opts=[[20,'20'],[50,'50'],[100,'100'],[0,'Semua']];
+  var h='<div style="font-size:10px;font-weight:800;color:var(--mist);letter-spacing:.4px;margin:0 0 4px">🃏 JUMLAH KARTU PER SESI</div><div style="display:flex;gap:5px;flex-wrap:wrap;margin-bottom:6px">';
+  opts.forEach(function(o){ var a=(o[0]===cur)||(o[0]===0&&cur<=0);
+    h+='<button onclick="'+(js||'setFlashSessSize')+'('+o[0]+')" style="padding:5px 12px;border-radius:12px;border:1.5px solid '+(a?'#c0392b':'var(--border)')+';background:'+(a?'#c0392b':'white')+';color:'+(a?'#fff':'var(--mist)')+';font-family:inherit;font-size:10.5px;font-weight:700;cursor:pointer">'+o[1]+'</button>'; });
+  return h+'</div>';
+}
+function _saveFlashSize(n){ _flashSizeMem=n; try{ localStorage.setItem('flash_sess_size', String(n)); }catch(e){} }
+function setFlashSessSize(n){
+  _saveFlashSize(n);
+  if(_lastFlashStart && typeof window[_lastFlashStart.name]==='function'){ window[_lastFlashStart.name].apply(null,_lastFlashStart.args); }
+}
+function renderFlashSizeBars(){
+  ['flash-size-bar','kf-size-bar'].forEach(function(id){ var el=document.getElementById(id); if(el) el.innerHTML=flashSizeRowHTML(); });
+}
 
 // Kanji reading session state
 let kreadQueue = [];
@@ -9495,7 +9517,7 @@ function startCustomStudyFlash(mode){
   else if(kfFilterMode==='sudah') pool = csDn.slice();
   else pool = csUn.concat(csDn);
   pool = orderPoolByMode(pool, function(w){ return w.rom||''; });
-  sessionQueue = pool; // Set Custom = milik user sendiri, sengaja TANPA batas SESSION_SIZE
+  sessionQueue = pool.slice(0,flashSessSize()); // Set Custom ikut pilihan jumlah kartu per sesi
   sessionIdx=0;
   document.getElementById('flash-category-title').textContent='📚 '+customStudyActiveSet;
   document.getElementById('flash-subtitle').textContent=csUn.length+' belum hafal · '+csDn.length+' sudah hafal';
@@ -9582,7 +9604,7 @@ function startStudyBunpo(){
   var unmastered=words.filter(function(w){return !mast[w.id];});
   var done=words.filter(function(w){return mast[w.id];});
   shuffle(unmastered); shuffle(done);
-  sessionQueue=unmastered.concat(done).slice(0,SESSION_SIZE);
+  sessionQueue=unmastered.concat(done).slice(0,flashSessSize());
   sessionIdx=0;
   document.getElementById('flash-category-title').textContent=(currentJLPT!=='N3'?currentJLPT+' — ':'')+'文法 Pola Tata Bahasa';
   document.getElementById('flash-subtitle').textContent=unmastered.length+' belum hafal · '+done.length+' sudah hafal';
@@ -9609,7 +9631,7 @@ function startStudyPos(pos){
   else if(kfFilterMode==='sudah') pool = done.slice();
   else pool = unmastered.concat(done);
   pool = orderPoolByMode(pool, function(w){ return w.rom || ''; });
-  sessionQueue=pool.slice(0,SESSION_SIZE);
+  sessionQueue=pool.slice(0,flashSessSize());
   sessionIdx=0;
   var titles={meishi:'名詞 Kata Benda',doushi:'動詞 Kata Kerja',keiyoushi:'形容詞 Kata Sifat',fukushi:'副詞 Keterangan',setsuzoku:'接続詞 Kata Sambung',pola:'表現 Pola/Ungkapan'};
   document.getElementById('flash-category-title').textContent=(currentJLPT!=='N3'?currentJLPT+' — ':'')+(titles[pos]||pos);
@@ -9653,7 +9675,7 @@ function startStudy(cat) {
       unmastered=words.filter(function(w){return !lvlMast[w.id];});
       done=words.filter(function(w){return !!lvlMast[w.id];});
       shuffle(unmastered); shuffle(done);
-      sessionQueue=unmastered.concat(done).slice(0,SESSION_SIZE);
+      sessionQueue=unmastered.concat(done).slice(0,flashSessSize());
       sessionIdx=0;
       var sswTitles={eisei:'衛生 Higiene',kigai:'危害要因 Faktor Bahaya',haccp:'HACCP',anzen:'労働安全 Keselamatan Kerja',kouteikanri:'製造工程管理 Manajemen Proses'};
       document.getElementById('flash-category-title').textContent=sswTitles[cat]||cat;
@@ -9672,7 +9694,7 @@ function startStudy(cat) {
     done=words.filter(function(w){return !!lvlMast[w.id];});
   }
   shuffle(unmastered); shuffle(done);
-  sessionQueue=unmastered.concat(done).slice(0,SESSION_SIZE);
+  sessionQueue=unmastered.concat(done).slice(0,flashSessSize());
   sessionIdx=0;
   var titles={kanji:'動詞 Kata Kerja',vocab:'名詞 Kata Benda',grammar:'形容詞 Kata Sifat'};
   document.getElementById('flash-category-title').textContent=
@@ -13341,7 +13363,7 @@ function startKanjiFlashBunpo(){
   else if(kfFilterMode==='sudah') pool = done.slice();
   else pool = unmastered.concat(done);
   pool = orderPoolByMode(pool, function(w){ return w.rom || ''; });
-  kfQueue=pool.slice(0,SESSION_SIZE);
+  kfQueue=pool.slice(0,flashSessSize());
   kfIdx=0;
   document.getElementById('kf-title').textContent=(currentJLPT!=='N3'?currentJLPT+' — ':'')+'文法 Pola (ber-kanji)';
   document.getElementById('kf-subtitle').textContent=unmastered.length+' belum · '+done.length+' sudah';
@@ -13365,7 +13387,7 @@ function startKanjiFlashPos(pos){
   else if(kfFilterMode==='sudah') pool = done.slice();
   else pool = unmastered.concat(done);
   pool = orderPoolByMode(pool, function(w){ return w.rom || ''; });
-  kfQueue=pool.slice(0,SESSION_SIZE);
+  kfQueue=pool.slice(0,flashSessSize());
   kfIdx=0;
   var titles={meishi:'名詞 Kata Benda',doushi:'動詞 Kata Kerja',keiyoushi:'形容詞 Kata Sifat',fukushi:'副詞 Keterangan',setsuzoku:'接続詞 Kata Sambung',pola:'表現 Pola'};
   document.getElementById('kf-title').textContent=(currentJLPT!=='N3'?currentJLPT+' — ':'')+(titles[pos]||pos);
@@ -13475,7 +13497,7 @@ function startKanjiFlash(cat) {
   else pool = unmastered.concat(done); // 'semua' -- prioritasin belum hafal duluan kayak sebelumnya
 
   pool = orderPoolByMode(pool, function(w){ return w.rom || ''; });
-  kfQueue=pool.slice(0,SESSION_SIZE);
+  kfQueue=pool.slice(0,flashSessSize());
   kfIdx=0;
   var titles={kanji:'動詞 Kata Kerja',vocab:'名詞 Kata Benda',grammar:'形容詞 Kata Sifat'};
   document.getElementById('kf-title').textContent=(currentJLPT!=='N3'?currentJLPT+' — ':'')+titles[cat];
@@ -19216,7 +19238,7 @@ function srsDueCount(){
 function startSrsReview(){
   var cards=srsDueWords();
   sessionCat='srs'; sessionReviewed=0; sessionMastered=0; revealed=false; sessionHistory=[];
-  sessionQueue=cards.slice(0,30);
+  sessionQueue=cards.slice(0,Math.max(30,flashSessSize()));
   sessionIdx=0;
   document.getElementById('flash-category-title').textContent='🔁 Review SRS — '+currentJLPT;
   document.getElementById('flash-subtitle').textContent=sessionQueue.length? sessionQueue.length+' kata untuk direview' : 'Tidak ada yang jatuh tempo 🎉';
@@ -21018,7 +21040,7 @@ function startOnoFlash(k){
   var unmastered=cards.filter(function(w){return !mast[w.id];});
   var done=cards.filter(function(w){return mast[w.id];});
   shuffle(unmastered); shuffle(done);
-  sessionQueue=unmastered.concat(done).slice(0,SESSION_SIZE);
+  sessionQueue=unmastered.concat(done).slice(0,flashSessSize());
   sessionIdx=0;
   document.getElementById('flash-category-title').textContent=(ONO_EMOJI[k]||'')+' '+(ONO_TITLE[k]||k);
   document.getElementById('flash-subtitle').textContent=unmastered.length+' belum hafal · '+done.length+' sudah hafal';
@@ -21093,7 +21115,7 @@ function startDialectFlash(k){
   var unmastered=cards.filter(function(w){return !mast[w.id];});
   var done=cards.filter(function(w){return mast[w.id];});
   shuffle(unmastered); shuffle(done);
-  sessionQueue=unmastered.concat(done).slice(0,SESSION_SIZE);
+  sessionQueue=unmastered.concat(done).slice(0,flashSessSize());
   sessionIdx=0;
   document.getElementById('flash-category-title').textContent=(d.emo||'')+' '+(d.name||k);
   document.getElementById('flash-subtitle').textContent=unmastered.length+' belum hafal · '+done.length+' sudah hafal';
@@ -21124,7 +21146,7 @@ function startExtFlashAll(kind){
   var unmastered=cards.filter(function(w){return !_extDone(w);});
   var done=cards.filter(function(w){return _extDone(w);});
   shuffle(unmastered); shuffle(done);
-  sessionQueue=unmastered.concat(done).slice(0,SESSION_SIZE);
+  sessionQueue=unmastered.concat(done).slice(0,flashSessSize());
   sessionIdx=0;
   document.getElementById('flash-category-title').textContent=titles[kind]||kind;
   document.getElementById('flash-subtitle').textContent=unmastered.length+' belum hafal · '+done.length+' sudah hafal';
@@ -21146,7 +21168,7 @@ function startKazuFlash(k){
   var unmastered=cards.filter(function(w){return !mast[w.id];});
   var done=cards.filter(function(w){return mast[w.id];});
   shuffle(unmastered); shuffle(done);
-  sessionQueue=unmastered.concat(done).slice(0,SESSION_SIZE);
+  sessionQueue=unmastered.concat(done).slice(0,flashSessSize());
   sessionIdx=0;
   document.getElementById('flash-category-title').textContent=(KAZU_EMOJI[k]||'')+' '+(KAZU_TITLE[k]||k);
   document.getElementById('flash-subtitle').textContent=unmastered.length+' belum hafal · '+done.length+' sudah hafal';
@@ -21351,6 +21373,7 @@ function prioFlashStart(order){
   var f=prioFiltered().slice();
   prioState.fc.order=order||prioState.fc.order;
   if(prioState.fc.order==='acak') shuffle(f);
+  f = f.filter(function(w){return !prioDone(w);}).concat(f.filter(function(w){return prioDone(w);})).slice(0,flashSessSize());
   prioState.fc.list=f.map(function(w){return w.i;}); prioState.fc.i=0; prioState.fc.flipped=false;
 }
 function prioRenderFlash(){
@@ -21369,6 +21392,7 @@ function prioRenderFlash(){
     + prioPill('Urut prioritas', prioState.fc.order==='prio', "prioFlashStart('prio');prioRenderFlash()")
     + prioPill('🔀 Acak', prioState.fc.order==='acak', "prioFlashStart('acak');prioRenderFlash()")
     + '<span style="margin-left:auto;font-size:12px;color:var(--mist);font-family:\'DM Mono\',monospace">'+(prioState.fc.i+1)+' / '+L.length+'</span></div>'
+    + flashSizeRowHTML('prioSetSessSize')
     + '<div onclick="prioState.fc.flipped=!prioState.fc.flipped;prioRenderFlash()" class="'+(prioState.furi?'':'prio-nofuri')+'" style="background:white;border:1px solid var(--border);border-radius:18px;padding:22px 18px;min-height:220px;cursor:pointer;text-align:center">'
     + '<div style="display:flex;gap:5px;justify-content:center;flex-wrap:wrap;margin-bottom:10px">'+prioBadge(w)+'</div>'
     + '<div style="font-size:44px;font-weight:800;line-height:1.3">'+prioEscape(prioHead(w))+'</div>';
@@ -21387,6 +21411,7 @@ function prioRenderFlash(){
     + '</div>';
   host.innerHTML=html;
 }
+function prioSetSessSize(n){ _saveFlashSize(n); prioFlashStart(); prioRenderFlash(); }
 function prioFlashMark(ok){
   var id=prioState.fc.list[prioState.fc.i];
   prioToggleDone(id, ok);
@@ -21521,6 +21546,17 @@ async function mpPrioQuestions(count){
   return out.slice(0,count);
 }
 
+
+// === Bungkus semua pemula flashcard: ingat start terakhir (buat tombol jumlah kartu) + render bar jumlah ===
+(function(){
+  ['startStudyBunpo','startStudyPos','startStudy','startOnoFlash','startDialectFlash','startExtFlashAll','startKazuFlash',
+   'startCustomStudyFlash','startSrsReview','startKanjiFlashBunpo','startKanjiFlashPos','startKanjiFlash','startCustomStudyKanjiFlash'
+  ].forEach(function(name){
+    var orig=window[name]; if(typeof orig!=='function' || orig._fsWrapped) return;
+    var w=function(){ _lastFlashStart={name:name,args:Array.prototype.slice.call(arguments)}; var r=orig.apply(this,arguments); try{ renderFlashSizeBars(); }catch(e){} return r; };
+    w._fsWrapped=true; window[name]=w;
+  });
+})();
 var KATEMA_DATA = null;
 var KATEMA_VER = 'v1';
 var _katemaLoading = null;
