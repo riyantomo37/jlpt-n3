@@ -1104,7 +1104,7 @@ header:has(.user-menu.open) { z-index:1000; }
         <span class="user-name" id="user-name">...</span>
         <span id="level-badge" onclick="event.stopPropagation();gotoScreen('levelreward')" title="Level & Reward" style="font-size:10px;font-weight:800;background:linear-gradient(135deg,var(--gold),#c98a1f);color:white;padding:2px 7px;border-radius:8px;cursor:pointer;letter-spacing:.3px">Lv.1</span>
         <span class="sync-badge" id="sync-badge">● sync</span>
-        <span id="build-dot" title="Indikator update: warnanya ganti tiap ada versi baru dari Claude" style="display:inline-block;width:11px;height:11px;border-radius:50%;background:#2da050;margin-left:6px;vertical-align:middle;border:2px solid white;box-shadow:0 0 0 1px rgba(0,0,0,.15)"></span>
+        <span id="build-dot" title="Indikator update: warnanya ganti tiap ada versi baru dari Claude" style="display:inline-block;width:11px;height:11px;border-radius:50%;background:#c0392b;margin-left:6px;vertical-align:middle;border:2px solid white;box-shadow:0 0 0 1px rgba(0,0,0,.15)"></span>
         <!-- 🔴🟢 CLAUDE: WAJIB toggle warna build-dot di atas SETIAP kali file ini dikirim ulang —
              merah #c0392b <-> hijau #2da050 gantian. Ini satu-satunya cara Riyan verifikasi
              upload-nya beneran ke-deploy. JANGAN LUPA, cek baris ini di awal SETIAP delivery. -->
@@ -1279,6 +1279,16 @@ header:has(.user-menu.open) { z-index:1000; }
 
 <!-- ====== OVERVIEW ====== -->
 <div id="screen-overview" class="screen active">
+  <div id="ov-prio-banner" onclick="gotoScreen('prio')" style="cursor:pointer;background:linear-gradient(135deg,#c0392b,#8e2a20);color:#fff;border-radius:16px;padding:16px 18px;margin-bottom:16px;box-shadow:0 6px 18px rgba(192,57,43,.25);display:flex;align-items:center;gap:14px">
+    <div style="font-size:34px;line-height:1">⭐</div>
+    <div style="flex:1;min-width:0">
+      <div style="font-size:16px;font-weight:800">Kosakata Prioritas N3 <span style="font-size:9px;background:#fff;color:#c0392b;padding:2px 7px;border-radius:6px;margin-left:4px;vertical-align:middle">BARU</span></div>
+      <div style="font-size:12px;opacity:.9;margin-top:2px">1.350 kata paling sering keluar di JLPT — daftar, flashcard, kuis + contoh kalimat</div>
+      <div style="background:rgba(255,255,255,.25);border-radius:4px;height:6px;margin-top:8px;overflow:hidden"><div id="ov-prio-bar" style="height:100%;width:0%;background:#fff;border-radius:4px"></div></div>
+      <div id="ov-prio-count" style="font-size:11px;opacity:.9;margin-top:4px">0 / 1.350 hafal</div>
+    </div>
+    <div style="font-size:22px;opacity:.85">›</div>
+  </div>
   <div class="section-title" style="margin-bottom:12px">Progress <span id="ov-level-name" style="color:var(--ink)"></span></div>
   <!-- Progress Hafalan cards (sama seperti tab Progress) -->
   <div id="ov-prog-cards" style="margin-bottom:12px"></div>
@@ -8968,6 +8978,12 @@ function renderLevelScreen(){
 
 
 function updateOverview() {
+  try {
+    var _pd = 0; for (var _k in mastered) { if (_k.indexOf('prio_')===0 && mastered[_k]) _pd++; }
+    var _pt = (typeof PRIO_DATA!=='undefined' && PRIO_DATA && PRIO_DATA.length) ? PRIO_DATA.length : 1350;
+    var _pc = document.getElementById('ov-prio-count'); if (_pc) _pc.textContent = _pd + ' / ' + _pt.toLocaleString('id-ID') + ' hafal';
+    var _pb = document.getElementById('ov-prio-bar'); if (_pb) _pb.style.width = Math.min(100, _pd/_pt*100).toFixed(1) + '%';
+  } catch(e) {}
   var color = JLPT_COLORS[currentJLPT] || 'var(--red)';
   var lnEl=document.getElementById('ov-level-name');
   if(lnEl){ lnEl.textContent = currentJLPT==='SSW'?'SSW Pengolahan Makanan':currentJLPT; lnEl.style.color=color; }
