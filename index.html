@@ -1104,7 +1104,7 @@ header:has(.user-menu.open) { z-index:1000; }
         <span class="user-name" id="user-name">...</span>
         <span id="level-badge" onclick="event.stopPropagation();gotoScreen('levelreward')" title="Level & Reward" style="font-size:10px;font-weight:800;background:linear-gradient(135deg,var(--gold),#c98a1f);color:white;padding:2px 7px;border-radius:8px;cursor:pointer;letter-spacing:.3px">Lv.1</span>
         <span class="sync-badge" id="sync-badge">● sync</span>
-        <span id="build-dot" title="Indikator update: warnanya ganti tiap ada versi baru dari Claude" style="display:inline-block;width:11px;height:11px;border-radius:50%;background:#c0392b;margin-left:6px;vertical-align:middle;border:2px solid white;box-shadow:0 0 0 1px rgba(0,0,0,.15)"></span>
+        <span id="build-dot" title="Indikator update: warnanya ganti tiap ada versi baru dari Claude" style="display:inline-block;width:11px;height:11px;border-radius:50%;background:#2da050;margin-left:6px;vertical-align:middle;border:2px solid white;box-shadow:0 0 0 1px rgba(0,0,0,.15)"></span>
         <!-- 🔴🟢 CLAUDE: WAJIB toggle warna build-dot di atas SETIAP kali file ini dikirim ulang —
              merah #c0392b <-> hijau #2da050 gantian. Ini satu-satunya cara Riyan verifikasi
              upload-nya beneran ke-deploy. JANGAN LUPA, cek baris ini di awal SETIAP delivery. -->
@@ -1152,6 +1152,7 @@ header:has(.user-menu.open) { z-index:1000; }
 </nav>
 <div id="nav-learn-menu">
   <button onclick="closeNavLearn();gotoScreen('jalur')" style="font-weight:800;color:#2c7ac8">🎯 Jalur Belajar</button>
+  <button onclick="closeNavLearn();gotoScreen('prio')" style="font-weight:800;color:#c0392b">⭐ Kosakata Prioritas N3 <span style="font-size:9px;background:#c0392b;color:#fff;padding:1px 6px;border-radius:6px;margin-left:4px;font-weight:800">BARU</span></button>
   <button onclick="closeNavLearn();gotoScreen('katema')" style="font-weight:800;color:#2c7ac8">📖 Kalimat per Tema <span style="font-size:9px;background:#2c7ac8;color:#fff;padding:1px 6px;border-radius:6px;margin-left:4px;font-weight:800">BARU</span></button>
   <button onclick="closeNavLearn();gotoScreen('custom')" style="font-weight:800;color:#8b5a2b">⚙️ Custom Belajar <span style="font-size:9px;background:#8b5a2b;color:#fff;padding:1px 6px;border-radius:6px;margin-left:4px;font-weight:800">BARU</span></button>
   <div style="border-top:1px solid var(--border);margin:4px 0"></div>
@@ -1651,6 +1652,24 @@ header:has(.user-menu.open) { z-index:1000; }
   <p style="font-size:13px;color:var(--mist);margin-bottom:16px;line-height:1.6">Kotoba dikelompokin per tema, dikasih 1 kalimat gabungan buat tiap tema + kalimat sendiri per kata (kalau ada). Menghafal lewat konteks kalimat biasanya lebih nempel drpd kata lepas.</p>
   <div id="katema-loading" style="display:none;text-align:center;padding:40px;color:var(--mist)">⏳ Memuat...</div>
   <div id="katema-list"></div>
+</div>
+
+<!-- ====== ⭐ KOSAKATA PRIORITAS N3 ====== -->
+<div id="screen-prio" class="screen">
+  <style>
+    #screen-prio ruby rt{font-size:.52em;color:#7a8794;font-weight:500}
+    #screen-prio .prio-nofuri ruby rt{visibility:hidden}
+    #screen-prio mark.prio-hl{background:#ffe9a8;color:inherit;padding:0 2px;border-radius:3px}
+    #screen-prio .prio-blank{display:inline-block;border-bottom:2px solid #c0392b;color:#c0392b;font-weight:800;padding:0 4px}
+  </style>
+  <div style="display:flex;align-items:center;gap:10px;margin-bottom:6px">
+    <span style="font-size:22px">⭐</span>
+    <div class="section-title" style="margin:0;flex:1">Kosakata Prioritas N3</div>
+    <span style="font-family:'DM Mono',monospace;font-size:10px;padding:3px 9px;border-radius:8px;font-weight:800;background:#c0392b;color:#fff">25 UJIAN</span>
+  </div>
+  <p style="font-size:13px;color:var(--mist);margin-bottom:14px;line-height:1.6">Kata yang paling sering keluar di 25 sesi ujian JLPT N3 asli (bank soal app ini), diurutkan dari yang paling sering. Tiap kata ada contoh kalimat bertema dan kalimat dari ujian aslinya. Belajar lewat daftar, flashcard, atau ujian; soalnya juga bisa dipakai di Kuis Bareng.</p>
+  <div id="prio-controls"></div>
+  <div id="prio-body"></div>
 </div>
 
 <!-- ====== LEADERBOARD ====== -->
@@ -2360,6 +2379,9 @@ header:has(.user-menu.open) { z-index:1000; }
       </label>
       <label style="display:flex;align-items:center;gap:8px;padding:11px;border:1.5px solid var(--border);border-radius:10px;cursor:pointer">
         <input type="checkbox" name="mp-source" value="konjugasi" onchange="mpToggleKanjiDir()"> <span style="font-size:13px">活用 Konjugasi (bentuk kata kerja)</span>
+      </label>
+      <label style="display:flex;align-items:center;gap:8px;padding:11px;border:1.5px solid var(--border);border-radius:10px;cursor:pointer">
+        <input type="checkbox" name="mp-source" value="prioritas" onchange="mpToggleKanjiDir()"> <span style="font-size:13px">⭐ Kosakata Prioritas N3 (isi kalimat + arti)</span>
       </label>
     </div>
     <div id="mp-kanjidir-wrap" style="display:none;margin-bottom:16px">
@@ -8119,13 +8141,14 @@ function gotoScreen(name) {
   });
   var _lm=document.getElementById('nav-learn-menu');
   if(_lm) _lm.classList.remove('open');
-  var _learnScreens=['custom','jalur','flashmenu','kotoba','kanjimenu','bunpomenu','katsuyomenu','dialectmenu','kazumenu','onomenu','onyomenu','wordtree','keiseimenu','katema'];
+  var _learnScreens=['custom','jalur','flashmenu','kotoba','kanjimenu','bunpomenu','katsuyomenu','dialectmenu','kazumenu','onomenu','onyomenu','wordtree','keiseimenu','katema','prio'];
   var _lb=document.getElementById('nav-learn-btn');
   if(_lb) _lb.classList.toggle('active', _learnScreens.indexOf(name)>=0);
   if (name === 'overview') { updateOverview(); try{ maybeShowDailyChecklistModal(); }catch(e){} }
   if (name === 'custom') renderCustomMenu();
   if (name === 'jalur') renderJalurBelajar();
   if (name === 'katema') updateKatema();
+  if (name === 'prio') updatePrio();
   if (name === 'flashmenu') updateFlashMenu();
   if (name === 'kanjimenu') updateKanjiMenu();
   if (name === 'kotoba') renderKotobaTab();
@@ -10773,6 +10796,10 @@ async function mpBuildQuestionPool(sources, levels, count, kanjiDirs, posFilters
       specs.push({type:'konjugasi'}); // data gak terikat level, cukup 1 spec walau multi-level dipilih
       return;
     }
+    if(src==='prioritas'){
+      specs.push({type:'prioritas'}); // daftar kata dari ujian N3, gak terikat level yang dipilih
+      return;
+    }
     lvlList.forEach(function(lvl){
       if(src==='kanji'){
         dirList.forEach(function(dir){ specs.push({type:'kanji', level:lvl, dir:dir}); });
@@ -10794,6 +10821,7 @@ async function mpBuildQuestionPool(sources, levels, count, kanjiDirs, posFilters
     if(spec.type==='bunpou'){ var gwords=await mpEnsureWords(spec.level); mpRefreshIndoVocab(); return mpBunpouQuestions(gwords, want); }
     if(spec.type==='keisei') return mpKeiseiQuestions(want, lvlList);
     if(spec.type==='konjugasi') return mpKonjugasiQuestions(want);
+    if(spec.type==='prioritas') return await mpPrioQuestions(want);
     return [];
   }
 
@@ -21121,6 +21149,362 @@ function startKazuFlash(k){
 // gabungan + tiap kata (kalau ada) ada kalimat sendiri. Data dimuat on-demand
 // dari bank/Kotoba/tema_n5.json, di-cache di localStorage.
 // ============================================================
+// ============================================================
+// ⭐ KOSAKATA PRIORITAS N3 — daftar kata yang paling sering keluar di 25 sesi ujian JLPT N3 asli
+// (bank soal app ini), dengan contoh kalimat bertema + kalimat ujian asli. Data dimuat dari
+// bank/Kotoba/prioritas.json (tanpa cache localStorage, biar kalimat tambahan langsung kelihatan
+// begitu file JSON-nya diganti — gak perlu ubah index.html lagi).
+// Status hafal disimpan di mastered['prio_'+kata] (ikut sync ke cloud lewat save()).
+// ============================================================
+var PRIO_DATA = null;
+var _prioLoading = null;
+var PRIO_GROUPS = {
+  1:{lbl:'Inti N3', desc:'Sering keluar di ujian N3', col:'#c0392b'},
+  2:{lbl:'Belum di web', desc:'Keluar di ujian, dari daftar luar', col:'#8b5a2b'},
+  3:{lbl:'N2/N1 di ujian N3', desc:'Level tinggi tapi keluar di N3', col:'#6b3fa0'},
+  4:{lbl:'Dasar N4/N5', desc:'Kata dasar yang terus dipakai', col:'#2c7ac8'},
+  5:{lbl:'Belum pernah keluar', desc:'Umum, tapi belum muncul di arsip', col:'#7a8794'}
+};
+var prioState = { mode:'list', g:'all', st:'all', q:'', ex:false, limit:40, furi:true,
+  fc:{list:[], i:0, flipped:false, order:'prio'},
+  quiz:{items:[], i:0, score:0, answered:false, type:'mix', n:10, wrong:[]} };
+try{ var _pf=localStorage.getItem('prio_furi'); if(_pf==='0') prioState.furi=false; }catch(e){}
+
+function prioLoaded(){ return Array.isArray(PRIO_DATA) && PRIO_DATA.length>0; }
+async function loadPrio(){
+  if(prioLoaded()) return true;
+  if(_prioLoading) return _prioLoading;
+  _prioLoading = (async function(){
+    try{
+      var res = await fetch('bank/Kotoba/prioritas.json', {cache:'no-cache'});
+      if(!res.ok) throw new Error('HTTP '+res.status);
+      var data = await res.json();
+      if(!Array.isArray(data)||!data.length) throw new Error('data kosong');
+      PRIO_DATA = data;
+      return true;
+    }catch(e){ console.error('loadPrio', e); return false; }
+    finally{ _prioLoading=null; }
+  })();
+  return _prioLoading;
+}
+function prioHead(w){ return String(w.jp||'').split(/[;；]/)[0].trim(); }
+function prioDone(w){ return !!mastered['prio_'+prioHead(w)]; }
+function prioToggleDone(id, val){
+  var w=(PRIO_DATA||[]).filter(function(x){return x.i===id;})[0]; if(!w) return;
+  var mk='prio_'+prioHead(w);
+  var want = (val===undefined) ? !mastered[mk] : !!val;
+  if(want){ if(!mastered[mk]){ mastered[mk]=true; _touchStreak(); } } else { delete mastered[mk]; }
+  save();
+}
+function prioEscape(s){ return String(s==null?'':s).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];}); }
+// Markup kalimat: {漢字|かんじ} = furigana, 【...】 = kata yang dibahas.
+// mode 'cloze': isi 【...】 diganti kotak kosong (buat soal isi kalimat).
+function prioRuby(s, mode){
+  var out='', re=/\{([^|}]+)\|([^}]+)\}|【|】|[^{【】]+/g, m, inHl=false, blanked=false;
+  while((m=re.exec(String(s||'')))){
+    var t=m[0];
+    if(t==='【'){ inHl=true; if(mode==='cloze'){ out+='<span class="prio-blank">（　　　）</span>'; blanked=true; } else out+='<mark class="prio-hl">'; continue; }
+    if(t==='】'){ inHl=false; if(mode!=='cloze') out+='</mark>'; continue; }
+    if(inHl && mode==='cloze') continue;
+    if(m[1]) out+='<ruby>'+prioEscape(m[1])+'<rt>'+prioEscape(m[2])+'</rt></ruby>';
+    else out+=prioEscape(t);
+  }
+  return out;
+}
+function prioPlain(s, mode){
+  return String(s||'').replace(/\{([^|}]+)\|[^}]+\}/g,'$1').replace(/【[^】]*】/g, mode==='cloze'?'（　　）':function(x){return x.slice(1,-1);});
+}
+function prioFiltered(){
+  var q=(prioState.q||'').trim().toLowerCase();
+  return (PRIO_DATA||[]).filter(function(w){
+    if(prioState.g!=='all' && String(w.g)!==String(prioState.g)) return false;
+    if(prioState.st==='belum' && prioDone(w)) return false;
+    if(prioState.st==='sudah' && !prioDone(w)) return false;
+    if(prioState.ex && !w.ex) return false;
+    if(q){
+      var hay=(w.jp+' '+w.k+' '+w.a).toLowerCase();
+      if(hay.indexOf(q)<0) return false;
+    }
+    return true;
+  });
+}
+function updatePrio(){
+  var host=document.getElementById('prio-body');
+  if(!host) return;
+  if(!prioLoaded()){
+    host.innerHTML='<div style="text-align:center;padding:40px;color:var(--mist)">⏳ Memuat kosakata prioritas…</div>';
+    loadPrio().then(function(ok){
+      if(ok) updatePrio();
+      else host.innerHTML='<div style="text-align:center;padding:30px;color:var(--red);font-size:13px">Gagal memuat data (bank/Kotoba/prioritas.json). Cek koneksi lalu buka lagi tab ini.</div>';
+    });
+    return;
+  }
+  prioRenderControls();
+  if(prioState.mode==='flash') prioRenderFlash();
+  else if(prioState.mode==='quiz') prioRenderQuiz();
+  else prioRenderList();
+}
+function prioPill(label, on, js, col){
+  col=col||'var(--ink)';
+  return '<button onclick="'+js+'" style="padding:7px 12px;border-radius:18px;border:1.5px solid '+(on?col:'var(--border)')+';background:'+(on?col:'white')+';color:'+(on?'#fff':'var(--mist)')+';font-family:inherit;font-size:12px;font-weight:700;cursor:pointer">'+label+'</button>';
+}
+function prioSet(k,v){ prioState[k]=v; prioState.limit=40; if(k!=='mode'){ prioState.fc.list=[]; } updatePrio(); }
+function prioRenderControls(){
+  var el=document.getElementById('prio-controls'); if(!el) return;
+  var all=PRIO_DATA, done=all.filter(prioDone).length, withEx=all.filter(function(w){return !!w.ex;}).length;
+  var cnt={}; all.forEach(function(w){ cnt[w.g]=(cnt[w.g]||0)+1; });
+  var f=prioFiltered();
+  var html='<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px">'
+    + prioPill('📋 Daftar', prioState.mode==='list', "prioSet('mode','list')")
+    + prioPill('🃏 Flashcard', prioState.mode==='flash', "prioSet('mode','flash')")
+    + prioPill('📝 Ujian', prioState.mode==='quiz', "prioState.quiz.items=[];prioSet('mode','quiz')")
+    + '</div>';
+  html+='<div style="font-size:10.5px;font-weight:800;color:var(--mist);letter-spacing:.5px;margin-bottom:6px">KELOMPOK</div><div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px">'
+    + prioPill('Semua <span style="opacity:.75">'+all.length+'</span>', prioState.g==='all', "prioSet('g','all')");
+  Object.keys(PRIO_GROUPS).forEach(function(g){
+    var G=PRIO_GROUPS[g];
+    html+=prioPill(g+' · '+G.lbl+' <span style="opacity:.75">'+(cnt[g]||0)+'</span>', String(prioState.g)===g, "prioSet('g','"+g+"')", G.col);
+  });
+  html+='</div><div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin-bottom:10px">'
+    + prioPill('Semua', prioState.st==='all', "prioSet('st','all')")
+    + prioPill('Belum hafal', prioState.st==='belum', "prioSet('st','belum')", '#8b5a2b')
+    + prioPill('Sudah hafal', prioState.st==='sudah', "prioSet('st','sudah')", '#2d7a4f')
+    + prioPill('✍️ Ada kalimat contoh', prioState.ex, "prioSet('ex',!prioState.ex)", '#0a7d6b')
+    + prioPill(prioState.furi?'ふ Furigana: ON':'ふ Furigana: OFF', prioState.furi, "prioToggleFuri()", '#2c3e7a')
+    + '</div>'
+    + '<input id="prio-search" type="search" value="'+prioEscape(prioState.q)+'" placeholder="Cari kata, bacaan, atau arti…" oninput="prioState.q=this.value;prioState.limit=40;prioState.fc.list=[];prioRenderAfterSearch()" style="width:100%;padding:10px 12px;border:1.5px solid var(--border);border-radius:10px;font-family:inherit;font-size:14px;margin-bottom:8px">'
+    + '<div style="font-size:11.5px;color:var(--mist);margin-bottom:12px">Menampilkan <b>'+f.length+'</b> kata · '+done+' dari '+all.length+' sudah hafal · '+withEx+' kata sudah punya kalimat contoh</div>';
+  el.innerHTML=html;
+}
+function prioRenderAfterSearch(){
+  // render ulang isi saja, biar kursor di kotak cari gak hilang
+  if(prioState.mode==='flash') prioRenderFlash(); else if(prioState.mode==='quiz') prioRenderQuiz(); else prioRenderList();
+  var info=document.querySelector('#prio-controls > div:last-child');
+  if(info){ var f=prioFiltered(); info.innerHTML=info.innerHTML.replace(/Menampilkan <b>\d+<\/b>/,'Menampilkan <b>'+f.length+'</b>'); }
+}
+function prioToggleFuri(){ prioState.furi=!prioState.furi; try{ localStorage.setItem('prio_furi', prioState.furi?'1':'0'); }catch(e){} updatePrio(); }
+function prioSentHtml(w, compact){
+  var h='';
+  if(w.ex){
+    h+='<div style="margin-top:8px;padding:10px 12px;border-radius:10px;background:#f6f8fc;border:1px solid #e3e8f3">'
+      + '<div style="font-size:10.5px;font-weight:800;color:#2c3e7a;margin-bottom:4px">'+prioEscape(w.ex.t)+' · CONTOH KALIMAT</div>'
+      + '<div class="prio-sent" style="font-size:16px;line-height:2.1">'+prioRuby(w.ex.s)+'</div>'
+      + '<div style="font-size:12.5px;color:var(--mist);margin-top:2px">'+prioEscape(w.ex.tr)+'</div></div>';
+  }
+  if(w.real && w.real.length){
+    var list = compact ? w.real.slice(0,1) : w.real;
+    h+='<div style="margin-top:8px;padding:10px 12px;border-radius:10px;background:#fbf6ec;border:1px solid #efe2c4">'
+      + '<div style="font-size:10.5px;font-weight:800;color:#8b5a2b;margin-bottom:4px">📜 KALIMAT DARI UJIAN ASLI</div>'
+      + list.map(function(r){
+          return '<div style="margin-bottom:6px"><div class="prio-sent" style="font-size:15px;line-height:2.05">'+prioRuby(r.s)+'</div>'
+            + '<div style="font-size:10.5px;color:#a07a3a">'+prioEscape(r.src)+'</div></div>';
+        }).join('')
+      + '</div>';
+  }
+  if(!w.ex && !(w.real && w.real.length)) h+='<div style="margin-top:8px;font-size:11.5px;color:#a0a8b4">Kalimat contoh untuk kata ini belum ditulis.</div>';
+  return h;
+}
+function prioBadge(w){
+  var G=PRIO_GROUPS[w.g]||{};
+  return '<span style="font-size:10px;font-weight:800;padding:2px 7px;border-radius:7px;background:'+(G.col||'#888')+';color:#fff">'+prioEscape(String(w.lv).replace('*',''))+'</span>'
+    + (w.n3>0?'<span style="font-size:10px;font-weight:700;padding:2px 7px;border-radius:7px;background:#fdecea;color:#c0392b">📊 '+w.n3+'/25 ujian</span>':'<span style="font-size:10px;font-weight:700;padding:2px 7px;border-radius:7px;background:#eef0f3;color:#7a8794">belum pernah keluar</span>');
+}
+function prioRenderList(){
+  var host=document.getElementById('prio-body'); if(!host) return;
+  var f=prioFiltered();
+  if(!f.length){ host.innerHTML='<div style="text-align:center;padding:30px;color:var(--mist);font-size:13px">Tidak ada kata yang cocok dengan filter ini.</div>'; return; }
+  var shown=f.slice(0,prioState.limit);
+  host.innerHTML='<div class="'+(prioState.furi?'':'prio-nofuri')+'">'+shown.map(function(w){
+    var done=prioDone(w);
+    return '<div style="background:white;border:1px solid var(--border);border-radius:14px;padding:14px;margin-bottom:10px">'
+      + '<div style="display:flex;align-items:flex-start;gap:10px">'
+      + '<div style="flex:1;min-width:0">'
+      + '<div style="display:flex;align-items:baseline;gap:8px;flex-wrap:wrap"><span style="font-size:22px;font-weight:800">'+prioEscape(prioHead(w))+'</span><span style="font-size:13px;color:var(--mist)">'+prioEscape(w.k)+'</span></div>'
+      + '<div style="font-size:14px;margin:2px 0 6px">'+prioEscape(w.a)+(w.en?' <span style="font-size:10px;color:#a0a8b4">(arti Inggris)</span>':'')+'</div>'
+      + '<div style="display:flex;gap:5px;flex-wrap:wrap">'+prioBadge(w)+'</div>'
+      + '</div>'
+      + '<button onclick="prioToggleDone(\''+w.i+'\');prioRenderList();prioRenderControls()" title="Tandai hafal" style="flex-shrink:0;padding:7px 10px;border-radius:10px;border:1.5px solid '+(done?'#2d7a4f':'var(--border)')+';background:'+(done?'#2d7a4f':'white')+';color:'+(done?'#fff':'var(--mist)')+';font-weight:800;font-size:12px;cursor:pointer;font-family:inherit">'+(done?'✓ Hafal':'Hafal?')+'</button>'
+      + '</div>'
+      + prioSentHtml(w,false)
+      + '</div>';
+  }).join('')+'</div>'
+  + (f.length>shown.length?'<button onclick="prioState.limit+=40;prioRenderList()" style="width:100%;padding:12px;border:1.5px dashed var(--border);border-radius:10px;background:white;color:var(--ink);font-weight:700;cursor:pointer;font-family:inherit">Muat 40 kata lagi ('+(f.length-shown.length)+' tersisa)</button>':'');
+}
+// ---------- FLASHCARD ----------
+function prioFlashStart(order){
+  var f=prioFiltered().slice();
+  prioState.fc.order=order||prioState.fc.order;
+  if(prioState.fc.order==='acak') shuffle(f);
+  prioState.fc.list=f.map(function(w){return w.i;}); prioState.fc.i=0; prioState.fc.flipped=false;
+}
+function prioRenderFlash(){
+  var host=document.getElementById('prio-body'); if(!host) return;
+  if(!prioState.fc.list.length) prioFlashStart();
+  var L=prioState.fc.list;
+  if(!L.length){ host.innerHTML='<div style="text-align:center;padding:30px;color:var(--mist);font-size:13px">Tidak ada kata untuk flashcard dengan filter ini.</div>'; return; }
+  if(prioState.fc.i>=L.length){
+    host.innerHTML='<div style="background:white;border:1px solid var(--border);border-radius:14px;padding:26px;text-align:center"><div style="font-size:30px">🎉</div><div style="font-weight:800;font-size:16px;margin:6px 0">Satu putaran selesai</div><div style="font-size:13px;color:var(--mist);margin-bottom:14px">'+L.length+' kartu sudah dilihat.</div>'
+      +'<button onclick="prioFlashStart();prioRenderFlash()" style="padding:11px 18px;border:none;border-radius:10px;background:var(--red);color:#fff;font-weight:800;cursor:pointer;font-family:inherit">Ulangi</button></div>';
+    return;
+  }
+  var w=(PRIO_DATA||[]).filter(function(x){return x.i===L[prioState.fc.i];})[0];
+  var fl=prioState.fc.flipped;
+  var html='<div style="display:flex;gap:6px;align-items:center;margin-bottom:10px;flex-wrap:wrap">'
+    + prioPill('Urut prioritas', prioState.fc.order==='prio', "prioFlashStart('prio');prioRenderFlash()")
+    + prioPill('🔀 Acak', prioState.fc.order==='acak', "prioFlashStart('acak');prioRenderFlash()")
+    + '<span style="margin-left:auto;font-size:12px;color:var(--mist);font-family:\'DM Mono\',monospace">'+(prioState.fc.i+1)+' / '+L.length+'</span></div>'
+    + '<div onclick="prioState.fc.flipped=!prioState.fc.flipped;prioRenderFlash()" class="'+(prioState.furi?'':'prio-nofuri')+'" style="background:white;border:1px solid var(--border);border-radius:18px;padding:22px 18px;min-height:220px;cursor:pointer;text-align:center">'
+    + '<div style="display:flex;gap:5px;justify-content:center;flex-wrap:wrap;margin-bottom:10px">'+prioBadge(w)+'</div>'
+    + '<div style="font-size:44px;font-weight:800;line-height:1.3">'+prioEscape(prioHead(w))+'</div>';
+  if(!fl){
+    html+=(w.ex?'<div class="prio-sent" style="font-size:15px;line-height:2.1;margin-top:14px;color:var(--ink);text-align:left">'+prioRuby(w.ex.s)+'</div>':'')
+      + '<div style="font-size:12px;color:var(--mist);margin-top:16px">Ketuk untuk lihat bacaan &amp; arti</div>';
+  } else {
+    html+='<div style="font-size:18px;color:var(--mist);margin-top:4px">'+prioEscape(w.k)+'</div>'
+      + '<div style="font-size:19px;font-weight:700;margin:6px 0 4px">'+prioEscape(w.a)+'</div>'
+      + '<div style="text-align:left">'+prioSentHtml(w,true)+'</div>';
+  }
+  html+='</div>'
+    + '<div style="display:flex;gap:10px;margin-top:12px">'
+    + '<button onclick="prioFlashMark(false)" style="flex:1;padding:14px;border-radius:12px;border:2px solid #e8b4ae;background:#fdf1ef;color:#c0392b;font-weight:800;font-size:14px;cursor:pointer;font-family:inherit">✗ Belum hafal</button>'
+    + '<button onclick="prioFlashMark(true)" style="flex:1;padding:14px;border-radius:12px;border:2px solid #b6d8c2;background:#eef7f1;color:#2d7a4f;font-weight:800;font-size:14px;cursor:pointer;font-family:inherit">✓ Sudah hafal</button>'
+    + '</div>';
+  host.innerHTML=html;
+}
+function prioFlashMark(ok){
+  var id=prioState.fc.list[prioState.fc.i];
+  prioToggleDone(id, ok);
+  prioState.fc.i++; prioState.fc.flipped=false;
+  prioRenderFlash(); prioRenderControls();
+}
+// ---------- UJIAN ----------
+function prioEndKind(jp){ var h=String(jp); var c=h.charAt(h.length-1); return /[぀-ゟ]/.test(c) ? 'k:'+c : (/[゠-ヿ]/.test(c)?'kata':'kanji'); }
+function prioPickDistractors(w, pool, keyFn, sameFn, n){
+  var key=keyFn(w), seen={}; seen[key]=1;
+  var c=pool.filter(function(x){ return x.i!==w.i; });
+  shuffle(c);
+  var good=c.filter(sameFn), rest=c.filter(function(x){ return !sameFn(x); });
+  var out=[];
+  good.concat(rest).forEach(function(x){ var k=keyFn(x); if(out.length<n && k && !seen[k]){ seen[k]=1; out.push(x); } });
+  return out;
+}
+function prioMakeQuestion(w, type, pool){
+  var head=prioHead(w);
+  if(type==='cloze' && !w.ex) type='arti';
+  if(type==='baca' && !/[一-鿿]/.test(head)) type='arti';
+  var ds, choices, ans, prompt, sub='';
+  if(type==='arti'){
+    ds=prioPickDistractors(w,pool,function(x){return x.a;},function(x){ return x.en===w.en && prioEndKind(prioHead(x))===prioEndKind(head); },3);
+    var opts=[w].concat(ds); shuffle(opts);
+    choices=opts.map(function(x){return x.a;}); ans=opts.indexOf(w);
+    prompt='<div style="font-size:40px;font-weight:800;text-align:center">'+prioEscape(head)+'</div>'; sub='Apa artinya?';
+  } else if(type==='baca'){
+    ds=prioPickDistractors(w,pool,function(x){return x.k;},function(x){ return /[一-鿿]/.test(prioHead(x)) && Math.abs(String(x.k).length-String(w.k).length)<=1 && String(x.k).slice(-1)===String(w.k).slice(-1); },3);
+    var o2=[w].concat(ds); shuffle(o2);
+    choices=o2.map(function(x){return x.k;}); ans=o2.indexOf(w);
+    prompt='<div style="font-size:40px;font-weight:800;text-align:center">'+prioEscape(head)+'</div>'; sub='Bagaimana cara bacanya?';
+  } else {
+    ds=prioPickDistractors(w,pool.filter(function(x){ return prioHead(x).length>=2 && x.g<=3; }),function(x){return prioHead(x);},function(x){ return prioEndKind(prioHead(x))===prioEndKind(head) && x.g===w.g; },3);
+    var o3=[w].concat(ds); shuffle(o3);
+    choices=o3.map(function(x){return prioHead(x);}); ans=o3.indexOf(w);
+    prompt='<div class="prio-sent" style="font-size:17px;line-height:2.2">'+prioRuby(w.ex.s,'cloze')+'</div>'; sub='Pilih kata yang paling tepat untuk （　　） — pilihan ditulis dalam bentuk kamus.';
+  }
+  return {id:w.i, type:type, prompt:prompt, sub:sub, choices:choices, answer:ans};
+}
+function prioQuizStart(){
+  var f=prioFiltered();
+  var pool=PRIO_DATA;
+  var t=prioState.quiz.type;
+  var cand=f.slice(); if(t==='cloze') cand=cand.filter(function(w){return !!w.ex;});
+  shuffle(cand);
+  cand=cand.slice(0, prioState.quiz.n);
+  var kinds=['arti','baca','cloze'];
+  prioState.quiz.items=cand.map(function(w,i){ return prioMakeQuestion(w, t==='mix' ? (w.ex && i%3===2 ? 'cloze' : kinds[i%2]) : t, pool); });
+  prioState.quiz.i=0; prioState.quiz.score=0; prioState.quiz.answered=false; prioState.quiz.wrong=[];
+}
+function prioRenderQuiz(){
+  var host=document.getElementById('prio-body'); if(!host) return;
+  var Q=prioState.quiz;
+  if(!Q.items.length){
+    var f=prioFiltered(), nEx=f.filter(function(w){return !!w.ex;}).length;
+    host.innerHTML='<div style="background:white;border:1px solid var(--border);border-radius:14px;padding:18px">'
+      + '<div style="font-weight:800;font-size:15px;margin-bottom:4px">📝 Ujian Kosakata Prioritas</div>'
+      + '<div style="font-size:12.5px;color:var(--mist);margin-bottom:12px">Soal diambil dari kata yang sedang tersaring ('+f.length+' kata). Atur kelompok &amp; status hafal di atas.</div>'
+      + '<div style="font-size:10.5px;font-weight:800;color:var(--mist);letter-spacing:.5px;margin-bottom:6px">JENIS SOAL</div><div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px">'
+      + prioPill('Campur', Q.type==='mix', "prioState.quiz.type='mix';prioRenderQuiz()")
+      + prioPill('Arti', Q.type==='arti', "prioState.quiz.type='arti';prioRenderQuiz()")
+      + prioPill('Bacaan', Q.type==='baca', "prioState.quiz.type='baca';prioRenderQuiz()")
+      + prioPill('Isi kalimat <span style="opacity:.75">'+nEx+'</span>', Q.type==='cloze', "prioState.quiz.type='cloze';prioRenderQuiz()", '#0a7d6b')
+      + '</div><div style="font-size:10.5px;font-weight:800;color:var(--mist);letter-spacing:.5px;margin-bottom:6px">JUMLAH SOAL</div><div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:16px">'
+      + [10,20,30,50].map(function(n){ return prioPill(String(n), Q.n===n, "prioState.quiz.n="+n+";prioRenderQuiz()"); }).join('')
+      + '</div><button onclick="prioQuizStart();prioRenderQuiz()" '+((Q.type==='cloze'?nEx:f.length)?'':'disabled ')+'style="width:100%;padding:13px;border:none;border-radius:10px;background:var(--red);color:#fff;font-weight:800;font-size:14px;cursor:pointer;font-family:inherit">Mulai ujian</button></div>';
+    return;
+  }
+  if(Q.i>=Q.items.length){
+    var pct=Math.round(Q.score/Q.items.length*100);
+    var wrongW=Q.wrong.map(function(id){ return (PRIO_DATA||[]).filter(function(x){return x.i===id;})[0]; }).filter(Boolean);
+    host.innerHTML='<div style="background:white;border:1px solid var(--border);border-radius:14px;padding:20px;text-align:center">'
+      + '<div style="font-size:34px;font-weight:800;color:'+(pct>=80?'#2d7a4f':pct>=60?'#a07a1a':'#c0392b')+'">'+Q.score+' / '+Q.items.length+'</div>'
+      + '<div style="font-size:13px;color:var(--mist);margin-bottom:12px">Nilai '+pct+'%</div>'
+      + (wrongW.length?'<div style="text-align:left;font-size:12.5px;margin-bottom:12px"><b>Perlu diulang:</b> '+wrongW.map(function(w){return prioEscape(prioHead(w))+' ('+prioEscape(w.k)+')';}).join(' · ')+'</div>':'')
+      + '<div style="display:flex;gap:8px"><button onclick="prioQuizStart();prioRenderQuiz()" style="flex:1;padding:12px;border:none;border-radius:10px;background:var(--red);color:#fff;font-weight:800;cursor:pointer;font-family:inherit">Ujian lagi</button>'
+      + '<button onclick="prioState.quiz.items=[];prioRenderQuiz()" style="flex:1;padding:12px;border:1.5px solid var(--border);border-radius:10px;background:white;color:var(--ink);font-weight:800;cursor:pointer;font-family:inherit">Atur ulang</button></div></div>';
+    return;
+  }
+  var q=Q.items[Q.i];
+  host.innerHTML='<div class="'+(prioState.furi?'':'prio-nofuri')+'" style="background:white;border:1px solid var(--border);border-radius:14px;padding:18px">'
+    + '<div style="display:flex;justify-content:space-between;font-size:11.5px;color:var(--mist);margin-bottom:10px"><span>Soal '+(Q.i+1)+' / '+Q.items.length+'</span><span>Benar: '+Q.score+'</span></div>'
+    + q.prompt
+    + '<div style="font-size:12.5px;color:var(--mist);margin:10px 0 12px;text-align:center">'+prioEscape(q.sub)+'</div>'
+    + '<div id="prio-quiz-choices">'+q.choices.map(function(c,ci){
+        return '<div onclick="prioQuizAnswer('+ci+')" style="padding:12px 14px;margin-bottom:8px;border:2px solid var(--border);border-radius:10px;cursor:pointer;font-size:15px;background:white">'+prioEscape(c)+'</div>';
+      }).join('')+'</div><div id="prio-quiz-fb"></div></div>';
+  Q.answered=false;
+}
+function prioQuizAnswer(ci){
+  var Q=prioState.quiz; if(Q.answered) return; Q.answered=true;
+  var q=Q.items[Q.i], ok=ci===q.answer;
+  if(ok) Q.score++; else Q.wrong.push(q.id);
+  var cont=document.getElementById('prio-quiz-choices');
+  if(cont) for(var k=0;k<cont.children.length;k++){
+    var el=cont.children[k]; el.style.pointerEvents='none';
+    if(k===q.answer){ el.style.borderColor='#2d7a4f'; el.style.background='#eef7f1'; }
+    if(k===ci && !ok){ el.style.borderColor='#c0392b'; el.style.background='#fdf1ef'; }
+  }
+  var w=(PRIO_DATA||[]).filter(function(x){return x.i===q.id;})[0];
+  var fb=document.getElementById('prio-quiz-fb');
+  if(fb) fb.innerHTML='<div style="margin-top:6px;padding:10px 12px;border-radius:10px;background:'+(ok?'#eef7f1':'#fdf1ef')+';font-weight:800;color:'+(ok?'#2d7a4f':'#c0392b')+'">'+(ok?'✓ Benar':'✗ Kurang tepat')+' — '+prioEscape(prioHead(w))+'（'+prioEscape(w.k)+'）: '+prioEscape(w.a)+'</div>'
+    + prioSentHtml(w,true)
+    + '<button onclick="prioState.quiz.i++;prioRenderQuiz()" style="margin-top:10px;width:100%;padding:12px;border:none;border-radius:10px;background:#2c3e7a;color:#fff;font-weight:800;cursor:pointer;font-family:inherit">Lanjut ▶</button>';
+  if(!ok) prioToggleDone(q.id,false);
+  try{ _touchStreak(); save(); }catch(e){}
+}
+// ---------- KUIS BARENG: sumber "⭐ Kosakata Prioritas" ----------
+// Campuran soal arti (pakai generator Kotoba yang sudah ada, termasuk penyamaan bahasa/bentuk)
+// dan soal ISI KALIMAT (文脈規定) dari contoh kalimat. Default: kelompok 1–3 (yang keluar di ujian N3).
+async function mpPrioQuestions(count){
+  var ok=await loadPrio(); if(!ok) return [];
+  var pool=PRIO_DATA.filter(function(w){ return w.g<=3; });
+  var withEx=pool.filter(function(w){ return !!w.ex; }); shuffle(withEx);
+  var nCloze=Math.min(withEx.length, Math.ceil(count/2));
+  var out=[];
+  withEx.slice(0,nCloze).forEach(function(w){
+    var q=prioMakeQuestion(w,'cloze',PRIO_DATA);
+    out.push({
+      q: prioPlain(w.ex.s,'cloze'),
+      choices: q.choices, answer: q.answer,
+      section: '⭐ Isi Kalimat (Prioritas)',
+      meaning: w.a,
+      expl: '「'+prioHead(w)+'」（'+w.k+'） = '+w.a+'. Kalimat lengkap: '+prioPlain(w.ex.s)+' — '+w.ex.tr
+    });
+  });
+  var rest=pool.map(function(w){ return {jp:prioHead(w), rom:w.k, id_:w.a}; });
+  mpRefreshIndoVocab();
+  out=out.concat(mpKotobaQuestions(rest, count-out.length).map(function(q){ q.section='⭐ Arti Kata (Prioritas)'; return q; }));
+  shuffle(out);
+  return out.slice(0,count);
+}
+
 var KATEMA_DATA = null;
 var KATEMA_VER = 'v1';
 var _katemaLoading = null;
