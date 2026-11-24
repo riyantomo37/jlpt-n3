@@ -2376,6 +2376,9 @@ header:has(.user-menu.open) { z-index:1000; }
     </div>
     <label style="font-size:12px;font-weight:700;color:var(--mist);display:block;margin-bottom:6px">Sumber Soal (bisa pilih lebih dari satu, di-mix)</label>
     <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:10px">
+      <label style="display:flex;align-items:center;gap:8px;padding:11px;border:1.5px solid #c9941a;background:rgba(201,148,26,.07);border-radius:10px;cursor:pointer">
+        <input type="checkbox" name="mp-source" value="prioritas" onchange="mpToggleKanjiDir()"> <span style="font-size:13px;font-weight:700">⭐ Kosakata Prioritas N3 (isi kalimat + arti)</span>
+      </label>
       <label style="display:flex;align-items:center;gap:8px;padding:11px;border:1.5px solid var(--border);border-radius:10px;cursor:pointer">
         <input type="checkbox" name="mp-source" value="bank" checked onchange="mpToggleKanjiDir()"> <span style="font-size:13px">📚 Bank Soal (arsip ujian asli)</span>
       </label>
@@ -2394,9 +2397,51 @@ header:has(.user-menu.open) { z-index:1000; }
       <label style="display:flex;align-items:center;gap:8px;padding:11px;border:1.5px solid var(--border);border-radius:10px;cursor:pointer">
         <input type="checkbox" name="mp-source" value="konjugasi" onchange="mpToggleKanjiDir()"> <span style="font-size:13px">活用 Konjugasi (bentuk kata kerja)</span>
       </label>
-      <label style="display:flex;align-items:center;gap:8px;padding:11px;border:1.5px solid var(--border);border-radius:10px;cursor:pointer">
-        <input type="checkbox" name="mp-source" value="prioritas" onchange="mpToggleKanjiDir()"> <span style="font-size:13px">⭐ Kosakata Prioritas N3 (isi kalimat + arti)</span>
-      </label>
+    </div>
+    <div id="mp-priomode-wrap" style="display:none;margin-bottom:16px;padding:12px;border:1.5px solid #c9941a;border-radius:12px;background:rgba(201,148,26,.05)">
+      <label style="font-size:12px;font-weight:700;color:#a8780f;display:block;margin-bottom:4px">⭐ Mode Soal Kosakata Prioritas (bisa pilih lebih dari satu, di-mix)</label>
+      <div style="font-size:11px;color:var(--mist);margin-bottom:8px">Mode 📝 JLPT memakai kalimat dari soal JLPT asli &amp; contoh kalimat, lengkap dengan instruksi bahasa Jepang dan garis bawah seperti di ujian.</div>
+      <div style="display:flex;flex-direction:column;gap:6px">
+        <label style="display:flex;align-items:center;gap:6px;padding:9px 10px;border:1.5px solid var(--border);border-radius:10px;cursor:pointer;background:white">
+          <input type="checkbox" name="mp-priomode" value="jlpt1" checked> <span style="font-size:12px">📝 JLPT 問題1 漢字読み — baca kanji, pengecoh mirip (panjang/pendek, tenten, っ)</span>
+        </label>
+        <label style="display:flex;align-items:center;gap:6px;padding:9px 10px;border:1.5px solid var(--border);border-radius:10px;cursor:pointer;background:white">
+          <input type="checkbox" name="mp-priomode" value="jlpt2"> <span style="font-size:12px">📝 JLPT 問題2 表記 — tulis kanji yang benar (kanji homofon/mirip)</span>
+        </label>
+        <label style="display:flex;align-items:center;gap:6px;padding:9px 10px;border:1.5px solid var(--border);border-radius:10px;cursor:pointer;background:white">
+          <input type="checkbox" name="mp-priomode" value="jlpt3" checked> <span style="font-size:12px">📝 JLPT 問題3 文脈規定 — isi （　） dalam kalimat</span>
+        </label>
+        <label style="display:flex;align-items:center;gap:6px;padding:9px 10px;border:1.5px solid var(--border);border-radius:10px;cursor:pointer;background:white">
+          <input type="checkbox" name="mp-priomode" value="arti" checked> <span style="font-size:12px">📖 Arti Kata (PG)</span>
+        </label>
+        <label style="display:flex;align-items:center;gap:6px;padding:9px 10px;border:1.5px solid var(--border);border-radius:10px;cursor:pointer;background:white">
+          <input type="checkbox" name="mp-priomode" value="cloze"> <span style="font-size:12px">✏️ Isi Kalimat (bentuk kamus, mode lama)</span>
+        </label>
+        <label style="display:flex;align-items:center;gap:6px;padding:9px 10px;border:1.5px solid var(--border);border-radius:10px;cursor:pointer;background:white">
+          <input type="checkbox" name="mp-priomode" value="read"> <span style="font-size:12px">🈶→🔤 Baca Kanji (PG)</span>
+        </label>
+        <label style="display:flex;align-items:center;gap:6px;padding:9px 10px;border:1.5px solid var(--border);border-radius:10px;cursor:pointer;background:white">
+          <input type="checkbox" name="mp-priomode" value="find"> <span style="font-size:12px">🔤→🈶 Cari Kanji (PG)</span>
+        </label>
+        <label style="display:flex;align-items:center;gap:6px;padding:9px 10px;border:1.5px solid var(--border);border-radius:10px;cursor:pointer;background:white">
+          <input type="checkbox" name="mp-priomode" value="pg2"> <span style="font-size:12px">🈶🔤 PG Dua Sisi (Arti+Bacaan)</span>
+        </label>
+        <label style="display:flex;align-items:center;gap:6px;padding:9px 10px;border:1.5px solid var(--border);border-radius:10px;cursor:pointer;background:white">
+          <input type="checkbox" name="mp-priomode" value="typeread"> <span style="font-size:12px">✍️ Ketik Bacaan</span>
+        </label>
+        <label style="display:flex;align-items:center;gap:6px;padding:9px 10px;border:1.5px solid var(--border);border-radius:10px;cursor:pointer;background:white">
+          <input type="checkbox" name="mp-priomode" value="typemeaning"> <span style="font-size:12px">✍️ Ketik Arti</span>
+        </label>
+        <label style="display:flex;align-items:center;gap:6px;padding:9px 10px;border:1.5px solid var(--border);border-radius:10px;cursor:pointer;background:white">
+          <input type="checkbox" name="mp-priomode" value="typeeither"> <span style="font-size:12px">✍️ Ketik Bebas (Bacaan/Arti)</span>
+        </label>
+        <label style="display:flex;align-items:center;gap:6px;padding:9px 10px;border:1.5px solid var(--border);border-radius:10px;cursor:pointer;background:white">
+          <input type="checkbox" name="mp-priomode" value="typeboth"> <span style="font-size:12px">✍️ Ketik Dua-duanya</span>
+        </label>
+        <label style="display:flex;align-items:center;gap:6px;padding:9px 10px;border:1.5px solid var(--border);border-radius:10px;cursor:pointer;background:white">
+          <input type="checkbox" name="mp-priomode" value="pecah"> <span style="font-size:12px">🧩 Pecah Kanji</span>
+        </label>
+      </div>
     </div>
     <div id="mp-kanjidir-wrap" style="display:none;margin-bottom:16px">
       <label style="font-size:12px;font-weight:700;color:var(--mist);display:block;margin-bottom:6px">Arah Soal Kanji (bisa pilih lebih dari satu, di-mix)</label>
@@ -9597,7 +9642,7 @@ async function mpBankQuestions(level, count){
   }catch(e){ return []; }
 }
 
-async function mpBuildQuestionPool(sources, levels, count, kanjiDirs, posFilters){
+async function mpBuildQuestionPool(sources, levels, count, kanjiDirs, posFilters, prioModes){
   // sources: array ['bank','kotoba','kanji'...]; levels: array ['N5','N3',...]; kanjiDirs: array ['read','find']
   // posFilters (opsional): array ['meishi','doushi',...] — kalau dikasih, cuma kata dengan
   // jenis itu yang dijadiin TARGET soal (bukan pengecoh — pengecoh tetep dari pool lengkap biar
@@ -9646,7 +9691,7 @@ async function mpBuildQuestionPool(sources, levels, count, kanjiDirs, posFilters
     if(spec.type==='bunpou'){ var gwords=await mpEnsureWords(spec.level); mpRefreshIndoVocab(); return mpBunpouQuestions(gwords, want); }
     if(spec.type==='keisei') return mpKeiseiQuestions(want, lvlList);
     if(spec.type==='konjugasi') return mpKonjugasiQuestions(want);
-    if(spec.type==='prioritas') return await mpPrioQuestions(want);
+    if(spec.type==='prioritas') return await mpPrioQuestions(want, prioModes);
     return [];
   }
 
@@ -9683,6 +9728,9 @@ function mpGoHostSetup(){
 }
 
 function mpToggleKanjiDir(){
+  var prioEl=document.querySelector('input[name="mp-source"][value="prioritas"]');
+  var pw=document.getElementById('mp-priomode-wrap');
+  if(pw) pw.style.display = (prioEl && prioEl.checked) ? 'block' : 'none';
   var kanjiEl=document.querySelector('input[name="mp-source"][value="kanji"]');
   var wrap=document.getElementById('mp-kanjidir-wrap');
   if(wrap) wrap.style.display = (kanjiEl && kanjiEl.checked) ? 'block' : 'none';
@@ -9694,6 +9742,161 @@ function mpToggleKanjiDir(){
 // ══ Sesi Custom — host tulis soal & jawaban sendiri (bukan generate dari sumber bawaan) ══
 var mpCustomRowIds=[];
 var mpCustomNextId=0;
+
+
+// ===== KUIS CUSTOM: "Tambah Soal dari Bank Kata" =====
+// Pilih kata dari level N5–N1/SSW atau ⭐ Kosakata Prioritas, filter hafal/belum, lalu jadikan soal PG
+// (arti / baca kanji) yang langsung masuk ke Daftar Soal dan masih bisa diedit manual.
+var mpcPickedWords = [];          // [{key, level, w}]
+var mpcMasteryFilter = 'all';     // all | belum | hafal
+var mpcListLimit = 60;
+var mpcPickLevel = 'N3';
+var mpcPoolCache = {};            // level -> kata ter-normalisasi
+function mpcLevelLabel(lv){ return lv==='PRIO' ? '⭐ Prioritas' : lv; }
+function mpcNormPrio(x){
+  return { id:'prio:'+x.i, jp:prioHead(x), rom:x.k||'', id_:x.a||'', _prio:x };
+}
+async function mpcLoadPool(lv){
+  if(mpcPoolCache[lv]) return mpcPoolCache[lv];
+  var pool=[];
+  if(lv==='PRIO'){
+    if(!PRIO_DATA){ try{ await loadPrio(); }catch(e){} }
+    pool=(PRIO_DATA||[]).map(mpcNormPrio);
+  } else {
+    pool=(await mpEnsureWords(lv)).filter(function(w){ return w && w.jp && w.id_; });
+  }
+  mpcPoolCache[lv]=pool;
+  return pool;
+}
+function mpcIsMastered(lv, w){
+  if(lv==='PRIO') return w._prio ? prioDone(w._prio) : false;
+  if(lv==='N3') return !!((mastered.kanji||{})[w.id] || (mastered.vocab||{})[w.id] || (mastered.grammar||{})[w.id]);
+  return !!((mastered[lv]||{})[w.id]);
+}
+function mpcPillHtml(label, active, onclick){
+  return '<button onclick="'+onclick+'" style="padding:6px 12px;border-radius:14px;border:1.5px solid '+(active?'#7a5cc4':'var(--border)')
+    +';background:'+(active?'#7a5cc4':'white')+';color:'+(active?'#fff':'var(--mist)')+';font-family:inherit;font-size:12px;font-weight:700;cursor:pointer">'+label+'</button>';
+}
+function mpcRenderLevelPills(){
+  var el=document.getElementById('mpc-pick-levels'); if(!el) return;
+  el.innerHTML=['PRIO'].concat(MP_LEVELS).map(function(lv){
+    return mpcPillHtml(mpcLevelLabel(lv), lv===mpcPickLevel, "mpcSwitchPickLevel('"+lv+"')");
+  }).join('');
+}
+function mpcRenderMasteryPills(){
+  var el=document.getElementById('mpc-pick-mastery'); if(!el) return;
+  el.innerHTML=[['all','Semua'],['belum','Belum hafal'],['hafal','Sudah hafal']].map(function(o){
+    return mpcPillHtml(o[1], mpcMasteryFilter===o[0], "mpcMasteryFilter='"+o[0]+"';mpcListLimit=60;mpcRenderMasteryPills();mpcRenderWordList()");
+  }).join('');
+}
+async function mpcSwitchPickLevel(lv){
+  mpcPickLevel=lv; mpcListLimit=60;
+  mpcRenderLevelPills();
+  var list=document.getElementById('mpc-pick-list');
+  if(list && !mpcPoolCache[lv]) list.innerHTML='<div style="padding:16px;text-align:center;font-size:12px;color:var(--mist)">Memuat kata '+mpcLevelLabel(lv)+'…</div>';
+  await mpcLoadPool(lv);
+  if(mpcPickLevel===lv) mpcRenderWordList();
+}
+function mpcEsc(s){ return String(s==null?'':s).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];}); }
+function mpcFilteredPool(){
+  var lv=mpcPickLevel, pool=mpcPoolCache[lv]||[];
+  var qEl=document.getElementById('mpc-pick-search'); var q=(qEl?qEl.value:'').trim().toLowerCase();
+  return pool.filter(function(w){
+    if(mpcMasteryFilter!=='all'){ var m=mpcIsMastered(lv,w); if(mpcMasteryFilter==='hafal'?!m:m) return false; }
+    if(!q) return true;
+    return String(w.jp).toLowerCase().indexOf(q)>=0 || String(w.rom).toLowerCase().indexOf(q)>=0 || String(w.id_).toLowerCase().indexOf(q)>=0;
+  });
+}
+function mpcRenderWordList(){
+  var list=document.getElementById('mpc-pick-list'); if(!list) return;
+  var lv=mpcPickLevel, all=mpcFilteredPool(), shown=all.slice(0,mpcListLimit);
+  var picked={}; mpcPickedWords.forEach(function(p){ picked[p.key]=1; });
+  if(!shown.length){ list.innerHTML='<div style="padding:16px;text-align:center;font-size:12px;color:var(--mist)">Tidak ada kata yang cocok.</div>'; }
+  else list.innerHTML=shown.map(function(w){
+    var key=lv+'|'+w.id, on=!!picked[key], m=mpcIsMastered(lv,w);
+    return '<div data-k="'+mpcEsc(key)+'" onclick="mpcTogglePick(this.getAttribute(\'data-k\'))" style="display:flex;align-items:center;gap:10px;padding:9px 12px;border-bottom:1px solid var(--border);cursor:pointer;background:'+(on?'rgba(122,92,196,.08)':'white')+'">'
+      + '<span style="width:20px;height:20px;border-radius:6px;border:2px solid '+(on?'#7a5cc4':'var(--border)')+';background:'+(on?'#7a5cc4':'white')+';color:#fff;font-size:12px;display:flex;align-items:center;justify-content:center;flex-shrink:0">'+(on?'✓':'')+'</span>'
+      + '<div style="flex:1;min-width:0"><div style="font-size:15px;font-weight:700">'+mpcEsc(w.jp)+' <span style="font-size:11px;font-weight:400;color:var(--mist)">'+mpcEsc(w.rom)+'</span></div>'
+      + '<div style="font-size:11.5px;color:var(--mist);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+mpcEsc(w.id_)+'</div></div>'
+      + (m?'<span style="font-size:10px;color:#2d7a4f;font-weight:700">✓ hafal</span>':'')
+      + '</div>';
+  }).join('');
+  var more=document.getElementById('mpc-pick-loadmore');
+  if(more){ more.style.display = all.length>shown.length ? 'block' : 'none'; more.textContent='Tampilkan lagi ('+(all.length-shown.length)+' kata)'; }
+}
+function mpcTogglePick(key){
+  var i=-1; mpcPickedWords.forEach(function(p,j){ if(p.key===key) i=j; });
+  if(i>=0) mpcPickedWords.splice(i,1);
+  else {
+    var lv=key.split('|')[0], id=key.slice(lv.length+1);
+    var w=(mpcPoolCache[lv]||[]).filter(function(x){ return String(x.id)===id; })[0];
+    if(w) mpcPickedWords.push({key:key, level:lv, w:w});
+  }
+  var c=document.getElementById('mpc-pick-count'); if(c) c.textContent=mpcPickedWords.length+' kata dipilih';
+  mpcRenderWordList();
+}
+function mpcMeanTokens(t){
+  return String(t||'').toLowerCase().replace(/\([^)]*\)|（[^）]*）/g,'').split(/[\/;,、，・]| atau /).map(function(x){ return x.trim(); }).filter(Boolean);
+}
+function mpcMeaningOverlap(a, b){
+  var A=mpcMeanTokens(a), B=mpcMeanTokens(b);
+  for(var i=0;i<A.length;i++) for(var j=0;j<B.length;j++){
+    var x=A[i], y=B[j];
+    if(x===y) return true;
+    if(x.length>=4 && y.length>=4 && (x.indexOf(y)>=0 || y.indexOf(x)>=0)) return true;
+  }
+  return false;
+}
+// Pengecoh arti tidak boleh bermakna sama/mirip dengan jawaban benar (mis. "bagus / baik" vs "bagus").
+function mpcFixArtiChoices(built, w, pool){
+  var right=built.choices[built.answer], used=[right];
+  var spare=pool.filter(function(x){ return x.id_ && x.jp!==w.jp; }).slice(); shuffle(spare);
+  built.choices=built.choices.map(function(c,i){
+    if(i===built.answer) return c;
+    var bad = !c || c==='—' || mpcMeaningOverlap(c,right) || used.some(function(u){ return u!==right && mpcMeaningOverlap(c,u); });
+    if(bad){
+      var alt=null;
+      for(var k=0;k<spare.length;k++){ var m=spare[k].id_; if(!mpcMeaningOverlap(m,right) && !used.some(function(u){ return mpcMeaningOverlap(m,u); })){ alt=m; spare.splice(k,1); break; } }
+      if(alt) c=alt;
+    }
+    used.push(c); return c;
+  });
+  return built;
+}
+function mpcRowIsBlank(id){
+  var q=document.getElementById('mpc-q-'+id); if(!q || q.value.trim()) return false;
+  for(var j=0;j<4;j++){ var c=document.getElementById('mpc-c-'+id+'-'+j); if(c && c.value.trim()) return false; }
+  return true;
+}
+function mpcAddPickedAsQuestions(){
+  if(!mpcPickedWords.length){ alert('Pilih dulu minimal 1 kata dari daftar.'); return; }
+  var dirEl=document.querySelector('input[name="mpc-pickdir"]:checked'); var dir=dirEl?dirEl.value:'arti';
+  var added=0, skipped=[];
+  mpcPickedWords.forEach(function(p){
+    var w=p.w, pool=mpcPoolCache[p.level]||[], built=null, q;
+    try{
+      if(dir==='baca'){
+        if(!/[一-龯㐀-䶿々]/.test(w.jp) || !w.rom){ skipped.push(w.jp); return; }
+        built=mpBuildBacaanChoices(w, pool); q='「'+w.jp+'」の読み方は？';
+      } else {
+        built=mpcFixArtiChoices(mpBuildArtiChoices(w, pool), w, pool); q='「'+w.jp+'」の意味は？';
+      }
+    }catch(e){ console.error('mpc build', e); }
+    if(!built || !built.choices || built.answer<0){ skipped.push(w.jp); return; }
+    var id;
+    if(mpCustomRowIds.length===1 && mpcRowIsBlank(mpCustomRowIds[0])) id=mpCustomRowIds[0];
+    else { mpCustomAddQuestion(); id=mpCustomRowIds[mpCustomRowIds.length-1]; }
+    document.getElementById('mpc-q-'+id).value=q;
+    if(w._prio && w._prio.ex && dir==='arti'){ try{ document.getElementById('mpc-p-'+id).value=prioPlain(w._prio.ex.s); }catch(e){} }
+    built.choices.slice(0,4).forEach(function(c,j){ var el=document.getElementById('mpc-c-'+id+'-'+j); if(el) el.value=c; });
+    var r=document.querySelector('input[name="mpc-ans-'+id+'"][value="'+built.answer+'"]'); if(r) r.checked=true;
+    added++;
+  });
+  mpcPickedWords=[];
+  var c=document.getElementById('mpc-pick-count'); if(c) c.textContent='0 kata dipilih';
+  mpcRenderWordList();
+  alert(added+' soal ditambahkan ke Daftar Soal.'+(skipped.length?'\n\nDilewati (tidak bisa jadi soal baca kanji): '+skipped.slice(0,15).join('、')+(skipped.length>15?'…':''):''));
+}
 
 function mpGoCustomSetup(){
   mpCustomRowIds=[]; mpCustomNextId=0;
@@ -9847,6 +10050,8 @@ async function mpCreateSession(){
   if(sources.indexOf('kanji')>=0 && !kanjiDirs.length){ alert('Pilih minimal 1 arah soal kanji.'); return; }
   var posEls=document.querySelectorAll('input[name="mp-posfilter"]:checked');
   var posFilters=[]; posEls.forEach(function(el){ posFilters.push(el.value); });
+  var prioModes=[]; document.querySelectorAll('input[name="mp-priomode"]:checked').forEach(function(el){ prioModes.push(el.value); });
+  if(sources.indexOf('prioritas')>=0 && !prioModes.length){ alert('Pilih minimal 1 mode soal Kosakata Prioritas.'); return; }
   var smEl=document.querySelector('input[name="mp-startmode"]:checked');
   var startMode = smEl ? smEl.value : 'host';
   var visEl=document.querySelector('input[name="mp-visibility"]:checked');
@@ -9859,7 +10064,7 @@ async function mpCreateSession(){
   if(btn) btn.disabled=true;
   if(statusEl){statusEl.textContent='⏳ Menyiapkan '+count+' soal…'; statusEl.style.display='block';}
   try{
-    var questions = await mpBuildQuestionPool(sources, levels, count, kanjiDirs, posFilters);
+    var questions = await mpBuildQuestionPool(sources, levels, count, kanjiDirs, posFilters, prioModes);
     if(questions.length<3){
       alert('Gagal menyiapkan soal (hanya '+questions.length+' soal ditemukan untuk '+mpLevelsLabel(levels)+'). Coba level atau sumber lain.');
       return;
@@ -20315,25 +20520,278 @@ function prioQuizAnswer(ci){
 // ---------- KUIS BARENG: sumber "⭐ Kosakata Prioritas" ----------
 // Campuran soal arti (pakai generator Kotoba yang sudah ada, termasuk penyamaan bahasa/bentuk)
 // dan soal ISI KALIMAT (文脈規定) dari contoh kalimat. Default: kelompok 1–3 (yang keluar di ujian N3).
-async function mpPrioQuestions(count){
-  var ok=await loadPrio(); if(!ok) return [];
-  var pool=PRIO_DATA.filter(function(w){ return w.g<=3; });
-  var withEx=pool.filter(function(w){ return !!w.ex; }); shuffle(withEx);
-  var nCloze=Math.min(withEx.length, Math.ceil(count/2));
+// ===== SOAL PRIORITAS GAYA JLPT (問題1 漢字読み / 問題2 表記 / 問題3 文脈規定) + mode jawab lain =====
+// Kalimat diambil dari contoh buatan (ex) & kalimat soal JLPT asli (real); target ditandai 【...】 dengan furigana {kanji|baca}.
+var PRIO_MODE_LABEL = {
+  jlpt1:'問題1 漢字読み', jlpt2:'問題2 表記', jlpt3:'問題3 文脈規定', arti:'Arti Kata', cloze:'Isi Kalimat',
+  read:'Baca Kanji', find:'Cari Kanji', pg2:'PG Dua Sisi', typeread:'Ketik Bacaan', typemeaning:'Ketik Arti',
+  typeeither:'Ketik Bebas', typeboth:'Ketik Dua-duanya', pecah:'Pecah Kanji'
+};
+function prioSegs(s){
+  var re=/\{([^|}]+)\|([^}]+)\}|【|】|[^{【】]+/g, m, part='before', out={before:[],target:[],after:[]};
+  while((m=re.exec(String(s||'')))){
+    var t=m[0];
+    if(t==='【'){ part='target'; continue; }
+    if(t==='】'){ part='after'; continue; }
+    if(m[1]) out[part].push({b:m[1], r:m[2]}); else out[part].push({b:t, r:null});
+  }
+  return out;
+}
+function prioTokBase(toks){ return toks.map(function(t){ return t.b; }).join(''); }
+function prioTokRead(toks){ return toks.map(function(t){ return t.r!=null ? t.r : t.b; }).join(''); }
+var PJ_KANJI_RE=/[一-鿿㐀-䶿々]/;
+function pjIsHira(s){ return /^[ぁ-ゟ]+$/.test(s); }
+function pjSentences(w){
+  var L=[]; if(w.ex && w.ex.s) L.push({s:w.ex.s, tr:w.ex.tr||'', src:'contoh'});
+  (w.real||[]).forEach(function(r){ if(r && r.s) L.push({s:r.s, tr:'', src:r.src||'JLPT'}); });
+  return L;
+}
+// --- mutasi bacaan (pengecoh khas 漢字読み: panjang/pendek, tenten, っ, ゅ/ょ, bacaan on lain) ---
+var PJ_DAKU={'か':'が','き':'ぎ','く':'ぐ','け':'げ','こ':'ご','さ':'ざ','し':'じ','す':'ず','せ':'ぜ','そ':'ぞ','た':'だ','ち':'ぢ','つ':'づ','て':'で','と':'ど','は':'ば','ひ':'び','ふ':'ぶ','へ':'べ','ほ':'ぼ'};
+var PJ_UNDAKU={}; Object.keys(PJ_DAKU).forEach(function(k){ PJ_UNDAKU[PJ_DAKU[k]]=k; });
+['ぱ','ぴ','ぷ','ぺ','ぽ'].forEach(function(p,i){ PJ_UNDAKU[p]='はひふへほ'.charAt(i); });
+var PJ_O='おこそとのほもよろごぞどぼぽょ', PJ_U='うくすつぬふむゆるぐずづぶぷゅ', PJ_E='えけせてねへめれげぜでべぺ';
+function pjMutations(r, bnd){
   var out=[];
-  withEx.slice(0,nCloze).forEach(function(w){
-    var q=prioMakeQuestion(w,'cloze',PRIO_DATA);
-    out.push({
-      q: prioPlain(w.ex.s,'cloze'),
-      choices: q.choices, answer: q.answer,
-      section: '⭐ Isi Kalimat (Prioritas)',
-      meaning: w.a,
-      expl: '「'+prioHead(w)+'」（'+w.k+'） = '+w.a+'. Kalimat lengkap: '+prioPlain(w.ex.s)+' — '+w.ex.tr
+  if(!r || !pjIsHira(r)) return out;
+  // vokal panjang/pendek (pengecoh paling khas 漢字読み): hapus う/い panjang, atau tambah う setelah vokal o / ゅ
+  for(var i=1;i<r.length;i++){
+    var p=r.charAt(i-1), c=r.charAt(i);
+    if(c==='う' && (PJ_O.indexOf(p)>=0 || PJ_U.indexOf(p)>=0)) out.push({t:'pendek', v:r.slice(0,i)+r.slice(i+1)});
+    if(c==='い' && PJ_E.indexOf(p)>=0) out.push({t:'pendek', v:r.slice(0,i)+r.slice(i+1)});
+  }
+  // tambah う hanya di AKHIR bacaan satu kanji (ど→どう, しょ→しょう), bukan di tengah (bukan もん→もうん)
+  (bnd||[r.length]).forEach(function(j){
+    var q=r.charAt(j-1), nx=r.charAt(j);
+    if((PJ_O.indexOf(q)>=0 || q==='ゅ') && nx!=='う' && nx!=='お') out.push({t:'panjang', v:r.slice(0,j)+'う'+r.slice(j)});
+  });
+  // tenten huruf pertama (tanpa ぢ/づ yang tidak dipakai di soal)
+  var f=r.charAt(0), dk=PJ_DAKU[f];
+  if(dk==='ぢ') dk='じ'; if(dk==='づ') dk='ず';
+  if(dk) out.push({t:'tenten', v:dk+r.slice(1)});
+  if(PJ_UNDAKU[f]) out.push({t:'tenten', v:PJ_UNDAKU[f]+r.slice(1)});
+  if('はひふへほ'.indexOf(f)>=0) out.push({t:'tenten', v:'ぱぴぷぺぽ'.charAt('はひふへほ'.indexOf(f))+r.slice(1)});
+  // っ realistis: く/つ/き/ち sebelum baris k/s/t/p jadi っ, dan sebaliknya っ dikembalikan jadi く/つ
+  var KST='かきくけこさしすせそたちつてとぱぴぷぺぽ';
+  for(var k=0;k<r.length-1;k++){
+    if('くつきち'.indexOf(r.charAt(k))>=0 && KST.indexOf(r.charAt(k+1))>=0 && k>0) out.push({t:'tsu', v:r.slice(0,k)+'っ'+r.slice(k+1)});
+    if(r.charAt(k)==='っ' && bnd && bnd.indexOf(k+1)>=0){ // っ di akhir bacaan kanji: kembalikan ke bentuk asli on-nya (けっ→けつ)
+      var ok=(bnd._on||{})[k+1]; if(ok) out.push({t:'tsu', v:r.slice(0,k)+ok+r.slice(k+1)});
+    }
+  }
+  // ゅ <-> ょ (じゅう/じょう, しゅ/しょ)
+  if(r.indexOf('ゅ')>=0) out.push({t:'yoon', v:r.replace('ゅ','ょ')});
+  if(r.indexOf('ょ')>=0) out.push({t:'yoon', v:r.replace('ょ','ゅ')});
+  return out.filter(function(o){ return o.v && o.v!==r && !/^[っんゃゅょー]/.test(o.v); });
+}
+function pjK2H(s){ return String(s||'').replace(/[ァ-ヶ]/g,function(c){ return String.fromCharCode(c.charCodeAt(0)-0x60); }); }
+function pjAltReadings(kj, cur){
+  var e=(typeof KANJI_READ!=='undefined')?KANJI_READ[kj]:null; if(!e) return [];
+  return (e[0]||[]).map(pjK2H).filter(function(x){ return x && x!==cur && pjIsHira(x); });
+}
+function pjBuildReadDistractors(target){
+  // target: token list; variasi satu token furigana sekaligus, okurigana tetap sama
+  var right=prioTokRead(target), cands={}, byType={};
+  target.forEach(function(t,ti){
+    if(t.r==null || !PJ_KANJI_RE.test(t.b)) return;
+    var bnd=[t.r.length];
+    if(t.b.length===2){
+      var on0=pjAltReadings(t.b.charAt(0)), on1=pjAltReadings(t.b.charAt(1));
+      on0.forEach(function(x){
+        var cut=null, last=null;
+        if(t.r.indexOf(x)===0 && on1.indexOf(t.r.slice(x.length))>=0){ cut=x.length; }
+        else if(/[くつきち]$/.test(x) && t.r.indexOf(x.slice(0,-1)+'っ')===0 && on1.indexOf(t.r.slice(x.length))>=0){ cut=x.length; last=x.slice(-1); }
+        if(cut!=null && bnd.indexOf(cut)<0){ bnd.unshift(cut); if(last){ bnd._on=bnd._on||{}; bnd._on[cut]=last; } }
+      });
+    }
+    var vars=pjMutations(t.r, bnd);
+    if(t.b.length===1 && pjAltReadings(t.b).indexOf(t.r)>=0) pjAltReadings(t.b, t.r).forEach(function(a){ vars.push({t:'on', v:a}); }); // hanya kalau memang dibaca on (金 きん→ごん), bukan kun (建つ)
+    if(t.b.length===2){ // 2 kanji dibaca on+on (mis. 直接 ちょく+せつ): ganti bacaan on SALAH SATU kanji (→ じきせつ)
+      var a0=pjAltReadings(t.b.charAt(0)), a1=pjAltReadings(t.b.charAt(1));
+      a0.forEach(function(x){ a1.forEach(function(y){
+        if(x+y!==t.r && !(/[くつきち]$/.test(x) && x.slice(0,-1)+'っ'+y===t.r)) return;
+        pjAltReadings(t.b.charAt(0), x).forEach(function(x2){ vars.push({t:'on', v:x2+y}); });
+        pjAltReadings(t.b.charAt(1), y).forEach(function(y2){ vars.push({t:'on', v:x+y2}); });
+      }); });
+    }
+    vars.forEach(function(v){
+      var full=target.map(function(u,ui){ return ui===ti ? v.v : (u.r!=null?u.r:u.b); }).join('');
+      if(full===right || cands[full]) return;
+      cands[full]=v.t; (byType[v.t]=byType[v.t]||[]).push(full);
     });
   });
-  var rest=pool.map(function(w){ return {jp:prioHead(w), rom:w.k, id_:w.a}; });
+  // ambil bervariasi: maksimal 1 per jenis dulu, sisanya acak
+  var types=Object.keys(byType); shuffle(types);
+  var pick=[];
+  types.forEach(function(ty){ if(pick.length<3){ var L=byType[ty]; pick.push(L[Math.floor(Math.random()*L.length)]); } });
+  var rest=Object.keys(cands).filter(function(x){ return pick.indexOf(x)<0; }); shuffle(rest);
+  while(pick.length<3 && rest.length) pick.push(rest.shift());
+  return pick.length>=3 ? pick.slice(0,3) : null;
+}
+var _pjOnIdx=null, _pjTwinIdx=null;
+function pjKanjiIndexes(){
+  if(_pjOnIdx) return;
+  _pjOnIdx={}; _pjTwinIdx={};
+  if(typeof KANJI_READ!=='undefined') Object.keys(KANJI_READ).forEach(function(k){
+    (KANJI_READ[k][0]||[]).forEach(function(on){ var h=pjK2H(on); (_pjOnIdx[h]=_pjOnIdx[h]||[]).push(k); });
+  });
+  if(typeof TWIN_SETS!=='undefined') TWIN_SETS.forEach(function(st){
+    (st.g||[]).forEach(function(k){ _pjTwinIdx[k]=(_pjTwinIdx[k]||[]).concat(st.g.filter(function(x){ return x!==k; })); });
+  });
+}
+function pjBuildKanjiDistractors(target){
+  // 表記: ganti 1 kanji dengan kanji berbunyi sama (homofon) atau kanji yang bentuknya mirip
+  pjKanjiIndexes();
+  var right=prioTokBase(target), cands=[];
+  target.forEach(function(t,ti){
+    if(!PJ_KANJI_RE.test(t.b)) return;
+    for(var ci=0;ci<t.b.length;ci++){
+      var kj=t.b.charAt(ci), subs=[];
+      var e=(typeof KANJI_READ!=='undefined')?KANJI_READ[kj]:null;
+      if(e) (e[0]||[]).forEach(function(on){ (_pjOnIdx[pjK2H(on)]||[]).forEach(function(k){ if(k!==kj) subs.push(k); }); });
+      (_pjTwinIdx[kj]||[]).forEach(function(k){ subs.push(k); });
+      subs.forEach(function(k){
+        var nb=t.b.slice(0,ci)+k+t.b.slice(ci+1);
+        var full=target.map(function(u,ui){ return ui===ti?nb:u.b; }).join('');
+        if(full!==right && cands.indexOf(full)<0) cands.push(full);
+      });
+    }
+  });
+  shuffle(cands);
+  // utamakan pengecoh yang beda posisi kanji supaya tidak monoton
+  return cands.length>=3 ? cands.slice(0,3) : null;
+}
+function pjReadingOk(w, seg){
+  // furigana target harus cocok dengan bacaan resmi kata (cegah soal お金 dibaca きん dsb.)
+  var h=prioHead(w), k=String(w.k||'');
+  if(/[\s(（]/.test(k)) return true;
+  var tail=(h.match(/[\u3041-\u309f]+$/)||[''])[0];
+  var hk=tail?h.slice(0,-tail.length):h, kr=(tail && k.slice(-tail.length)===tail)?k.slice(0,-tail.length):k;
+  var rub=seg.target.filter(function(t){ return t.r!=null; });
+  var base=rub.map(function(t){return t.b;}).join(''), read=rub.map(function(t){return t.r;}).join('');
+  return !(base===hk && read!==kr);
+}
+function pjCleanTarget(seg){
+  return seg.target.length && seg.target.every(function(t){ return t.r!=null ? true : /^[\u3041-\u309f]*$/.test(t.b); });
+}
+function pjGoodSentence(seg){
+  var all=pjPlainSentence(seg);
+  return all.length>=12 && !/[／\/｜|]/.test(all);
+}
+function pjPlainSentence(seg){ return prioTokBase(seg.before)+prioTokBase(seg.target)+prioTokBase(seg.after); }
+function pjQuestionJ1(w){
+  var S=pjSentences(w); shuffle(S);
+  for(var i=0;i<S.length;i++){
+    var seg=prioSegs(S[i].s); if(!pjCleanTarget(seg) || !pjGoodSentence(seg) || !pjReadingOk(w, seg)) continue;
+    var base=prioTokBase(seg.target); if(!PJ_KANJI_RE.test(base)) continue;
+    var sent=pjPlainSentence(seg), pre=prioTokBase(seg.before);
+    if(sent.indexOf(base)!==pre.length) continue; // garis bawah harus jatuh di kata target
+    var ds=pjBuildReadDistractors(seg.target); if(!ds) continue;
+    var right=prioTokRead(seg.target), ch=ds.concat([right]); shuffle(ch);
+    return { q:sent, underline:base, choices:ch, answer:ch.indexOf(right), instr:MP_MONDAI_INSTR['漢字読み'],
+      section:'⭐ '+PRIO_MODE_LABEL.jlpt1+' (Prioritas)', meaning:w.a,
+      expl:'「'+base+'」 dibaca 「'+right+'」 — '+prioHead(w)+' = '+w.a+(S[i].tr?'. '+S[i].tr:'') };
+  }
+  return null;
+}
+function pjQuestionJ2(w){
+  var S=pjSentences(w); shuffle(S);
+  for(var i=0;i<S.length;i++){
+    var seg=prioSegs(S[i].s); if(!pjCleanTarget(seg) || !pjGoodSentence(seg) || !pjReadingOk(w, seg)) continue;
+    var base=prioTokBase(seg.target), read=prioTokRead(seg.target);
+    if(!PJ_KANJI_RE.test(base) || !pjIsHira(read)) continue;
+    var pre=prioTokBase(seg.before), sent=pre+read+prioTokBase(seg.after);
+    if(sent.indexOf(read)!==pre.length) continue;
+    var ds=pjBuildKanjiDistractors(seg.target); if(!ds) continue;
+    var ch=ds.concat([base]); shuffle(ch);
+    return { q:sent, underline:read, choices:ch, answer:ch.indexOf(base), instr:MP_MONDAI_INSTR['表記'],
+      section:'⭐ '+PRIO_MODE_LABEL.jlpt2+' (Prioritas)', meaning:w.a,
+      expl:'「'+read+'」 ditulis 「'+base+'」 — '+w.a+(S[i].tr?'. '+S[i].tr:'') };
+  }
+  return null;
+}
+function pjWordKind(h){
+  var p='meishi'; try{ p=posOf({jp:h}); }catch(e){}
+  if(p==='doushi') return 'verb';
+  if(p==='keiyoushi') return 'iadj';
+  if(p==='fukushi'||p==='setsuzoku'||p==='pola') return p;
+  return 'noun';
+}
+function pjScript(h){ return PJ_KANJI_RE.test(h)?'kanji':(/^[\u30a0-\u30ff]+$/.test(h)?'kata':'hira'); }
+function pjInflect(head, kind, targetBase, otherHead){
+  // bentuk 'otherHead' disamakan dengan bentuk target (mis. なりました -> かわりました)
+  if(targetBase===head) return otherHead;
+  if(kind==='verb'){
+    var f=conjugateAll(head), g=conjugateAll(otherHead); if(!f||!g) return null;
+    for(var k in f){ if(f[k]===targetBase && g[k]) return g[k]; }
+    // bentuk lain (mis. なりそう / なって) — cocokkan lewat bentuk -masu atau -te
+    var stems=[['te','て'],['ta','た'],['nai','ない'],['masu','ます']];
+    for(var s=0;s<stems.length;s++){
+      var key=stems[s][0], suf=stems[s][1], fs=f[key]; if(!fs) continue;
+      var st=fs.slice(0,fs.length-suf.length);
+      if(targetBase.indexOf(st)===0 && g[key]) return g[key].slice(0,g[key].length-suf.length)+targetBase.slice(st.length);
+    }
+    return null;
+  }
+  if(kind==='iadj'){
+    var st1=head.slice(0,-1);
+    if(targetBase.indexOf(st1)===0) return otherHead.slice(0,-1)+targetBase.slice(st1.length);
+    return null;
+  }
+  if(targetBase.indexOf(head)===0) return otherHead+targetBase.slice(head.length);
+  return null;
+}
+function pjQuestionJ3(w, pool){
+  var head=prioHead(w), kind=pjWordKind(head);
+  var S=pjSentences(w); shuffle(S);
+  var scr=pjScript(head); var others=pool.filter(function(x){ var h=prioHead(x); return x!==w && h.length>=2 && h!==head && x.g<=4 && pjWordKind(h)===kind && pjScript(h)===scr && !x.en && !(typeof mpcMeaningOverlap==='function' && mpcMeaningOverlap(x.a,w.a)); });
+  shuffle(others);
+  for(var i=0;i<S.length;i++){
+    var seg=prioSegs(S[i].s); if(!seg.target.length || !pjGoodSentence(seg)) continue;
+    var tb=prioTokBase(seg.target);
+    var ds=[];
+    for(var j=0;j<others.length && ds.length<3;j++){
+      var f=pjInflect(head, kind, tb, prioHead(others[j]));
+      if(f && f!==tb && ds.indexOf(f)<0) ds.push(f);
+    }
+    if(ds.length<3) continue;
+    var ch=ds.concat([tb]); shuffle(ch);
+    var sent=prioTokBase(seg.before)+'（　　）'+prioTokBase(seg.after);
+    return { q:sent, choices:ch, answer:ch.indexOf(tb), instr:MP_MONDAI_INSTR['語彙'],
+      section:'⭐ '+PRIO_MODE_LABEL.jlpt3+' (Prioritas)', meaning:w.a,
+      expl:'Jawaban: 「'+tb+'」（'+prioTokRead(seg.target)+'） — '+head+' = '+w.a+(S[i].tr?'. '+S[i].tr:'') };
+  }
+  return null;
+}
+function pjMapWords(list){ return list.map(function(w){ return {id:'prio_'+w.i, jp:prioHead(w), rom:w.k, id_:w.a, _prio:w}; }); }
+async function mpPrioQuestions(count, modes){
+  var ok=await loadPrio(); if(!ok) return [];
+  if(!modes || !modes.length) modes=['cloze','arti'];
+  var pool=PRIO_DATA.filter(function(w){ return w.g<=3; });
+  var all=PRIO_DATA;
   mpRefreshIndoVocab();
-  out=out.concat(mpKotobaQuestions(rest, count-out.length).map(function(q){ q.section='⭐ Arti Kata (Prioritas)'; return q; }));
+  var per=Math.ceil(count/modes.length), out=[];
+  async function gen(mode, want){
+    var res=[], cand=pool.slice(); shuffle(cand);
+    if(mode==='jlpt1'||mode==='jlpt2'||mode==='jlpt3'){
+      var fn = mode==='jlpt1'?pjQuestionJ1 : mode==='jlpt2'?pjQuestionJ2 : function(w){ return pjQuestionJ3(w, all); };
+      for(var i=0;i<cand.length && res.length<want;i++){ var q=null; try{ q=fn(cand[i]); }catch(e){ console.error('prio jlpt', e); } if(q) res.push(q); }
+      return res;
+    }
+    if(mode==='cloze'){
+      cand.filter(function(w){ return !!w.ex; }).slice(0,want).forEach(function(w){
+        var q=prioMakeQuestion(w,'cloze',PRIO_DATA);
+        res.push({ q:prioPlain(w.ex.s,'cloze'), choices:q.choices, answer:q.answer, section:'⭐ Isi Kalimat (Prioritas)', meaning:w.a,
+          expl:'「'+prioHead(w)+'」（'+w.k+'） = '+w.a+'. Kalimat lengkap: '+prioPlain(w.ex.s)+' — '+w.ex.tr });
+      });
+      return res;
+    }
+    var mapped=pjMapWords(pool.filter(function(w){ return !w.en; })), dpool=pjMapWords(all.filter(function(w){ return !w.en; }));
+    if(mode==='arti') return mpKotobaQuestions(mapped, want).map(function(q){ q.section='⭐ Arti Kata (Prioritas)'; return q; });
+    // mode jawab gaya Kanji: read / find / pg2 / typeread / typemeaning / typeeither / typeboth / pecah
+    return mpKanjiQuestions(mapped, want, mode, dpool).map(function(q){ q.section='⭐ '+(PRIO_MODE_LABEL[mode]||mode)+' (Prioritas)'; return q; });
+  }
+  for(var m=0;m<modes.length;m++) out=out.concat(await gen(modes[m], per));
   shuffle(out);
   return out.slice(0,count);
 }
