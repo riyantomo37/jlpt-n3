@@ -1104,7 +1104,7 @@ header:has(.user-menu.open) { z-index:1000; }
         <span class="user-name" id="user-name">...</span>
         <span id="level-badge" onclick="event.stopPropagation();gotoScreen('levelreward')" title="Level & Reward" style="font-size:10px;font-weight:800;background:linear-gradient(135deg,var(--gold),#c98a1f);color:white;padding:2px 7px;border-radius:8px;cursor:pointer;letter-spacing:.3px">Lv.1</span>
         <span class="sync-badge" id="sync-badge">● sync</span>
-        <span id="build-dot" title="Indikator update: warnanya ganti tiap ada versi baru dari Claude" style="display:inline-block;width:11px;height:11px;border-radius:50%;background:#2da050;margin-left:6px;vertical-align:middle;border:2px solid white;box-shadow:0 0 0 1px rgba(0,0,0,.15)"></span>
+        <span id="build-dot" title="Indikator update: warnanya ganti tiap ada versi baru dari Claude" style="display:inline-block;width:11px;height:11px;border-radius:50%;background:#c0392b;margin-left:6px;vertical-align:middle;border:2px solid white;box-shadow:0 0 0 1px rgba(0,0,0,.15)"></span>
         <!-- 🔴🟢 CLAUDE: WAJIB toggle warna build-dot di atas SETIAP kali file ini dikirim ulang —
              merah #c0392b <-> hijau #2da050 gantian. Ini satu-satunya cara Riyan verifikasi
              upload-nya beneran ke-deploy. JANGAN LUPA, cek baris ini di awal SETIAP delivery. -->
@@ -1288,6 +1288,11 @@ header:has(.user-menu.open) { z-index:1000; }
       <div id="ov-prio-count" style="font-size:11px;opacity:.9;margin-top:4px">0 / 1.350 hafal</div>
     </div>
     <div style="font-size:22px;opacity:.85">›</div>
+  </div>
+  <div onclick="gotoScreen('kalender')" style="cursor:pointer;background:white;border:1.5px solid var(--border);border-radius:14px;padding:12px 16px;margin-bottom:16px;display:flex;align-items:center;gap:12px">
+    <div style="font-size:26px">📅</div>
+    <div style="flex:1"><div style="font-size:14px;font-weight:800">Kalender Aktivitas</div><div id="ov-act-today" style="font-size:11.5px;color:var(--mist)">Hari ini: 0 mnt</div></div>
+    <div style="font-size:20px;color:var(--mist)">›</div>
   </div>
   <div class="section-title" style="margin-bottom:12px">Progress <span id="ov-level-name" style="color:var(--ink)"></span></div>
   <!-- Progress Hafalan cards (sama seperti tab Progress) -->
@@ -2197,6 +2202,13 @@ header:has(.user-menu.open) { z-index:1000; }
 </div>
 
 <!-- ====== REVIEW SCREEN ====== -->
+<div id="screen-kalender" class="screen">
+  <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px">
+    <button onclick="gotoScreen('overview')" style="border:1.5px solid var(--border);background:white;border-radius:10px;padding:6px 12px;font-family:inherit;cursor:pointer">← Kembali</button>
+    <div><div style="font-size:18px;font-weight:800">📅 Kalender Aktivitas</div><div style="font-size:11px;color:var(--mist)">Waktu belajar aktif &amp; apa saja yang kamu kerjakan tiap hari</div></div>
+  </div>
+  <div id="kal-body"></div>
+</div>
 <div id="screen-review" class="screen">
   <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
     <div class="section-title" style="margin:0" id="review-title">📊 Progress Hafalan</div>
@@ -6139,6 +6151,7 @@ async function loadFromFirestore() {
       if (data.todayDate === new Date().toDateString()) {
         todayCount = data.todayCount || 0;
       }
+      try{ if(data.activityLog) actMergeCloud(data.activityLog); }catch(e){}
       if (Array.isArray(data.examHistory)) {
         // Merge cloud + local, dedupe by id, keep most recent 50
         var byId = {};
@@ -6212,6 +6225,7 @@ async function saveToFirestore() {
       customStudySets: customStudySets,
       customStudyActiveSet: customStudyActiveSet,
       kalimatBuatan: (kalimatBuatan||[]).slice(-60), // cap 60 biar gak nabrak limit dokumen 1MB
+      activityLog: actForCloud(),
       lastSeen: firebase.firestore.FieldValue.serverTimestamp(),
     }, { merge: true });
     try{ localStorage.removeItem('n3_dirty'); }catch(e){}
@@ -7013,6 +7027,7 @@ function gotoScreen(name) {
   if (name === 'jalur') renderJalurBelajar();
   if (name === 'katema') updateKatema();
   if (name === 'prio') updatePrio();
+  if (name === 'kalender') renderKalender();
   if (name === 'flashmenu') updateFlashMenu();
   if (name === 'kanjimenu') updateKanjiMenu();
   if (name === 'kotoba') renderKotobaTab();
@@ -7832,6 +7847,7 @@ function renderLevelScreen(){
 
 
 function updateOverview() {
+  try{ var _oa=document.getElementById('ov-act-today'); if(_oa) _oa.textContent='Hari ini: '+actFmtDur(actDay().s); }catch(e){}
   try {
     var _pd = 0; for (var _k in mastered) { if (_k.indexOf('prio_')===0 && mastered[_k]) _pd++; }
     var _pt = (typeof PRIO_DATA!=='undefined' && PRIO_DATA && PRIO_DATA.length) ? PRIO_DATA.length : 1350;
@@ -20856,6 +20872,212 @@ function setKonteks(elId, w){
   var h = konteksHtml(konteksOf(w));
   el.innerHTML = h; el.style.display = h ? 'block' : 'none';
 }
+
+// ===== 📅 KALENDER AKTIVITAS — catat waktu belajar aktif & apa saja yang dikerjakan per hari =====
+// Struktur: ACT_LOG['YYYY-MM-DD'] = { s: detik aktif, c: {kategori: jumlah}, v: {layar: kali dibuka}, l: [[jam, teks, x]] }
+var ACT_LOG = (function(){ try{ return JSON.parse(localStorage.getItem('n3_activity')||'{}')||{}; }catch(e){ return {}; } })();
+var ACT_TICK = 20;               // detik per tick
+var _actLastInput = Date.now(), _actSinceCloud = 0, _actCalMonth = null, _actCalSel = null;
+var ACT_CAT = {
+  flash:   ['🃏','Kartu flashcard dinilai'], hafal:['✅','Ditandai hafal'], kanji:['🈶','Kartu kanji dinilai'],
+  prio:    ['⭐','Kartu Prioritas'], prioquiz:['⭐','Soal kuis Prioritas'], mp:['🎮','Soal Kuis Bareng'], mpok:['🎯','Kuis Bareng benar'],
+  bunpo:   ['📘','Pola bunpou dipelajari'], bunpoquiz:['📘','Kuis bunpou selesai'], ujian:['📝','Sesi ujian/latihan'], soal:['📝','Soal ujian dikerjakan']
+};
+var ACT_SCREEN = {
+  overview:'Dashboard', prio:'⭐ Kosakata Prioritas', flash:'Flashcard', kanjiflash:'Flashcard Kanji', flashmenu:'Menu Flashcard', kotoba:'Kotoba',
+  kanjimenu:'Kanji', bunpomenu:'Bunpou', bunpostudy:'Belajar Bunpou', bunpoquiz:'Kuis Bunpou', exam:'Ujian', review:'Progress', jalur:'Jalur Belajar',
+  katema:'Kalimat per Tema', custom:'Custom Belajar', mphome:'Kuis Bareng', mpplay:'Main Kuis Bareng', mphostsetup:'Buat Kuis', mpcustomsetup:'Kuis Custom',
+  leaderboard:'Ranking', ai:'Sensei AI', katsuyomenu:'Katsuyō', keiseimenu:'Bunyi Kanji', onomenu:'Onomatope', dialectmenu:'Dialek', kazumenu:'Angka', kalender:'Kalender'
+};
+function actKey(d){ d=d||new Date(); return d.getFullYear()+'-'+('0'+(d.getMonth()+1)).slice(-2)+'-'+('0'+d.getDate()).slice(-2); }
+function actDay(k){ k=k||actKey(); var e=ACT_LOG[k]; if(!e){ e=ACT_LOG[k]={s:0,c:{},v:{},l:[]}; } e.c=e.c||{}; e.v=e.v||{}; e.l=e.l||[]; return e; }
+function actPersist(){
+  try{
+    var keys=Object.keys(ACT_LOG).sort(); if(keys.length>400) keys.slice(0,keys.length-400).forEach(function(k){ delete ACT_LOG[k]; });
+    localStorage.setItem('n3_activity', JSON.stringify(ACT_LOG));
+  }catch(e){}
+}
+function actCount(cat, n){ var d=actDay(); d.c[cat]=(d.c[cat]||0)+(n||1); actPersist(); }
+function actNote(text){
+  var d=actDay(), t=new Date(), hm=('0'+t.getHours()).slice(-2)+':'+('0'+t.getMinutes()).slice(-2);
+  var last=d.l[d.l.length-1];
+  if(last && last[1]===text){ last[2]=(last[2]||1)+1; last[0]=hm; }
+  else { d.l.push([hm, text, 1]); if(d.l.length>60) d.l.splice(0, d.l.length-60); }
+  actPersist();
+}
+function actFmtDur(sec){
+  sec=Math.round(sec||0); if(sec<60) return sec>0?'<1 mnt':'0 mnt';
+  var m=Math.round(sec/60), h=Math.floor(m/60); return h? (h+' j '+(m%60)+' mnt') : (m+' mnt');
+}
+// waktu aktif: hanya dihitung kalau tab terlihat & ada interaksi dalam 90 detik terakhir
+['pointerdown','keydown','touchstart','wheel','scroll'].forEach(function(ev){
+  window.addEventListener(ev, function(){ _actLastInput=Date.now(); }, {passive:true, capture:true});
+});
+setInterval(function(){
+  if(document.visibilityState!=='visible') return;
+  if(Date.now()-_actLastInput > 90000) return;
+  actDay().s += ACT_TICK; actPersist();
+  _actSinceCloud += ACT_TICK;
+  if(_actSinceCloud>=300 && typeof currentUser!=='undefined' && currentUser){ _actSinceCloud=0; try{ save(); }catch(e){} }
+  var el=document.getElementById('ov-act-today'); if(el) el.textContent='Hari ini: '+actFmtDur(actDay().s);
+}, ACT_TICK*1000);
+// versi ringkas untuk cloud (dokumen Firestore dibatasi 1MB): 180 hari terakhir, catatan per hari maks 30
+function actForCloud(){
+  var out={}, keys=Object.keys(ACT_LOG).sort().slice(-180);
+  keys.forEach(function(k){ var e=ACT_LOG[k]; out[k]={s:e.s||0, c:e.c||{}, v:e.v||{}, l:(e.l||[]).slice(-30)}; });
+  return out;
+}
+function actMergeCloud(remote){
+  if(!remote || typeof remote!=='object') return;
+  Object.keys(remote).forEach(function(k){
+    var r=remote[k]||{}, l=ACT_LOG[k];
+    if(!l){ ACT_LOG[k]={s:r.s||0,c:r.c||{},v:r.v||{},l:r.l||[]}; return; }
+    l.s=Math.max(l.s||0, r.s||0);
+    ['c','v'].forEach(function(f){ l[f]=l[f]||{}; var R=r[f]||{}; Object.keys(R).forEach(function(x){ l[f][x]=Math.max(l[f][x]||0, R[x]||0); }); });
+    if((r.l||[]).length > (l.l||[]).length) l.l=r.l;
+  });
+  actPersist();
+}
+// ---- sambungkan ke fungsi-fungsi yang sudah ada (dibungkus, logika asli tidak diubah) ----
+function actWrap(name, before){
+  var orig=window[name]; if(typeof orig!=='function' || orig._actWrapped) return;
+  var w=function(){ try{ before.apply(this, arguments); }catch(e){} return orig.apply(this, arguments); };
+  w._actWrapped=true; if(orig._fsWrapped) w._fsWrapped=true; window[name]=w;
+}
+function actWrapAfter(name, after){
+  var orig=window[name]; if(typeof orig!=='function' || orig._actWrapped) return;
+  var w=function(){ var r=orig.apply(this, arguments); try{ after.apply(this, arguments); }catch(e){} return r; };
+  w._actWrapped=true; if(orig._fsWrapped) w._fsWrapped=true; window[name]=w;
+}
+function actInstallHooks(){
+  actWrap('gotoScreen', function(name){
+    var d=actDay(); d.v[name]=(d.v[name]||0)+1; actPersist();
+    if(ACT_SCREEN[name] && ['overview','kalender','review','mpplay'].indexOf(name)<0) actNote('Buka '+ACT_SCREEN[name]);
+  });
+  actWrap('markCard', function(isHafal){
+    var w=(typeof sessionQueue!=='undefined')?sessionQueue[sessionIdx]:null; if(!w) return;
+    actCount('flash'); if(isHafal) actCount('hafal');
+  });
+  actWrap('markKanjiFlash', function(h){ actCount('kanji'); if(h) actCount('hafal'); });
+  actWrap('prioFlashMark', function(ok){ actCount('prio'); if(ok) actCount('hafal'); });
+  actWrap('prioQuizAnswer', function(){ actCount('prioquiz'); });
+  actWrapAfter('mpFinalizeAnswer', function(){
+    actCount('mp');
+    try{ var lg=mpState.answerLog, last=lg[lg.length-1]; if(last && last.correct) actCount('mpok'); }catch(e){}
+  });
+  actWrap('markBunpoLearned', function(ids){ actCount('bunpo', (ids&&ids.length)||1); actNote('Belajar bunpou: '+((ids&&ids.length)||1)+' pola'); });
+  actWrap('finishBunpoQuiz', function(){ actCount('bunpoquiz'); actNote('Selesai kuis bunpou'); });
+  actWrapAfter('submitSection', function(){
+    var e=(examHistory||[])[examHistory.length-1];
+    if(e && e.ts && Date.now()-new Date(e.ts).getTime()<10000){ actCount('ujian'); actCount('soal', e.total||0); actNote('Ujian '+(e.type||'')+' '+(e.level||'')+': '+e.score+'/'+e.total+' ('+e.pct+'%)'); }
+  });
+  ['startStudyBunpo','startStudyPos','startStudy','startOnoFlash','startDialectFlash','startExtFlashAll','startKazuFlash',
+   'startCustomStudyFlash','startSrsReview','startKanjiFlashBunpo','startKanjiFlashPos','startKanjiFlash','startCustomStudyKanjiFlash'
+  ].forEach(function(n){
+    var label={startSrsReview:'Review SRS',startStudyBunpo:'Flashcard bunpou',startKanjiFlash:'Flashcard kanji',startKanjiFlashPos:'Flashcard kanji (jenis kata)',
+      startKanjiFlashBunpo:'Flashcard kanji bunpou',startStudyPos:'Flashcard jenis kata',startCustomStudyFlash:'Flashcard set custom',startCustomStudyKanjiFlash:'Flashcard kanji set custom',
+      startOnoFlash:'Flashcard onomatope',startDialectFlash:'Flashcard dialek',startKazuFlash:'Flashcard angka',startExtFlashAll:'Flashcard semua'}[n]||'Flashcard';
+    actWrap(n, function(arg){ actNote('Mulai '+label+(typeof arg==='string'&&arg.length<20?' ('+arg+')':'')+' · '+(typeof currentJLPT!=='undefined'?currentJLPT:'')); });
+  });
+}
+// ---- layar kalender ----
+function actExamsByDay(){
+  var m={}; (typeof examHistory!=='undefined'?examHistory:[]).forEach(function(e){ if(!e||!e.ts) return; var k=actKey(new Date(e.ts)); (m[k]=m[k]||[]).push(e); });
+  return m;
+}
+function actLevel(sec){ var m=(sec||0)/60; return m<=0?0 : m<10?1 : m<30?2 : m<60?3 : 4; }
+var ACT_COLORS=['var(--paper,#f4efe6)','#f5d9a8','#e9a95a','#d0702e','#a33a1c'];
+function renderKalender(){
+  var host=document.getElementById('kal-body'); if(!host) return;
+  var now=new Date(); if(!_actCalMonth) _actCalMonth=new Date(now.getFullYear(), now.getMonth(), 1);
+  var y=_actCalMonth.getFullYear(), mo=_actCalMonth.getMonth();
+  var exams=actExamsByDay();
+  var first=new Date(y,mo,1), days=new Date(y,mo+1,0).getDate(), lead=(first.getDay()+6)%7; // Senin = kolom pertama
+  var monTot={s:0,active:0,flash:0,soal:0,hafal:0};
+  for(var dd=1; dd<=days; dd++){
+    var k=actKey(new Date(y,mo,dd)), e=ACT_LOG[k], ex=exams[k]||[];
+    var c=(e&&e.c)||{};
+    if((e&&e.s>0) || ex.length) monTot.active++;
+    monTot.s+=(e&&e.s)||0; monTot.flash+=(c.flash||0)+(c.kanji||0)+(c.prio||0); monTot.hafal+=c.hafal||0;
+    monTot.soal+=(c.mp||0)+(c.prioquiz||0)+(c.soal||0) + (e?0:ex.reduce(function(a,x){return a+(x.total||0);},0));
+  }
+  var mNames=['Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember'];
+  var h='';
+  h+='<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">'
+    +'<button onclick="actCalNav(-1)" style="width:40px;height:40px;border-radius:12px;border:1.5px solid var(--border);background:white;font-size:18px;cursor:pointer">‹</button>'
+    +'<div style="font-size:18px;font-weight:800">'+mNames[mo]+' '+y+'</div>'
+    +'<button onclick="actCalNav(1)" style="width:40px;height:40px;border-radius:12px;border:1.5px solid var(--border);background:white;font-size:18px;cursor:pointer">›</button></div>';
+  function chip(v,l){ return '<div style="flex:1;min-width:30%;background:white;border:1.5px solid var(--border);border-radius:12px;padding:9px 6px;text-align:center"><div style="font-size:16px;font-weight:800">'+v+'</div><div style="font-size:10px;color:var(--mist);margin-top:2px">'+l+'</div></div>'; }
+  h+='<div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:14px">'
+    +chip(actFmtDur(monTot.s),'waktu belajar')+chip(monTot.active+' hari','hari aktif')+chip('🔥 '+((typeof streak!=='undefined'&&streak)||0),'streak sekarang')
+    +chip(monTot.flash,'kartu dinilai')+chip(monTot.hafal,'ditandai hafal')+chip(monTot.soal,'soal dikerjakan')+'</div>';
+  h+='<div style="display:grid;grid-template-columns:repeat(7,1fr);gap:5px;text-align:center;font-size:10px;font-weight:800;color:var(--mist);margin-bottom:5px">'
+    +['Sen','Sel','Rab','Kam','Jum','Sab','Min'].map(function(x){return '<div>'+x+'</div>';}).join('')+'</div>';
+  h+='<div style="display:grid;grid-template-columns:repeat(7,1fr);gap:5px">';
+  for(var i=0;i<lead;i++) h+='<div></div>';
+  var todayK=actKey();
+  for(var d=1; d<=days; d++){
+    var key=actKey(new Date(y,mo,d)), ent=ACT_LOG[key], lv=actLevel(ent&&ent.s), exn=(exams[key]||[]).length;
+    if(!lv && exn) lv=1;
+    var sel=key===_actCalSel, today=key===todayK;
+    h+='<button onclick="actCalSelect(\''+key+'\')" style="aspect-ratio:1;border-radius:10px;border:'+(sel?'2.5px solid #2c3e50':today?'2px solid #c0392b':'1px solid var(--border)')
+      +';background:'+ACT_COLORS[lv]+';color:'+(lv>=3?'#fff':'var(--ink,#222)')+';font-family:inherit;font-size:13px;font-weight:700;cursor:pointer;position:relative;padding:0">'+d
+      +(exn?'<span style="position:absolute;bottom:3px;left:50%;transform:translateX(-50%);font-size:8px">📝</span>':'')+'</button>';
+  }
+  h+='</div>';
+  h+='<div style="display:flex;align-items:center;gap:4px;justify-content:flex-end;margin-top:8px;font-size:10px;color:var(--mist)">0'
+    +ACT_COLORS.map(function(c){ return '<span style="width:14px;height:14px;border-radius:4px;background:'+c+';border:1px solid var(--border)"></span>'; }).join('')+'60+ mnt · 📝 ada ujian</div>';
+  // grafik 7 hari terakhir
+  var bars='', mx=1, last7=[];
+  for(var b=6;b>=0;b--){ var dt=new Date(Date.now()-b*86400000), kk=actKey(dt), ss=(ACT_LOG[kk]&&ACT_LOG[kk].s)||0; last7.push([dt,ss]); mx=Math.max(mx,ss); }
+  last7.forEach(function(p){
+    var hpx=Math.max(3, Math.round(p[1]/mx*70));
+    bars+='<div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:3px"><div style="font-size:9px;color:var(--mist)">'+(p[1]>=60?Math.round(p[1]/60):'')+'</div>'
+      +'<div style="width:70%;height:'+hpx+'px;background:'+(p[1]?'#d0702e':'var(--border)')+';border-radius:4px"></div>'
+      +'<div style="font-size:9px;color:var(--mist)">'+['Min','Sen','Sel','Rab','Kam','Jum','Sab'][p[0].getDay()]+'</div></div>';
+  });
+  h+='<div style="margin-top:16px;background:white;border:1.5px solid var(--border);border-radius:14px;padding:12px"><div style="font-size:12px;font-weight:800;margin-bottom:8px">⏱️ 7 hari terakhir (menit)</div>'
+    +'<div style="display:flex;align-items:flex-end;height:100px;gap:4px">'+bars+'</div></div>';
+  h+='<div id="kal-detail" style="margin-top:16px"></div>';
+  host.innerHTML=h;
+  actRenderDetail(_actCalSel||todayK);
+}
+function actCalNav(dir){ _actCalMonth=new Date(_actCalMonth.getFullYear(), _actCalMonth.getMonth()+dir, 1); renderKalender(); }
+function actCalSelect(k){ _actCalSel=k; renderKalender(); var el=document.getElementById('kal-detail'); if(el) el.scrollIntoView({behavior:'smooth',block:'start'}); }
+function actRenderDetail(k){
+  var el=document.getElementById('kal-detail'); if(!el) return;
+  var e=ACT_LOG[k], ex=actExamsByDay()[k]||[];
+  var p=k.split('-'), dt=new Date(+p[0], +p[1]-1, +p[2]);
+  var title=dt.toLocaleDateString('id-ID',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
+  var h='<div style="background:white;border:1.5px solid var(--border);border-radius:14px;padding:14px">'
+    +'<div style="font-size:15px;font-weight:800">'+title+'</div>'
+    +'<div style="font-size:12px;color:var(--mist);margin:2px 0 10px">Waktu belajar aktif: <b style="color:var(--ink,#222)">'+actFmtDur(e&&e.s)+'</b></div>';
+  if(!e && !ex.length){ el.innerHTML=h+'<div style="font-size:13px;color:var(--mist);padding:8px 0">Belum ada aktivitas tercatat di hari ini.</div></div>'; return; }
+  var c=(e&&e.c)||{}, rows=Object.keys(ACT_CAT).filter(function(x){ return c[x]; });
+  if(rows.length){
+    h+='<div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:12px">'+rows.map(function(x){
+      return '<div style="background:var(--paper,#f7f3ec);border-radius:10px;padding:8px 10px"><div style="font-size:16px;font-weight:800">'+ACT_CAT[x][0]+' '+c[x]+'</div><div style="font-size:10.5px;color:var(--mist)">'+ACT_CAT[x][1]+'</div></div>';
+    }).join('')+'</div>';
+  }
+  if(ex.length){
+    h+='<div style="font-size:12px;font-weight:800;margin:4px 0 6px">📝 Ujian & latihan soal</div>'+ex.map(function(x){
+      return '<div style="display:flex;justify-content:space-between;gap:8px;padding:7px 0;border-bottom:1px solid var(--border);font-size:12.5px"><span>'+(x.type||'Ujian')+' · '+(x.level||'')+'</span><b>'+x.score+'/'+x.total+' ('+x.pct+'%) '+(x.grade||'')+'</b></div>';
+    }).join('');
+  }
+  var v=(e&&e.v)||{}, vs=Object.keys(v).filter(function(n){ return ACT_SCREEN[n] && ['overview','kalender'].indexOf(n)<0; }).sort(function(a,b){ return v[b]-v[a]; });
+  if(vs.length){
+    h+='<div style="font-size:12px;font-weight:800;margin:12px 0 6px">📂 Menu yang dibuka</div><div style="display:flex;flex-wrap:wrap;gap:5px">'
+      +vs.map(function(n){ return '<span style="font-size:11px;padding:4px 9px;border-radius:12px;background:var(--paper,#f7f3ec);border:1px solid var(--border)">'+ACT_SCREEN[n]+(v[n]>1?' ×'+v[n]:'')+'</span>'; }).join('')+'</div>';
+  }
+  var L=(e&&e.l)||[];
+  if(L.length){
+    h+='<div style="font-size:12px;font-weight:800;margin:12px 0 6px">🕒 Riwayat aktivitas</div>'+L.slice().reverse().map(function(r){
+      return '<div style="display:flex;gap:10px;padding:5px 0;font-size:12px;border-bottom:1px dashed var(--border)"><span style="color:var(--mist);font-family:\'DM Mono\',monospace;flex-shrink:0">'+r[0]+'</span><span>'+String(r[1]).replace(/</g,'&lt;')+(r[2]>1?' <span style="color:var(--mist)">×'+r[2]+'</span>':'')+'</span></div>';
+    }).join('');
+  }
+  el.innerHTML=h+'</div>';
+}
+
 var KATEMA_DATA = null;
 var KATEMA_VER = 'v1';
 var _katemaLoading = null;
@@ -20961,5 +21183,6 @@ function toggleKatemaMastered(jp){
 
 // Jangan panggil init() di sini — dipanggil oleh onAuthStateChanged setelah login
 </script>
+<script>try{ actInstallHooks(); }catch(e){ console.error('act hooks', e); }</script>
 </body>
 </html>
