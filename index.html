@@ -1049,6 +1049,9 @@ header:has(.user-menu.open) { z-index:1000; }
 }
 .sync-badge.syncing { background:rgba(212,160,23,0.15); color:var(--gold); }
 
+.fav-star{width:36px;height:36px;border-radius:50%;border:1.5px solid var(--border);background:rgba(255,255,255,.92);color:#b9b2a5;font-size:19px;line-height:1;cursor:pointer;flex-shrink:0;display:inline-flex;align-items:center;justify-content:center;padding:0;font-family:inherit}
+.fav-star.on{color:#e0a800;border-color:#e0a800;background:#fff8e1}
+#flashcard,#kf-card{position:relative}
 </style>
 </head>
 <body>
@@ -1104,7 +1107,7 @@ header:has(.user-menu.open) { z-index:1000; }
         <span class="user-name" id="user-name">...</span>
         <span id="level-badge" onclick="event.stopPropagation();gotoScreen('levelreward')" title="Level & Reward" style="font-size:10px;font-weight:800;background:linear-gradient(135deg,var(--gold),#c98a1f);color:white;padding:2px 7px;border-radius:8px;cursor:pointer;letter-spacing:.3px">Lv.1</span>
         <span class="sync-badge" id="sync-badge">● sync</span>
-        <span id="build-dot" title="Indikator update: warnanya ganti tiap ada versi baru dari Claude" style="display:inline-block;width:11px;height:11px;border-radius:50%;background:#c0392b;margin-left:6px;vertical-align:middle;border:2px solid white;box-shadow:0 0 0 1px rgba(0,0,0,.15)"></span>
+        <span id="build-dot" title="Indikator update: warnanya ganti tiap ada versi baru dari Claude" style="display:inline-block;width:11px;height:11px;border-radius:50%;background:#2da050;margin-left:6px;vertical-align:middle;border:2px solid white;box-shadow:0 0 0 1px rgba(0,0,0,.15)"></span>
         <!-- 🔴🟢 CLAUDE: WAJIB toggle warna build-dot di atas SETIAP kali file ini dikirim ulang —
              merah #c0392b <-> hijau #2da050 gantian. Ini satu-satunya cara Riyan verifikasi
              upload-nya beneran ke-deploy. JANGAN LUPA, cek baris ini di awal SETIAP delivery. -->
@@ -1152,6 +1155,7 @@ header:has(.user-menu.open) { z-index:1000; }
 </nav>
 <div id="nav-learn-menu">
   <button onclick="closeNavLearn();gotoScreen('jalur')" style="font-weight:800;color:#2c7ac8">🎯 Jalur Belajar</button>
+  <button onclick="closeNavLearn();gotoScreen('favorit')" style="font-weight:800;color:#b8860b">★ Favorit</button>
   <button onclick="closeNavLearn();gotoScreen('prio')" style="font-weight:800;color:#c0392b">⭐ Kosakata Prioritas N3 <span style="font-size:9px;background:#c0392b;color:#fff;padding:1px 6px;border-radius:6px;margin-left:4px;font-weight:800">BARU</span></button>
   <button onclick="closeNavLearn();gotoScreen('katema')" style="font-weight:800;color:#2c7ac8">📖 Kalimat per Tema <span style="font-size:9px;background:#2c7ac8;color:#fff;padding:1px 6px;border-radius:6px;margin-left:4px;font-weight:800">BARU</span></button>
   <button onclick="closeNavLearn();gotoScreen('custom')" style="font-weight:800;color:#8b5a2b">⚙️ Custom Belajar <span style="font-size:9px;background:#8b5a2b;color:#fff;padding:1px 6px;border-radius:6px;margin-left:4px;font-weight:800">BARU</span></button>
@@ -1289,6 +1293,11 @@ header:has(.user-menu.open) { z-index:1000; }
     </div>
     <div style="font-size:22px;opacity:.85">›</div>
   </div>
+  <div onclick="gotoScreen('favorit')" style="cursor:pointer;background:white;border:1.5px solid #e0a800;border-radius:14px;padding:12px 16px;margin-bottom:10px;display:flex;align-items:center;gap:12px">
+    <div style="font-size:26px;color:#e0a800">★</div>
+    <div style="flex:1"><div style="font-size:14px;font-weight:800">Favorit</div><div id="ov-fav-count" style="font-size:11.5px;color:var(--mist)">Tandai ☆ di flashcard, kotoba, bunpou, prioritas</div></div>
+    <div style="font-size:20px;color:var(--mist)">›</div>
+  </div>
   <div onclick="gotoScreen('kalender')" style="cursor:pointer;background:white;border:1.5px solid var(--border);border-radius:14px;padding:12px 16px;margin-bottom:16px;display:flex;align-items:center;gap:12px">
     <div style="font-size:26px">📅</div>
     <div style="flex:1"><div style="font-size:14px;font-weight:800">Kalender Aktivitas</div><div id="ov-act-today" style="font-size:11.5px;color:var(--mist)">Hari ini: 0 mnt</div></div>
@@ -1361,7 +1370,7 @@ header:has(.user-menu.open) { z-index:1000; }
   <!-- Active card -->
   <div id="flash-active">
     <div class="card-wrap">
-      <div class="flashcard" id="flashcard" onclick="revealCard()">
+      <div class="flashcard" id="flashcard" onclick="revealCard()"><span id="fc-fav-slot"></span>
         <div class="hint">Tap → lihat arti &amp; cara baca</div>
         <div class="word" id="fc-word">食べる</div>
         <div class="romaji" id="fc-romaji">taberu</div>
@@ -1463,7 +1472,7 @@ header:has(.user-menu.open) { z-index:1000; }
 
   <div id="kf-active">
     <div class="card-wrap">
-      <div class="flashcard" id="kf-card" onclick="revealKanjiCard()">
+      <div class="flashcard" id="kf-card" onclick="revealKanjiCard()"><span id="kf-fav-slot"></span>
         <div class="hint">Tap → lihat furigana &amp; arti</div>
         <div class="word" id="kf-word" style="font-size:48px;line-height:1.2">感謝する</div>
         <div class="meaning-reveal">
@@ -2202,6 +2211,14 @@ header:has(.user-menu.open) { z-index:1000; }
 </div>
 
 <!-- ====== REVIEW SCREEN ====== -->
+<div id="screen-favorit" class="screen">
+  <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px">
+    <button onclick="gotoScreen('overview')" style="border:1.5px solid var(--border);background:white;border-radius:10px;padding:6px 12px;font-family:inherit;cursor:pointer">← Kembali</button>
+    <div><div style="font-size:18px;font-weight:800">★ Favorit</div><div style="font-size:11px;color:var(--mist)">Semua kosakata, kanji, bunpou &amp; kosakata prioritas yang kamu tandai</div></div>
+  </div>
+  <input id="fav-search" oninput="renderFavorit()" placeholder="Cari kanji / bacaan / arti…" style="width:100%;box-sizing:border-box;padding:10px 12px;border:1.5px solid var(--border);border-radius:10px;font-family:inherit;font-size:14px;margin-bottom:10px">
+  <div id="fav-body"></div>
+</div>
 <div id="screen-kalender" class="screen">
   <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px">
     <button onclick="gotoScreen('overview')" style="border:1.5px solid var(--border);background:white;border-radius:10px;padding:6px 12px;font-family:inherit;cursor:pointer">← Kembali</button>
@@ -6152,6 +6169,7 @@ async function loadFromFirestore() {
         todayCount = data.todayCount || 0;
       }
       try{ if(data.activityLog) actMergeCloud(data.activityLog); }catch(e){}
+      try{ if(data.favorites) favMergeCloud(data.favorites); }catch(e){}
       if (Array.isArray(data.examHistory)) {
         // Merge cloud + local, dedupe by id, keep most recent 50
         var byId = {};
@@ -6226,6 +6244,7 @@ async function saveToFirestore() {
       customStudyActiveSet: customStudyActiveSet,
       kalimatBuatan: (kalimatBuatan||[]).slice(-60), // cap 60 biar gak nabrak limit dokumen 1MB
       activityLog: actForCloud(),
+      favorites: favForCloud(),
       lastSeen: firebase.firestore.FieldValue.serverTimestamp(),
     }, { merge: true });
     try{ localStorage.removeItem('n3_dirty'); }catch(e){}
@@ -6457,7 +6476,7 @@ function renderBunpoList(){
       + '<div style="font-weight:700;font-size:15px;color:'+lblBorder+';margin-bottom:2px">'+p.pattern+'</div>'
       + '<div style="font-size:12px;color:var(--mist)">'+(p.arti||'')+'</div>'
       + '</div>'
-      + badge
+      + '<div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px">'+badge+favBtn(favItemBunpo(p, currentJLPT),'width:30px;height:30px;font-size:16px')+'</div>'
       + '</div>'
       + '</div>';
   });
@@ -6684,7 +6703,7 @@ function renderBunpoStudy(){
   }).join('');
   var card = document.getElementById('bs-card');
   if (card) card.innerHTML =
-      '<div style="font-size:24px;font-weight:800;color:'+color+';margin-bottom:4px">'+p.pattern+'</div>'
+      '<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px"><div style="font-size:24px;font-weight:800;color:'+color+';margin-bottom:4px">'+p.pattern+'</div>'+favBtn(favItemBunpo(p, (function(){ for(var L in BUNPO_DATA){ if((BUNPO_DATA[L]||[]).indexOf(p)>=0) return L; } return currentJLPT; })()),'')+'</div>'
     + '<div style="font-size:14px;color:var(--ink);margin-bottom:16px">'+p.arti+'</div>'
     + '<div style="font-size:13px;line-height:1.7;color:var(--ink);margin-bottom:16px">'+p.penjelasan+'</div>'
     + '<div style="background:'+color+';color:white;border-radius:10px;padding:12px 14px;margin-bottom:16px">'
@@ -7028,6 +7047,7 @@ function gotoScreen(name) {
   if (name === 'katema') updateKatema();
   if (name === 'prio') updatePrio();
   if (name === 'kalender') renderKalender();
+  if (name === 'favorit') renderFavorit();
   if (name === 'flashmenu') updateFlashMenu();
   if (name === 'kanjimenu') updateKanjiMenu();
   if (name === 'kotoba') renderKotobaTab();
@@ -7847,6 +7867,7 @@ function renderLevelScreen(){
 
 
 function updateOverview() {
+  try{ favUpdateBadge(); }catch(e){}
   try{ var _oa=document.getElementById('ov-act-today'); if(_oa) _oa.textContent='Hari ini: '+actFmtDur(actDay().s); }catch(e){}
   try {
     var _pd = 0; for (var _k in mastered) { if (_k.indexOf('prio_')===0 && mastered[_k]) _pd++; }
@@ -18469,7 +18490,8 @@ function ktRowHtml(w){
     +'<div class="id-meaning">'+(w.id_||'')+'</div>'
     +'<div style="font-size:10px;color:var(--mist)">'+(w.rom||'')+(w._sub?' \u00b7 '+w._sub:'')+' \u00b7 <b style="color:'+scColor+'">'+sc+'%</b></div>'
     +'</div>'
-    +'<div style="display:flex;flex-direction:column;gap:5px;flex-shrink:0">'
+    +'<div style="display:flex;flex-direction:column;gap:5px;flex-shrink:0;align-items:flex-end">'
+    +favBtn(favItemWord(w, currentJLPT),'width:30px;height:30px;font-size:16px')
     +'<button class="kt-btn '+(a?'on':'')+'" data-wid="'+w.id+'" data-mode="arti" onclick="ktToggle(this)">'+(a?'\u2713':'\u25cb')+' Arti</button>'
     +(hasK?'<button class="kt-btn baca '+(b?'on':'')+'" data-wid="'+w.id+'" data-mode="baca" onclick="ktToggle(this)">'+(b?'\u2713':'\u25cb')+' Baca</button>':'')
     +'</div>'
@@ -20371,6 +20393,7 @@ function prioRenderList(){
       + '<div style="font-size:14px;margin:2px 0 6px">'+prioEscape(w.a)+(w.en?' <span style="font-size:10px;color:#a0a8b4">(arti Inggris)</span>':'')+'</div>'
       + '<div style="display:flex;gap:5px;flex-wrap:wrap">'+prioBadge(w)+'</div>'
       + '</div>'
+      + favBtn(favItemPrio(w),'margin-right:2px')
       + '<button onclick="prioToggleDone(\''+w.i+'\');prioRenderList();prioRenderControls()" title="Tandai hafal" style="flex-shrink:0;padding:7px 10px;border-radius:10px;border:1.5px solid '+(done?'#2d7a4f':'var(--border)')+';background:'+(done?'#2d7a4f':'white')+';color:'+(done?'#fff':'var(--mist)')+';font-weight:800;font-size:12px;cursor:pointer;font-family:inherit">'+(done?'✓ Hafal':'Hafal?')+'</button>'
       + '</div>'
       + prioSentHtml(w,false)
@@ -20422,7 +20445,7 @@ function prioRenderFlash(){
     + '</div>';
   host.innerHTML=html;
   var _pc=document.getElementById('prio-card');
-  if(_pc){ _pc.style.position='relative'; attachSwipe(_pc, function(){ prioFlashMark(false); }, function(){ prioFlashMark(true); }); }
+  if(_pc){ _pc.style.position='relative'; try{ _pc.insertAdjacentHTML('afterbegin', favBtn(favItemPrio(w),'position:absolute;top:8px;right:8px;z-index:3')); }catch(e){} attachSwipe(_pc, function(){ prioFlashMark(false); }, function(){ prioFlashMark(true); }); }
 }
 function prioSetSessSize(n){ _saveFlashSize(n); prioFlashStart(); prioRenderFlash(); }
 function prioFlashMark(ok){
@@ -21078,6 +21101,150 @@ function actRenderDetail(k){
   el.innerHTML=h+'</div>';
 }
 
+
+// ===== ★ FAVORIT — tandai kosakata / kanji / bunpou / prioritas dari mana saja, lihat di layar ★ Favorit =====
+// FAV[key] = {k, t:'kata'|'bunpo'|'prio', lv, id, jp, r, a, x, ts, del?}  (del = tanda dihapus, supaya sinkron antar perangkat)
+var FAV = (function(){ try{ return JSON.parse(localStorage.getItem('n3_fav')||'{}')||{}; }catch(e){ return {}; } })();
+var _favReg = {}, _favFilter = 'all';
+function favPersist(){ try{ localStorage.setItem('n3_fav', JSON.stringify(FAV)); }catch(e){} }
+function favHas(k){ var e=FAV[k]; return !!(e && !e.del); }
+function favList(){ return Object.keys(FAV).map(function(k){ return FAV[k]; }).filter(function(e){ return e && !e.del; }).sort(function(a,b){ return (b.ts||0)-(a.ts||0); }); }
+function favEsc(s){ return String(s==null?'':s).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];}); }
+// --- bentuk item dari berbagai sumber ---
+function favItemWord(w, lv){
+  if(!w) return null;
+  lv = w._csLevel || w._lvl || lv || currentJLPT;
+  if(lv==='PRIO' || w._prio) { var p=w._prio || (PRIO_DATA||[]).filter(function(x){ return x.i===String(w.id).replace(/^prio[:_]/,''); })[0]; if(p) return favItemPrio(p); }
+  if(w._isBunpo) return favItemBunpo({id:w.id, pattern:w._pattern||w.jp, arti:String(w.id_||'').split('\n')[0], rumus:w.rom}, lv);
+  return {k:'w:'+lv+':'+w.id, t:'kata', lv:lv, id:w.id, jp:w.jp, r:w.rom||'', a:w.id_||''};
+}
+function favItemBunpo(p, lv){ lv=lv||currentJLPT; return {k:'b:'+lv+':'+p.id, t:'bunpo', lv:lv, id:p.id, jp:p.pattern, r:'', a:p.arti||'', x:p.rumus||''}; }
+function favItemPrio(p){ return {k:'p:'+p.i, t:'prio', lv:'PRIO', id:p.i, jp:prioHead(p), r:p.k||'', a:p.a||''}; }
+// --- tombol bintang ---
+function favBtn(item, style){
+  if(!item) return '';
+  _favReg[item.k]=item;
+  var on=favHas(item.k);
+  return '<button class="fav-star'+(on?' on':'')+'" data-fk="'+favEsc(item.k)+'" title="Favorit" onclick="event.stopPropagation();favToggleKey(this.getAttribute(\'data-fk\'))"'
+    +' style="'+(style||'')+'">'+(on?'★':'☆')+'</button>';
+}
+function favToggleKey(k){
+  var on=favHas(k);
+  if(on){ FAV[k]={k:k, del:1, ts:Date.now()}; }
+  else { var it=_favReg[k]; if(!it) return; var c={}; for(var x in it) c[x]=it[x]; c.ts=Date.now(); delete c.del; FAV[k]=c; }
+  favPersist();
+  document.querySelectorAll('.fav-star[data-fk]').forEach(function(b){
+    if(b.getAttribute('data-fk')!==k) return;
+    var o=favHas(k); b.textContent=o?'★':'☆'; b.classList.toggle('on', o);
+  });
+  try{ if(typeof actNote==='function') actNote((on?'Hapus favorit: ':'Tambah favorit: ')+((FAV[k]&&FAV[k].jp)||(_favReg[k]&&_favReg[k].jp)||'')); }catch(e){}
+  favUpdateBadge();
+  var sc=document.querySelector('.screen.active'); if(sc && sc.id==='screen-favorit') renderFavorit();
+  try{ save(); }catch(e){}
+}
+function favUpdateBadge(){ var el=document.getElementById('ov-fav-count'); if(el){ var n=favList().length; el.textContent=n? n+' item ditandai' : 'Tandai ☆ di flashcard, kotoba, bunpou, prioritas'; } }
+function favMergeCloud(remote){
+  if(!remote || typeof remote!=='object') return;
+  Object.keys(remote).forEach(function(k){ var r=remote[k], l=FAV[k]; if(!r) return; if(!l || (r.ts||0)>(l.ts||0)) FAV[k]=r; });
+  favPersist(); favUpdateBadge();
+}
+function favForCloud(){
+  var out={}, cut=Date.now()-60*86400000; // tanda hapus disimpan 60 hari
+  Object.keys(FAV).forEach(function(k){ var e=FAV[k]; if(e && (!e.del || (e.ts||0)>cut)) out[k]=e; });
+  return out;
+}
+// --- sinkron bintang di kartu yang sedang tampil ---
+function favSyncFlash(){
+  var el=document.getElementById('fc-fav-slot'); if(!el) return;
+  var w=(typeof sessionQueue!=='undefined')?sessionQueue[sessionIdx]:null;
+  var it=null; try{ it=w?favItemWord(w):null; }catch(e){}
+  el.innerHTML=it?favBtn(it,'position:absolute;top:8px;right:8px;z-index:3'):'';
+}
+function favSyncKf(){
+  var el=document.getElementById('kf-fav-slot'); if(!el) return;
+  var w=(typeof kfQueue!=='undefined')?kfQueue[kfIdx]:null;
+  var it=null; try{ it=w?favItemWord(w):null; }catch(e){}
+  el.innerHTML=it?favBtn(it,'position:absolute;top:8px;right:8px;z-index:3'):'';
+}
+// --- layar ★ Favorit ---
+var FAV_TYPE={kata:['📗','Kosakata'], bunpo:['📘','Bunpou'], prio:['⭐','Prioritas']};
+function favFilterMatch(e){
+  if(_favFilter==='all') return true;
+  if(_favFilter==='kanji') return e.t!=='bunpo' && /[一-鿿々]/.test(e.jp||'');
+  return e.t===_favFilter;
+}
+function renderFavorit(){
+  var host=document.getElementById('fav-body'); if(!host) return;
+  var all=favList();
+  var qEl=document.getElementById('fav-search'); var q=(qEl?qEl.value:'').trim().toLowerCase();
+  var cnt={all:all.length, kata:0, kanji:0, bunpo:0, prio:0};
+  all.forEach(function(e){ cnt[e.t]=(cnt[e.t]||0)+1; if(e.t!=='bunpo' && /[一-鿿々]/.test(e.jp||'')) cnt.kanji++; });
+  var tabs=[['all','Semua'],['kata','📗 Kosakata'],['kanji','🈶 Kanji'],['bunpo','📘 Bunpou'],['prio','⭐ Prioritas']];
+  var h='<div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px">'+tabs.map(function(t){
+    var a=_favFilter===t[0];
+    return '<button onclick="_favFilter=\''+t[0]+'\';renderFavorit()" style="padding:7px 12px;border-radius:16px;border:1.5px solid '+(a?'#d39b00':'var(--border)')+';background:'+(a?'#d39b00':'white')
+      +';color:'+(a?'#fff':'var(--ink,#222)')+';font-family:inherit;font-size:12px;font-weight:700;cursor:pointer">'+t[1]+' <span style="opacity:.75">'+(cnt[t[0]]||0)+'</span></button>';
+  }).join('')+'</div>';
+  var rows=all.filter(favFilterMatch).filter(function(e){
+    if(!q) return true; return [e.jp,e.r,e.a,e.x].join(' ').toLowerCase().indexOf(q)>=0;
+  });
+  var words=rows.filter(function(e){ return e.t!=='bunpo'; }), bps=rows.filter(function(e){ return e.t==='bunpo'; });
+  if(rows.length){
+    h+='<div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px">';
+    if(words.length) h+='<button onclick="favStartFlash(\'arti\')" style="flex:1;min-width:45%;padding:11px;border:none;border-radius:12px;background:#d39b00;color:#fff;font-weight:800;font-family:inherit;cursor:pointer">🃏 Flashcard ('+words.length+')</button>'
+      +'<button onclick="favStartFlash(\'kanji\')" style="flex:1;min-width:45%;padding:11px;border:1.5px solid #d39b00;border-radius:12px;background:white;color:#a87a00;font-weight:800;font-family:inherit;cursor:pointer">🈶 Flashcard Kanji</button>';
+    if(bps.length) h+='<button onclick="favStartBunpo()" style="flex:1;min-width:45%;padding:11px;border:1.5px solid #2c7ac8;border-radius:12px;background:white;color:#2c7ac8;font-weight:800;font-family:inherit;cursor:pointer">📘 Belajar Bunpou ('+bps.length+')</button>';
+    h+='</div>';
+  }
+  if(!all.length){
+    h+='<div style="text-align:center;padding:34px 16px;color:var(--mist);background:white;border:1.5px dashed var(--border);border-radius:14px">'
+      +'<div style="font-size:34px">☆</div><div style="font-weight:800;color:var(--ink,#222);margin:6px 0">Belum ada favorit</div>'
+      +'<div style="font-size:12.5px;line-height:1.6">Ketuk tombol ☆ di flashcard, flashcard kanji, daftar Kotoba, Bunpou, atau Kosakata Prioritas. Semua yang ditandai akan terkumpul di sini.</div></div>';
+  } else if(!rows.length){
+    h+='<div style="text-align:center;padding:24px;color:var(--mist);font-size:13px">Tidak ada favorit yang cocok.</div>';
+  } else {
+    h+=rows.map(function(e){
+      _favReg[e.k]=e;
+      var ty=FAV_TYPE[e.t]||['•',''];
+      var open = e.t==='bunpo' ? ' onclick="favOpenBunpo(\''+favEsc(e.k)+'\')" style="cursor:pointer;flex:1;min-width:0"' : ' style="flex:1;min-width:0"';
+      return '<div style="display:flex;align-items:flex-start;gap:10px;background:white;border:1px solid var(--border);border-radius:12px;padding:11px 12px;margin-bottom:8px">'
+        +'<div'+open+'>'
+        +'<div style="display:flex;align-items:baseline;gap:8px;flex-wrap:wrap"><span style="font-size:18px;font-weight:800">'+favEsc(e.jp)+'</span>'
+        +(e.r?'<span style="font-size:12px;color:var(--mist)">'+favEsc(e.r)+'</span>':'')+'</div>'
+        +'<div style="font-size:13px;margin-top:2px">'+favEsc(String(e.a||'').split('\n')[0])+'</div>'
+        +(e.x?'<div style="font-size:11px;color:var(--mist);margin-top:3px">'+favEsc(e.x)+'</div>':'')
+        +'<div style="font-size:10px;color:var(--mist);margin-top:5px">'+ty[0]+' '+ty[1]+' · '+(e.lv==='PRIO'?'Prioritas N3':e.lv)+(e.t==='bunpo'?' · ketuk untuk belajar':'')+'</div>'
+        +'</div>'
+        +favBtn(e,'')
+        +'</div>';
+    }).join('');
+  }
+  host.innerHTML=h;
+}
+function favStartFlash(mode){
+  var words=favList().filter(favFilterMatch).filter(function(e){ return e.t!=='bunpo'; }).map(function(e){
+    return {id:e.id, jp:e.jp, rom:e.r, id_:e.a, _csLevel:e.lv};
+  });
+  if(!words.length){ alert('Belum ada kosakata favorit.'); return; }
+  customStudySets['★ Favorit']=words;
+  customStudyActiveSet='★ Favorit';
+  try{ _saveCustomStudySets(); }catch(e){}
+  startCustomStudyFlash(mode==='kanji'?'kanji':undefined);
+}
+function favBunpoPattern(e){
+  var arr=(typeof BUNPO_DATA!=='undefined' && BUNPO_DATA[e.lv])||[];
+  for(var i=0;i<arr.length;i++) if(arr[i].id===e.id) return arr[i];
+  return null;
+}
+function favStartBunpo(onlyKey){
+  var list=favList().filter(function(e){ return e.t==='bunpo' && (!onlyKey || e.k===onlyKey); }).map(favBunpoPattern).filter(Boolean);
+  if(!list.length){ alert('Pola bunpou favorit tidak ditemukan.'); return; }
+  bunpoState.single = list.length===1; bunpoState.singleId = list.length===1 ? list[0].id : null;
+  bunpoState.patterns=list; bunpoState.patternIdx=0; bunpoState.quiz=[]; bunpoState.quizIdx=0; bunpoState.score=0;
+  renderBunpoStudy(); gotoScreenRaw('bunpostudy');
+}
+function favOpenBunpo(k){ favStartBunpo(k); }
+
 var KATEMA_DATA = null;
 var KATEMA_VER = 'v1';
 var _katemaLoading = null;
@@ -21183,6 +21350,7 @@ function toggleKatemaMastered(jp){
 
 // Jangan panggil init() di sini — dipanggil oleh onAuthStateChanged setelah login
 </script>
-<script>try{ actInstallHooks(); }catch(e){ console.error('act hooks', e); }</script>
+<script>try{ actInstallHooks(); }catch(e){ console.error('act hooks', e); }
+try{ actWrapAfter('showCard', favSyncFlash); actWrapAfter('showKanjiCard', favSyncKf); }catch(e){ console.error('fav hooks', e); }</script>
 </body>
 </html>
