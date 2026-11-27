@@ -1107,7 +1107,7 @@ header:has(.user-menu.open) { z-index:1000; }
         <span class="user-name" id="user-name">...</span>
         <span id="level-badge" onclick="event.stopPropagation();gotoScreen('levelreward')" title="Level & Reward" style="font-size:10px;font-weight:800;background:linear-gradient(135deg,var(--gold),#c98a1f);color:white;padding:2px 7px;border-radius:8px;cursor:pointer;letter-spacing:.3px">Lv.1</span>
         <span class="sync-badge" id="sync-badge">● sync</span>
-        <span id="build-dot" title="Indikator update: warnanya ganti tiap ada versi baru dari Claude" style="display:inline-block;width:11px;height:11px;border-radius:50%;background:#c0392b;margin-left:6px;vertical-align:middle;border:2px solid white;box-shadow:0 0 0 1px rgba(0,0,0,.15)"></span>
+        <span id="build-dot" title="Indikator update: warnanya ganti tiap ada versi baru dari Claude" style="display:inline-block;width:11px;height:11px;border-radius:50%;background:#2da050;margin-left:6px;vertical-align:middle;border:2px solid white;box-shadow:0 0 0 1px rgba(0,0,0,.15)"></span>
         <!-- 🔴🟢 CLAUDE: WAJIB toggle warna build-dot di atas SETIAP kali file ini dikirim ulang —
              merah #c0392b <-> hijau #2da050 gantian. Ini satu-satunya cara Riyan verifikasi
              upload-nya beneran ke-deploy. JANGAN LUPA, cek baris ini di awal SETIAP delivery. -->
@@ -2405,6 +2405,9 @@ header:has(.user-menu.open) { z-index:1000; }
     </div>
     <label style="font-size:12px;font-weight:700;color:var(--mist);display:block;margin-bottom:6px">Sumber Soal (bisa pilih lebih dari satu, di-mix)</label>
     <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:10px">
+      <label style="display:flex;align-items:center;gap:8px;padding:11px;border:1.5px solid #e0a800;background:#fff8e1;border-radius:10px;cursor:pointer">
+        <input type="checkbox" name="mp-source" value="favorit" onchange="mpToggleKanjiDir()"> <span style="font-size:13px;font-weight:700">★ Favorit saya (kata, kanji, bunpou &amp; prioritas yang ditandai)</span>
+      </label>
       <label style="display:flex;align-items:center;gap:8px;padding:11px;border:1.5px solid #c9941a;background:rgba(201,148,26,.07);border-radius:10px;cursor:pointer">
         <input type="checkbox" name="mp-source" value="prioritas" onchange="mpToggleKanjiDir()"> <span style="font-size:13px;font-weight:700">⭐ Kosakata Prioritas N3 (isi kalimat + arti)</span>
       </label>
@@ -3753,7 +3756,8 @@ function setFlashSessSize(n){
   if(_lastFlashStart && typeof window[_lastFlashStart.name]==='function'){ window[_lastFlashStart.name].apply(null,_lastFlashStart.args); }
 }
 function renderFlashSizeBars(){
-  ['flash-size-bar','kf-size-bar'].forEach(function(id){ var el=document.getElementById(id); if(el) el.innerHTML=flashSizeRowHTML(); });
+  ['flash-size-bar','kf-size-bar'].forEach(function(id){ var el=document.getElementById(id); if(el) el.innerHTML=flashSizeRowHTML()
+    + '<div style="margin:-2px 0 6px">'+favFlashPillHtml('favToggleFlashOnly()', favOnlyFlash)+'</div>'; });
 }
 
 // Kanji reading session state
@@ -9707,6 +9711,10 @@ async function mpBuildQuestionPool(sources, levels, count, kanjiDirs, posFilters
       specs.push({type:'prioritas'}); // daftar kata dari ujian N3, gak terikat level yang dipilih
       return;
     }
+    if(src==='favorit'){
+      specs.push({type:'favorit'}); // item ★ favorit pemain, lintas level
+      return;
+    }
     lvlList.forEach(function(lvl){
       if(src==='kanji'){
         dirList.forEach(function(dir){ specs.push({type:'kanji', level:lvl, dir:dir}); });
@@ -9729,6 +9737,7 @@ async function mpBuildQuestionPool(sources, levels, count, kanjiDirs, posFilters
     if(spec.type==='keisei') return mpKeiseiQuestions(want, lvlList);
     if(spec.type==='konjugasi') return mpKonjugasiQuestions(want);
     if(spec.type==='prioritas') return await mpPrioQuestions(want, prioModes);
+    if(spec.type==='favorit') return await mpFavQuestions(want);
     return [];
   }
 
@@ -9822,7 +9831,7 @@ function mpcRenderLevelPills(){
 }
 function mpcRenderMasteryPills(){
   var el=document.getElementById('mpc-pick-mastery'); if(!el) return;
-  el.innerHTML=[['all','Semua'],['belum','Belum hafal'],['hafal','Sudah hafal']].map(function(o){
+  el.innerHTML=[['all','Semua'],['belum','Belum hafal'],['hafal','Sudah hafal'],['fav','★ Favorit']].map(function(o){
     return mpcPillHtml(o[1], mpcMasteryFilter===o[0], "mpcMasteryFilter='"+o[0]+"';mpcListLimit=60;mpcRenderMasteryPills();mpcRenderWordList()");
   }).join('');
 }
@@ -9839,7 +9848,8 @@ function mpcFilteredPool(){
   var lv=mpcPickLevel, pool=mpcPoolCache[lv]||[];
   var qEl=document.getElementById('mpc-pick-search'); var q=(qEl?qEl.value:'').trim().toLowerCase();
   return pool.filter(function(w){
-    if(mpcMasteryFilter!=='all'){ var m=mpcIsMastered(lv,w); if(mpcMasteryFilter==='hafal'?!m:m) return false; }
+    if(mpcMasteryFilter==='fav'){ var it=(lv==='PRIO' && w._prio)?favItemPrio(w._prio):favItemWord(w, lv); if(!it || !favHas(it.k)) return false; }
+    else if(mpcMasteryFilter!=='all'){ var m=mpcIsMastered(lv,w); if(mpcMasteryFilter==='hafal'?!m:m) return false; }
     if(!q) return true;
     return String(w.jp).toLowerCase().indexOf(q)>=0 || String(w.rom).toLowerCase().indexOf(q)>=0 || String(w.id_).toLowerCase().indexOf(q)>=0;
   });
@@ -17410,7 +17420,7 @@ function csSetMasteryFilter(f){
 function csRenderMasteryPills(){
   var el = document.getElementById('custom-mastery-pills');
   if(!el) return;
-  var defs = [['all','Semua'],['no','😕 Belum Hafal'],['yes','✅ Sudah Hafal']];
+  var defs = [['all','Semua'],['no','😕 Belum Hafal'],['yes','✅ Sudah Hafal'],['fav','★ Favorit']];
   el.innerHTML = defs.map(function(d){
     var active = _customMasteryFilter===d[0];
     return '<button onclick="csSetMasteryFilter(\''+d[0]+'\')" style="padding:9px 14px;border-radius:20px;border:1.5px solid '+(active?'#8b5a2b':'var(--border)')+';background:'+(active?'#8b5a2b':'white')+';color:'+(active?'#fff':'var(--mist)')+';font-family:inherit;font-size:12.5px;font-weight:700;cursor:pointer">'+d[1]+'</button>';
@@ -17419,6 +17429,7 @@ function csRenderMasteryPills(){
 // Terapin filter status hafalan (di atas hasil filter level yang udah ada) ke pool kata manapun
 function csApplyMasteryFilter(pool){
   if(_customMasteryFilter==='all') return pool;
+  if(_customMasteryFilter==='fav') return pool.filter(function(w){ return favWordOn(w); });
   return pool.filter(function(w){
     var done = wordDone(w);
     return _customMasteryFilter==='yes' ? done : !done;
@@ -20291,6 +20302,7 @@ function prioFiltered(){
     if(prioState.st==='belum' && prioDone(w)) return false;
     if(prioState.st==='sudah' && !prioDone(w)) return false;
     if(prioState.ex && !w.ex) return false;
+    if(prioState.fav && !favHas('p:'+w.i)) return false;
     if(q){
       var hay=(w.jp+' '+w.k+' '+w.a).toLowerCase();
       if(hay.indexOf(q)<0) return false;
@@ -20340,6 +20352,7 @@ function prioRenderControls(){
     + prioPill('Belum hafal', prioState.st==='belum', "prioSet('st','belum')", '#8b5a2b')
     + prioPill('Sudah hafal', prioState.st==='sudah', "prioSet('st','sudah')", '#2d7a4f')
     + prioPill('✍️ Ada kalimat contoh', prioState.ex, "prioSet('ex',!prioState.ex)", '#0a7d6b')
+    + prioPill((prioState.fav?'★':'☆')+' Favorit saja', !!prioState.fav, "prioSet('fav',!prioState.fav)", '#d39b00')
     + prioPill(prioState.furi?'ふ Furigana: ON':'ふ Furigana: OFF', prioState.furi, "prioToggleFuri()", '#2c3e7a')
     + '</div>'
     + '<input id="prio-search" type="search" value="'+prioEscape(prioState.q)+'" placeholder="Cari kata, bacaan, atau arti…" oninput="prioState.q=this.value;prioState.limit=40;prioState.fc.list=[];prioRenderAfterSearch()" style="width:100%;padding:10px 12px;border:1.5px solid var(--border);border-radius:10px;font-family:inherit;font-size:14px;margin-bottom:8px">'
@@ -21247,6 +21260,85 @@ function favStartBunpo(onlyKey){
 }
 function favOpenBunpo(k){ favStartBunpo(k); }
 
+
+// ===== FILTER ★ FAVORIT di flashcard / prioritas / custom / kuis bareng =====
+var favOnlyFlash = (function(){ try{ return localStorage.getItem('n3_favOnlyFlash')==='1'; }catch(e){ return false; } })();
+function favWordOn(w){ try{ var it=favItemWord(w); return !!(it && favHas(it.k)); }catch(e){ return false; } }
+function favToggleFlashOnly(){
+  favOnlyFlash=!favOnlyFlash;
+  try{ localStorage.setItem('n3_favOnlyFlash', favOnlyFlash?'1':'0'); }catch(e){}
+  if(_lastFlashStart && typeof window[_lastFlashStart.name]==='function') window[_lastFlashStart.name].apply(null,_lastFlashStart.args);
+  else renderFlashSizeBars();
+}
+function favFlashPillHtml(onclick, on){
+  return '<button onclick="'+onclick+'" style="padding:5px 12px;border-radius:12px;border:1.5px solid '+(on?'#e0a800':'var(--border)')+';background:'+(on?'#e0a800':'white')
+    +';color:'+(on?'#fff':'#b8860b')+';font-family:inherit;font-size:10.5px;font-weight:800;cursor:pointer">'+(on?'★':'☆')+' Favorit saja</button>';
+}
+// bungkus semua pemula flashcard: kalau "★ Favorit saja" aktif, ambil SEMUA kartu dulu, saring favorit, baru potong sesuai jumlah per sesi
+function favInstallFlashFilter(){
+  ['startStudyBunpo','startStudyPos','startStudy','startOnoFlash','startDialectFlash','startExtFlashAll','startKazuFlash',
+   'startCustomStudyFlash','startSrsReview','startKanjiFlashBunpo','startKanjiFlashPos','startKanjiFlash','startCustomStudyKanjiFlash'
+  ].forEach(function(name){
+    var orig=window[name]; if(typeof orig!=='function' || orig._favWrapped) return;
+    var w=function(){
+      if(!favOnlyFlash) return orig.apply(this, arguments);
+      var keep=_flashSizeMem, r; _flashSizeMem=0;
+      try{ r=orig.apply(this, arguments); } finally { _flashSizeMem=keep; }
+      var act=document.querySelector('.screen.active'), kanji=act && act.id==='screen-kanjiflash';
+      if(kanji){
+        kfQueue=(kfQueue||[]).filter(favWordOn).slice(0,flashSessSize()); kfIdx=0; kfRevealed=false; showKanjiCard();
+        if(!kfQueue.length){ var ks=document.getElementById('kf-subtitle'); if(ks) ks.textContent='Belum ada kata ★ favorit di sini — matikan "Favorit saja" atau tandai ☆ dulu'; }
+      } else {
+        sessionQueue=(sessionQueue||[]).filter(favWordOn).slice(0,flashSessSize()); sessionIdx=0; revealed=false; showCard();
+        if(!sessionQueue.length){ var fs=document.getElementById('flash-subtitle'); if(fs) fs.textContent='Belum ada kartu ★ favorit di sini — matikan "Favorit saja" atau tandai ☆ dulu'; }
+      }
+      try{ renderFlashSizeBars(); }catch(e){}
+      return r;
+    };
+    w._favWrapped=true; w._fsWrapped=orig._fsWrapped; w._actWrapped=orig._actWrapped; window[name]=w;
+  });
+}
+// ---- Kuis Bareng: sumber "★ Favorit" ----
+async function mpFavQuestions(want){
+  var favs=favList(); if(!favs.length) return [];
+  var words=favs.filter(function(e){ return e.t!=='bunpo'; }), bps=favs.filter(function(e){ return e.t==='bunpo'; });
+  // kumpulan pengecoh: kata dari level yang sama + data Prioritas
+  var lvls={}; words.forEach(function(e){ if(e.lv && e.lv!=='PRIO') lvls[e.lv]=1; });
+  var dpool=[];
+  for(var lv in lvls){ try{ dpool=dpool.concat(await mpEnsureWords(lv)); }catch(e){} }
+  if(words.some(function(e){ return e.lv==='PRIO'; })){ try{ await loadPrio(); dpool=dpool.concat(pjMapWords((PRIO_DATA||[]).filter(function(w){ return !w.en; }))); }catch(e){} }
+  try{ mpRefreshIndoVocab(); }catch(e){}
+  var cand=[];
+  words.forEach(function(e){
+    var w={id:'fav_'+e.k, jp:e.jp, rom:e.r||'', id_:String(e.a||'').split('\n')[0]};
+    var pool=dpool.length>=8 ? dpool : dpool.concat(words.map(function(x){ return {id:'fav_'+x.k, jp:x.jp, rom:x.r||'', id_:String(x.a||'').split('\n')[0]}; }));
+    try{
+      var b=mpcFixArtiChoices(mpBuildArtiChoices(w, pool), w, pool);
+      if(b && b.answer>=0 && new Set(b.choices).size===b.choices.length) cand.push({q:'「'+w.jp+'」'+(w.rom?'（'+w.rom+'）':'')+' artinya apa?', choices:b.choices, answer:b.answer, section:'★ Favorit — Arti', meaning:w.id_, expl:w.jp+' = '+w.id_});
+    }catch(err){}
+    if(/[一-鿿々]/.test(w.jp) && w.rom){
+      try{
+        var c=mpBuildBacaanChoices(w, pool);
+        if(c && c.answer>=0 && new Set(c.choices).size===c.choices.length) cand.push({q:'「'+w.jp+'」 dibaca apa?', choices:c.choices, answer:c.answer, section:'★ Favorit — Baca Kanji', meaning:w.id_, expl:w.jp+' dibaca '+w.rom+' — '+w.id_});
+      }catch(err){}
+    }
+  });
+  bps.forEach(function(e){
+    var arr=(BUNPO_DATA[e.lv]||[]), p=favBunpoPattern(e); if(!p || arr.length<4) return;
+    var others=arr.filter(function(x){ return x.id!==p.id && x.arti && !mpcMeaningOverlap(x.arti,p.arti); }); shuffle(others);
+    var ch=[p.arti].concat(others.slice(0,3).map(function(x){ return x.arti; })); shuffle(ch);
+    cand.push({q:'Arti pola 「'+p.pattern+'」 adalah…', choices:ch, answer:ch.indexOf(p.arti), section:'★ Favorit — Bunpou', meaning:p.arti, expl:p.pattern+' = '+p.arti+'. Rumus: '+(p.rumus||'')});
+    var ch2=[p.pattern].concat(others.slice(3,6).map(function(x){ return x.pattern; })); shuffle(ch2);
+    if(ch2.length===4) cand.push({q:'Pola mana yang artinya: "'+p.arti+'"?', choices:ch2, answer:ch2.indexOf(p.pattern), section:'★ Favorit — Bunpou', meaning:p.arti, expl:p.pattern+' = '+p.arti});
+  });
+  shuffle(cand);
+  var out=cand.slice(0,want);
+  // favorit sedikit tapi minta banyak soal -> ulangi dengan urutan pilihan diacak ulang
+  var guard=0;
+  while(out.length<want && cand.length && guard<20){ guard++; cand.forEach(function(q){ if(out.length<want){ var c=q.choices.slice(), r=c[q.answer]; shuffle(c); out.push(Object.assign({}, q, {choices:c, answer:c.indexOf(r)})); } }); }
+  return out;
+}
+
 var KATEMA_DATA = null;
 var KATEMA_VER = 'v1';
 var _katemaLoading = null;
@@ -21353,6 +21445,6 @@ function toggleKatemaMastered(jp){
 // Jangan panggil init() di sini — dipanggil oleh onAuthStateChanged setelah login
 </script>
 <script>try{ actInstallHooks(); }catch(e){ console.error('act hooks', e); }
-try{ actWrapAfter('showCard', favSyncFlash); actWrapAfter('showKanjiCard', favSyncKf); }catch(e){ console.error('fav hooks', e); }</script>
+try{ actWrapAfter('showCard', favSyncFlash); actWrapAfter('showKanjiCard', favSyncKf); favInstallFlashFilter(); }catch(e){ console.error('fav hooks', e); }</script>
 </body>
 </html>
