@@ -1107,7 +1107,7 @@ header:has(.user-menu.open) { z-index:1000; }
         <span class="user-name" id="user-name">...</span>
         <span id="level-badge" onclick="event.stopPropagation();gotoScreen('levelreward')" title="Level & Reward" style="font-size:10px;font-weight:800;background:linear-gradient(135deg,var(--gold),#c98a1f);color:white;padding:2px 7px;border-radius:8px;cursor:pointer;letter-spacing:.3px">Lv.1</span>
         <span class="sync-badge" id="sync-badge">● sync</span>
-        <span id="build-dot" title="Indikator update: warnanya ganti tiap ada versi baru dari Claude" style="display:inline-block;width:11px;height:11px;border-radius:50%;background:#2da050;margin-left:6px;vertical-align:middle;border:2px solid white;box-shadow:0 0 0 1px rgba(0,0,0,.15)"></span>
+        <span id="build-dot" title="Indikator update: warnanya ganti tiap ada versi baru dari Claude" style="display:inline-block;width:11px;height:11px;border-radius:50%;background:#c0392b;margin-left:6px;vertical-align:middle;border:2px solid white;box-shadow:0 0 0 1px rgba(0,0,0,.15)"></span>
         <!-- 🔴🟢 CLAUDE: WAJIB toggle warna build-dot di atas SETIAP kali file ini dikirim ulang —
              merah #c0392b <-> hijau #2da050 gantian. Ini satu-satunya cara Riyan verifikasi
              upload-nya beneran ke-deploy. JANGAN LUPA, cek baris ini di awal SETIAP delivery. -->
@@ -20947,13 +20947,15 @@ setInterval(function(){
 // versi ringkas untuk cloud (dokumen Firestore dibatasi 1MB): 180 hari terakhir, catatan per hari maks 30
 function actForCloud(){
   var out={}, keys=Object.keys(ACT_LOG).sort().slice(-180);
-  keys.forEach(function(k){ var e=ACT_LOG[k]; out[k]={s:e.s||0, c:e.c||{}, v:e.v||{}, l:(e.l||[]).slice(-30)}; });
+  // Firestore TIDAK menerima array di dalam array -> tiap baris riwayat dikirim sebagai objek {h,t,x}
+  keys.forEach(function(k){ var e=ACT_LOG[k]; out[k]={s:e.s||0, c:e.c||{}, v:e.v||{}, l:(e.l||[]).slice(-30).map(function(r){ return {h:String(r[0]||''), t:String(r[1]||''), x:r[2]||1}; })}; });
   return out;
 }
 function actMergeCloud(remote){
   if(!remote || typeof remote!=='object') return;
   Object.keys(remote).forEach(function(k){
     var r=remote[k]||{}, l=ACT_LOG[k];
+    if(Array.isArray(r.l)) r.l=r.l.map(function(x){ return Array.isArray(x) ? x : [x&&x.h||'', x&&x.t||'', (x&&x.x)||1]; });
     if(!l){ ACT_LOG[k]={s:r.s||0,c:r.c||{},v:r.v||{},l:r.l||[]}; return; }
     l.s=Math.max(l.s||0, r.s||0);
     ['c','v'].forEach(function(f){ l[f]=l[f]||{}; var R=r[f]||{}; Object.keys(R).forEach(function(x){ l[f][x]=Math.max(l[f][x]||0, R[x]||0); }); });
